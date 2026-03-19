@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Breakout Scan — 2026-03-20T04:06:16</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0d1117; color: #c9d1d9; margin: 24px; }
+    h1   { color: #58a6ff; margin-top: 0; }
+    h2   { color: #79c0ff; font-size: 1.1em; margin-top: 24px; margin-bottom: 12px; }
+    .meta{ color: #8b949e; font-size: 0.9em; margin-bottom: 12px; }
+    .summary { color: #79c0ff; margin: 8px 0 16px 0; font-size: 0.92em; }
+
+    /* Controls */
+    .controls {
+      display: flex; gap: 16px; align-items: center; margin-bottom: 20px;
+      flex-wrap: wrap; padding: 12px; background: #161b22; border-radius: 8px;
+    }
+    .control-group { display: flex; gap: 8px; align-items: center; }
+    .control-label { color: #8b949e; font-size: 0.9em; font-weight: 600; }
+    .search-box {
+      flex: 0 0 200px; padding: 6px 10px; background: #0d1117; border: 1px solid #30363d;
+      border-radius: 6px; color: #c9d1d9; font-size: 0.9em;
+    }
+    .score-slider { flex: 0 0 200px; }
+    .slider { width: 100%; height: 4px; border-radius: 3px; background: #30363d;
+               outline: none; -webkit-appearance: none; cursor: pointer; }
+    .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none;
+      width: 14px; height: 14px; border-radius: 50%; background: #58a6ff; cursor: pointer; }
+    .slider::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%;
+      background: #58a6ff; cursor: pointer; border: none; }
+    .slider-value { color: #79c0ff; font-size: 0.9em; min-width: 40px; text-align: center; }
+    .setup-filter { display: flex; gap: 8px; }
+    .filter-btn {
+      padding: 6px 12px; border: 1px solid #30363d; border-radius: 6px;
+      background: transparent; color: #58a6ff; cursor: pointer; font-size: 0.85em;
+      transition: all 0.2s;
+    }
+    .filter-btn.active { background: #1f6feb; border-color: #58a6ff; }
+    .filter-btn:hover { background: #1f6feb33; }
+    .export-btn {
+      padding: 6px 12px; border: 1px solid #30363d; border-radius: 6px;
+      background: transparent; color: #7ee787; cursor: pointer; font-size: 0.85em;
+      transition: all 0.2s;
+    }
+    .export-btn:hover { background: #2ea04333; }
+
+    /* Analytics */
+    .analytics { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                   gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: #161b22; padding: 12px; border-radius: 8px; border: 1px solid #21262d; }
+    .stat-label { color: #8b949e; font-size: 0.85em; margin-bottom: 4px; }
+    .stat-value { color: #58a6ff; font-size: 1.4em; font-weight: 700; }
+    .stat-secondary { color: #79c0ff; font-size: 0.9em; margin-top: 4px; }
+
+    /* Charts */
+    .chart-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                        gap: 16px; margin-bottom: 24px; }
+    .chart { background: #161b22; padding: 12px; border-radius: 8px; border: 1px solid #21262d; }
+    .chart-title { color: #79c0ff; font-size: 0.95em; font-weight: 600; margin-bottom: 12px; }
+    .bar-item { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .bar-label { width: 40px; color: #8b949e; font-size: 0.85em; }
+    .bar { flex: 1; height: 20px; background: #0d1117; border-radius: 3px; position: relative; }
+    .bar-fill { height: 100%; background: #58a6ff; border-radius: 3px; }
+    .bar-count { width: 30px; text-align: right; font-size: 0.85em; color: #79c0ff; }
+    .pie-item { display: flex; justify-content: space-between; padding: 4px 0;
+                font-size: 0.85em; border-bottom: 1px solid #21262d; }
+    .pie-label { color: #79c0ff; }
+    .pie-count { color: #7ee787; font-weight: 600; }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; border: 1px solid #21262d; border-radius: 8px; }
+    table{ border-collapse: collapse; width: 100%; font-size: 0.88em; min-width: 2250px; }
+    th   { background: #161b22; color: #58a6ff; padding: 8px 12px;
+            position: sticky; top: 0; text-align: right; cursor: pointer; user-select: none;
+            transition: background-color 0.2s, opacity 0.2s; }
+    th:first-child { text-align: left; }
+    th:hover { background: #1f6feb22; opacity: 0.9; }
+    th::after { content: ' ↕'; font-size: 0.7em; opacity: 0; }
+    th.sort-asc::after { content: ' ↑'; opacity: 1; }
+    th.sort-desc::after { content: ' ↓'; opacity: 1; }
+    td   { padding: 6px 12px; border-bottom: 1px solid #21262d; text-align: right; }
+    td:first-child { text-align: left; font-weight: 600; color: #7ee787; }
+    tr:hover td    { background: #161b22; }
+    tr.hidden { display: none; }
+
+    .links { text-align: left; white-space: nowrap; }
+    .link-btn {
+      display: inline-block; padding: 4px 8px; margin-right: 6px; border-radius: 6px;
+      color: #58a6ff; border: 1px solid #30363d; text-decoration: none; font-size: 0.8em;
+    }
+    .link-btn:hover { background: #1f6feb22; }
+    .link-btn.alt { color: #7ee787; }
+    .rating-badge {
+      display: inline-block; min-width: 34px; text-align: center;
+      padding: 2px 8px; border-radius: 999px; font-weight: 700; font-size: 0.80em;
+      border: 1px solid transparent;
+    }
+    .rating-a-plus { color: #2ea043; background: #23863633; border-color: #2ea04399; }
+    .rating-a { color: #3fb950; background: #2ea0432b; border-color: #3fb95099; }
+    .rating-b { color: #d29922; background: #9e6a032d; border-color: #d2992299; }
+    .rating-c { color: #f0883e; background: #bc4c002d; border-color: #f0883e99; }
+    .rating-d { color: #f85149; background: #da36332d; border-color: #f8514999; }
+    .rating-na { color: #8b949e; background: #6e768133; border-color: #8b949e99; }
+
+    .row-count { color: #8b949e; font-size: 0.9em; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>🚀 VCP + Range Expansion Breakout Scan Results</h1>
+  <div class="meta">
+    Finished: 2026-03-20T04:06:16 &nbsp;|&nbsp;
+    Symbols scanned: 2101 &nbsp;|&nbsp;
+    Elapsed: 0:02:02 &nbsp;|&nbsp;
+    <b style="color:#7ee787">14 hits</b>
+  </div>
+  <div class="summary">Shortlist by setup: RANGE_EXPANSION: 4 | VCP: 10</div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="control-group">
+      <label class="control-label">Search:</label>
+      <input type="text" class="search-box" id="searchInput" placeholder="Symbol or setup..." autocomplete="off">
+    </div>
+    <div class="control-group">
+      <label class="control-label">Min Score:</label>
+      <input type="range" class="slider" id="scoreSlider" min="0" max="100" value="0">
+      <span class="slider-value" id="scoreDisplay">0+</span>
+    </div>
+    <div class="control-group setup-filter">
+      <label class="control-label">Setup:</label>
+      <button class="filter-btn active" data-setup="all">All</button>
+      <button class="filter-btn" data-setup="VCP">VCP</button>
+      <button class="filter-btn" data-setup="RANGE_EXPANSION">Range Exp</button>
+    </div>
+    <button class="export-btn" id="exportBtn">📥 Export Filtered</button>
+  </div>
+
+  <!-- Analytics -->
+  <div class="analytics">
+    <div class="stat-card">
+      <div class="stat-label">Total Hits</div>
+      <div class="stat-value">14</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Quality Score</div>
+      <div class="stat-value">62.0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Risk/Reward</div>
+      <div class="stat-value">1.00:1</div>
+    </div>
+  </div>
+
+  <div class="chart-container">
+    <div class="chart">
+      <div class="chart-title">📊 Rating Distribution</div>
+<div class='bar-item'><span class='bar-label'>A+</span><div class='bar'><div class='bar-fill' style='width:35.714285714285715%'></div></div><span class='bar-count'>5</span></div>
+<div class='bar-item'><span class='bar-label'>A</span><div class='bar'><div class='bar-fill' style='width:7.142857142857142%'></div></div><span class='bar-count'>1</span></div>
+<div class='bar-item'><span class='bar-label'>B</span><div class='bar'><div class='bar-fill' style='width:7.142857142857142%'></div></div><span class='bar-count'>1</span></div>
+<div class='bar-item'><span class='bar-label'>C</span><div class='bar'><div class='bar-fill' style='width:21.428571428571427%'></div></div><span class='bar-count'>3</span></div>
+<div class='bar-item'><span class='bar-label'>D</span><div class='bar'><div class='bar-fill' style='width:28.57142857142857%'></div></div><span class='bar-count'>4</span></div>
+    </div>
+    <div class="chart">
+      <div class="chart-title">🎯 Setup Distribution</div>
+<div class='pie-item'><span class='pie-label'>RANGE_EXPANSION</span><span class='pie-count'>4</span></div>
+<div class='pie-item'><span class='pie-label'>VCP</span><span class='pie-count'>10</span></div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th>Symbol</th><th>List</th><th>Setup</th><th>Window</th><th>Height%</th><th>Depth%</th><th>Len</th><th>Ctr</th><th>Dist%</th><th>Rating</th><th>Close</th><th>Pivot</th><th>Entry</th><th>Score</th>
+        <th>Range%</th><th>Vol%</th><th>RExp</th><th>Shares</th><th>Stop</th>
+        <th>T1</th><th>T2</th><th>T3</th><th>Price Charts</th><th>Fundamental Charts</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+<tr data-symbol='ATHERENERG.NS' data-setup-type='RANGE_EXPANSION' data-rating='A+' data-score='99.9'><td><b>ATHERENERG.NS</b></td><td>WATCHLIST</td><td>RANGE_EXPANSION</td><td>Q2(120)</td><td>37.9%</td><td>31.0%</td><td>120</td><td>1/2</td><td>4.52%</td><td><span class='rating-badge rating-a-plus'>A+</span></td><td>754.30</td><td>790.00</td><td>792.37</td><td>99.9</td><td>31.0%</td><td>66.1%</td><td>1.66x</td><td>3</td><td>531.83</td><td>1052.91</td><td>1313.45</td><td>1574.00</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/ATHERENERG.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3AATHERENERG' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/ATHERENERG.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/ATHERENERG.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/ATHERENERG.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/ATHERENERG.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td></tr>
+<tr data-symbol='KSB.NS' data-setup-type='RANGE_EXPANSION' data-rating='A+' data-score='92.8'><td><b>KSB.NS</b></td><td>WATCHLIST</td><td>RANGE_EXPANSION</td><td>WEEK(15)</td><td>15.6%</td><td>19.5%</td><td>15</td><td>1/2</td><td>2.82%</td><td><span class='rating-badge rating-a-plus'>A+</span></td><td>799.85</td><td>823.05</td><td>825.52</td><td>92.8</td><td>19.5%</td><td>94.7%</td><td>1.61x</td><td>8</td><td>700.78</td><td>950.26</td><td>1075.00</td><td>1199.74</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/KSB.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3AKSB' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/KSB.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/KSB.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/KSB.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/KSB.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td></tr>
+<tr data-symbol='IPCALAB.NS' data-setup-type='RANGE_EXPANSION' data-rating='A+' data-score='81.5'><td><b>IPCALAB.NS</b></td><td>WATCHLIST</td><td>RANGE_EXPANSION</td><td>Q4(240)</td><td>32.3%</td><td>34.4%</td><td>240</td><td>2/2</td><td>4.90%</td><td><span class='rating-badge rating-a-plus'>A+</span></td><td>1544.40</td><td>1624.00</td><td>1628.87</td><td>81.5</td><td>34.4%</td><td>21.6%</td><td>1.62x</td><td>2</td><td>1162.36</td><td>2095.39</td><td>2561.90</td><td>3028.41</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/IPCALAB.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3AIPCALAB' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/IPCALAB.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/IPCALAB.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/IPCALAB.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/IPCALAB.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td></tr>
+<tr data-symbol='SEAMECLTD.NS' data-setup-type='RANGE_EXPANSION' data-rating='A+' data-score='80.3'><td><b>SEAMECLTD.NS</b></td><td>WATCHLIST</td><td>RANGE_EXPANSION</td><td>WEEK(45)</td><td>33.8%</td><td>48.7%</td><td>45</td><td>2/2</td><td>5.75%</td><td><span class='rating-badge rating-a-plus'>A+</span></td><td>1363.50</td><td>1446.70</td><td>1451.04</td><td>80.3</td><td>48.7%</td><td>24.2%</td><td>1.40x</td><td>2</td><td>1012.81</td><td>1889.27</td><td>2327.50</td><td>2765.73</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/SEAMECLTD.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3ASEAMECLTD' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/SEAMECLTD.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/SEAMECLTD.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/SEAMECLTD.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/SEAMECLTD.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td></tr>
+<tr data-symbol='BANARISUG.NS' data-setup-type='VCP' data-rating='A+' data-score='76.6'><td><b>BANARISUG.NS</b></td><td>WATCHLIST</td><td>VCP</td><td>WEEK(12)</td><td>10.2%</td><td>73.6%</td><td>12</td><td>2/2</td><td>5.83%</td><td><span class='rating-badge rating-a-plus'>A+</span></td><td>3603.00</td><td>3826.00</td><td>3837.48</td><td>76.6</td><td>73.6%</td><td>68.6%</td><td>0.00x</td><td>2</td><td>3439.72</td><td>4235.24</td><td>4633.00</td><td>5030.77</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/BANARISUG.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3ABANARISUG' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/BANARISUG.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/BANARISUG.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/BANARISUG.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/BANARISUG.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td></tr>
+<tr data-symbol='VTL.NS' data-setup-type='VCP' data-rating='A' data-score='66.2'><td><b>VTL.NS</b></td><td>WATCHLIST</td><td>VCP</td><td>WEEK(45)</td><td>34.4%</td><td>74.4%</td><td>45</td><td>2/2</td><td>5.47%</td><td><span class='rating-badge rating-a'>A</span></td><td>529.25</td><td>559.90</td><td>561.58</td><td>66.2</td><td>74.4%</td><td>54.0%</td><td>0.00x</td><td>5</td><td>389.05</td><td>734.11</td><td>906.65</td><td>1079.18</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/VTL.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3AVTL' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/VTL.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/VTL.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/VTL.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/VTL.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td></tr>
+<tr data-symbol='CPPLUS.NS' data-setup-type='VCP' data-rating='B' data-score='59.0'><td><b>CPPLUS.NS</b></td><td>WATCHLIST</td><td>VCP</td><td>WEEK(15)</td><td>15.8%</td><td>41.1%</td><td>15</td><td>2/2</td><td>4.80%</td><td><span class='rating-badge rating-b'>B</span></td><td>1674.50</td><td>1759.00</td><td>1764.28</td><td>59.0</td><td>41.1%</td><td>73.2%</td><td>0.00x</td><td>3</td><td>1492.50</td><td>2036.05</td><td>2307.83</td><td>2579.61</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/CPPLUS.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3ACPPLUS' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/CPPLUS.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/CPPLUS.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/CPPLUS.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/CPPLUS.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td></tr>
+<tr data-symbol='NAVINFLUOR.NS' data-setup-type='VCP' data-rating='C' data-score='48.9'><td><b>NAVINFLUOR.NS</b></td><td>WATCHLIST</td><td>VCP</td><td>WEEK(12)</td><td>12.0%</td><td>42.8%</td><td>12</td><td>2/2</td><td>5.97%</td><td><span class='rating-badge rating-c'>C</span></td><td>6262.50</td><td>6660.00</td><td>6679.98</td><td>48.9</td><td>42.8%</td><td>45.7%</td><td>0.00x</td><td>1</td><td>5870.50</td><td>7489.46</td><td>8298.94</td><td>9108.42</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/NAVINFLUOR.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3ANAVINFLUOR' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/NAVINFLUOR.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/NAVINFLUOR.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/NAVINFLUOR.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/NAVINFLUOR.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td></tr>
+<tr data-symbol='LGEINDIA.NS' data-setup-type='VCP' data-rating='C' data-score='48.0'><td><b>LGEINDIA.NS</b></td><td>WATCHLIST</td><td>VCP</td><td>WEEK(30)</td><td>14.2%</td><td>44.8%</td><td>30</td><td>2/2</td><td>5.27%</td><td><span class='rating-badge rating-c'>C</span></td><td>1526.60</td><td>1611.50</td><td>1616.33</td><td>48.0</td><td>44.8%</td><td>47.8%</td><td>0.00x</td><td>4</td><td>1385.04</td><td>1847.63</td><td>2078.92</td><td>2310.22</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/LGEINDIA.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3ALGEINDIA' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/LGEINDIA.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/LGEINDIA.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/LGEINDIA.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/LGEINDIA.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td></tr>
+<tr data-symbol='SPORTKING.NS' data-setup-type='VCP' data-rating='D' data-score='46.0'><td><b>SPORTKING.NS</b></td><td>WATCHLIST</td><td>VCP</td><td>WEEK(30)</td><td>21.3%</td><td>30.3%</td><td>30</td><td>2/2</td><td>3.30%</td><td><span class='rating-badge rating-d'>D</span></td><td>117.13</td><td>121.13</td><td>121.49</td><td>46.0</td><td>30.3%</td><td>64.7%</td><td>0.00x</td><td>40</td><td>96.84</td><td>146.14</td><td>170.79</td><td>195.44</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/SPORTKING.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3ASPORTKING' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/SPORTKING.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/SPORTKING.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/SPORTKING.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/SPORTKING.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td></tr>
+<tr data-symbol='PASHUPATI.NS' data-setup-type='VCP' data-rating='D' data-score='45.4'><td><b>PASHUPATI.NS</b></td><td>WATCHLIST</td><td>VCP</td><td>WEEK(30)</td><td>27.1%</td><td>45.6%</td><td>30</td><td>2/2</td><td>4.82%</td><td><span class='rating-badge rating-d'>D</span></td><td>985.15</td><td>1035.05</td><td>1038.16</td><td>45.4</td><td>45.6%</td><td>40.1%</td><td>0.00x</td><td>3</td><td>776.10</td><td>1300.21</td><td>1562.27</td><td>1824.32</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/PASHUPATI.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3APASHUPATI' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/PASHUPATI.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/PASHUPATI.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/PASHUPATI.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/PASHUPATI.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td></tr>
+<tr data-symbol='CCL.NS' data-setup-type='VCP' data-rating='C' data-score='44.1'><td><b>CCL.NS</b></td><td>WATCHLIST</td><td>VCP</td><td>Q2(120)</td><td>27.0%</td><td>42.9%</td><td>120</td><td>1/2</td><td>3.73%</td><td><span class='rating-badge rating-c'>C</span></td><td>1034.30</td><td>1074.40</td><td>1077.62</td><td>44.1</td><td>42.9%</td><td>45.9%</td><td>0.00x</td><td>3</td><td>811.42</td><td>1343.82</td><td>1610.02</td><td>1876.23</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/CCL.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3ACCL' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/CCL.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/CCL.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/CCL.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/CCL.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td></tr>
+<tr data-symbol='SUNPHARMA.NS' data-setup-type='VCP' data-rating='D' data-score='40.7'><td><b>SUNPHARMA.NS</b></td><td>WATCHLIST</td><td>VCP</td><td>WEEK(12)</td><td>7.3%</td><td>31.8%</td><td>12</td><td>2/2</td><td>5.35%</td><td><span class='rating-badge rating-d'>D</span></td><td>1744.40</td><td>1843.00</td><td>1848.53</td><td>40.7</td><td>31.8%</td><td>41.5%</td><td>0.00x</td><td>6</td><td>1703.44</td><td>1993.62</td><td>2138.71</td><td>2283.80</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/SUNPHARMA.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3ASUNPHARMA' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/SUNPHARMA.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/SUNPHARMA.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/SUNPHARMA.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/SUNPHARMA.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td></tr>
+<tr data-symbol='GALAPREC.NS' data-setup-type='VCP' data-rating='D' data-score='39.2'><td><b>GALAPREC.NS</b></td><td>WATCHLIST</td><td>VCP</td><td>WEEK(15)</td><td>15.3%</td><td>42.2%</td><td>15</td><td>2/2</td><td>3.57%</td><td><span class='rating-badge rating-d'>D</span></td><td>756.05</td><td>784.00</td><td>786.35</td><td>39.2</td><td>42.2%</td><td>22.1%</td><td>0.00x</td><td>8</td><td>667.84</td><td>904.86</td><td>1023.37</td><td>1141.88</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/GALAPREC.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3AGALAPREC' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/GALAPREC.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/GALAPREC.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/GALAPREC.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/GALAPREC.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="row-count">Showing <span id="visibleCount">14</span> of <span id="totalCount">14</span> rows</div>
+
+  <script>
+    // Data for filtering and sorting
+    const originalRows = Array.from(document.querySelectorAll('#tableBody tr'));
+    let currentSort = { column: null, direction: 'asc' };
+    let currentFilters = { search: '', score: 0, setup: 'all' };
+
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      currentFilters.search = e.target.value.toLowerCase();
+      applyFilters();
+    });
+
+    // Score slider with real-time display
+    const scoreSlider = document.getElementById('scoreSlider');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    scoreSlider.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value);
+      scoreDisplay.textContent = val + '+';
+      currentFilters.score = val;
+      applyFilters();
+    });
+
+    // Setup filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilters.setup = btn.dataset.setup;
+        applyFilters();
+      });
+    });
+
+    // Table header sorting - WITH CURSOR FEEDBACK
+    document.querySelectorAll('th').forEach((th, idx) => {
+      th.style.cursor = 'pointer';
+      th.addEventListener('click', () => {
+        const column = th.textContent.trim();
+        if (currentSort.column === column) {
+          currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+          currentSort.column = column;
+          currentSort.direction = 'asc';
+        }
+        sortTable(idx);
+      });
+      th.addEventListener('mouseenter', () => { th.style.opacity = '0.8'; });
+      th.addEventListener('mouseleave', () => { th.style.opacity = '1'; });
+    });
+
+    // Export filtered data
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      const visibleRows = originalRows.filter(row => !row.classList.contains('hidden'));
+      if (visibleRows.length === 0) {
+        alert('No rows to export. Adjust filters and try again.');
+        return;
+      }
+      const csv = exportToCSV(visibleRows);
+      downloadCSV(csv, 'filtered_results.csv');
+    });
+
+    function applyFilters() {
+      let visible = 0;
+      originalRows.forEach(row => {
+        const symbol = row.dataset.symbol.toLowerCase();
+        const setup = row.dataset['setupType'];
+        const score = parseFloat(row.dataset.score);
+
+        const matchesSearch = !currentFilters.search ||
+          symbol.includes(currentFilters.search) ||
+          setup.toLowerCase().includes(currentFilters.search);
+
+        const matchesScore = score >= currentFilters.score;
+        const matchesSetup = currentFilters.setup === 'all' || setup === currentFilters.setup;
+
+        if (matchesSearch && matchesScore && matchesSetup) {
+          row.classList.remove('hidden');
+          visible++;
+        } else {
+          row.classList.add('hidden');
+        }
+      });
+      updateRowCount(visible, originalRows.length);
+    }
+
+    function sortTable(colIdx) {
+      const tbody = document.getElementById('tableBody');
+      // Get ALL rows (including hidden), sort visible ones, then maintain order
+      const allRows = Array.from(tbody.querySelectorAll('tr'));
+      const visibleRows = allRows.filter(row => !row.classList.contains('hidden'));
+
+      visibleRows.sort((a, b) => {
+        const aVal = a.cells[colIdx].textContent.trim();
+        const bVal = b.cells[colIdx].textContent.trim();
+
+        const aNum = parseFloat(aVal);
+        const bNum = parseFloat(bVal);
+
+        let cmp = 0;
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          cmp = aNum - bNum;
+        } else {
+          cmp = aVal.localeCompare(bVal);
+        }
+
+        return currentSort.direction === 'asc' ? cmp : -cmp;
+      });
+
+      // Update UI - show sort direction
+      document.querySelectorAll('th').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+      document.querySelectorAll('th')[colIdx].classList.add(
+        currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc'
+      );
+
+      // Reorder visible rows in DOM
+      visibleRows.forEach(row => tbody.appendChild(row));
+    }
+
+    function updateRowCount(visible, total) {
+      document.getElementById('visibleCount').textContent = visible;
+      document.getElementById('totalCount').textContent = total;
+    }
+
+    function exportToCSV(rows) {
+      const headers = ['Symbol', 'List', 'Setup', 'Window', 'Height%', 'Depth%', 'Len', 'Ctr', 'Dist%',
+        'Rating', 'Close', 'Pivot', 'Entry', 'Score', 'Range%', 'Vol%', 'RExp', 'Shares', 'Stop', 'T1', 'T2', 'T3'];
+
+      let csv = headers.join(',') + '\n';
+      rows.forEach(row => {
+        const cells = Array.from(row.cells).slice(0, -2).map(cell => {
+          let text = cell.textContent.trim();
+          if (text.includes(',') || text.includes('"')) {
+            text = '"' + text.replace(/"/g, '""') + '"';
+          }
+          return text;
+        });
+        csv += cells.join(',') + '\n';
+      });
+      return csv;
+    }
+
+    function downloadCSV(csv, filename) {
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>

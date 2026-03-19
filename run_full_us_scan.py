@@ -472,6 +472,7 @@ def save_variation_summary(rows: list[dict], path: Path, meta: dict):
 
 
 def save_html(rows: list[dict], path: Path, meta: dict):
+    """Generate interactive HTML report with fundamentals, sorting, filtering, and analytics."""
     path.parent.mkdir(parents=True, exist_ok=True)
     now_str = meta.get("finished", datetime.now().isoformat(timespec="seconds"))
     total   = meta.get("total_scanned", "?")
@@ -493,7 +494,6 @@ def save_html(rows: list[dict], path: Path, meta: dict):
             tv_symbol = f"BSE:{sym[:-3]}"
         tv_price = f"https://www.tradingview.com/chart/?symbol={quote(tv_symbol)}"
 
-        # Price link includes both Yahoo and TradingView; fundamentals use Yahoo stats page.
         price_link = (
             f"<a class='link-btn' href='{html.escape(yahoo_price)}' target='_blank' rel='noopener noreferrer'>Yahoo</a>"
             f"<a class='link-btn alt' href='{html.escape(tv_price)}' target='_blank' rel='noopener noreferrer'>TradingView</a>"
@@ -522,22 +522,58 @@ def save_html(rows: list[dict], path: Path, meta: dict):
         label = html.escape(rating if rating else "N/A")
         return f"<span class='rating-badge {css}'>{label}</span>"
 
+    # Calculate analytics
     setup_counts = {}
+    rating_counts = {}
+    scores = []
+    risk_rewards = []
+
     for r in rows:
         setup = (r.get("setup") or "UNKNOWN").upper()
         setup_counts[setup] = setup_counts.get(setup, 0) + 1
+
+        rating = (r.get("rating") or "N/A").upper()
+        rating_counts[rating] = rating_counts.get(rating, 0) + 1
+
+        try:
+            score = float(r.get("score", 0))
+            scores.append(score)
+
+            entry = float(r.get("entry", 0))
+            stop = float(r.get("sl", 0))
+            target1 = float(r.get("T1", 0))
+            if entry > 0 and stop > 0 and target1 > 0:
+                risk = entry - stop
+                reward = target1 - entry
+                if risk > 0:
+                    rr = reward / risk
+                    risk_rewards.append(rr)
+        except (ValueError, TypeError):
+            pass
+
+    avg_score = sum(scores) / len(scores) if scores else 0
+    avg_rr = sum(risk_rewards) / len(risk_rewards) if risk_rewards else 0
     setup_summary = " | ".join(f"{k}: {v}" for k, v in sorted(setup_counts.items())) or "No hits"
 
+    # Build table rows with data attributes
     rows_html = ""
     for r in rows:
         symbol = html.escape(r.get("symbol", ""))
+        setup_type = (r.get("setup", "")).upper()
+        rating_val = str(r.get("rating", "")).upper()
+        score_val = float(r.get("score", 0))
+
         price_link, fund_link = chart_links(r.get("symbol", ""))
-        rating_chip = rating_badge(str(r.get("rating", "")))
+        rating_chip = rating_badge(rating_val)
+
         rows_html += (
-            f"<tr>"
+            f"<tr data-symbol='{html.escape(r.get('symbol', ''))}' "
+            f"data-setup-type='{setup_type}' "
+            f"data-rating='{rating_val}' "
+            f"data-score='{score_val}'>"
             f"<td><b>{symbol}</b></td>"
             f"<td>{html.escape(str(r.get('listType','BREAKOUT')))}</td>"
-            f"<td>{html.escape(str(r.get('setup','VCP')))}</td>"
+            f"<td>{html.escape(setup_type)}</td>"
             f"<td>{html.escape(str(r.get('window','')))}</td>"
             f"<td>{html.escape(str(r.get('height%','')))}</td>"
             f"<td>{html.escape(str(r.get('depth%','')))}</td>"
@@ -562,25 +598,106 @@ def save_html(rows: list[dict], path: Path, meta: dict):
             f"</tr>\n"
         )
 
+    # Build rating distribution HTML
+    rating_bars = ""
+    for rating in ["A+", "A", "B", "C", "D"]:
+        count = rating_counts.get(rating, 0)
+        pct = (count / len(rows) * 100) if rows else 0
+        rating_bars += f"<div class='bar-item'><span class='bar-label'>{rating}</span><div class='bar'><div class='bar-fill' style='width:{pct}%'></div></div><span class='bar-count'>{count}</span></div>\n"
+
+    setup_pie = ""
+    for setup in sorted(setup_counts.keys()):
+        count = setup_counts[setup]
+        setup_pie += f"<div class='pie-item'><span class='pie-label'>{setup}</span><span class='pie-count'>{count}</span></div>\n"
+
     html_doc = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Breakout Scan — {now_str}</title>
   <style>
+    * {{ box-sizing: border-box; }}
     body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: #0d1117; color: #c9d1d9; margin: 24px; }}
-    h1   {{ color: #58a6ff; }}
-    .meta{{ color: #8b949e; font-size: 0.9em; margin-bottom: 16px; }}
-    .summary {{ color: #79c0ff; margin: 8px 0 14px 0; font-size: 0.92em; }}
+    h1   {{ color: #58a6ff; margin-top: 0; }}
+    h2   {{ color: #79c0ff; font-size: 1.1em; margin-top: 24px; margin-bottom: 12px; }}
+    .meta{{ color: #8b949e; font-size: 0.9em; margin-bottom: 12px; }}
+    .summary {{ color: #79c0ff; margin: 8px 0 16px 0; font-size: 0.92em; }}
+
+    /* Controls */
+    .controls {{
+      display: flex; gap: 16px; align-items: center; margin-bottom: 20px;
+      flex-wrap: wrap; padding: 12px; background: #161b22; border-radius: 8px;
+    }}
+    .control-group {{ display: flex; gap: 8px; align-items: center; }}
+    .control-label {{ color: #8b949e; font-size: 0.9em; font-weight: 600; }}
+    .search-box {{
+      flex: 0 0 200px; padding: 6px 10px; background: #0d1117; border: 1px solid #30363d;
+      border-radius: 6px; color: #c9d1d9; font-size: 0.9em;
+    }}
+    .score-slider {{ flex: 0 0 200px; }}
+    .slider {{ width: 100%; height: 4px; border-radius: 3px; background: #30363d;
+               outline: none; -webkit-appearance: none; cursor: pointer; }}
+    .slider::-webkit-slider-thumb {{ -webkit-appearance: none; appearance: none;
+      width: 14px; height: 14px; border-radius: 50%; background: #58a6ff; cursor: pointer; }}
+    .slider::-moz-range-thumb {{ width: 14px; height: 14px; border-radius: 50%;
+      background: #58a6ff; cursor: pointer; border: none; }}
+    .slider-value {{ color: #79c0ff; font-size: 0.9em; min-width: 40px; text-align: center; }}
+    .setup-filter {{ display: flex; gap: 8px; }}
+    .filter-btn {{
+      padding: 6px 12px; border: 1px solid #30363d; border-radius: 6px;
+      background: transparent; color: #58a6ff; cursor: pointer; font-size: 0.85em;
+      transition: all 0.2s;
+    }}
+    .filter-btn.active {{ background: #1f6feb; border-color: #58a6ff; }}
+    .filter-btn:hover {{ background: #1f6feb33; }}
+    .export-btn {{
+      padding: 6px 12px; border: 1px solid #30363d; border-radius: 6px;
+      background: transparent; color: #7ee787; cursor: pointer; font-size: 0.85em;
+      transition: all 0.2s;
+    }}
+    .export-btn:hover {{ background: #2ea04333; }}
+
+    /* Analytics */
+    .analytics {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                   gap: 16px; margin-bottom: 24px; }}
+    .stat-card {{ background: #161b22; padding: 12px; border-radius: 8px; border: 1px solid #21262d; }}
+    .stat-label {{ color: #8b949e; font-size: 0.85em; margin-bottom: 4px; }}
+    .stat-value {{ color: #58a6ff; font-size: 1.4em; font-weight: 700; }}
+    .stat-secondary {{ color: #79c0ff; font-size: 0.9em; margin-top: 4px; }}
+
+    /* Charts */
+    .chart-container {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                        gap: 16px; margin-bottom: 24px; }}
+    .chart {{ background: #161b22; padding: 12px; border-radius: 8px; border: 1px solid #21262d; }}
+    .chart-title {{ color: #79c0ff; font-size: 0.95em; font-weight: 600; margin-bottom: 12px; }}
+    .bar-item {{ display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }}
+    .bar-label {{ width: 40px; color: #8b949e; font-size: 0.85em; }}
+    .bar {{ flex: 1; height: 20px; background: #0d1117; border-radius: 3px; position: relative; }}
+    .bar-fill {{ height: 100%; background: #58a6ff; border-radius: 3px; }}
+    .bar-count {{ width: 30px; text-align: right; font-size: 0.85em; color: #79c0ff; }}
+    .pie-item {{ display: flex; justify-content: space-between; padding: 4px 0;
+                font-size: 0.85em; border-bottom: 1px solid #21262d; }}
+    .pie-label {{ color: #79c0ff; }}
+    .pie-count {{ color: #7ee787; font-weight: 600; }}
+
+    /* Table */
     .table-wrap {{ overflow-x: auto; border: 1px solid #21262d; border-radius: 8px; }}
     table{{ border-collapse: collapse; width: 100%; font-size: 0.88em; min-width: 2250px; }}
     th   {{ background: #161b22; color: #58a6ff; padding: 8px 12px;
-            position: sticky; top: 0; text-align: right; }}
+            position: sticky; top: 0; text-align: right; cursor: pointer; user-select: none;
+            transition: background-color 0.2s, opacity 0.2s; }}
     th:first-child {{ text-align: left; }}
+    th:hover {{ background: #1f6feb22; opacity: 0.9; }}
+    th::after {{ content: ' ↕'; font-size: 0.7em; opacity: 0; }}
+    th.sort-asc::after {{ content: ' ↑'; opacity: 1; }}
+    th.sort-desc::after {{ content: ' ↓'; opacity: 1; }}
     td   {{ padding: 6px 12px; border-bottom: 1px solid #21262d; text-align: right; }}
     td:first-child {{ text-align: left; font-weight: 600; color: #7ee787; }}
     tr:hover td    {{ background: #161b22; }}
+    tr.hidden {{ display: none; }}
+
     .links {{ text-align: left; white-space: nowrap; }}
     .link-btn {{
       display: inline-block; padding: 4px 8px; margin-right: 6px; border-radius: 6px;
@@ -599,6 +716,8 @@ def save_html(rows: list[dict], path: Path, meta: dict):
     .rating-c {{ color: #f0883e; background: #bc4c002d; border-color: #f0883e99; }}
     .rating-d {{ color: #f85149; background: #da36332d; border-color: #f8514999; }}
     .rating-na {{ color: #8b949e; background: #6e768133; border-color: #8b949e99; }}
+
+    .row-count {{ color: #8b949e; font-size: 0.9em; margin-top: 8px; }}
   </style>
 </head>
 <body>
@@ -610,8 +729,55 @@ def save_html(rows: list[dict], path: Path, meta: dict):
     <b style="color:#7ee787">{len(rows)} hits</b>
   </div>
   <div class="summary">Shortlist by setup: {html.escape(setup_summary)}</div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="control-group">
+      <label class="control-label">Search:</label>
+      <input type="text" class="search-box" id="searchInput" placeholder="Symbol or setup..." autocomplete="off">
+    </div>
+    <div class="control-group">
+      <label class="control-label">Min Score:</label>
+      <input type="range" class="slider" id="scoreSlider" min="0" max="100" value="0">
+      <span class="slider-value" id="scoreDisplay">0+</span>
+    </div>
+    <div class="control-group setup-filter">
+      <label class="control-label">Setup:</label>
+      <button class="filter-btn active" data-setup="all">All</button>
+      <button class="filter-btn" data-setup="VCP">VCP</button>
+      <button class="filter-btn" data-setup="RANGE_EXPANSION">Range Exp</button>
+    </div>
+    <button class="export-btn" id="exportBtn">📥 Export Filtered</button>
+  </div>
+
+  <!-- Analytics -->
+  <div class="analytics">
+    <div class="stat-card">
+      <div class="stat-label">Total Hits</div>
+      <div class="stat-value">{len(rows)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Quality Score</div>
+      <div class="stat-value">{avg_score:.1f}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Risk/Reward</div>
+      <div class="stat-value">{avg_rr:.2f}:1</div>
+    </div>
+  </div>
+
+  <div class="chart-container">
+    <div class="chart">
+      <div class="chart-title">📊 Rating Distribution</div>
+{rating_bars}    </div>
+    <div class="chart">
+      <div class="chart-title">🎯 Setup Distribution</div>
+{setup_pie}    </div>
+  </div>
+
+  <!-- Table -->
   <div class="table-wrap">
-  <table>
+  <table id="dataTable">
     <thead>
       <tr>
         <th>Symbol</th><th>List</th><th>Setup</th><th>Window</th><th>Height%</th><th>Depth%</th><th>Len</th><th>Ctr</th><th>Dist%</th><th>Rating</th><th>Close</th><th>Pivot</th><th>Entry</th><th>Score</th>
@@ -619,10 +785,164 @@ def save_html(rows: list[dict], path: Path, meta: dict):
         <th>T1</th><th>T2</th><th>T3</th><th>Price Charts</th><th>Fundamental Charts</th>
       </tr>
     </thead>
-    <tbody>
+    <tbody id="tableBody">
 {rows_html}    </tbody>
   </table>
   </div>
+  <div class="row-count">Showing <span id="visibleCount">{len(rows)}</span> of <span id="totalCount">{len(rows)}</span> rows</div>
+
+  <script>
+    // Data for filtering and sorting
+    const originalRows = Array.from(document.querySelectorAll('#tableBody tr'));
+    let currentSort = {{ column: null, direction: 'asc' }};
+    let currentFilters = {{ search: '', score: 0, setup: 'all' }};
+
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', (e) => {{
+      currentFilters.search = e.target.value.toLowerCase();
+      applyFilters();
+    }});
+
+    // Score slider with real-time display
+    const scoreSlider = document.getElementById('scoreSlider');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    scoreSlider.addEventListener('input', (e) => {{
+      const val = parseInt(e.target.value);
+      scoreDisplay.textContent = val + '+';
+      currentFilters.score = val;
+      applyFilters();
+    }});
+
+    // Setup filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {{
+      btn.addEventListener('click', () => {{
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilters.setup = btn.dataset.setup;
+        applyFilters();
+      }});
+    }});
+
+    // Table header sorting - WITH CURSOR FEEDBACK
+    document.querySelectorAll('th').forEach((th, idx) => {{
+      th.style.cursor = 'pointer';
+      th.addEventListener('click', () => {{
+        const column = th.textContent.trim();
+        if (currentSort.column === column) {{
+          currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        }} else {{
+          currentSort.column = column;
+          currentSort.direction = 'asc';
+        }}
+        sortTable(idx);
+      }});
+      th.addEventListener('mouseenter', () => {{ th.style.opacity = '0.8'; }});
+      th.addEventListener('mouseleave', () => {{ th.style.opacity = '1'; }});
+    }});
+
+    // Export filtered data
+    document.getElementById('exportBtn').addEventListener('click', () => {{
+      const visibleRows = originalRows.filter(row => !row.classList.contains('hidden'));
+      if (visibleRows.length === 0) {{
+        alert('No rows to export. Adjust filters and try again.');
+        return;
+      }}
+      const csv = exportToCSV(visibleRows);
+      downloadCSV(csv, 'filtered_results.csv');
+    }});
+
+    function applyFilters() {{
+      let visible = 0;
+      originalRows.forEach(row => {{
+        const symbol = row.dataset.symbol.toLowerCase();
+        const setup = row.dataset['setupType'];
+        const score = parseFloat(row.dataset.score);
+
+        const matchesSearch = !currentFilters.search ||
+          symbol.includes(currentFilters.search) ||
+          setup.toLowerCase().includes(currentFilters.search);
+
+        const matchesScore = score >= currentFilters.score;
+        const matchesSetup = currentFilters.setup === 'all' || setup === currentFilters.setup;
+
+        if (matchesSearch && matchesScore && matchesSetup) {{
+          row.classList.remove('hidden');
+          visible++;
+        }} else {{
+          row.classList.add('hidden');
+        }}
+      }});
+      updateRowCount(visible, originalRows.length);
+    }}
+
+    function sortTable(colIdx) {{
+      const tbody = document.getElementById('tableBody');
+      // Get ALL rows (including hidden), sort visible ones, then maintain order
+      const allRows = Array.from(tbody.querySelectorAll('tr'));
+      const visibleRows = allRows.filter(row => !row.classList.contains('hidden'));
+
+      visibleRows.sort((a, b) => {{
+        const aVal = a.cells[colIdx].textContent.trim();
+        const bVal = b.cells[colIdx].textContent.trim();
+
+        const aNum = parseFloat(aVal);
+        const bNum = parseFloat(bVal);
+
+        let cmp = 0;
+        if (!isNaN(aNum) && !isNaN(bNum)) {{
+          cmp = aNum - bNum;
+        }} else {{
+          cmp = aVal.localeCompare(bVal);
+        }}
+
+        return currentSort.direction === 'asc' ? cmp : -cmp;
+      }});
+
+      // Update UI - show sort direction
+      document.querySelectorAll('th').forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+      document.querySelectorAll('th')[colIdx].classList.add(
+        currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc'
+      );
+
+      // Reorder visible rows in DOM
+      visibleRows.forEach(row => tbody.appendChild(row));
+    }}
+
+    function updateRowCount(visible, total) {{
+      document.getElementById('visibleCount').textContent = visible;
+      document.getElementById('totalCount').textContent = total;
+    }}
+
+    function exportToCSV(rows) {{
+      const headers = ['Symbol', 'List', 'Setup', 'Window', 'Height%', 'Depth%', 'Len', 'Ctr', 'Dist%',
+        'Rating', 'Close', 'Pivot', 'Entry', 'Score', 'Range%', 'Vol%', 'RExp', 'Shares', 'Stop', 'T1', 'T2', 'T3'];
+
+      let csv = headers.join(',') + '\\n';
+      rows.forEach(row => {{
+        const cells = Array.from(row.cells).slice(0, -2).map(cell => {{
+          let text = cell.textContent.trim();
+          if (text.includes(',') || text.includes('"')) {{
+            text = '"' + text.replace(/"/g, '""') + '"';
+          }}
+          return text;
+        }});
+        csv += cells.join(',') + '\\n';
+      }});
+      return csv;
+    }}
+
+    function downloadCSV(csv, filename) {{
+      const blob = new Blob([csv], {{ type: 'text/csv;charset=utf-8;' }});
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }}
+  </script>
 </body>
 </html>
 """

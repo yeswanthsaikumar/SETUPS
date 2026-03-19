@@ -10,6 +10,8 @@ Each hit includes a full trade plan (`entry`, `stop`, `shares`, `T1/T2/T3`).
 
 New: each scan now also builds a **watchlist of potential breakouts** near pivot and a separate **open-trades list**.
 
+**🎉 NEW - Milestone 2**: Interactive HTML reports with real-time filtering, sorting, searching, and fundamentals data enrichment!
+
 ## What The Latest System Does
 
 - Scans both `us` and `india` universes using Yahoo data + local cache.
@@ -23,12 +25,15 @@ New: each scan now also builds a **watchlist of potential breakouts** near pivot
   - Daily: short-term + quarter-style windows (`Q1/Q2/Q3/Q4`)
   - Weekly: few-weeks + quarter-style windows (`Q1/Q2/Q3/Q4`)
 - Picks the best-scoring valid setup and builds a full trade plan.
-- Produces CSV/JSON/HTML reports; HTML now includes:
-  - full shortlist and trade-plan columns
-  - setup/window tags
-  - range height, contraction depth, contraction count (`Ctr`) and rating badge (`A+/A/B/C/D`)
-  - price chart links (Yahoo + TradingView)
-  - fundamentals link (Yahoo key statistics)
+- **Milestone 2**: Produces interactive HTML reports with:
+  - **Client-side filtering**: Search by symbol, filter by score slider, quick-filter by setup type
+  - **Column sorting**: Click any column to sort (numeric or text)
+  - **CSV export**: Export currently filtered results as CSV
+  - **Analytics dashboard**: Summary stats and distribution charts
+  - **Fundamentals data**: Market cap, PE ratio, sector, dividend yield (cached for 24h)
+  - Setup/window tags, range height, contraction depth, contraction count, and rating badges
+  - Price chart links (Yahoo + TradingView)
+  - Fundamentals links (Yahoo statistics, financials, balance sheet, cash flow)
 
 ## Latest System Snapshot
 
@@ -48,6 +53,44 @@ New: each scan now also builds a **watchlist of potential breakouts** near pivot
 
 - **Daily scans:** last ~1 year (`252` bars)
 - **Weekly scans:** last ~2 years (`104` bars)
+
+## ✨ Milestone 2: Interactive Features (NEW!)
+
+### Dashboard Analytics
+See summary statistics immediately:
+- Total hits count
+- Average quality score
+- Average risk/reward ratio
+
+### Distribution Charts
+- **Rating Distribution**: Visual breakdown of A+/A/B/C/D ratings
+- **Setup Distribution**: VCP vs Range Expansion split
+
+### Real-Time Filtering
+- **Search Box**: Find symbols or setup types instantly
+- **Score Slider**: Filter by quality score (0-100)
+- **Setup Buttons**: Quick filter by VCP or Range Expansion
+- **Row Counter**: Shows "Showing X of Y rows" as you filter
+
+### Column Sorting
+- Click any table header to sort
+- Numeric columns sort by value
+- Text columns sort alphabetically
+- Visual indicator (↑/↓) shows sort direction
+
+### Export Filtered Results
+- "📥 Export Filtered" button downloads visible rows as CSV
+- Preserves your current filter selections
+- One-click download via browser
+
+### Fundamentals Data (Cached)
+- Market cap in billions
+- P/E ratio (trailing and forward)
+- Sector and industry
+- Dividend yield percentage
+- 24-hour cache to minimize API calls
+
+---
 - Works for `us` and `india` universes
 - Setup filter via `--setups=both|vcp|range_expansion`
 
