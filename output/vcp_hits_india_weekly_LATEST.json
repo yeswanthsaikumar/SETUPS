@@ -1,0 +1,26 @@
+[
+  {
+    "symbol": "WHEELS.NS",
+    "raw": "WHEELS.NS | Setup RANGE_EXPANSION | Window WEEK(6) | Height 21.4% | Depth 21.8% | Len 6 | Ctr 1/2 | Rating A+ | Close 998.00 | Pivot 949.95 | Entry 998.00 | Score 91.6 | Range 21.8% | Vol 0.0% | RExp 1.84x | Shares 4 | SL 757.20 | T1 1238.80 T2 1479.61 T3 1720.42",
+    "listType": "BREAKOUT",
+    "setup": "RANGE_EXPANSION",
+    "window": "WEEK(6)",
+    "height%": "21.4%",
+    "depth%": "21.8%",
+    "len": "6",
+    "ctr": "1/2",
+    "rating": "A+",
+    "close": "998.00",
+    "pivot": "949.95",
+    "entry": "998.00",
+    "score": "91.6",
+    "range%": "21.8%",
+    "vol%": "0.0%",
+    "rexp": "1.84x",
+    "shares": "4",
+    "sl": "757.20",
+    "T1": "1238.80",
+    "T2": "1479.61",
+    "T3": "1720.42"
+  }
+]

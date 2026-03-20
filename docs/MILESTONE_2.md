@@ -9,6 +9,18 @@ Milestone 2 transforms the static HTML reports from Milestone 1 into **interacti
 
 ## What's New
 
+### 0. **Setup Filtering Upgrade (Post-Milestone 2 Update)**
+
+Quality scoring now applies **candle anatomy weighting** so setup filtering better reflects breakout quality:
+
+- **Positive weighting**: bullish candle body and lower wick strength
+- **Negative weighting**: upper wick rejection
+- **Filtering impact**: the wick/body adjustment is added to setup quality score before `minQualityScore` gates are applied
+
+Implementation location:
+- `src/VcpDetector.java` (`computeWickBodyAdjustment(...)`)
+- `src/AppConfig.java` (tunable wick/body weights and adjustment cap)
+
 ### 1. **Interactive HTML Features**
 
 #### Client-Side Filtering & Sorting
@@ -145,6 +157,24 @@ The `save_html()` function now:
 - String: ascending/descending by localeCompare()
 - Maintains DOM order for performance
 ```
+
+## Wick/Body Weighting Details
+
+The detector now scores the most recent `N` candles (recency-weighted):
+
+- `bodyDirectional = (close - open) / (high - low)`
+- `lowerWick = (min(open, close) - low) / (high - low)`
+- `upperWick = (high - max(open, close)) / (high - low)`
+
+Per-candle bias:
+
+```text
+bias = (bodyDirectional * bodyDirectionalWeight)
+     + (lowerWick * lowerWickPositiveWeight)
+     - (upperWick * upperWickNegativeWeight)
+```
+
+Final setup adjustment is clamped by `maxWickBodyScoreAdjustment` to avoid unstable ranking jumps.
 
 ## Usage
 

@@ -19,6 +19,11 @@ public class AppConfig {
     public final double minRangeExpansionMultiplier;
     public final double minExpansionVolumeMultiplier;
     public final double minExpansionClosePosition;
+    public final int wickBiasLookbackBars;
+    public final double bodyDirectionalWeight;
+    public final double lowerWickPositiveWeight;
+    public final double upperWickNegativeWeight;
+    public final double maxWickBodyScoreAdjustment;
     public final double minBaseHeightPct;
     public final double maxBaseHeightPct;
     public final double shortWindowHeightCapPct;
@@ -76,6 +81,11 @@ public class AppConfig {
         this.minRangeExpansionMultiplier = weekly ? 1.15 : 1.25;
         this.minExpansionVolumeMultiplier = weekly ? 1.05 : 1.10;
         this.minExpansionClosePosition = 0.60;
+        this.wickBiasLookbackBars      = weekly ? 2 : 3;
+        this.bodyDirectionalWeight     = 1.0;
+        this.lowerWickPositiveWeight   = 1.25;
+        this.upperWickNegativeWeight   = 1.45;
+        this.maxWickBodyScoreAdjustment = weekly ? 8.0 : 12.0;
         this.minBaseHeightPct          = weekly ? 6.0 : 4.0;
         this.maxBaseHeightPct          = weekly ? 75.0 : 60.0;
         this.shortWindowHeightCapPct   = weekly ? 40.0 : 30.0;

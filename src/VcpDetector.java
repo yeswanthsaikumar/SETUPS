@@ -124,6 +124,9 @@ public class VcpDetector {
         VcpSetup bestSetup = null;
 
         // ── Setup A: classic VCP contraction breakout base ───────────────────
+        int breakoutIndex = consolidationEnd + 1;
+        double wickBodyAdjustment = computeWickBodyAdjustment(candles, breakoutIndex, config);
+
         if (allowsSetupType(setupFilter, VcpSetup.SetupType.VCP)
                 && isBaseHeightAccepted(config, VcpSetup.SetupType.VCP, windowDays, baseRangeHeightPct)
                 && isWaveContractionAccepted(contractionStats, config)
@@ -131,7 +134,7 @@ public class VcpDetector {
                 && rangeContraction >= requiredRangeContraction
                 && volumeContraction >= requiredVolumeContraction) {
             double baseBonus = windowDays <= 20 ? 5.0 : windowDays <= 30 ? 2.0 : 0.0;
-            double vcpScore = ((rangeContraction * 0.6) + (volumeContraction * 0.4)) * 100.0 + baseBonus;
+            double vcpScore = ((rangeContraction * 0.6) + (volumeContraction * 0.4)) * 100.0 + baseBonus + wickBodyAdjustment;
             if (vcpScore >= config.minQualityScore) {
                 String setupRating = rateSetup(vcpScore, baseRangeHeightPct, contractionDepthPct, windowDays);
                 bestSetup = new VcpSetup(
@@ -168,7 +171,7 @@ public class VcpDetector {
                     + (volumeContraction * 0.15)
                     + (Math.min(rangeExpansion / requiredRangeExpansion, 2.0) * 0.35)
                     + (Math.min(expansionVolume / requiredExpansionVolume, 2.0) * 0.15)
-            ) * 100.0;
+            ) * 100.0 + wickBodyAdjustment;
 
             if (expansionScore >= config.minQualityScore) {
                 String setupRating = rateSetup(expansionScore, baseRangeHeightPct, contractionDepthPct, windowDays);
@@ -366,6 +369,48 @@ public class VcpDetector {
     private double safeRatioReduction(double first, double last) {
         if (first <= 0.0) return 0.0;
         return Math.max(0.0, (first - last) / first);
+    }
+
+    private double computeWickBodyAdjustment(List<Candle> candles, int breakoutIndex, AppConfig config) {
+        if (candles == null || candles.isEmpty() || breakoutIndex <= 0 || breakoutIndex >= candles.size()) {
+            return 0.0;
+        }
+
+        int lookbackBars = Math.max(1, config.wickBiasLookbackBars);
+        int start = Math.max(0, breakoutIndex - lookbackBars + 1);
+
+        double weightedSum = 0.0;
+        double weightTotal = 0.0;
+        for (int i = start; i <= breakoutIndex; i++) {
+            Candle c = candles.get(i);
+            double range = c.getHigh() - c.getLow();
+            if (range <= 0.0) {
+                continue;
+            }
+
+            double bodyDirectional = (c.getClose() - c.getOpen()) / range;
+            double lowerWick = Math.max(0.0, Math.min(c.getOpen(), c.getClose()) - c.getLow()) / range;
+            double upperWick = Math.max(0.0, c.getHigh() - Math.max(c.getOpen(), c.getClose())) / range;
+
+            double candleBias =
+                    (bodyDirectional * config.bodyDirectionalWeight)
+                    + (lowerWick * config.lowerWickPositiveWeight)
+                    - (upperWick * config.upperWickNegativeWeight);
+
+            // Recency-weight candles so breakout candle anatomy contributes the most.
+            double recencyWeight = (i - start + 1);
+            weightedSum += candleBias * recencyWeight;
+            weightTotal += recencyWeight;
+        }
+
+        if (weightTotal <= 0.0) {
+            return 0.0;
+        }
+
+        double normalizedBias = weightedSum / weightTotal;
+        double adjustment = normalizedBias * config.maxWickBodyScoreAdjustment;
+        double maxAbs = Math.max(0.0, config.maxWickBodyScoreAdjustment);
+        return Math.max(-maxAbs, Math.min(maxAbs, adjustment));
     }
 
     private int minBarsForAnyWindow(AppConfig config) {

@@ -1,5 +1,5 @@
 # Normalized symbol universe for VCP scan
-# Source: indian_stock_tickers.csv
+# Source: /Users/yeshwantha/IdeaProjects/SETUPS/indian_stock_tickers.csv
 # Total symbols: 2101
 20MICRONS.NS
 21STCENMGM.NS

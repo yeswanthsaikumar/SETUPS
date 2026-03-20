@@ -43,6 +43,10 @@ New: each scan now also builds a **watchlist of potential breakouts** near pivot
   - VCP contraction depth thresholds vary by window length
   - VCP contraction count requirement varies by window (`Ctr` pairs)
   - range-expansion thresholds vary by window length
+  - breakout candle anatomy is now score-weighted:
+    - stronger bullish body + lower wicks add positive score
+    - larger upper wicks apply negative score
+    - this directly affects setup quality and min-score filtering
 - Hit output fields now include: `window`, `height%`, `depth%`, `len`, `ctr`, `rating`, full trade plan.
 - Outputs now include three list types per scan run:
   - breakout hits (confirmed)
@@ -237,4 +241,15 @@ python3 run_vcp_system.py --markets india --timeframes daily,weekly --setups ran
 - Add extra fundamentals links (financials, balance sheet, cash flow).
 - Add a small daily quality gate in summary (for example: min score + min liquidity).
 - Add automated schedule via macOS `launchd` for hands-free daily scans.
+
+## Wick/Body Weighted Filtering (Latest)
+
+Setup scoring now includes a candle-structure adjustment on the most recent bars (recency-weighted, breakout bar strongest):
+
+- `bodyDirectionalWeight`: bullish candle body helps, bearish body hurts
+- `lowerWickPositiveWeight`: longer lower wick is treated as demand/support (positive)
+- `upperWickNegativeWeight`: longer upper wick is treated as rejection/supply (negative)
+- `maxWickBodyScoreAdjustment`: caps total wick/body impact to keep scoring stable
+
+These values are defined in `src/AppConfig.java` and are applied in `src/VcpDetector.java` before setup score thresholds are checked.
 

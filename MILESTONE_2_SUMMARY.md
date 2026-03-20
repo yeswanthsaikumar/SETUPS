@@ -8,6 +8,23 @@
 
 ## 📦 What Was Built
 
+### 0. **Setup Filtering Enhancement** (UPDATED)
+**Purpose**: Improve signal quality by weighting candle anatomy in setup scoring
+
+**Changes**:
+- Added positive score contribution for bullish body + lower wick support
+- Added negative score contribution for upper wick rejection
+- Applied recency weighting so breakout candle anatomy has the strongest effect
+- Clamped total wick/body impact to keep score stability
+
+**Implementation**:
+- `src/VcpDetector.java`: `computeWickBodyAdjustment(...)`
+- `src/AppConfig.java`: wick/body tuning parameters
+
+**Behavioral impact**:
+- Better prioritization of setups with constructive price action
+- Weak breakout candles with long upper wicks are naturally de-ranked or filtered out by score gates
+
 ### 1. **FundamentalsProvider.py** (NEW)
 **Purpose**: Fetch and cache stock fundamentals data  
 **Location**: `/Users/yeshwantha/IdeaProjects/SETUPS/fundamentals_provider.py`
