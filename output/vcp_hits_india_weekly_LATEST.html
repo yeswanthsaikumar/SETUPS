@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Breakout Scan — 2026-03-20T10:29:12</title>
+  <title>Breakout Scan — 2026-03-22T04:07:39</title>
   <style>
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -106,17 +106,25 @@
     .rating-na { color: #8b949e; background: #6e768133; border-color: #8b949e99; }
 
     .row-count { color: #8b949e; font-size: 0.9em; margin-top: 8px; }
+    .reason-icon { cursor: help; font-size: 1.1em; }
+    .reason-icon:hover { opacity: .7; }
   </style>
 </head>
 <body>
   <h1>🚀 VCP + Range Expansion Breakout Scan Results</h1>
   <div class="meta">
-    Finished: 2026-03-20T10:29:12 &nbsp;|&nbsp;
+    Finished: 2026-03-22T04:07:39 &nbsp;|&nbsp;
     Symbols scanned: 2101 &nbsp;|&nbsp;
-    Elapsed: 0:00:44 &nbsp;|&nbsp;
-    <b style="color:#7ee787">1 hits</b>
+    Elapsed: 0:01:39 &nbsp;|&nbsp;
+    <b style="color:#7ee787">3 hits</b>
   </div>
-  <div class="summary">Shortlist by setup: RANGE_EXPANSION: 1</div>
+  <div class="summary">Shortlist by setup: RANGE_EXPANSION: 2 | VCP: 1</div>
+  <div class="summary" style="margin-top:6px">
+    Columns: <b>Base Height %</b> (consolidation range height), <b>Contraction Depth %</b> (VCP squeeze depth),
+    <b>Base Length</b> (bars), <b>Contraction Pairs</b> (effective range+volume contraction count),
+    <b>Range Expansion x</b> (breakout candle expansion factor),
+    <b>💡 Trade Reasoning</b> (hover to see full setup logic, entry, stop, and targets).
+  </div>
 
   <!-- Controls -->
   <div class="controls">
@@ -142,11 +150,11 @@
   <div class="analytics">
     <div class="stat-card">
       <div class="stat-label">Total Hits</div>
-      <div class="stat-value">1</div>
+      <div class="stat-value">3</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Avg Quality Score</div>
-      <div class="stat-value">91.6</div>
+      <div class="stat-value">94.6</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Avg Risk/Reward</div>
@@ -157,15 +165,16 @@
   <div class="chart-container">
     <div class="chart">
       <div class="chart-title">📊 Rating Distribution</div>
-<div class='bar-item'><span class='bar-label'>A+</span><div class='bar'><div class='bar-fill' style='width:100.0%'></div></div><span class='bar-count'>1</span></div>
-<div class='bar-item'><span class='bar-label'>A</span><div class='bar'><div class='bar-fill' style='width:0.0%'></div></div><span class='bar-count'>0</span></div>
+<div class='bar-item'><span class='bar-label'>A+</span><div class='bar'><div class='bar-fill' style='width:66.66666666666666%'></div></div><span class='bar-count'>2</span></div>
+<div class='bar-item'><span class='bar-label'>A</span><div class='bar'><div class='bar-fill' style='width:33.33333333333333%'></div></div><span class='bar-count'>1</span></div>
 <div class='bar-item'><span class='bar-label'>B</span><div class='bar'><div class='bar-fill' style='width:0.0%'></div></div><span class='bar-count'>0</span></div>
 <div class='bar-item'><span class='bar-label'>C</span><div class='bar'><div class='bar-fill' style='width:0.0%'></div></div><span class='bar-count'>0</span></div>
 <div class='bar-item'><span class='bar-label'>D</span><div class='bar'><div class='bar-fill' style='width:0.0%'></div></div><span class='bar-count'>0</span></div>
     </div>
     <div class="chart">
       <div class="chart-title">🎯 Setup Distribution</div>
-<div class='pie-item'><span class='pie-label'>RANGE_EXPANSION</span><span class='pie-count'>1</span></div>
+<div class='pie-item'><span class='pie-label'>RANGE_EXPANSION</span><span class='pie-count'>2</span></div>
+<div class='pie-item'><span class='pie-label'>VCP</span><span class='pie-count'>1</span></div>
     </div>
   </div>
 
@@ -174,17 +183,19 @@
   <table id="dataTable">
     <thead>
       <tr>
-        <th>Symbol</th><th>List</th><th>Setup</th><th>Window</th><th>Height%</th><th>Depth%</th><th>Len</th><th>Ctr</th><th>Dist%</th><th>Rating</th><th>Close</th><th>Pivot</th><th>Entry</th><th>Score</th>
-        <th>Range%</th><th>Vol%</th><th>RExp</th><th>Shares</th><th>Stop</th>
-        <th>T1</th><th>T2</th><th>T3</th><th>Price Charts</th><th>Fundamental Charts</th>
+        <th>Symbol</th><th>List Type</th><th>Setup</th><th>Window</th><th>Base Height %</th><th>Contraction Depth %</th><th>Base Length</th><th>Contraction Pairs</th><th>Pivot Distance %</th><th>Rating</th><th>Last Close</th><th>Pivot Price</th><th>Planned Entry</th><th>Quality Score</th>
+        <th>Range Contraction %</th><th>Volume Contraction %</th><th>Range Expansion x</th><th>Position Size</th><th>Stop Loss</th>
+        <th>Target 1 (1R)</th><th>Target 2 (2R)</th><th>Target 3 (3R)</th><th>Price Charts</th><th>Fundamental Charts</th><th>Trade Reasoning</th>
       </tr>
     </thead>
     <tbody id="tableBody">
-<tr data-symbol='WHEELS.NS' data-setup-type='RANGE_EXPANSION' data-rating='A+' data-score='91.6'><td><b>WHEELS.NS</b></td><td>BREAKOUT</td><td>RANGE_EXPANSION</td><td>WEEK(6)</td><td>21.4%</td><td>21.8%</td><td>6</td><td>1/2</td><td></td><td><span class='rating-badge rating-a-plus'>A+</span></td><td>998.00</td><td>949.95</td><td>998.00</td><td>91.6</td><td>21.8%</td><td>0.0%</td><td>1.84x</td><td>4</td><td>757.20</td><td>1238.80</td><td>1479.61</td><td>1720.42</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/WHEELS.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3AWHEELS' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/WHEELS.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/WHEELS.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/WHEELS.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/WHEELS.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td></tr>
+<tr data-symbol='AETHER.NS' data-setup-type='RANGE_EXPANSION' data-rating='A+' data-score='115.5'><td><b>AETHER.NS</b></td><td>BREAKOUT</td><td>RANGE_EXPANSION</td><td>Q1(13)</td><td>26.5%</td><td>20.6%</td><td>13</td><td>1/2</td><td></td><td><span class='rating-badge rating-a-plus'>A+</span></td><td>1155.55</td><td>1083.60</td><td>1155.55</td><td>115.5</td><td>20.6%</td><td>36.1%</td><td>2.60x</td><td>3</td><td>824.86</td><td>1486.25</td><td>1816.94</td><td>2147.64</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/AETHER.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3AAETHER' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/AETHER.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/AETHER.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/AETHER.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/AETHER.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td><td style='text-align:center'><span class='reason-icon' title='Setup: Range Expansion Breakout — narrow base with wide-range breakout candle above pivot &#10; Rating: A+  |  Window: Q1(13)  |  Quality Score: 115.5 &#10; Base Height: 26.5%%  |  Contraction Depth: 20.6%%  |  Contraction Pairs: 1/2 &#10; Range Expansion: 2.60xx  |  Volume vs Avg: 36.1%% &#10; Pivot: 1083.60  |  Entry: 1155.55  |  Stop Loss: 824.86 &#10; Targets → T1(1R): 1486.25  |  T2(2R): 1816.94  |  T3(3R): 2147.64 &#10; Distance to Pivot: ?%' style='cursor:help;font-size:1.1em'>💡</span></td></tr>
+<tr data-symbol='WHEELS.NS' data-setup-type='RANGE_EXPANSION' data-rating='A+' data-score='99.0'><td><b>WHEELS.NS</b></td><td>BREAKOUT</td><td>RANGE_EXPANSION</td><td>WEEK(6)</td><td>21.4%</td><td>21.8%</td><td>6</td><td>1/2</td><td></td><td><span class='rating-badge rating-a-plus'>A+</span></td><td>1027.20</td><td>949.95</td><td>1027.20</td><td>99.0</td><td>21.8%</td><td>0.0%</td><td>2.07x</td><td>3</td><td>757.20</td><td>1297.20</td><td>1567.21</td><td>1837.21</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/WHEELS.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3AWHEELS' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/WHEELS.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/WHEELS.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/WHEELS.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/WHEELS.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td><td style='text-align:center'><span class='reason-icon' title='Setup: Range Expansion Breakout — narrow base with wide-range breakout candle above pivot &#10; Rating: A+  |  Window: WEEK(6)  |  Quality Score: 99.0 &#10; Base Height: 21.4%%  |  Contraction Depth: 21.8%%  |  Contraction Pairs: 1/2 &#10; Range Expansion: 2.07xx  |  Volume vs Avg: 0.0%% &#10; Pivot: 949.95  |  Entry: 1027.20  |  Stop Loss: 757.20 &#10; Targets → T1(1R): 1297.20  |  T2(2R): 1567.21  |  T3(3R): 1837.21 &#10; Distance to Pivot: ?%' style='cursor:help;font-size:1.1em'>💡</span></td></tr>
+<tr data-symbol='CCL.NS' data-setup-type='VCP' data-rating='A' data-score='69.2'><td><b>CCL.NS</b></td><td>BREAKOUT</td><td>VCP</td><td>Q4(52)</td><td>63.4%</td><td>67.6%</td><td>52</td><td>2/2</td><td></td><td><span class='rating-badge rating-a'>A</span></td><td>1087.60</td><td>1074.40</td><td>1087.60</td><td>69.2</td><td>67.6%</td><td>67.3%</td><td>0.00x</td><td>1</td><td>522.38</td><td>1652.82</td><td>2218.05</td><td>2783.27</td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/CCL.NS/chart' target='_blank' rel='noopener noreferrer'>Yahoo</a><a class='link-btn alt' href='https://www.tradingview.com/chart/?symbol=NSE%3ACCL' target='_blank' rel='noopener noreferrer'>TradingView</a></td><td class='links'><a class='link-btn' href='https://finance.yahoo.com/quote/CCL.NS/key-statistics' target='_blank' rel='noopener noreferrer'>Stats</a><a class='link-btn' href='https://finance.yahoo.com/quote/CCL.NS/financials' target='_blank' rel='noopener noreferrer'>Financials</a><a class='link-btn' href='https://finance.yahoo.com/quote/CCL.NS/balance-sheet' target='_blank' rel='noopener noreferrer'>Balance Sheet</a><a class='link-btn' href='https://finance.yahoo.com/quote/CCL.NS/cash-flow' target='_blank' rel='noopener noreferrer'>Cash Flow</a></td><td style='text-align:center'><span class='reason-icon' title='Setup: VCP — Volatility Contraction Pattern with tightening range waves into pivot &#10; Rating: A  |  Window: Q4(52)  |  Quality Score: 69.2 &#10; Base Height: 63.4%%  |  Contraction Depth: 67.6%%  |  Contraction Pairs: 2/2 &#10; Range Expansion: 0.00xx  |  Volume vs Avg: 67.3%% &#10; Pivot: 1074.40  |  Entry: 1087.60  |  Stop Loss: 522.38 &#10; Targets → T1(1R): 1652.82  |  T2(2R): 2218.05  |  T3(3R): 2783.27 &#10; Distance to Pivot: ?%' style='cursor:help;font-size:1.1em'>💡</span></td></tr>
     </tbody>
   </table>
   </div>
-  <div class="row-count">Showing <span id="visibleCount">1</span> of <span id="totalCount">1</span> rows</div>
+  <div class="row-count">Showing <span id="visibleCount">3</span> of <span id="totalCount">3</span> rows</div>
 
   <script>
     // Data for filtering and sorting

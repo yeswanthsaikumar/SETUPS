@@ -6,7 +6,7 @@ Run once after market close:
 
 ```bash
 cd /Users/yeshwantha/IdeaProjects/SETUPS
-python3 run_vcp_system.py --skip-us-refresh
+python3 apps/python/cli/run_vcp_system.py --skip-us-refresh
 ```
 
 This runs:
@@ -23,14 +23,14 @@ VCP only:
 
 ```bash
 cd /Users/yeshwantha/IdeaProjects/SETUPS
-python3 run_vcp_system.py --skip-us-refresh --setups vcp
+python3 apps/python/cli/run_vcp_system.py --skip-us-refresh --setups vcp
 ```
 
 Range expansion only:
 
 ```bash
 cd /Users/yeshwantha/IdeaProjects/SETUPS
-python3 run_vcp_system.py --skip-us-refresh --setups range_expansion
+python3 apps/python/cli/run_vcp_system.py --skip-us-refresh --setups range_expansion
 ```
 
 ## Common Variants
@@ -39,21 +39,21 @@ US only:
 
 ```bash
 cd /Users/yeshwantha/IdeaProjects/SETUPS
-python3 run_vcp_system.py --skip-us-refresh --markets us
+python3 apps/python/cli/run_vcp_system.py --skip-us-refresh --markets us
 ```
 
 India only:
 
 ```bash
 cd /Users/yeshwantha/IdeaProjects/SETUPS
-python3 run_vcp_system.py --skip-us-refresh --markets india
+python3 apps/python/cli/run_vcp_system.py --skip-us-refresh --markets india
 ```
 
 Weekly only:
 
 ```bash
 cd /Users/yeshwantha/IdeaProjects/SETUPS
-python3 run_vcp_system.py --skip-us-refresh --timeframes weekly
+python3 apps/python/cli/run_vcp_system.py --skip-us-refresh --timeframes weekly
 ```
 
 ## Outputs To Check

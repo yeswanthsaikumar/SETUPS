@@ -1,1 +1,2 @@
 symbol,listType,setup,window,height%,depth%,len,ctr,dist%,rating,close,pivot,entry,score,range%,vol%,rexp,shares,sl,T1,T2,T3
+CCL.NS,BREAKOUT,VCP,Q4(52),63.4%,67.6%,52,2/2,,A,1087.60,1074.40,1087.60,69.2,67.6%,67.3%,0.00x,1,522.38,1652.82,2218.05,2783.27

@@ -11,9 +11,9 @@ What it does:
   4. Writes a combined summary into output/system_run_<timestamp>/
 
 Examples:
-    python3 run_vcp_system.py
-    python3 run_vcp_system.py --markets us --timeframes daily,weekly
-    python3 run_vcp_system.py --workers 6 --batch 30
+    python3 apps/python/cli/run_vcp_system.py
+    python3 apps/python/cli/run_vcp_system.py --markets us --timeframes daily,weekly
+    python3 apps/python/cli/run_vcp_system.py --workers 6 --batch 30
 """
 
 from __future__ import annotations
@@ -25,13 +25,14 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[3]
+CLI_DIR = ROOT / "apps" / "python" / "cli"
 DEFAULT_OUTPUT_DIR = ROOT / "output"
-DEFAULT_US_SYMBOLS = ROOT / "us_stock_tickers.csv"
-DEFAULT_US_FALLBACK = ROOT / "all_us_stocks.txt"
-DEFAULT_INDIA_SYMBOLS = ROOT / "indian_stock_tickers.csv"
-FETCH_US_SCRIPT = ROOT / "fetch_us_stocks.py"
-SCAN_SCRIPT = ROOT / "run_full_us_scan.py"
+DEFAULT_US_SYMBOLS = ROOT / "data" / "universes" / "us_stock_tickers.csv"
+DEFAULT_US_FALLBACK = ROOT / "data" / "universes" / "all_us_stocks.txt"
+DEFAULT_INDIA_SYMBOLS = ROOT / "data" / "universes" / "indian_stock_tickers.csv"
+FETCH_US_SCRIPT = CLI_DIR / "fetch_us_stocks.py"
+SCAN_SCRIPT = CLI_DIR / "run_full_us_scan.py"
 JAVA_SRC_DIR = ROOT / "src"
 
 
@@ -100,7 +101,7 @@ def refresh_us_universe(skip: bool):
 
 def resolve_us_symbols(args: argparse.Namespace) -> Path:
     if args.us_symbols:
-        path = ROOT / args.us_symbols if not Path(args.us_symbols).is_absolute() else Path(args.us_symbols)
+        path = Path(args.us_symbols) if Path(args.us_symbols).is_absolute() else (ROOT / args.us_symbols)
         if path.exists():
             return path
         raise FileNotFoundError(f"US symbols file not found: {path}")
@@ -114,7 +115,7 @@ def resolve_us_symbols(args: argparse.Namespace) -> Path:
 
 def resolve_india_symbols(args: argparse.Namespace) -> Path:
     if args.india_symbols:
-        path = ROOT / args.india_symbols if not Path(args.india_symbols).is_absolute() else Path(args.india_symbols)
+        path = Path(args.india_symbols) if Path(args.india_symbols).is_absolute() else (ROOT / args.india_symbols)
         if path.exists():
             return path
         raise FileNotFoundError(f"Indian symbols file not found: {path}")

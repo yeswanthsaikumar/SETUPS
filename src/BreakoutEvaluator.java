@@ -8,7 +8,7 @@ public class BreakoutEvaluator {
 
         Candle latest = candles.get(candles.size() - 1);
         int baseEnd = candles.size() - 2;
-        int volumeLookback = Math.max(5, Math.min(20, baseEnd));
+        int volumeLookback = Math.min(20, baseEnd);
         int volumeStart = Math.max(0, baseEnd - volumeLookback + 1);
         double volume20 = Indicators.averageVolume(candles, volumeStart, baseEnd);
 
@@ -35,6 +35,47 @@ public class BreakoutEvaluator {
             boolean strongClose = closeInRange >= config.minExpansionClosePosition;
 
             return expandedRange && strongClose;
+        }
+
+        return true;
+    }
+
+    public boolean isNearBreakoutContinuation(List<Candle> candles, VcpSetup setup, AppConfig config) {
+        if (candles.size() < 8) {
+            return false;
+        }
+
+        Candle latest = candles.get(candles.size() - 1);
+        int baseEnd = candles.size() - 2;
+        int volumeLookback = Math.min(20, baseEnd);
+        int volumeStart = Math.max(0, baseEnd - volumeLookback + 1);
+        double avgVolume = Indicators.averageVolume(candles, volumeStart, baseEnd);
+
+        double pivot = setup.getPivotPrice();
+        if (pivot <= 0.0) {
+            return false;
+        }
+
+        // Must already be above pivot buffer, but not too extended.
+        double abovePivotPct = (latest.getClose() - pivot) / pivot;
+        boolean inContinuationZone =
+                abovePivotPct >= config.nearBreakoutMinAbovePivotPct
+                        && abovePivotPct <= config.nearBreakoutMaxAbovePivotPct;
+        if (!inContinuationZone) {
+            return false;
+        }
+
+        boolean volumeHealthy = latest.getVolume() >= avgVolume * config.nearBreakoutVolumeMultiplier;
+        boolean holdingPivot = latest.getLow() >= pivot * (1.0 - config.breakoutBufferPct);
+        boolean closeAboveEntry = latest.getClose() >= pivot * (1.0 + config.breakoutBufferPct);
+        if (!volumeHealthy || !holdingPivot || !closeAboveEntry) {
+            return false;
+        }
+
+        if (setup.getSetupType() == VcpSetup.SetupType.RANGE_EXPANSION) {
+            double breakoutRange = Math.max(0.0, latest.getHigh() - latest.getLow());
+            double closeInRange = breakoutRange <= 0.0 ? 0.0 : (latest.getClose() - latest.getLow()) / breakoutRange;
+            return closeInRange >= config.minExpansionClosePosition;
         }
 
         return true;

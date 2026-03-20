@@ -50,6 +50,9 @@ public class AppConfig {
     // Breakout bar volume must be >= this multiple of the 20-day average
     // 1.25x works well for large-caps; 1.5x for mid/small-caps
     public final double breakoutVolumeMultiplier;
+    public final double nearBreakoutMinAbovePivotPct;
+    public final double nearBreakoutMaxAbovePivotPct;
+    public final double nearBreakoutVolumeMultiplier;
     public final double watchlistMaxDistanceToPivotPct;
 
     // ── Trade plan ───────────────────────────────────────────────────────────
@@ -101,6 +104,10 @@ public class AppConfig {
 
         this.breakoutBufferPct         = weekly ? 0.005 : 0.003;
         this.breakoutVolumeMultiplier  = weekly ? 1.10 : 1.25;
+        // Continuation zone after breakout: allow entries that are still close enough to pivot.
+        this.nearBreakoutMinAbovePivotPct = 0.03;
+        this.nearBreakoutMaxAbovePivotPct = 0.08;
+        this.nearBreakoutVolumeMultiplier = weekly ? 1.00 : 1.05;
         this.watchlistMaxDistanceToPivotPct = weekly ? 0.08 : 0.06;
 
         this.accountSize               = 100_000.0;

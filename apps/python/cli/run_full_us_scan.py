@@ -16,7 +16,7 @@ Features:
   • Progress bar with ETA
 
 Usage:
-    python3 run_full_us_scan.py [--symbols us_stock_tickers.csv] [--workers 4] [--batch 25] [--setups both]
+    python3 apps/python/cli/run_full_us_scan.py [--symbols data/universes/us_stock_tickers.csv] [--workers 4] [--batch 25] [--setups both]
 """
 
 import argparse
@@ -229,7 +229,7 @@ def load_symbols(args) -> tuple[list[str], str]:
             print(f"Loaded {len(syms)} symbols from  {path}")
             return syms, path
 
-    print("ERROR: No symbols file found. Run fetch_us_stocks.py first.", file=sys.stderr)
+    print("ERROR: No symbols file found. Run apps/python/cli/fetch_us_stocks.py first.", file=sys.stderr)
     sys.exit(1)
 
 
@@ -563,6 +563,41 @@ def save_html(rows: list[dict], path: Path, meta: dict):
     avg_rr = sum(risk_rewards) / len(risk_rewards) if risk_rewards else 0
     setup_summary = " | ".join(f"{k}: {v}" for k, v in sorted(setup_counts.items())) or "No hits"
 
+    def build_scan_reason(r: dict) -> str:
+        """Generate a hover tooltip describing why this setup was flagged as a breakout."""
+        setup = (r.get("setup") or r.get("setupType") or "?").upper()
+        rating = r.get("rating") or "?"
+        window = r.get("window") or "?"
+        height = r.get("height%") or "?"
+        depth  = r.get("depth%") or "?"
+        score  = r.get("score") or "?"
+        ctr    = r.get("ctr") or "?"
+        rexp   = r.get("rexp") or "?"
+        pivot  = r.get("pivot") or "?"
+        entry  = r.get("entry") or "?"
+        sl     = r.get("sl") or r.get("stop") or "?"
+        t1     = r.get("T1") or "?"
+        t2     = r.get("T2") or "?"
+        t3     = r.get("T3") or "?"
+        dist   = r.get("dist%") or "?"
+        vol    = r.get("vol%") or "?"
+
+        setup_desc = (
+            "VCP — Volatility Contraction Pattern with tightening range waves into pivot"
+            if setup == "VCP"
+            else "Range Expansion Breakout — narrow base with wide-range breakout candle above pivot"
+        )
+        lines = [
+            f"Setup: {setup_desc}",
+            f"Rating: {rating}  |  Window: {window}  |  Quality Score: {score}",
+            f"Base Height: {height}%  |  Contraction Depth: {depth}%  |  Contraction Pairs: {ctr}",
+            f"Range Expansion: {rexp}x  |  Volume vs Avg: {vol}%",
+            f"Pivot: {pivot}  |  Entry: {entry}  |  Stop Loss: {sl}",
+            f"Targets → T1(1R): {t1}  |  T2(2R): {t2}  |  T3(3R): {t3}",
+            f"Distance to Pivot: {dist}%",
+        ]
+        return " &#10; ".join(lines)
+
     # Build table rows with data attributes
     rows_html = ""
     for r in rows:
@@ -573,6 +608,7 @@ def save_html(rows: list[dict], path: Path, meta: dict):
 
         price_link, fund_link = chart_links(r.get("symbol", ""))
         rating_chip = rating_badge(rating_val)
+        reason_tooltip = build_scan_reason(r)
 
         rows_html += (
             f"<tr data-symbol='{html.escape(r.get('symbol', ''))}' "
@@ -603,6 +639,8 @@ def save_html(rows: list[dict], path: Path, meta: dict):
             f"<td>{html.escape(str(r.get('T3','')))}</td>"
             f"<td class='links'>{price_link}</td>"
             f"<td class='links'>{fund_link}</td>"
+            f"<td style='text-align:center'><span class='reason-icon' title='{reason_tooltip}' "
+            f"style='cursor:help;font-size:1.1em'>💡</span></td>"
             f"</tr>\n"
         )
 
@@ -726,6 +764,8 @@ def save_html(rows: list[dict], path: Path, meta: dict):
     .rating-na {{ color: #8b949e; background: #6e768133; border-color: #8b949e99; }}
 
     .row-count {{ color: #8b949e; font-size: 0.9em; margin-top: 8px; }}
+    .reason-icon {{ cursor: help; font-size: 1.1em; }}
+    .reason-icon:hover {{ opacity: .7; }}
   </style>
 </head>
 <body>
@@ -740,7 +780,8 @@ def save_html(rows: list[dict], path: Path, meta: dict):
   <div class="summary" style="margin-top:6px">
     Columns: <b>Base Height %</b> (consolidation range height), <b>Contraction Depth %</b> (VCP squeeze depth),
     <b>Base Length</b> (bars), <b>Contraction Pairs</b> (effective range+volume contraction count),
-    <b>Range Expansion x</b> (breakout candle expansion factor).
+    <b>Range Expansion x</b> (breakout candle expansion factor),
+    <b>💡 Trade Reasoning</b> (hover to see full setup logic, entry, stop, and targets).
   </div>
 
   <!-- Controls -->
@@ -795,7 +836,7 @@ def save_html(rows: list[dict], path: Path, meta: dict):
       <tr>
         <th>Symbol</th><th>List Type</th><th>Setup</th><th>Window</th><th>Base Height %</th><th>Contraction Depth %</th><th>Base Length</th><th>Contraction Pairs</th><th>Pivot Distance %</th><th>Rating</th><th>Last Close</th><th>Pivot Price</th><th>Planned Entry</th><th>Quality Score</th>
         <th>Range Contraction %</th><th>Volume Contraction %</th><th>Range Expansion x</th><th>Position Size</th><th>Stop Loss</th>
-        <th>Target 1 (1R)</th><th>Target 2 (2R)</th><th>Target 3 (3R)</th><th>Price Charts</th><th>Fundamental Charts</th>
+        <th>Target 1 (1R)</th><th>Target 2 (2R)</th><th>Target 3 (3R)</th><th>Price Charts</th><th>Fundamental Charts</th><th>Trade Reasoning</th>
       </tr>
     </thead>
     <tbody id="tableBody">

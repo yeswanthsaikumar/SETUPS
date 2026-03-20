@@ -48,7 +48,7 @@ echo ""
 # ── STEP 1 : Fetch tickers ────────────────────────────────────────────────────
 if [ "$SKIP_FETCH" = false ]; then
     echo -e "${BOLD}▶ Step 1/3 — Downloading US stock universe…${RESET}"
-    python3 fetch_us_stocks.py
+    python3 apps/python/cli/fetch_us_stocks.py
     echo ""
 else
     echo -e "${BOLD}▶ Step 1/3 — Skipped ticker fetch (--skip-fetch)${RESET}"
@@ -75,7 +75,7 @@ echo ""
 
 # ── STEP 3 : Run scan ─────────────────────────────────────────────────────────
 echo -e "${BOLD}▶ Step 3/3 — Running breakout scan…${RESET}"
-python3 run_full_us_scan.py "${SCAN_ARGS[@]}"
+python3 apps/python/cli/run_full_us_scan.py "${SCAN_ARGS[@]}"
 
 # ── Open HTML report ─────────────────────────────────────────────────────────
 LATEST_HTML=$(ls -t output/scan_*/vcp_hits_*.html 2>/dev/null | head -1 || true)

@@ -93,7 +93,9 @@ public class ScannerEngine {
             return null;
         }
 
-        if (!breakoutEvaluator.isBullishBreakout(slice, setup, config)) {
+        boolean breakout = breakoutEvaluator.isBullishBreakout(slice, setup, config);
+        boolean nearBreakout = !breakout && breakoutEvaluator.isNearBreakoutContinuation(slice, setup, config);
+        if (!breakout && !nearBreakout) {
             return null;
         }
 
@@ -103,7 +105,8 @@ public class ScannerEngine {
             return null;
         }
 
-        return new ScanResult(symbol, setup, signalCandle, plan);
+        String signalType = nearBreakout ? "NEAR_BREAKOUT" : "BREAKOUT";
+        return new ScanResult(symbol, setup, signalCandle, plan, signalType);
     }
 
     public WatchlistResult evaluateWatchlistAtIndex(String symbol, List<Candle> candles, int endIndexInclusive) {

@@ -65,7 +65,7 @@ if [ -f "data/universes/us_stock_tickers.csv" ]; then
     echo "   Extracting first 10 symbols for quick test..."
     head -11 data/universes/us_stock_tickers.csv > /tmp/test_symbols.csv
 
-    python3 run_full_us_scan.py \
+    python3 apps/python/cli/run_full_us_scan.py \
         --symbols /tmp/test_symbols.csv \
         --batch 5 \
         --workers 1 \

@@ -13,7 +13,7 @@ Sources (tried in order):
   4. Comprehensive hardcoded fallback (~2 000+ symbols)
 
 Run:
-    python3 fetch_us_stocks.py
+    python3 apps/python/cli/fetch_us_stocks.py
 """
 
 import ftplib

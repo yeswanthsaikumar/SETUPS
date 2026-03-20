@@ -10,10 +10,10 @@ fires the same VCP/Range-Expansion detector at each bar, and simulates the
 trade forward until: T1/T2/T3 hit, stop hit, or max-hold reached.
 
 Usage:
-    python3 run_backtest.py                               # India daily, 728 bars
-    python3 run_backtest.py --market india --timeframe weekly
-    python3 run_backtest.py --market us   --timeframe daily
-    python3 run_backtest.py --market india --hold-bars 30 --setups vcp
+    python3 apps/python/cli/run_backtest.py                               # India daily, 728 bars
+    python3 apps/python/cli/run_backtest.py --market india --timeframe weekly
+    python3 apps/python/cli/run_backtest.py --market us   --timeframe daily
+    python3 apps/python/cli/run_backtest.py --market india --hold-bars 30 --setups vcp
 """
 
 import argparse, csv, html, json, os, shutil, subprocess, sys, threading, time
@@ -294,6 +294,50 @@ def build_monthly_heatmap(monthly: dict[str, float]) -> str:
     return f"<div class='heatmap'>{cells}</div>"
 
 
+def build_trade_reason(t: dict) -> str:
+    """Build a short plain-text trade reasoning description for tooltip hover."""
+    setup = t.get("setupType", "?")
+    rating = t.get("setupRating", "?")
+    window = t.get("windowLabel", "?")
+    score = t.get("qualityScore", 0)
+    entry_date = t.get("entryDate", "?")
+    exit_date  = t.get("exitDate",  "?")
+    entry = t.get("entryPrice", 0)
+    exit_p = t.get("exitPrice", 0)
+    stop  = t.get("stopPrice", 0)
+    r     = t.get("rMultiple", 0)
+    hold  = t.get("holdBars", 0)
+    exit_reason = t.get("exitReason", "?")
+    mae   = t.get("mae", 0)
+    mfe   = t.get("mfe", 0)
+    hit_t1 = t.get("hitT1", False)
+    hit_t2 = t.get("hitT2", False)
+    hit_t3 = t.get("hitT3", False)
+
+    setup_desc = (
+        "Volatility Contraction Pattern (VCP) — multiple tightening waves into pivot"
+        if setup == "VCP"
+        else "Range Expansion Breakout — narrow consolidation base followed by wide-range breakout candle"
+    )
+
+    targets_hit = ", ".join(
+        t for t, h in [("T1 (1R)", hit_t1), ("T2 (2R)", hit_t2), ("T3 (3R)", hit_t3)] if h
+    ) or "None"
+
+    rr_label = "1:3 (3R)" if hit_t3 else ("1:2 (2R)" if hit_t2 else ("1:1 (1R)" if hit_t1 else f"1:{abs(r):.1f}"))
+
+    lines = [
+        f"Setup: {setup_desc}",
+        f"Rating: {rating}  |  Window: {window}  |  Quality Score: {score:.1f}",
+        f"Entry: {entry_date} @ {entry:.2f}  |  Stop: {stop:.2f}",
+        f"Exit:  {exit_date} @ {exit_p:.2f}  ({exit_reason})",
+        f"Result: {r:+.2f}R  |  Risk/Reward achieved: {rr_label}",
+        f"Targets hit: {targets_hit}",
+        f"Hold: {hold} bars  |  MAE: {mae:.1f}%  |  MFE: {mfe:.1f}%",
+    ]
+    return " &#10; ".join(lines)   # &#10; = newline in HTML title attribute
+
+
 def bar_rows(group: dict, color="#58a6ff") -> str:
     if not group:
         return "<p style='color:#8b949e'>No data.</p>"
@@ -334,10 +378,24 @@ def build_trade_rows(trades: list[dict]) -> str:
         r = t.get("rMultiple", 0)
         rc = rcolor(r)
         rb = rating_badge(t.get("setupRating", "?"))
-        t1 = "✅" if t.get("hitT1") else "—"
-        t2 = "✅" if t.get("hitT2") else "—"
-        t3 = "✅" if t.get("hitT3") else "—"
+        hit_t1 = t.get("hitT1", False)
+        hit_t2 = t.get("hitT2", False)
+        hit_t3 = t.get("hitT3", False)
+        t1 = "✅" if hit_t1 else "—"
+        t2 = "✅" if hit_t2 else "—"
+        t3 = "✅" if hit_t3 else "—"
         er = html.escape(t.get("exitReason", "?"))
+
+        # RR badge: highlight 1:2 and 1:3
+        if hit_t3:
+            rr_badge = "<span style='background:#2ea04330;color:#3fb950;padding:1px 6px;border-radius:999px;border:1px solid #2ea043;font-size:.78em;font-weight:700'>1:3</span>"
+        elif hit_t2:
+            rr_badge = "<span style='background:#1f6feb30;color:#58a6ff;padding:1px 6px;border-radius:999px;border:1px solid #1f6feb;font-size:.78em;font-weight:700'>1:2</span>"
+        else:
+            rr_badge = "<span style='color:#8b949e;font-size:.78em'>—</span>"
+
+        reason = build_trade_reason(t)
+
         rows += (
             f"<tr data-r='{r:.3f}' data-setup='{html.escape(t.get('setupType',''))}' "
             f"data-rating='{html.escape(t.get('setupRating',''))}' "
@@ -352,11 +410,15 @@ def build_trade_rows(trades: list[dict]) -> str:
             f"<td>{t.get('entryPrice',0):.2f}</td>"
             f"<td>{t.get('exitPrice',0):.2f}</td>"
             f"<td style='color:{rc};font-weight:700'>{r:+.2f}R</td>"
+            f"<td>{rr_badge}</td>"
             f"<td>{t.get('holdBars',0)}</td>"
             f"<td>{t.get('mae',0):.1f}%</td>"
             f"<td>{t.get('mfe',0):.1f}%</td>"
             f"<td>{t1}</td><td>{t2}</td><td>{t3}</td>"
             f"<td style='color:#8b949e;font-size:.8em'>{er}</td>"
+            f"<td style='text-align:center'>"
+            f"<span class='reason-icon' title='{reason}' style='cursor:help;font-size:1.1em'>💡</span>"
+            f"</td>"
             f"</tr>\n"
         )
     return rows
@@ -468,6 +530,8 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
     .rating-d{{color:#f85149;background:#da36332d;border-color:#f8514999;}}
     .rating-na{{color:#8b949e;background:#6e768133;border-color:#8b949e99;}}
     .row-count{{color:#8b949e;font-size:.85em;margin-top:8px;}}
+    .reason-icon:hover{{opacity:.7;}}
+    [title]{{position:relative;}}
   </style>
 </head>
 <body>
@@ -581,11 +645,22 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
   <!-- ── Trade-level Table ─────────────────────────────────────────── -->
   <h2>📋 Trade-Level Details</h2>
   <div class="panel" style="margin-bottom:12px">
-    <div class="panel-title">Result Columns Guide</div>
-    <div style="font-size:.82em;color:#8b949e;line-height:1.5">
-      <b style="color:#c9d1d9">Window</b>: setup variation window (Q1/Q2/Q3/Q4 or short windows) &nbsp;|&nbsp;
-      <b style="color:#c9d1d9">Quality Score</b>: final setup score after contraction + candle-structure weighting &nbsp;|&nbsp;
-      <b style="color:#c9d1d9">MAE/MFE</b>: max adverse/favorable excursion (%) during trade life.
+    <div class="panel-title">🎯 1:2 / 1:3 Quality Trades</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px">
+      <div style="background:#161b22;border:1px solid #2ea043;border-radius:8px;padding:10px 18px;text-align:center">
+        <div style="color:#8b949e;font-size:.78em">1:2 Trades (hit T2)</div>
+        <div style="color:#58a6ff;font-size:1.5em;font-weight:700" id="t2CountCard">{m.get('t2HitCount',0):,}</div>
+        <div style="color:#8b949e;font-size:.72em">{m.get('t2HitRate',0):.1f}% of trades</div>
+      </div>
+      <div style="background:#161b22;border:1px solid #3fb950;border-radius:8px;padding:10px 18px;text-align:center">
+        <div style="color:#8b949e;font-size:.78em">1:3 Trades (hit T3)</div>
+        <div style="color:#3fb950;font-size:1.5em;font-weight:700" id="t3CountCard">{m.get('t3HitCount',0):,}</div>
+        <div style="color:#8b949e;font-size:.72em">{m.get('t3HitRate',0):.1f}% of trades</div>
+      </div>
+    </div>
+    <div style="font-size:.82em;color:#8b949e;line-height:1.5;margin-top:10px">
+      <b style="color:#c9d1d9">RR</b>: Risk/Reward achieved (1:2 = T2 hit, 1:3 = T3 hit). &nbsp;|&nbsp;
+      <b style="color:#c9d1d9">💡 Reasoning</b>: Hover the icon to see setup details, entry logic, and outcome.
     </div>
   </div>
   <div class="controls">
@@ -593,6 +668,12 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
     <input class="ctrl-input" id="searchBox" placeholder="Symbol..." style="width:130px" autocomplete="off">
     <span class="ctrl-label">Min R:</span>
     <input class="ctrl-input" id="minR" type="number" step="0.5" value="-99" style="width:80px">
+    <span class="ctrl-label">RR:</span>
+    <div id="rrBtns" style="display:flex;gap:6px">
+      <button class="filter-btn active" data-rr="all">All</button>
+      <button class="filter-btn" data-rr="1:2">1:2+</button>
+      <button class="filter-btn" data-rr="1:3">1:3</button>
+    </div>
     <span class="ctrl-label">Setup:</span>
     <div id="setupBtns" style="display:flex;gap:6px">
       <button class="filter-btn active" data-setup="all">All</button>
@@ -615,11 +696,13 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
           <th onclick="sortT(7)">Entry Price</th>
           <th onclick="sortT(8)">Exit Price</th>
           <th onclick="sortT(9)">R Multiple</th>
-          <th onclick="sortT(10)">Hold Bars</th>
-          <th onclick="sortT(11)">MAE (%)</th>
-          <th onclick="sortT(12)">MFE (%)</th>
+          <th onclick="sortT(10)">RR</th>
+          <th onclick="sortT(11)">Hold Bars</th>
+          <th onclick="sortT(12)">MAE (%)</th>
+          <th onclick="sortT(13)">MFE (%)</th>
           <th>T1</th><th>T2</th><th>T3</th>
-          <th onclick="sortT(16)">Exit Reason</th>
+          <th onclick="sortT(17)">Exit Reason</th>
+          <th>Reasoning</th>
         </tr>
       </thead>
       <tbody id="tradeBody">{trade_rows}</tbody>
@@ -633,6 +716,14 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
 
     document.getElementById('searchBox').addEventListener('input', applyFilters);
     document.getElementById('minR').addEventListener('input', applyFilters);
+
+    document.querySelectorAll('#rrBtns .filter-btn').forEach(b => {{
+      b.addEventListener('click', () => {{
+        document.querySelectorAll('#rrBtns .filter-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active'); applyFilters();
+      }});
+    }});
+
     document.querySelectorAll('#setupBtns .filter-btn').forEach(b => {{
       b.addEventListener('click', () => {{
         document.querySelectorAll('#setupBtns .filter-btn').forEach(x => x.classList.remove('active'));
@@ -644,14 +735,21 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
       const search = document.getElementById('searchBox').value.toLowerCase();
       const minR   = parseFloat(document.getElementById('minR').value) || -99;
       const setup  = document.querySelector('#setupBtns .filter-btn.active').dataset.setup;
+      const rr     = document.querySelector('#rrBtns .filter-btn.active').dataset.rr;
       let vis = 0;
       allRows.forEach(row => {{
-        const sym = row.dataset.symbol.toLowerCase();
-        const r   = parseFloat(row.dataset.r);
-        const st  = row.dataset.setup;
-        const ok  = (!search || sym.includes(search))
+        const sym   = row.dataset.symbol.toLowerCase();
+        const r     = parseFloat(row.dataset.r);
+        const st    = row.dataset.setup;
+        const t2hit = row.cells[15] && row.cells[15].textContent.trim() === '✅';
+        const t3hit = row.cells[16] && row.cells[16].textContent.trim() === '✅';
+        let rrOk = true;
+        if (rr === '1:2') rrOk = t2hit || t3hit;
+        if (rr === '1:3') rrOk = t3hit;
+        const ok = (!search || sym.includes(search))
                  && r >= minR
-                 && (setup === 'all' || st === setup);
+                 && (setup === 'all' || st === setup)
+                 && rrOk;
         row.classList.toggle('hidden', !ok);
         if (ok) vis++;
       }});
@@ -680,11 +778,12 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
       const vis = allRows.filter(r => !r.classList.contains('hidden'));
       if (!vis.length) {{ alert('No rows to export'); return; }}
       const headers = ['Symbol','EntryDate','ExitDate','Setup','Rating','Window',
-                       'QualityScore','EntryPrice','ExitPrice','RMultiple','HoldBars','MAEPercent','MFEPercent',
+                       'QualityScore','EntryPrice','ExitPrice','RMultiple','RR',
+                       'HoldBars','MAEPercent','MFEPercent',
                        'HitT1','HitT2','HitT3','ExitReason'];
       let csv = headers.join(',') + '\\n';
       vis.forEach(row => {{
-        const cols = Array.from(row.cells).map(c => {{
+        const cols = Array.from(row.cells).slice(0,18).map(c => {{
           let t = c.textContent.trim().replace(/"/g, '""');
           return `"${{t}}"`;
         }});

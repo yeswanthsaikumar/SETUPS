@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Breakout Scan — 2026-03-20T10:28:28</title>
+  <title>Breakout Scan — 2026-03-22T04:05:59</title>
   <style>
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -106,17 +106,25 @@
     .rating-na { color: #8b949e; background: #6e768133; border-color: #8b949e99; }
 
     .row-count { color: #8b949e; font-size: 0.9em; margin-top: 8px; }
+    .reason-icon { cursor: help; font-size: 1.1em; }
+    .reason-icon:hover { opacity: .7; }
   </style>
 </head>
 <body>
   <h1>🚀 VCP + Range Expansion Breakout Scan Results</h1>
   <div class="meta">
-    Finished: 2026-03-20T10:28:28 &nbsp;|&nbsp;
+    Finished: 2026-03-22T04:05:59 &nbsp;|&nbsp;
     Symbols scanned: 2101 &nbsp;|&nbsp;
-    Elapsed: 0:00:40 &nbsp;|&nbsp;
+    Elapsed: 0:01:34 &nbsp;|&nbsp;
     <b style="color:#7ee787">0 hits</b>
   </div>
   <div class="summary">Shortlist by setup: No hits</div>
+  <div class="summary" style="margin-top:6px">
+    Columns: <b>Base Height %</b> (consolidation range height), <b>Contraction Depth %</b> (VCP squeeze depth),
+    <b>Base Length</b> (bars), <b>Contraction Pairs</b> (effective range+volume contraction count),
+    <b>Range Expansion x</b> (breakout candle expansion factor),
+    <b>💡 Trade Reasoning</b> (hover to see full setup logic, entry, stop, and targets).
+  </div>
 
   <!-- Controls -->
   <div class="controls">
@@ -173,9 +181,9 @@
   <table id="dataTable">
     <thead>
       <tr>
-        <th>Symbol</th><th>List</th><th>Setup</th><th>Window</th><th>Height%</th><th>Depth%</th><th>Len</th><th>Ctr</th><th>Dist%</th><th>Rating</th><th>Close</th><th>Pivot</th><th>Entry</th><th>Score</th>
-        <th>Range%</th><th>Vol%</th><th>RExp</th><th>Shares</th><th>Stop</th>
-        <th>T1</th><th>T2</th><th>T3</th><th>Price Charts</th><th>Fundamental Charts</th>
+        <th>Symbol</th><th>List Type</th><th>Setup</th><th>Window</th><th>Base Height %</th><th>Contraction Depth %</th><th>Base Length</th><th>Contraction Pairs</th><th>Pivot Distance %</th><th>Rating</th><th>Last Close</th><th>Pivot Price</th><th>Planned Entry</th><th>Quality Score</th>
+        <th>Range Contraction %</th><th>Volume Contraction %</th><th>Range Expansion x</th><th>Position Size</th><th>Stop Loss</th>
+        <th>Target 1 (1R)</th><th>Target 2 (2R)</th><th>Target 3 (3R)</th><th>Price Charts</th><th>Fundamental Charts</th><th>Trade Reasoning</th>
       </tr>
     </thead>
     <tbody id="tableBody">
