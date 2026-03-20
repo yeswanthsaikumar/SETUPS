@@ -23,10 +23,11 @@ Main
   -> WatchlistResult (near-pivot potential breakout output)
 
 Python orchestration
-  -> run_vcp_system.py (market/timeframe/setup scheduler)
-      -> run_full_us_scan.py (parallel batch runner)
+  -> apps/python/cli/run_vcp_system.py (market/timeframe/setup scheduler)
+      -> apps/python/cli/run_full_us_scan.py (parallel batch runner)
           -> java -cp src Main ...
   -> output/* (CSV, JSON, HTML, summaries)
+  -> run_backtest.py --matrix-all (US/India x daily/weekly batch backtest)
 ```
 
 ### Core responsibilities
@@ -36,8 +37,8 @@ Python orchestration
 - `BreakoutEvaluator`: confirms breakout quality
 - `TradePlanner`: converts signal to position sizing and targets
 - `ScannerEngine`: orchestration and ranking
-- `run_full_us_scan.py`: batch scan orchestration, parsing, report generation
-- `run_vcp_system.py`: daily automation across US/India and daily/weekly runs
+- `apps/python/cli/run_full_us_scan.py`: batch scan orchestration, parsing, report generation
+- `apps/python/cli/run_vcp_system.py`: daily automation across US/India and daily/weekly runs
 - `WatchlistResult`: potential breakout candidate with trade plan + pivot distance
 
 ## 3) Current Detection Logic
@@ -103,6 +104,7 @@ Python orchestration
   - color rating badges (`A+/A/B/C/D`)
   - price chart links (Yahoo + TradingView)
   - fundamentals link (Yahoo key statistics)
+  - descriptive result column names with inline column guide
 - Additional outputs now include:
   - `open_trades_*` (confirmed breakouts, execution list)
   - `watchlist_*` (potential near-breakout candidates)
@@ -151,6 +153,8 @@ Python orchestration
 
 ## 8) How To Execute
 
+Note: root scripts remain as compatibility wrappers, so `python3 run_vcp_system.py` still works.
+
 ### One-time
 
 ```bash
@@ -186,6 +190,18 @@ cd /Users/yeshwantha/IdeaProjects/SETUPS
 cat output/system_latest_summary.md
 ls -lh output/vcp_hits_*_LATEST.html
 ```
+
+### Backtest all markets/timeframes (single command)
+
+```bash
+cd /Users/yeshwantha/IdeaProjects/SETUPS
+python3 run_backtest.py --matrix-all --setups both
+```
+
+Backtest matrix summary outputs:
+- `output/backtest_matrix_LATEST.md`
+- `output/backtest_matrix_LATEST.html`
+- `output/backtest_matrix_LATEST.json`
 
 ## 9) Suggested Milestones
 

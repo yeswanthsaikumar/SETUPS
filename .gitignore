@@ -35,3 +35,8 @@ __pycache__/
 
 ### Java build artifacts ###
 src/*.class
+
+### Runtime artifacts ###
+cache/
+output/
+

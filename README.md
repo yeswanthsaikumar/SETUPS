@@ -8,6 +8,18 @@ Scans US or Indian stocks for breakout entries using either:
 
 Each hit includes a full trade plan (`entry`, `stop`, `shares`, `T1/T2/T3`).
 
+## Project Structure (Reorganized)
+
+- `apps/python/cli/` - Python runners (`run_vcp_system.py`, `run_full_us_scan.py`, `run_backtest.py`, `fetch_us_stocks.py`)
+- `apps/python/lib/` - Python libraries (`fundamentals_provider.py`)
+- `data/universes/` - Symbol universe files (`us_stock_tickers.csv`, `indian_stock_tickers.csv`, `all_us_stocks.txt`)
+- `scripts/` - Shell entry scripts (`daily_vcp.sh`, `full_scan.sh`, `milestone_2_quickstart.sh`)
+- `docs/runbooks/` - operational runbooks (`DAILY_RUNBOOK.md`)
+- `src/` - Java strategy/scanner engine
+- `cache/`, `output/` - runtime data and reports
+
+Root-level script names are kept as compatibility wrappers, so existing commands still work.
+
 New: each scan now also builds a **watchlist of potential breakouts** near pivot and a separate **open-trades list**.
 
 **🎉 NEW - Milestone 2**: Interactive HTML reports with real-time filtering, sorting, searching, and fundamentals data enrichment!
@@ -181,18 +193,18 @@ Python batch run for one universe:
 
 ```bash
 cd /Users/yeshwantha/IdeaProjects/SETUPS
-python3 run_full_us_scan.py --symbols us_stock_tickers.csv --market-label us --timeframe daily --setups both --lookback 252
-python3 run_full_us_scan.py --symbols indian_stock_tickers.csv --market-label india --timeframe weekly --setups range_expansion --lookback 104
+python3 run_full_us_scan.py --symbols data/universes/us_stock_tickers.csv --market-label us --timeframe daily --setups both --lookback 252
+python3 run_full_us_scan.py --symbols data/universes/indian_stock_tickers.csv --market-label india --timeframe weekly --setups range_expansion --lookback 104
 ```
 
 ## Key Files
 
-- `run_vcp_system.py` - daily orchestrator for markets/timeframes/setups
-- `run_full_us_scan.py` - parallel batch scanner and report writer
+- `apps/python/cli/run_vcp_system.py` - daily orchestrator for markets/timeframes/setups
+- `apps/python/cli/run_full_us_scan.py` - parallel batch scanner and report writer
 - `src/VcpDetector.java` - setup detection logic
 - `src/BreakoutEvaluator.java` - breakout confirmation logic
 - `src/TradePlanner.java` - trade plan builder
-- `DAILY_RUNBOOK.md` - daily operational steps
+- `docs/runbooks/DAILY_RUNBOOK.md` - daily operational steps
 
 ## Everyday Run (Recommended)
 
@@ -237,10 +249,46 @@ python3 run_vcp_system.py --markets india --timeframes daily,weekly --setups ran
 
 ## Suggested Next Improvements
 
-- Add sortable/filterable HTML tables (by setup, score, window, risk/reward).
-- Add extra fundamentals links (financials, balance sheet, cash flow).
-- Add a small daily quality gate in summary (for example: min score + min liquidity).
 - Add automated schedule via macOS `launchd` for hands-free daily scans.
+
+---
+
+## 🧪 Milestone 3: 2-Year Historical Backtest (NEW)
+
+Replay every historical bar over the last 2 years and measure how your breakout signals performed.
+
+### Quick start
+```bash
+cd /Users/yeshwantha/IdeaProjects/SETUPS
+python3 run_backtest.py                          # India daily, 728 bars, 20-bar hold
+python3 run_backtest.py --timeframe weekly       # India weekly, 104 bars, 8-bar hold
+python3 run_backtest.py --market us              # US daily
+python3 run_backtest.py --matrix-all             # US+India on Daily+Weekly, single command
+```
+
+### What it measures
+| Metric | Description |
+|---|---|
+| Win Rate | % of trades that hit T1 (1R) or better |
+| Avg R | Average R-multiple per trade |
+| Total R | Cumulative R across all trades |
+| Max Drawdown | Peak-to-trough in running R |
+| Profit Factor | Gross wins / gross losses |
+| Avg MAE / MFE | Adverse / favorable excursion before exit |
+| T1 / T2 / T3 Hit Rate | % of trades reaching each target |
+
+### Output
+- `output/backtest_india_daily_LATEST.html` — interactive report (open in browser)
+- `output/backtest_india_daily_LATEST.csv` — all trades flat CSV
+- `output/backtest_us_daily_LATEST.html` and `output/backtest_us_weekly_LATEST.html`
+- `output/backtest_india_weekly_LATEST.html`
+- `output/backtest_matrix_LATEST.md|html|json` — combined 4-run summary index
+
+### UI Result Columns (Updated Naming)
+- Scan report now uses descriptive labels like `Base Height %`, `Contraction Depth %`, `Base Length`, `Contraction Pairs`, `Pivot Distance %`, and `Range Expansion x`.
+- Backtest report trade table now uses `Trade Setup`, `Setup Rating`, `Setup Window`, `Quality Score`, `Entry Price`, `Exit Price`, `R Multiple`, `Hold Bars`, `MAE (%)`, and `MFE (%)`.
+
+See `docs/MILESTONE_3_BACKTEST.md` for full architecture details.
 
 ## Wick/Body Weighted Filtering (Latest)
 
@@ -252,4 +300,3 @@ Setup scoring now includes a candle-structure adjustment on the most recent bars
 - `maxWickBodyScoreAdjustment`: caps total wick/body impact to keep scoring stable
 
 These values are defined in `src/AppConfig.java` and are applied in `src/VcpDetector.java` before setup score thresholds are checked.
-

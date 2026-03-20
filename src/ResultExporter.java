@@ -122,19 +122,19 @@ public final class ResultExporter {
 
     private static void writeBacktestCsv(BacktestReport report, Path path) {
         List<String> lines = new ArrayList<>();
-        lines.add("symbol,entryDate,exitDate,entryPrice,exitPrice,stopPrice,shares,rMultiple,pnl,exitReason");
+        lines.add("symbol,setupType,setupRating,windowLabel,qualityScore," +
+                  "entryDate,exitDate,entryPrice,exitPrice,stopPrice,shares," +
+                  "rMultiple,pnl,holdBars,mae,mfe,hitT1,hitT2,hitT3,exitReason");
         for (BacktestTrade t : report.getTrades()) {
             lines.add(String.format(
-                    "%s,%s,%s,%.5f,%.5f,%.5f,%d,%.4f,%.2f,%s",
-                    t.getSymbol(),
-                    t.getEntryDate(),
-                    t.getExitDate(),
-                    t.getEntryPrice(),
-                    t.getExitPrice(),
-                    t.getStopPrice(),
-                    t.getShares(),
-                    t.getRMultiple(),
-                    t.getPnl(),
+                    "%s,%s,%s,%s,%.2f,%s,%s,%.5f,%.5f,%.5f,%d,%.4f,%.2f,%d,%.2f,%.2f,%b,%b,%b,%s",
+                    t.getSymbol(), t.getSetupType(), t.getSetupRating(), t.getWindowLabel(),
+                    t.getQualityScore(),
+                    t.getEntryDate(), t.getExitDate(),
+                    t.getEntryPrice(), t.getExitPrice(), t.getStopPrice(), t.getShares(),
+                    t.getRMultiple(), t.getPnl(), t.getHoldBars(),
+                    t.getMae(), t.getMfe(),
+                    t.isHitT1(), t.isHitT2(), t.isHitT3(),
                     t.getExitReason()
             ));
         }
@@ -150,6 +150,14 @@ public final class ResultExporter {
         sb.append("  \"averageR\": ").append(format(report.getAverageR())).append(",\n");
         sb.append("  \"totalR\": ").append(format(report.getTotalR())).append(",\n");
         sb.append("  \"totalPnl\": ").append(format(report.getTotalPnl())).append(",\n");
+        sb.append("  \"maxDrawdown\": ").append(format(report.getMaxDrawdown())).append(",\n");
+        sb.append("  \"profitFactor\": ").append(format(report.getProfitFactor())).append(",\n");
+        sb.append("  \"avgMae\": ").append(format(report.getAvgMae())).append(",\n");
+        sb.append("  \"avgMfe\": ").append(format(report.getAvgMfe())).append(",\n");
+        sb.append("  \"avgHoldBars\": ").append(format(report.getAvgHoldBars())).append(",\n");
+        sb.append("  \"t1HitCount\": ").append(report.getT1HitCount()).append(",\n");
+        sb.append("  \"t2HitCount\": ").append(report.getT2HitCount()).append(",\n");
+        sb.append("  \"t3HitCount\": ").append(report.getT3HitCount()).append(",\n");
         sb.append("  \"items\": [\n");
 
         List<BacktestTrade> trades = report.getTrades();
@@ -157,6 +165,10 @@ public final class ResultExporter {
             BacktestTrade t = trades.get(i);
             sb.append("    {\n");
             sb.append("      \"symbol\": \"").append(escape(t.getSymbol())).append("\",\n");
+            sb.append("      \"setupType\": \"").append(escape(t.getSetupType())).append("\",\n");
+            sb.append("      \"setupRating\": \"").append(escape(t.getSetupRating())).append("\",\n");
+            sb.append("      \"windowLabel\": \"").append(escape(t.getWindowLabel())).append("\",\n");
+            sb.append("      \"qualityScore\": ").append(format(t.getQualityScore())).append(",\n");
             sb.append("      \"entryDate\": \"").append(t.getEntryDate()).append("\",\n");
             sb.append("      \"exitDate\": \"").append(t.getExitDate()).append("\",\n");
             sb.append("      \"entryPrice\": ").append(format(t.getEntryPrice())).append(",\n");
@@ -165,16 +177,19 @@ public final class ResultExporter {
             sb.append("      \"shares\": ").append(t.getShares()).append(",\n");
             sb.append("      \"rMultiple\": ").append(format(t.getRMultiple())).append(",\n");
             sb.append("      \"pnl\": ").append(format(t.getPnl())).append(",\n");
+            sb.append("      \"holdBars\": ").append(t.getHoldBars()).append(",\n");
+            sb.append("      \"mae\": ").append(format(t.getMae())).append(",\n");
+            sb.append("      \"mfe\": ").append(format(t.getMfe())).append(",\n");
+            sb.append("      \"hitT1\": ").append(t.isHitT1()).append(",\n");
+            sb.append("      \"hitT2\": ").append(t.isHitT2()).append(",\n");
+            sb.append("      \"hitT3\": ").append(t.isHitT3()).append(",\n");
             sb.append("      \"exitReason\": \"").append(escape(t.getExitReason())).append("\"\n");
             sb.append("    }");
-            if (i < trades.size() - 1) {
-                sb.append(",");
-            }
+            if (i < trades.size() - 1) sb.append(",");
             sb.append("\n");
         }
 
-        sb.append("  ]\n");
-        sb.append("}\n");
+        sb.append("  ]\n}\n");
         writeLines(path, List.of(sb.toString()));
     }
 
