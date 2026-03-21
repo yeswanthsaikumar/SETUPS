@@ -27,7 +27,7 @@ Python orchestration
       -> apps/python/cli/run_full_us_scan.py (parallel batch runner)
           -> java -cp src Main ...
   -> output/* (CSV, JSON, HTML, summaries)
-  -> run_backtest.py --matrix-all (US/India x daily/weekly batch backtest)
+  -> apps/python/cli/run_backtest.py --matrix-all (US/India x daily/weekly batch backtest)
 ```
 
 ### Core responsibilities
@@ -43,7 +43,11 @@ Python orchestration
 
 ## 3) Setup Quality Rules and Signal Logic
 
-This section is the implementation-level source of truth for how the system decides whether a setup is high quality enough to become a scan hit, continuation candidate, or watchlist candidate.
+This section is the implementation-level source of truth for how the system decides whether a setup is good enough to become:
+
+- a confirmed breakout hit,
+- a `NEAR_BREAKOUT` continuation candidate, or
+- a watchlist candidate.
 
 Primary code references:
 
@@ -54,25 +58,24 @@ Primary code references:
 - `src/AppConfig.java`
 - `src/Indicators.java`
 
-The current engine is deterministic and formula-based. It does not use any machine-learning model in the live setup path.
+The engine is deterministic and formula-based. No machine-learning model is used in the live setup-selection path.
 
 ### 3.1 Evaluation pipeline
 
 For each symbol/timeframe combination:
 
-1. Load candles.
+1. Load candles from the market data provider.
 2. Build a candle slice up to the evaluation bar.
 3. Run `VcpDetector.detect(...)` to find the best valid setup across all configured windows.
-4. Reject if no setup is returned or if `qualityScore < minQualityScore`.
+4. Reject if no setup is found or if `qualityScore < minQualityScore`.
 5. Run `BreakoutEvaluator.isBullishBreakout(...)`.
 6. If breakout is false, run `BreakoutEvaluator.isNearBreakoutContinuation(...)`.
 7. Reject if neither breakout nor continuation passes.
 8. Build a trade plan with `TradePlanner.buildPlan(...)`.
 9. Reject if the risk math is invalid.
-10. Emit one of:
-   - `BREAKOUT`
-   - `NEAR_BREAKOUT`
-   - watchlist result (separate mode only)
+10. Emit a `BREAKOUT` or `NEAR_BREAKOUT` signal.
+
+Watchlist mode uses the same setup detector and quality-score filter, but applies a separate near-pivot rule instead of breakout confirmation.
 
 ### 3.2 Indicator formulas used by the detector
 
@@ -102,7 +105,7 @@ ATR = arithmetic average of TR values over the period
 minimumBars = min(consolidationWindows) + 2
 ```
 
-The detector rejects the symbol if the available candle count is below that requirement.
+The detector rejects the symbol if the available candle count is below this requirement.
 
 #### Minimum price
 
@@ -202,7 +205,7 @@ waveVolume   = averageVolume(wave)
 
 ### 3.7 Contraction formulas
 
-The system compares the first wave against the last wave.
+The detector compares the first wave against the last wave.
 
 #### Range contraction
 
