@@ -21,7 +21,16 @@
     "sl": "824.86",
     "T1": "1486.25",
     "T2": "1816.94",
-    "T3": "2147.64"
+    "T3": "2147.64",
+    "avgVol20": 361241.5,
+    "avgDollarVol20": 385654267.77,
+    "regimeScore": 17.09,
+    "regimeState": "UNFAVORABLE",
+    "rs3m": 36.99,
+    "rs6m": 58.12,
+    "rs12m": 0.0,
+    "rsScore": 48.9,
+    "rankingScore": 122.61
   },
   {
     "symbol": "WHEELS.NS",
@@ -45,7 +54,16 @@
     "sl": "757.20",
     "T1": "1297.20",
     "T2": "1567.21",
-    "T3": "1837.21"
+    "T3": "1837.21",
+    "avgVol20": 78516.6,
+    "avgDollarVol20": 74460393.37,
+    "regimeScore": 17.09,
+    "regimeState": "UNFAVORABLE",
+    "rs3m": 23.26,
+    "rs6m": 26.48,
+    "rs12m": 0.0,
+    "rsScore": 32.54,
+    "rankingScore": 100.39
   },
   {
     "symbol": "CCL.NS",
@@ -69,6 +87,15 @@
     "sl": "522.38",
     "T1": "1652.82",
     "T2": "2218.05",
-    "T3": "2783.27"
+    "T3": "2783.27",
+    "avgVol20": 456096.8,
+    "avgDollarVol20": 477539463.28,
+    "regimeScore": 17.09,
+    "regimeState": "UNFAVORABLE",
+    "rs3m": 9.83,
+    "rs6m": 20.06,
+    "rs12m": 0.0,
+    "rsScore": 23.9,
+    "rankingScore": 67.57
   }
 ]

@@ -21,6 +21,15 @@
     "sl": "522.38",
     "T1": "1652.82",
     "T2": "2218.05",
-    "T3": "2783.27"
+    "T3": "2783.27",
+    "avgVol20": 456096.8,
+    "avgDollarVol20": 477539463.28,
+    "regimeScore": 17.09,
+    "regimeState": "UNFAVORABLE",
+    "rs3m": 9.83,
+    "rs6m": 20.06,
+    "rs12m": 0.0,
+    "rsScore": 23.9,
+    "rankingScore": 67.57
   }
 ]

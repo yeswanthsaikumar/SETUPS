@@ -890,6 +890,26 @@ def save_html(rows: list[dict], path: Path, meta: dict):
     avg_rr = sum(risk_rewards) / len(risk_rewards) if risk_rewards else 0
     setup_summary = " | ".join(f"{k}: {v}" for k, v in sorted(setup_counts.items())) or "No hits"
 
+    list_type_counts: dict[str, int] = {}
+    dist_values = []
+    for r in rows:
+        lt = str(r.get("listType", "BREAKOUT")).upper()
+        list_type_counts[lt] = list_type_counts.get(lt, 0) + 1
+        try:
+            dist = float(r.get("dist%", 0))
+            dist_values.append(dist)
+        except (ValueError, TypeError):
+            pass
+
+    top_score = max(scores) if scores else 0
+    avg_dist = sum(dist_values) / len(dist_values) if dist_values else 0
+    dominant_list_type = max(list_type_counts, key=list_type_counts.get) if list_type_counts else "BREAKOUT"
+    page_title = (
+        "📌 Watchlist Opportunities"
+        if dominant_list_type == "WATCHLIST"
+        else ("💼 Open Trades Monitor" if dominant_list_type == "OPEN_TRADE" else "🚀 Breakout Opportunities")
+    )
+
     def build_scan_reason(r: dict) -> str:
         """Generate a hover tooltip describing why this setup was flagged as a breakout."""
         setup = (r.get("setup") or r.get("setupType") or "?").upper()
@@ -936,14 +956,19 @@ def save_html(rows: list[dict], path: Path, meta: dict):
         price_link, fund_link = chart_links(r.get("symbol", ""))
         rating_chip = rating_badge(rating_val)
         reason_tooltip = build_scan_reason(r)
+        list_type_raw = str(r.get('listType', 'BREAKOUT')).upper()
+        list_type_css = f"list-badge list-{list_type_raw.lower()}"
+        list_type_chip = f"<span class='{list_type_css}'>{html.escape(list_type_raw)}</span>"
+        score_chip = f"<span class='score-chip'>{html.escape(str(r.get('score','')))}</span>"
 
         rows_html += (
             f"<tr data-symbol='{html.escape(r.get('symbol', ''))}' "
             f"data-setup-type='{setup_type}' "
             f"data-rating='{rating_val}' "
+            f"data-list-type='{list_type_raw}' "
             f"data-score='{score_val}'>"
             f"<td><b>{symbol}</b></td>"
-            f"<td>{html.escape(str(r.get('listType','BREAKOUT')))}</td>"
+            f"<td>{list_type_chip}</td>"
             f"<td>{html.escape(setup_type)}</td>"
             f"<td>{html.escape(str(r.get('window','')))}</td>"
             f"<td>{html.escape(str(r.get('height%','')))}</td>"
@@ -955,7 +980,7 @@ def save_html(rows: list[dict], path: Path, meta: dict):
             f"<td>{html.escape(str(r.get('close','')))}</td>"
             f"<td>{html.escape(str(r.get('pivot','')))}</td>"
             f"<td>{html.escape(str(r.get('entry','')))}</td>"
-            f"<td>{html.escape(str(r.get('score','')))}</td>"
+            f"<td>{score_chip}</td>"
             f"<td>{html.escape(str(r.get('range%','')))}</td>"
             f"<td>{html.escape(str(r.get('vol%','')))}</td>"
             f"<td>{html.escape(str(r.get('rexp','')))}</td>"
@@ -988,20 +1013,34 @@ def save_html(rows: list[dict], path: Path, meta: dict):
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Breakout Scan — {now_str}</title>
+  <title>{page_title} — {now_str}</title>
   <style>
     * {{ box-sizing: border-box; }}
-    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #0d1117; color: #c9d1d9; margin: 24px; }}
-    h1   {{ color: #58a6ff; margin-top: 0; }}
+    body {{ font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: radial-gradient(1200px 500px at 10% -5%, #1a2333 0%, #0d1117 45%, #0b1016 100%);
+            color: #c9d1d9; margin: 24px; }}
+    h1   {{ color: #9ecbff; margin-top: 0; letter-spacing: .2px; }}
     h2   {{ color: #79c0ff; font-size: 1.1em; margin-top: 24px; margin-bottom: 12px; }}
     .meta{{ color: #8b949e; font-size: 0.9em; margin-bottom: 12px; }}
-    .summary {{ color: #79c0ff; margin: 8px 0 16px 0; font-size: 0.92em; }}
+    .summary {{ color: #9ecbff; margin: 8px 0 16px 0; font-size: 0.92em; }}
+
+    .hero {{
+      background: linear-gradient(135deg, #111827 0%, #1b263b 100%);
+      border: 1px solid #273244;
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    }}
+    .hero-top {{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }}
+    .pill-wrap {{ display:flex; gap:8px; flex-wrap:wrap; }}
+    .pill {{ border:1px solid #30363d; color:#9ecbff; background:#0f1622; border-radius:999px; padding:4px 10px; font-size:.78em; }}
 
     /* Controls */
     .controls {{
       display: flex; gap: 16px; align-items: center; margin-bottom: 20px;
-      flex-wrap: wrap; padding: 12px; background: #161b22; border-radius: 8px;
+      flex-wrap: wrap; padding: 12px; background: rgba(22,27,34,.92); border-radius: 10px;
+      border: 1px solid #273244; position: sticky; top: 10px; z-index: 20; backdrop-filter: blur(4px);
     }}
     .control-group {{ display: flex; gap: 8px; align-items: center; }}
     .control-label {{ color: #8b949e; font-size: 0.9em; font-weight: 600; }}
@@ -1031,11 +1070,20 @@ def save_html(rows: list[dict], path: Path, meta: dict):
       transition: all 0.2s;
     }}
     .export-btn:hover {{ background: #2ea04333; }}
+    .reset-btn {{
+      padding: 6px 12px; border: 1px solid #30363d; border-radius: 6px;
+      background: transparent; color: #f2cc60; cursor: pointer; font-size: 0.85em;
+    }}
+    .reset-btn:hover {{ background: #f2cc6022; }}
+    .select {{
+      padding: 6px 8px; background: #0d1117; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px;
+      font-size: 0.85em;
+    }}
 
     /* Analytics */
     .analytics {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
                    gap: 16px; margin-bottom: 24px; }}
-    .stat-card {{ background: #161b22; padding: 12px; border-radius: 8px; border: 1px solid #21262d; }}
+    .stat-card {{ background: linear-gradient(180deg, #161b22 0%, #121820 100%); padding: 12px; border-radius: 10px; border: 1px solid #273244; }}
     .stat-label {{ color: #8b949e; font-size: 0.85em; margin-bottom: 4px; }}
     .stat-value {{ color: #58a6ff; font-size: 1.4em; font-weight: 700; }}
     .stat-secondary {{ color: #79c0ff; font-size: 0.9em; margin-top: 4px; }}
@@ -1056,9 +1104,14 @@ def save_html(rows: list[dict], path: Path, meta: dict):
     .pie-count {{ color: #7ee787; font-weight: 600; }}
 
     /* Table */
-    .table-wrap {{ overflow-x: auto; border: 1px solid #21262d; border-radius: 8px; }}
+    .table-wrap {{ overflow-x: auto; border: 1px solid #273244; border-radius: 10px; box-shadow: 0 8px 18px rgba(0,0,0,.2); position: relative; -webkit-overflow-scrolling: touch; }}
+    .table-wrap::before, .table-wrap::after {{
+      content: ""; position: sticky; top: 0; width: 14px; height: 100%; display: block; pointer-events: none; z-index: 4;
+    }}
+    .table-wrap::before {{ left: 0; float: left; background: linear-gradient(to right, rgba(13,17,23,.95), rgba(13,17,23,0)); }}
+    .table-wrap::after  {{ right: 0; float: right; background: linear-gradient(to left, rgba(13,17,23,.95), rgba(13,17,23,0)); }}
     table{{ border-collapse: collapse; width: 100%; font-size: 0.88em; min-width: 2250px; }}
-    th   {{ background: #161b22; color: #58a6ff; padding: 8px 12px;
+    th   {{ background: #161b22; color: #9ecbff; padding: 9px 12px;
             position: sticky; top: 0; text-align: right; cursor: pointer; user-select: none;
             transition: background-color 0.2s, opacity 0.2s; }}
     th:first-child {{ text-align: left; }}
@@ -1066,9 +1119,10 @@ def save_html(rows: list[dict], path: Path, meta: dict):
     th::after {{ content: ' ↕'; font-size: 0.7em; opacity: 0; }}
     th.sort-asc::after {{ content: ' ↑'; opacity: 1; }}
     th.sort-desc::after {{ content: ' ↓'; opacity: 1; }}
-    td   {{ padding: 6px 12px; border-bottom: 1px solid #21262d; text-align: right; }}
+    td   {{ padding: 9px 12px; border-bottom: 1px solid #1f2937; text-align: right; }}
     td:first-child {{ text-align: left; font-weight: 600; color: #7ee787; }}
-    tr:hover td    {{ background: #161b22; }}
+    tbody tr:nth-child(even) td {{ background: #0f1520; }}
+    tr:hover td    {{ background: #182132 !important; }}
     tr.hidden {{ display: none; }}
 
     .links {{ text-align: left; white-space: nowrap; }}
@@ -1093,15 +1147,85 @@ def save_html(rows: list[dict], path: Path, meta: dict):
     .row-count {{ color: #8b949e; font-size: 0.9em; margin-top: 8px; }}
     .reason-icon {{ cursor: help; font-size: 1.1em; }}
     .reason-icon:hover {{ opacity: .7; }}
+
+    .list-badge {{ border:1px solid #344254; border-radius:999px; padding:2px 8px; font-size:.76em; color:#9ecbff; }}
+    .list-watchlist {{ color:#f2cc60; border-color:#6b5b2a; background:#f2cc6018; }}
+    .list-open_trade {{ color:#7ee787; border-color:#285b35; background:#7ee78718; }}
+    .score-chip {{ border:1px solid #2f445a; border-radius:8px; padding:2px 7px; color:#a5d6ff; background:#0f1b2a; font-variant-numeric: tabular-nums; }}
+    .empty-state {{ display:none; margin-top:12px; border:1px dashed #35506f; border-radius:10px; padding:12px; color:#9ecbff; background:#0f1a28; }}
+    .mobile-note {{ display:none; margin-top:8px; color:#8fb9e7; font-size:.85em; }}
+
+    /* Keep key identity columns visible while horizontally scrolling */
+    #dataTable th:nth-child(1), #dataTable td:nth-child(1) {{
+      position: sticky; left: 0; z-index: 3; background: #111926;
+    }}
+    #dataTable th:nth-child(2), #dataTable td:nth-child(2) {{
+      position: sticky; left: 124px; z-index: 3; background: #111926;
+    }}
+    #dataTable thead th:nth-child(1), #dataTable thead th:nth-child(2) {{ z-index: 6; }}
+
+    body.compact td {{ padding: 5px 10px; }}
+    body.compact th {{ padding: 6px 10px; }}
+
+    @media (max-width: 1100px) {{
+      .mobile-note {{ display:block; }}
+      .controls {{ gap: 10px; }}
+      .control-group {{ flex-wrap: wrap; }}
+      .search-box {{ flex: 1 1 180px; }}
+
+      /* Hide advanced columns by default on tablet/mobile */
+      #dataTable th:nth-child(5), #dataTable td:nth-child(5),
+      #dataTable th:nth-child(6), #dataTable td:nth-child(6),
+      #dataTable th:nth-child(7), #dataTable td:nth-child(7),
+      #dataTable th:nth-child(8), #dataTable td:nth-child(8),
+      #dataTable th:nth-child(15), #dataTable td:nth-child(15),
+      #dataTable th:nth-child(16), #dataTable td:nth-child(16),
+      #dataTable th:nth-child(17), #dataTable td:nth-child(17),
+      #dataTable th:nth-child(18), #dataTable td:nth-child(18),
+      #dataTable th:nth-child(20), #dataTable td:nth-child(20),
+      #dataTable th:nth-child(21), #dataTable td:nth-child(21),
+      #dataTable th:nth-child(22), #dataTable td:nth-child(22),
+      #dataTable th:nth-child(24), #dataTable td:nth-child(24) {{ display: none; }}
+
+      body.show-advanced #dataTable th:nth-child(5), body.show-advanced #dataTable td:nth-child(5),
+      body.show-advanced #dataTable th:nth-child(6), body.show-advanced #dataTable td:nth-child(6),
+      body.show-advanced #dataTable th:nth-child(7), body.show-advanced #dataTable td:nth-child(7),
+      body.show-advanced #dataTable th:nth-child(8), body.show-advanced #dataTable td:nth-child(8),
+      body.show-advanced #dataTable th:nth-child(15), body.show-advanced #dataTable td:nth-child(15),
+      body.show-advanced #dataTable th:nth-child(16), body.show-advanced #dataTable td:nth-child(16),
+      body.show-advanced #dataTable th:nth-child(17), body.show-advanced #dataTable td:nth-child(17),
+      body.show-advanced #dataTable th:nth-child(18), body.show-advanced #dataTable td:nth-child(18),
+      body.show-advanced #dataTable th:nth-child(20), body.show-advanced #dataTable td:nth-child(20),
+      body.show-advanced #dataTable th:nth-child(21), body.show-advanced #dataTable td:nth-child(21),
+      body.show-advanced #dataTable th:nth-child(22), body.show-advanced #dataTable td:nth-child(22),
+      body.show-advanced #dataTable th:nth-child(24), body.show-advanced #dataTable td:nth-child(24) {{ display: table-cell; }}
+    }}
+
+    @media (max-width: 900px) {{
+      body {{ margin: 12px; }}
+      .controls {{ position: static; }}
+      .chart-container {{ grid-template-columns: 1fr; }}
+      .analytics {{ grid-template-columns: repeat(2, minmax(120px,1fr)); }}
+      #dataTable th:nth-child(2), #dataTable td:nth-child(2) {{ left: 108px; }}
+      .row-count {{ font-size: .82em; }}
+      .link-btn {{ padding: 6px 8px; }}
+    }}
   </style>
 </head>
 <body>
-  <h1>🚀 VCP + Range Expansion Breakout Scan Results</h1>
+  <div class="hero">
+    <div class="hero-top">
+      <h1>{page_title}</h1>
+      <div class="pill-wrap">
+        <span class="pill">Finished: {now_str}</span>
+        <span class="pill">Scanned: {total}</span>
+        <span class="pill">Elapsed: {elapsed}</span>
+        <span class="pill"><b style="color:#7ee787">Hits: {len(rows)}</b></span>
+      </div>
+    </div>
+  </div>
   <div class="meta">
-    Finished: {now_str} &nbsp;|&nbsp;
-    Symbols scanned: {total} &nbsp;|&nbsp;
-    Elapsed: {elapsed} &nbsp;|&nbsp;
-    <b style="color:#7ee787">{len(rows)} hits</b>
+    Report mode is inferred from row list type and optimized for fast shortlist decisions.
   </div>
   <div class="summary">Shortlist by setup: {html.escape(setup_summary)}</div>
   <div class="summary" style="margin-top:6px">
@@ -1128,7 +1252,30 @@ def save_html(rows: list[dict], path: Path, meta: dict):
       <button class="filter-btn" data-setup="VCP">VCP</button>
       <button class="filter-btn" data-setup="RANGE_EXPANSION">Range Exp</button>
     </div>
+    <div class="control-group">
+      <label class="control-label">List:</label>
+      <select id="listTypeFilter" class="select">
+        <option value="all">All</option>
+        <option value="BREAKOUT">Breakout</option>
+        <option value="WATCHLIST">Watchlist</option>
+        <option value="OPEN_TRADE">Open Trade</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label class="control-label">Rating:</label>
+      <select id="ratingFilter" class="select">
+        <option value="all">All</option>
+        <option value="A+">A+</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
+      </select>
+    </div>
     <button class="export-btn" id="exportBtn">📥 Export Filtered</button>
+    <button class="reset-btn" id="resetFiltersBtn">↺ Reset Filters</button>
+    <button class="reset-btn" id="compactToggleBtn" title="Toggle compact row density">▦ Compact</button>
+    <button class="reset-btn" id="advancedColsToggleBtn" title="Show/hide advanced columns on small screens">☰ Columns</button>
   </div>
 
   <!-- Analytics -->
@@ -1144,6 +1291,20 @@ def save_html(rows: list[dict], path: Path, meta: dict):
     <div class="stat-card">
       <div class="stat-label">Avg Risk/Reward</div>
       <div class="stat-value">{avg_rr:.2f}:1</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Top Quality Score</div>
+      <div class="stat-value">{top_score:.1f}</div>
+      <div class="stat-secondary">Best candidate in current run</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Pivot Distance</div>
+      <div class="stat-value">{avg_dist:.2f}%</div>
+      <div class="stat-secondary">Lower is cleaner for entries</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Dominant List Type</div>
+      <div class="stat-value">{dominant_list_type}</div>
     </div>
   </div>
 
@@ -1171,12 +1332,14 @@ def save_html(rows: list[dict], path: Path, meta: dict):
   </table>
   </div>
   <div class="row-count">Showing <span id="visibleCount">{len(rows)}</span> of <span id="totalCount">{len(rows)}</span> rows</div>
+  <div class="mobile-note" id="mobileHint">Tip: swipe table horizontally. Use <b>☰ Columns</b> to show advanced fields on tablet/mobile.</div>
+  <div id="emptyState" class="empty-state">No rows match current filters. Try lowering Min Score or resetting filters.</div>
 
   <script>
     // Data for filtering and sorting
     const originalRows = Array.from(document.querySelectorAll('#tableBody tr'));
     let currentSort = {{ column: null, direction: 'asc' }};
-    let currentFilters = {{ search: '', score: 0, setup: 'all' }};
+    let currentFilters = {{ search: '', score: 0, setup: 'all', rating: 'all', listType: 'all' }};
 
     // Search functionality
     document.getElementById('searchInput').addEventListener('input', (e) => {{
@@ -1202,6 +1365,58 @@ def save_html(rows: list[dict], path: Path, meta: dict):
         currentFilters.setup = btn.dataset.setup;
         applyFilters();
       }});
+    }});
+
+    // Rating filter
+    document.getElementById('ratingFilter').addEventListener('change', (e) => {{
+      currentFilters.rating = e.target.value;
+      applyFilters();
+    }});
+
+    // List type filter
+    document.getElementById('listTypeFilter').addEventListener('change', (e) => {{
+      currentFilters.listType = e.target.value;
+      applyFilters();
+    }});
+
+    // Reset filters
+    document.getElementById('resetFiltersBtn').addEventListener('click', () => {{
+      currentFilters = {{ search: '', score: 0, setup: 'all', rating: 'all', listType: 'all' }};
+      document.getElementById('searchInput').value = '';
+      scoreSlider.value = 0;
+      scoreDisplay.textContent = '0+';
+      document.getElementById('ratingFilter').value = 'all';
+      document.getElementById('listTypeFilter').value = 'all';
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.filter-btn[data-setup="all"]').classList.add('active');
+      applyFilters();
+    }});
+
+    // Compact density mode (persisted)
+    const compactBtn = document.getElementById('compactToggleBtn');
+    const advancedColsBtn = document.getElementById('advancedColsToggleBtn');
+    const compactStored = localStorage.getItem('scanUiCompact') === '1';
+    const advancedStored = localStorage.getItem('scanUiShowAdvanced') === '1';
+
+    function syncUiToggleButtons() {{
+      compactBtn.textContent = document.body.classList.contains('compact') ? '▦ Comfortable' : '▦ Compact';
+      advancedColsBtn.textContent = document.body.classList.contains('show-advanced') ? '☰ Basic' : '☰ Columns';
+    }}
+
+    if (compactStored) document.body.classList.add('compact');
+    if (advancedStored) document.body.classList.add('show-advanced');
+    syncUiToggleButtons();
+
+    compactBtn.addEventListener('click', () => {{
+      document.body.classList.toggle('compact');
+      localStorage.setItem('scanUiCompact', document.body.classList.contains('compact') ? '1' : '0');
+      syncUiToggleButtons();
+    }});
+
+    advancedColsBtn.addEventListener('click', () => {{
+      document.body.classList.toggle('show-advanced');
+      localStorage.setItem('scanUiShowAdvanced', document.body.classList.contains('show-advanced') ? '1' : '0');
+      syncUiToggleButtons();
     }});
 
     // Table header sorting - WITH CURSOR FEEDBACK
@@ -1237,6 +1452,8 @@ def save_html(rows: list[dict], path: Path, meta: dict):
       originalRows.forEach(row => {{
         const symbol = row.dataset.symbol.toLowerCase();
         const setup = row.dataset['setupType'];
+        const rating = row.dataset.rating;
+        const listType = row.dataset['listType'];
         const score = parseFloat(row.dataset.score);
 
         const matchesSearch = !currentFilters.search ||
@@ -1245,8 +1462,10 @@ def save_html(rows: list[dict], path: Path, meta: dict):
 
         const matchesScore = score >= currentFilters.score;
         const matchesSetup = currentFilters.setup === 'all' || setup === currentFilters.setup;
+        const matchesRating = currentFilters.rating === 'all' || rating === currentFilters.rating;
+        const matchesListType = currentFilters.listType === 'all' || listType === currentFilters.listType;
 
-        if (matchesSearch && matchesScore && matchesSetup) {{
+        if (matchesSearch && matchesScore && matchesSetup && matchesRating && matchesListType) {{
           row.classList.remove('hidden');
           visible++;
         }} else {{
@@ -1254,6 +1473,7 @@ def save_html(rows: list[dict], path: Path, meta: dict):
         }}
       }});
       updateRowCount(visible, originalRows.length);
+      document.getElementById('emptyState').style.display = visible === 0 ? 'block' : 'none';
     }}
 
     function sortTable(colIdx) {{
@@ -1300,7 +1520,7 @@ def save_html(rows: list[dict], path: Path, meta: dict):
 
       let csv = headers.join(',') + '\\n';
       rows.forEach(row => {{
-        const cells = Array.from(row.cells).slice(0, -2).map(cell => {{
+        const cells = Array.from(row.cells).slice(0, 22).map(cell => {{
           let text = cell.textContent.trim();
           if (text.includes(',') || text.includes('"')) {{
             text = '"' + text.replace(/"/g, '""') + '"';
