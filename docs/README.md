@@ -33,6 +33,12 @@ New: each scan now also builds a **watchlist of potential breakouts** near pivot
 - Detects both setup families:
   - `VCP` breakout
   - `RANGE_EXPANSION` breakout
+- Applies top-5 production overlays:
+  - symbol-level rejection diagnostics
+  - liquidity filters (min average volume / dollar volume)
+  - market regime filter (`off|soft|hard`)
+  - relative-strength ranking overlays (3M/6M/12M)
+  - portfolio heat control with shortlist output
 - Evaluates multiple window variations per symbol:
   - Daily: short-term + quarter-style windows (`Q1/Q2/Q3/Q4`)
   - Weekly: few-weeks + quarter-style windows (`Q1/Q2/Q3/Q4`)
@@ -160,6 +166,59 @@ Per group latest outputs:
 - `output/vcp_hits_india_weekly_LATEST.csv|json|html`
 - `output/open_trades_<market>_<timeframe>[_<setups>]_LATEST.csv|json|html`
 - `output/watchlist_<market>_<timeframe>[_<setups>]_LATEST.csv|json|html`
+- `output/portfolio_shortlist_<market>_<timeframe>[_<setups>]_LATEST.csv|json|html`
+- `output/rejections_<market>_<timeframe>[_<setups>]_LATEST.csv|json`
+- `output/scan_manifest_<market>_<timeframe>[_<setups>]_LATEST.json`
+- `output/scan_bundle_<market>_<timeframe>[_<setups>]_LATEST.json`
+
+## Top-5 Overlay Controls
+
+The top-5 upgrade is implemented in `apps/python/cli/run_full_us_scan.py` and is automatically used by `apps/python/cli/run_vcp_system.py`.
+
+Key flags:
+
+- Rejection diagnostics: always on (writes `rejections_*` outputs)
+- Liquidity filters: `--min-price-floor`, `--min-avg-volume`, `--min-avg-dollar-volume`, `--liquidity-lookback`
+- Regime filter: `--regime-mode off|soft|hard`, `--regime-sample`, `--regime-min-breadth50`, `--regime-min-breadth200`
+- Relative strength ranking: `--rs-weight` (uses 3M/6M/12M RS overlays)
+- Portfolio heat control: `--max-portfolio-heat-r`, `--account-size`, `--base-risk-pct`
+
+Operational artifacts generated per scan run:
+
+- Structured exports:
+  - full CSV/JSON/HTML for hits, watchlist, open trades, portfolio shortlist, rejections
+- Manifests:
+  - run-level scan manifest (`scan_manifest_*.json`)
+  - structured bundle summary (`scan_bundle_*.json`)
+- Data validation:
+  - invalid/partial rows are rejected with validation reason codes in `rejections_*`
+- Better logging:
+  - human-readable log: `scan.log`
+  - structured event stream: `events.jsonl`
+  - per-batch progress log: `batch_log.txt`
+
+Default behavior:
+
+- Regime mode defaults to `soft` (penalty mode, not hard block)
+- Liquidity minimums default to `0` (except min price floor)
+- Portfolio shortlist is always produced and capped by `--max-portfolio-heat-r` (default `6`)
+
+Recommended stricter profile (manual scan):
+
+```bash
+cd /Users/yeshwantha/IdeaProjects/SETUPS
+python3 apps/python/cli/run_full_us_scan.py \
+  --symbols data/universes/us_stock_tickers.csv \
+  --market-label us \
+  --timeframe daily \
+  --setups both \
+  --lookback 252 \
+  --min-avg-volume 200000 \
+  --min-avg-dollar-volume 5000000 \
+  --regime-mode soft \
+  --rs-weight 0.35 \
+  --max-portfolio-heat-r 6
+```
 
 When `--setups both`, split setup lists are also written:
 
@@ -198,6 +257,8 @@ Python batch run for one universe:
 cd /Users/yeshwantha/IdeaProjects/SETUPS
 python3 apps/python/cli/run_full_us_scan.py --symbols data/universes/us_stock_tickers.csv --market-label us --timeframe daily --setups both --lookback 252
 python3 apps/python/cli/run_full_us_scan.py --symbols data/universes/indian_stock_tickers.csv --market-label india --timeframe weekly --setups range_expansion --lookback 104
+# Example with advanced overlays enabled
+python3 apps/python/cli/run_full_us_scan.py --symbols data/universes/us_stock_tickers.csv --market-label us --timeframe daily --setups both --lookback 252 --min-avg-volume 200000 --min-avg-dollar-volume 5000000 --regime-mode soft --max-portfolio-heat-r 6
 ```
 
 ## Key Files
@@ -260,6 +321,18 @@ python3 apps/python/cli/run_vcp_system.py --markets india --timeframes daily,wee
 
 Replay every historical bar over the last 2 years and measure how your breakout signals performed.
 
+Backtest now supports advanced robustness tooling:
+
+- realistic execution costs (commission/slippage/fixed cost)
+- walk-forward fold analysis
+- Monte Carlo equity robustness simulation
+- parameter stability maps (lookback x hold-bars grid)
+- upgraded exit model for simulation quality:
+  - partial profit-taking (25% at T1, 25% at T2, trail remaining)
+  - ATR trailing stop once breakout confirms
+  - swing-low trailing stop (structure-aware)
+  - setup/timeframe-aware time-stop behavior (VCP vs range expansion, daily vs weekly)
+
 ### Quick start
 ```bash
 cd /Users/yeshwantha/IdeaProjects/SETUPS
@@ -267,6 +340,10 @@ python3 apps/python/cli/run_backtest.py                          # India daily, 
 python3 apps/python/cli/run_backtest.py --timeframe weekly       # India weekly, 104 bars, 8-bar hold
 python3 apps/python/cli/run_backtest.py --market us              # US daily
 python3 apps/python/cli/run_backtest.py --matrix-all             # US+India on Daily+Weekly, single command
+# Realistic cost + robustness example
+python3 apps/python/cli/run_backtest.py --market india --timeframe daily --setups both --commission-bps 5 --slippage-bps 5 --fixed-cost 10 --walk-forward-folds 6 --monte-carlo-iterations 2000
+# Parameter stability map example
+python3 apps/python/cli/run_backtest.py --market india --timeframe daily --stability-lookbacks 504,728,900 --stability-hold-bars 12,16,20,24
 ```
 
 ### What it measures
@@ -294,6 +371,9 @@ The same **💡 Trade Reasoning** hover column is also present in the daily scan
 - `output/backtest_us_daily_LATEST.html` and `output/backtest_us_weekly_LATEST.html`
 - `output/backtest_india_weekly_LATEST.html`
 - `output/backtest_matrix_LATEST.md|html|json` — combined 4-run summary index
+- `output/backtest_<market>_<timeframe>_walk_forward_LATEST.json` — fold-by-fold forward stats
+- `output/backtest_<market>_<timeframe>_monte_carlo_LATEST.json` — Monte Carlo percentile and risk stats
+- `output/backtest_stability_<market>_<timeframe>_LATEST.md|html|json` — parameter stability map
 
 ### UI Result Columns (Updated Naming)
 - Scan report now uses descriptive labels like `Base Height %`, `Contraction Depth %`, `Base Length`, `Contraction Pairs`, `Pivot Distance %`, and `Range Expansion x`.

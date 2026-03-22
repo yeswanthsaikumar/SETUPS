@@ -9,6 +9,8 @@ public class ScannerEngine {
     private final TradePlanner tradePlanner;
     private final AppConfig config;
     private final String setupFilter;
+    private final MultiTimeframeAlignmentAnalyzer alignmentAnalyzer;
+    private final List<RejectionDiagnostic> lastRejections;
 
     public ScannerEngine(
             MarketDataProvider marketDataProvider,
@@ -24,6 +26,14 @@ public class ScannerEngine {
         this.tradePlanner = tradePlanner;
         this.config = config;
         this.setupFilter = setupFilter == null ? "both" : setupFilter.toLowerCase();
+        this.alignmentAnalyzer = new MultiTimeframeAlignmentAnalyzer(
+                marketDataProvider, vcpDetector, breakoutEvaluator, config
+        );
+        this.lastRejections = new ArrayList<>();
+    }
+
+    public List<RejectionDiagnostic> getLastRejections() {
+        return new ArrayList<>(lastRejections);
     }
 
     public List<ScanResult> scan(List<String> symbols) {
@@ -36,6 +46,7 @@ public class ScannerEngine {
 
     public List<ScanResult> scan(List<String> symbols, int lookbackBars, String timeframe) {
         List<ScanResult> results = new ArrayList<>();
+        lastRejections.clear();
 
         for (String symbol : symbols) {
             try {
@@ -43,9 +54,21 @@ public class ScannerEngine {
                 ScanResult result = evaluateAtIndex(symbol, candles, candles.size() - 1);
                 if (result != null) {
                     results.add(result);
+                } else {
+                    RejectionDiagnostic rejection = diagnoseScanRejection(symbol, candles, candles.size() - 1, timeframe);
+                    if (rejection != null) {
+                        lastRejections.add(rejection);
+                    }
                 }
             } catch (RuntimeException ex) {
                 System.err.println("Skipping symbol due to data error: " + symbol + " | " + ex.getMessage());
+                lastRejections.add(new RejectionDiagnostic(
+                        symbol,
+                        "scan",
+                        timeframe,
+                        RejectionDiagnostic.Reason.DATA_ERROR,
+                        ex.getMessage()
+                ));
             }
         }
 
@@ -55,6 +78,7 @@ public class ScannerEngine {
 
     public List<WatchlistResult> scanWatchlist(List<String> symbols, int lookbackBars, String timeframe) {
         List<WatchlistResult> results = new ArrayList<>();
+        lastRejections.clear();
 
         for (String symbol : symbols) {
             try {
@@ -62,9 +86,21 @@ public class ScannerEngine {
                 WatchlistResult result = evaluateWatchlistAtIndex(symbol, candles, candles.size() - 1);
                 if (result != null) {
                     results.add(result);
+                } else {
+                    RejectionDiagnostic rejection = diagnoseWatchlistRejection(symbol, candles, candles.size() - 1, timeframe);
+                    if (rejection != null) {
+                        lastRejections.add(rejection);
+                    }
                 }
             } catch (RuntimeException ex) {
                 System.err.println("Skipping symbol due to data error: " + symbol + " | " + ex.getMessage());
+                lastRejections.add(new RejectionDiagnostic(
+                        symbol,
+                        "watchlist",
+                        timeframe,
+                        RejectionDiagnostic.Reason.DATA_ERROR,
+                        ex.getMessage()
+                ));
             }
         }
 
@@ -106,7 +142,24 @@ public class ScannerEngine {
         }
 
         String signalType = nearBreakout ? "NEAR_BREAKOUT" : "BREAKOUT";
-        return new ScanResult(symbol, setup, signalCandle, plan, signalType);
+        ScanResult result = new ScanResult(symbol, setup, signalCandle, plan, signalType);
+
+        // Apply multi-timeframe alignment analysis
+        // Only for daily scans; skip for weekly scans
+        if (!"weekly".equalsIgnoreCase(config.timeframe)) {
+            try {
+                MultiTimeframeAlignmentAnalyzer.MultiTimeframeContext alignment = 
+                        alignmentAnalyzer.analyzeAlignmentForDaily(symbol, setup, slice);
+                if (alignment.alignmentBonus > 0.0) {
+                    result.setAlignmentBonus(alignment.alignmentBonus, alignment.alignmentReason, true);
+                }
+            } catch (Exception ex) {
+                // Alignment analysis failed; continue without bonus
+                // This is safe—weekly data might be unavailable or have issues
+            }
+        }
+
+        return result;
     }
 
     public WatchlistResult evaluateWatchlistAtIndex(String symbol, List<Candle> candles, int endIndexInclusive) {
@@ -141,6 +194,140 @@ public class ScannerEngine {
             return null;
         }
 
-        return new WatchlistResult(symbol, setup, signalCandle, plan, distanceToPivotPct);
+        WatchlistResult result = new WatchlistResult(symbol, setup, signalCandle, plan, distanceToPivotPct);
+
+        // Apply multi-timeframe alignment analysis
+        // Only for daily scans; skip for weekly scans
+        if (!"weekly".equalsIgnoreCase(config.timeframe)) {
+            try {
+                MultiTimeframeAlignmentAnalyzer.MultiTimeframeContext alignment = 
+                        alignmentAnalyzer.analyzeAlignmentForWatchlist(symbol, setup, slice);
+                if (alignment.alignmentBonus > 0.0) {
+                    result.setAlignmentBonus(alignment.alignmentBonus, alignment.alignmentReason, true);
+                }
+            } catch (Exception ex) {
+                // Alignment analysis failed; continue without bonus
+                // This is safe—weekly data might be unavailable or have issues
+            }
+        }
+
+        return result;
+    }
+
+    private RejectionDiagnostic diagnoseScanRejection(String symbol, List<Candle> candles, int endIndexInclusive, String timeframe) {
+        if (candles == null || candles.isEmpty() || endIndexInclusive < 0 || endIndexInclusive >= candles.size()) {
+            return new RejectionDiagnostic(symbol, "scan", timeframe, RejectionDiagnostic.Reason.INSUFFICIENT_DATA, "No usable candles");
+        }
+
+        List<Candle> slice = new ArrayList<>(candles.subList(0, endIndexInclusive + 1));
+        RejectionDiagnostic preGate = diagnosePreSetupGate(symbol, "scan", timeframe, slice);
+        if (preGate != null) {
+            return preGate;
+        }
+
+        VcpSetup setup = vcpDetector.detect(slice, config, setupFilter);
+        if (setup == null) {
+            return new RejectionDiagnostic(symbol, "scan", timeframe, RejectionDiagnostic.Reason.LOW_QUALITY, "No valid setup detected");
+        }
+        if (setup.getQualityScore() < config.minQualityScore) {
+            return new RejectionDiagnostic(symbol, "scan", timeframe, RejectionDiagnostic.Reason.LOW_QUALITY,
+                    String.format("setupScore=%.2f < min=%.2f", setup.getQualityScore(), config.minQualityScore));
+        }
+
+        boolean breakout = breakoutEvaluator.isBullishBreakout(slice, setup, config);
+        boolean nearBreakout = !breakout && breakoutEvaluator.isNearBreakoutContinuation(slice, setup, config);
+        if (!breakout && !nearBreakout) {
+            RejectionDiagnostic.Reason reason = breakoutEvaluator.classifyBreakoutRejection(slice, setup, config);
+            return new RejectionDiagnostic(symbol, "scan", timeframe, reason, "Failed breakout/near-breakout confirmation");
+        }
+
+        Candle signalCandle = slice.get(slice.size() - 1);
+        TradePlan plan = tradePlanner.buildPlan(signalCandle.getClose(), setup, config);
+        if (plan == null) {
+            return new RejectionDiagnostic(symbol, "scan", timeframe, RejectionDiagnostic.Reason.LOW_QUALITY, "Trade plan could not be built");
+        }
+
+        return null;
+    }
+
+    private RejectionDiagnostic diagnoseWatchlistRejection(String symbol, List<Candle> candles, int endIndexInclusive, String timeframe) {
+        if (candles == null || candles.isEmpty() || endIndexInclusive < 0 || endIndexInclusive >= candles.size()) {
+            return new RejectionDiagnostic(symbol, "watchlist", timeframe, RejectionDiagnostic.Reason.INSUFFICIENT_DATA, "No usable candles");
+        }
+
+        List<Candle> slice = new ArrayList<>(candles.subList(0, endIndexInclusive + 1));
+        RejectionDiagnostic preGate = diagnosePreSetupGate(symbol, "watchlist", timeframe, slice);
+        if (preGate != null) {
+            return preGate;
+        }
+
+        VcpSetup setup = vcpDetector.detect(slice, config, setupFilter);
+        if (setup == null) {
+            return new RejectionDiagnostic(symbol, "watchlist", timeframe, RejectionDiagnostic.Reason.LOW_QUALITY, "No valid setup detected");
+        }
+        if (setup.getQualityScore() < config.minQualityScore) {
+            return new RejectionDiagnostic(symbol, "watchlist", timeframe, RejectionDiagnostic.Reason.LOW_QUALITY,
+                    String.format("setupScore=%.2f < min=%.2f", setup.getQualityScore(), config.minQualityScore));
+        }
+
+        if (breakoutEvaluator.isBullishBreakout(slice, setup, config)) {
+            return new RejectionDiagnostic(symbol, "watchlist", timeframe, RejectionDiagnostic.Reason.ALREADY_BROKEN_OUT,
+                    "Already in breakout state");
+        }
+
+        Candle signalCandle = slice.get(slice.size() - 1);
+        double pivot = setup.getPivotPrice();
+        if (pivot <= 0.0) {
+            return new RejectionDiagnostic(symbol, "watchlist", timeframe, RejectionDiagnostic.Reason.LOW_QUALITY, "Invalid pivot");
+        }
+
+        double distanceToPivotPct = (pivot - signalCandle.getClose()) / pivot;
+        if (distanceToPivotPct < 0.0 || distanceToPivotPct > config.watchlistMaxDistanceToPivotPct) {
+            return new RejectionDiagnostic(symbol, "watchlist", timeframe, RejectionDiagnostic.Reason.TOO_FAR_FROM_PIVOT,
+                    String.format("distanceToPivotPct=%.4f max=%.4f", distanceToPivotPct, config.watchlistMaxDistanceToPivotPct));
+        }
+
+        double plannedEntry = pivot * (1.0 + config.breakoutBufferPct);
+        TradePlan plan = tradePlanner.buildPlan(plannedEntry, setup, config);
+        if (plan == null) {
+            return new RejectionDiagnostic(symbol, "watchlist", timeframe, RejectionDiagnostic.Reason.LOW_QUALITY, "Trade plan could not be built");
+        }
+
+        return null;
+    }
+
+    private RejectionDiagnostic diagnosePreSetupGate(String symbol, String mode, String timeframe, List<Candle> slice) {
+        if (slice.size() < 3) {
+            return new RejectionDiagnostic(symbol, mode, timeframe, RejectionDiagnostic.Reason.INSUFFICIENT_DATA, "Too few candles");
+        }
+
+        double latestClose = slice.get(slice.size() - 1).getClose();
+        if (latestClose < config.minPrice) {
+            return new RejectionDiagnostic(symbol, mode, timeframe, RejectionDiagnostic.Reason.LOW_PRICE,
+                    String.format("close=%.2f minPrice=%.2f", latestClose, config.minPrice));
+        }
+
+        int highLookback = Math.min(slice.size(), config.annualHighLookbackBars);
+        double high52w = Indicators.highestHigh(slice, slice.size() - highLookback, slice.size() - 1);
+        if (high52w > 0) {
+            double distanceFromHigh = (high52w - latestClose) / high52w;
+            if (distanceFromHigh > config.maxDistanceFrom52WkHighPct) {
+                return new RejectionDiagnostic(symbol, mode, timeframe, RejectionDiagnostic.Reason.FAR_FROM_52W_HIGH,
+                        String.format("distance=%.4f max=%.4f", distanceFromHigh, config.maxDistanceFrom52WkHighPct));
+            }
+        }
+
+        if (config.requireAboveMA) {
+            int baseEndIdx = slice.size() - 2;
+            if (baseEndIdx >= 0) {
+                double ma = Indicators.movingAverage(slice, baseEndIdx, config.maPeriod);
+                if (ma > 0 && slice.get(baseEndIdx).getClose() < ma) {
+                    return new RejectionDiagnostic(symbol, mode, timeframe, RejectionDiagnostic.Reason.BELOW_MA,
+                            String.format("close=%.2f ma=%.2f", slice.get(baseEndIdx).getClose(), ma));
+                }
+            }
+        }
+
+        return null;
     }
 }

@@ -23,8 +23,10 @@ import argparse
 import csv
 import html
 import json
+import logging
 import os
 import re
+import statistics
 import subprocess
 import sys
 import threading
@@ -50,6 +52,9 @@ DEFAULT_WORKERS       = 4                     # concurrent Java processes
 SAVE_EVERY_N_HITS     = 20                    # flush CSV every N new hits
 SAVE_EVERY_N_BATCHES  = 10                    # refresh output files even if hit count is unchanged
 JAVA_TIMEOUT_SEC      = 180                   # kill stalled Java process after 3 min
+DEFAULT_LIQ_LOOKBACK  = 20
+DEFAULT_ACCOUNT_SIZE  = 100_000.0
+DEFAULT_BASE_RISK_PCT = 0.01
 # ─────────────────────────────────────────────────────────────────────────────
 
 lock = threading.Lock()
@@ -87,6 +92,18 @@ def parse_args():
     p.add_argument("--workers",   type=int, default=DEFAULT_WORKERS)
     p.add_argument("--output-dir", default=str(ROOT / "output"))
     p.add_argument("--no-watchlist", action="store_true", help="Skip watchlist generation and only produce breakout/open-trade hits")
+    p.add_argument("--min-price-floor", type=float, default=5.0, help="Minimum latest close required for shortlist eligibility")
+    p.add_argument("--min-avg-volume", type=float, default=0.0, help="Minimum average volume over liquidity lookback (0 disables)")
+    p.add_argument("--min-avg-dollar-volume", type=float, default=0.0, help="Minimum average dollar volume over liquidity lookback (0 disables)")
+    p.add_argument("--liquidity-lookback", type=int, default=DEFAULT_LIQ_LOOKBACK)
+    p.add_argument("--regime-mode", choices=["off", "soft", "hard"], default="soft", help="Market regime handling: off, soft-rank-penalty, or hard-filter")
+    p.add_argument("--regime-sample", type=int, default=300, help="How many symbols to sample for breadth regime estimation")
+    p.add_argument("--regime-min-breadth50", type=float, default=0.50)
+    p.add_argument("--regime-min-breadth200", type=float, default=0.45)
+    p.add_argument("--rs-weight", type=float, default=0.35, help="Weight for RS score when building rankingScore")
+    p.add_argument("--max-portfolio-heat-r", type=float, default=6.0, help="Maximum aggregate portfolio heat in R units for shortlist")
+    p.add_argument("--account-size", type=float, default=DEFAULT_ACCOUNT_SIZE)
+    p.add_argument("--base-risk-pct", type=float, default=DEFAULT_BASE_RISK_PCT, help="Baseline risk-per-trade used to convert risk amount to R")
     args = p.parse_args()
     if args.batch <= 0:
         p.error("--batch must be greater than 0")
@@ -94,9 +111,229 @@ def parse_args():
         p.error("--workers must be greater than 0")
     if args.lookback <= 0:
         p.error("--lookback must be greater than 0")
+    if args.liquidity_lookback <= 1:
+        p.error("--liquidity-lookback must be greater than 1")
+    if args.max_portfolio_heat_r <= 0:
+        p.error("--max-portfolio-heat-r must be greater than 0")
+    if args.account_size <= 0:
+        p.error("--account-size must be greater than 0")
+    if args.base_risk_pct <= 0:
+        p.error("--base-risk-pct must be greater than 0")
     if args.symbols and not os.path.isabs(args.symbols):
         args.symbols = str((ROOT / args.symbols).resolve())
     return args
+
+
+def _to_float(value, default=0.0):
+    try:
+        if value is None:
+            return default
+        text = str(value).strip().replace("%", "").replace(",", "")
+        return float(text)
+    except Exception:
+        return default
+
+
+def _safe_return(closes: list[float], bars: int) -> float:
+    if bars <= 0 or len(closes) <= bars:
+        return 0.0
+    old = closes[-bars - 1]
+    now = closes[-1]
+    if old <= 0:
+        return 0.0
+    return (now / old) - 1.0
+
+
+def _cache_candidates(symbol: str, lookback: int, timeframe: str, cache_dir: str) -> list[Path]:
+    cache = Path(cache_dir)
+    suffixes = {lookback}
+    if timeframe == "weekly":
+        suffixes.add(max(lookback * 7, lookback + 60))
+    suffixes.update({252, 728})
+    files = [cache / f"{symbol}_{n}.csv" for n in sorted(suffixes)]
+    existing = [p for p in files if p.exists()]
+    if existing:
+        return existing
+    return sorted(cache.glob(f"{symbol}_*.csv"))
+
+
+def load_cached_bars(symbol: str, lookback: int, timeframe: str, cache_dir: str) -> list[dict]:
+    for path in _cache_candidates(symbol, lookback, timeframe, cache_dir):
+        try:
+            rows = []
+            with open(path, newline="") as fh:
+                reader = csv.DictReader(fh)
+                for row in reader:
+                    rows.append({
+                        "close": _to_float(row.get("close")),
+                        "volume": _to_float(row.get("volume")),
+                    })
+            if len(rows) >= 30:
+                return rows
+        except Exception:
+            continue
+    return []
+
+
+def build_market_regime(symbols: list[str], args) -> dict:
+    if args.regime_mode == "off":
+        return {"mode": "off", "favorable": True, "breadth50": 1.0, "breadth200": 1.0, "score": 1.0, "sampled": 0}
+
+    sample = symbols[: max(10, min(len(symbols), args.regime_sample))]
+    above50 = 0
+    above200 = 0
+    valid = 0
+    rs_pool_3m: list[float] = []
+    rs_pool_6m: list[float] = []
+    rs_pool_12m: list[float] = []
+
+    for sym in sample:
+        bars = load_cached_bars(sym, args.lookback, args.timeframe, args.cache_dir)
+        if len(bars) < 210:
+            continue
+        closes = [b["close"] for b in bars if b.get("close", 0) > 0]
+        if len(closes) < 210:
+            continue
+        close = closes[-1]
+        ma50 = sum(closes[-50:]) / 50
+        ma200 = sum(closes[-200:]) / 200
+        valid += 1
+        if close > ma50:
+            above50 += 1
+        if close > ma200:
+            above200 += 1
+        rs_pool_3m.append(_safe_return(closes, 63))
+        rs_pool_6m.append(_safe_return(closes, 126))
+        rs_pool_12m.append(_safe_return(closes, 252))
+
+    if valid == 0:
+        return {"mode": args.regime_mode, "favorable": True, "breadth50": 1.0, "breadth200": 1.0, "score": 1.0, "sampled": 0,
+                "bench3m": 0.0, "bench6m": 0.0, "bench12m": 0.0}
+
+    breadth50 = above50 / valid
+    breadth200 = above200 / valid
+    favorable = breadth50 >= args.regime_min_breadth50 and breadth200 >= args.regime_min_breadth200
+    return {
+        "mode": args.regime_mode,
+        "favorable": favorable,
+        "breadth50": breadth50,
+        "breadth200": breadth200,
+        "score": (breadth50 + breadth200) / 2.0,
+        "sampled": valid,
+        "bench3m": statistics.median(rs_pool_3m) if rs_pool_3m else 0.0,
+        "bench6m": statistics.median(rs_pool_6m) if rs_pool_6m else 0.0,
+        "bench12m": statistics.median(rs_pool_12m) if rs_pool_12m else 0.0,
+    }
+
+
+def enrich_and_filter_rows(rows: list[dict], args, regime: dict, list_type: str) -> tuple[list[dict], list[dict], dict[str, str]]:
+    kept: list[dict] = []
+    rejected: list[dict] = []
+    rejected_map: dict[str, str] = {}
+
+    for row in rows:
+        symbol = str(row.get("symbol", "")).strip().upper()
+        bars = load_cached_bars(symbol, args.lookback, args.timeframe, args.cache_dir)
+        if len(bars) < max(args.liquidity_lookback, 30):
+            reason = "DATA_UNAVAILABLE"
+            rejected.append({"symbol": symbol, "reason": reason, "source": list_type, "detail": "cache<lookback"})
+            rejected_map[symbol] = reason
+            continue
+
+        closes = [b["close"] for b in bars]
+        vols = [b["volume"] for b in bars]
+        liq_n = min(args.liquidity_lookback, len(bars))
+        recent = bars[-liq_n:]
+        avg_vol = sum(x["volume"] for x in recent) / liq_n
+        avg_dollar = sum(x["volume"] * x["close"] for x in recent) / liq_n
+        latest_close = closes[-1]
+
+        row["avgVol20"] = round(avg_vol, 2)
+        row["avgDollarVol20"] = round(avg_dollar, 2)
+        row["regimeScore"] = round(regime.get("score", 1.0) * 100.0, 2)
+        row["regimeState"] = "FAVORABLE" if regime.get("favorable", True) else "UNFAVORABLE"
+
+        rs3 = _safe_return(closes, 63)
+        rs6 = _safe_return(closes, 126)
+        rs12 = _safe_return(closes, 252)
+        rel3 = rs3 - regime.get("bench3m", 0.0)
+        rel6 = rs6 - regime.get("bench6m", 0.0)
+        rel12 = rs12 - regime.get("bench12m", 0.0)
+        rs_score = (rel3 * 0.5 + rel6 * 0.3 + rel12 * 0.2) * 100.0
+        row["rs3m"] = round(rs3 * 100.0, 2)
+        row["rs6m"] = round(rs6 * 100.0, 2)
+        row["rs12m"] = round(rs12 * 100.0, 2)
+        row["rsScore"] = round(rs_score, 2)
+
+        quality = _to_float(row.get("score"))
+        rank_score = quality + (args.rs_weight * rs_score)
+        if regime.get("mode") == "soft" and not regime.get("favorable", True):
+            rank_score -= 10.0
+        row["rankingScore"] = round(rank_score, 2)
+
+        if latest_close < args.min_price_floor:
+            reason = "LOW_PRICE"
+            rejected.append({"symbol": symbol, "reason": reason, "source": list_type, "detail": f"close={latest_close:.2f}"})
+            rejected_map[symbol] = reason
+            continue
+        if args.min_avg_volume > 0 and avg_vol < args.min_avg_volume:
+            reason = "LOW_VOLUME"
+            rejected.append({"symbol": symbol, "reason": reason, "source": list_type, "detail": f"avgVol={avg_vol:.0f}"})
+            rejected_map[symbol] = reason
+            continue
+        if args.min_avg_dollar_volume > 0 and avg_dollar < args.min_avg_dollar_volume:
+            reason = "LOW_ADV"
+            rejected.append({"symbol": symbol, "reason": reason, "source": list_type, "detail": f"adv={avg_dollar:.0f}"})
+            rejected_map[symbol] = reason
+            continue
+        if regime.get("mode") == "hard" and not regime.get("favorable", True):
+            reason = "REGIME_UNFAVORABLE"
+            rejected.append({"symbol": symbol, "reason": reason, "source": list_type, "detail": f"breadth50={regime.get('breadth50', 0):.2f}"})
+            rejected_map[symbol] = reason
+            continue
+
+        kept.append(row)
+
+    return kept, rejected, rejected_map
+
+
+def apply_portfolio_heat(rows: list[dict], args) -> list[dict]:
+    if not rows:
+        return []
+    sorted_rows = sorted(rows, key=lambda r: _to_float(r.get("rankingScore"), _to_float(r.get("score"))), reverse=True)
+    shortlist: list[dict] = []
+    cumulative = 0.0
+    denom = args.account_size * args.base_risk_pct
+    for row in sorted_rows:
+        entry = _to_float(row.get("entry"))
+        stop = _to_float(row.get("sl"))
+        shares = _to_float(row.get("shares"))
+        risk_amount = max(0.0, (entry - stop) * shares)
+        risk_r = (risk_amount / denom) if denom > 0 else 0.0
+        if risk_r <= 0:
+            continue
+        if cumulative + risk_r > args.max_portfolio_heat_r:
+            continue
+        cumulative += risk_r
+        item = dict(row)
+        item["riskR"] = round(risk_r, 3)
+        item["heatAfterR"] = round(cumulative, 3)
+        shortlist.append(item)
+    return shortlist
+
+
+def build_rejection_rows(symbols: list[str], included: set[str], rejected_map: dict[str, str]) -> list[dict]:
+    rows: list[dict] = []
+    for sym in symbols:
+        if sym in included:
+            continue
+        rows.append({
+            "symbol": sym,
+            "reason": rejected_map.get(sym, "NO_BREAKOUT_OR_QUALITY"),
+            "source": "UNIVERSE",
+            "detail": "",
+        })
+    return rows
 
 
 def normalize_symbol(raw: str) -> str:
@@ -402,7 +639,88 @@ def parse_hit(line: str) -> dict:
         return {"symbol": line, "raw": line}
 
 
-CSV_FIELDS = ["symbol", "listType", "setup", "window", "height%", "depth%", "len", "ctr", "dist%", "rating", "close", "pivot", "entry", "score", "range%", "vol%", "rexp", "shares", "sl", "T1", "T2", "T3"]
+CSV_FIELDS = [
+    "symbol", "listType", "setup", "window", "height%", "depth%", "len", "ctr", "dist%", "rating", "close", "pivot", "entry", "score",
+    "range%", "vol%", "rexp", "shares", "sl", "T1", "T2", "T3", "avgVol20", "avgDollarVol20", "rs3m", "rs6m", "rs12m", "rsScore",
+    "regimeState", "regimeScore", "rankingScore", "riskR", "heatAfterR"
+]
+
+
+REJECTION_FIELDS = ["symbol", "reason", "source", "detail"]
+
+
+def setup_run_logger(log_path: Path) -> logging.Logger:
+    logger_name = f"scan.{log_path.stem}.{int(time.time())}"
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.INFO)
+    logger.handlers.clear()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    file_handler = logging.FileHandler(log_path)
+    file_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+    logger.addHandler(file_handler)
+    return logger
+
+
+def append_event(path: Path, event: str, payload: dict):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    record = {
+        "ts": datetime.now().isoformat(timespec="seconds"),
+        "event": event,
+        "payload": payload,
+    }
+    with open(path, "a") as fh:
+        fh.write(json.dumps(record) + "\n")
+
+
+def validate_rows(rows: list[dict], list_type: str) -> tuple[list[dict], list[dict]]:
+    valid: list[dict] = []
+    issues: list[dict] = []
+    required_numeric = ["close", "pivot", "entry", "score", "shares", "sl", "T1", "T2", "T3"]
+    for row in rows:
+        symbol = str(row.get("symbol", "")).strip().upper()
+        if not symbol:
+            issues.append({"symbol": "", "reason": "INVALID_SYMBOL", "source": list_type, "detail": "missing symbol"})
+            continue
+        bad_field = None
+        for field in required_numeric:
+            val = row.get(field)
+            if val in (None, ""):
+                continue
+            try:
+                _ = float(str(val).replace("%", "").replace(",", ""))
+            except Exception:
+                bad_field = field
+                break
+        if bad_field:
+            issues.append({"symbol": symbol, "reason": "INVALID_NUMERIC", "source": list_type, "detail": bad_field})
+            continue
+
+        entry = _to_float(row.get("entry"), 0.0)
+        stop = _to_float(row.get("sl"), 0.0)
+        shares = _to_float(row.get("shares"), 0.0)
+        if entry <= 0 or stop <= 0 or shares <= 0:
+            issues.append({"symbol": symbol, "reason": "INVALID_TRADE_PLAN", "source": list_type, "detail": "entry/stop/shares"})
+            continue
+        if entry <= stop:
+            issues.append({"symbol": symbol, "reason": "INVALID_RISK", "source": list_type, "detail": "entry<=stop"})
+            continue
+        valid.append(row)
+    return valid, issues
+
+
+def save_manifest(path: Path, payload: dict):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2) + "\n")
+
+
+def save_bundle(path: Path, meta: dict, files: dict[str, str], counts: dict[str, int], validation: dict):
+    save_manifest(path, {
+        "generatedAt": datetime.now().isoformat(timespec="seconds"),
+        "meta": meta,
+        "counts": counts,
+        "validation": validation,
+        "files": files,
+    })
 
 
 def as_open_trade_rows(rows: list[dict]) -> list[dict]:
@@ -426,6 +744,15 @@ def save_json(rows: list[dict], path: Path):
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w") as fh:
         json.dump(rows, fh, indent=2)
+
+
+def save_rejections(rows: list[dict], csv_path: Path, json_path: Path):
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(csv_path, "w", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=REJECTION_FIELDS, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
+    save_json(rows, json_path)
 
 
 def summarize_variations(rows: list[dict]) -> dict[str, dict[str, int]]:
@@ -1035,6 +1362,15 @@ def main():
     open_trades_json_path = out_dir / f"open_trades_{scan_label}_{timestamp}.json"
     open_trades_html_path = out_dir / f"open_trades_{scan_label}_{timestamp}.html"
     variation_summary_path = out_dir / "variation_progress.md"
+    shortlist_csv_path = out_dir / f"portfolio_shortlist_{scan_label}_{timestamp}.csv"
+    shortlist_json_path = out_dir / f"portfolio_shortlist_{scan_label}_{timestamp}.json"
+    shortlist_html_path = out_dir / f"portfolio_shortlist_{scan_label}_{timestamp}.html"
+    rejections_csv_path = out_dir / f"rejections_{scan_label}_{timestamp}.csv"
+    rejections_json_path = out_dir / f"rejections_{scan_label}_{timestamp}.json"
+    manifest_path = out_dir / "scan_manifest.json"
+    bundle_path = out_dir / f"scan_bundle_{scan_label}_{timestamp}.json"
+    run_log_path = out_dir / "scan.log"
+    events_path = out_dir / "events.jsonl"
     log_path   = out_dir / "batch_log.txt"
     latest_csv = Path(args.output_dir) / f"vcp_hits_{scan_label}_LATEST.csv"
     latest_json = Path(args.output_dir) / f"vcp_hits_{scan_label}_LATEST.json"
@@ -1046,6 +1382,13 @@ def main():
     latest_open_trades_json = Path(args.output_dir) / f"open_trades_{scan_label}_LATEST.json"
     latest_open_trades_html = Path(args.output_dir) / f"open_trades_{scan_label}_LATEST.html"
     latest_variation_summary = Path(args.output_dir) / f"vcp_hits_{scan_label}_variation_LATEST.md"
+    latest_shortlist_csv = Path(args.output_dir) / f"portfolio_shortlist_{scan_label}_LATEST.csv"
+    latest_shortlist_json = Path(args.output_dir) / f"portfolio_shortlist_{scan_label}_LATEST.json"
+    latest_shortlist_html = Path(args.output_dir) / f"portfolio_shortlist_{scan_label}_LATEST.html"
+    latest_rejections_csv = Path(args.output_dir) / f"rejections_{scan_label}_LATEST.csv"
+    latest_rejections_json = Path(args.output_dir) / f"rejections_{scan_label}_LATEST.json"
+    latest_manifest_path = Path(args.output_dir) / f"scan_manifest_{scan_label}_LATEST.json"
+    latest_bundle_path = Path(args.output_dir) / f"scan_bundle_{scan_label}_LATEST.json"
     generic_latest_csv = Path(args.output_dir) / "vcp_hits_LATEST.csv"
 
     total     = len(symbols)
@@ -1063,6 +1406,8 @@ def main():
 
     all_hits: list[dict] = []
     all_watchlist: list[dict] = []
+    all_rejections: list[dict] = []
+    validation_issues: list[dict] = []
     scanned_count = 0
     batch_done    = 0
     start_time    = time.time()
@@ -1070,6 +1415,21 @@ def main():
     last_save_batch = 0
 
     log_fh = open(log_path, "w")
+    run_logger = setup_run_logger(run_log_path)
+    append_event(events_path, "scan_start", {
+        "scanLabel": scan_label,
+        "marketLabel": market_label,
+        "timeframe": args.timeframe,
+        "setups": args.setups,
+        "totalSymbols": total,
+        "workers": args.workers,
+        "batch": args.batch,
+    })
+    run_logger.info("Scan start label=%s symbols=%s workers=%s batch=%s", scan_label, total, args.workers, args.batch)
+    regime = build_market_regime(symbols, args)
+    print(f"  Regime mode: {regime.get('mode')} | favorable={regime.get('favorable')} | breadth50={regime.get('breadth50', 1.0):.2f} | breadth200={regime.get('breadth200', 1.0):.2f}")
+    run_logger.info("Regime mode=%s favorable=%s breadth50=%.3f breadth200=%.3f sampled=%s",
+                    regime.get("mode"), regime.get("favorable"), regime.get("breadth50", 1.0), regime.get("breadth200", 1.0), regime.get("sampled", 0))
 
     def process_batch(batch_idx_batch):
         idx, batch = batch_idx_batch
@@ -1095,6 +1455,7 @@ def main():
 
         snapshot = sorted(all_hits, key=safe_score, reverse=True)
         watch_snapshot = sorted(all_watchlist, key=safe_score, reverse=True)
+        shortlist_snapshot = apply_portfolio_heat(snapshot, args)
         open_trade_snapshot = as_open_trade_rows(snapshot)
         elapsed_snapshot = str(timedelta(seconds=int(time.time() - start_time)))
         meta_snapshot = {
@@ -1111,6 +1472,9 @@ def main():
         save_csv(watch_snapshot, watchlist_csv_path)
         save_json(watch_snapshot, watchlist_json_path)
         save_html(watch_snapshot, watchlist_html_path, meta_snapshot)
+        save_csv(shortlist_snapshot, shortlist_csv_path)
+        save_json(shortlist_snapshot, shortlist_json_path)
+        save_html(shortlist_snapshot, shortlist_html_path, meta_snapshot)
         save_variation_summary(snapshot, variation_summary_path, meta_snapshot)
         save_csv(snapshot, latest_csv)
         save_json(snapshot, latest_json)
@@ -1121,6 +1485,9 @@ def main():
         save_csv(watch_snapshot, latest_watchlist_csv)
         save_json(watch_snapshot, latest_watchlist_json)
         save_html(watch_snapshot, latest_watchlist_html, meta_snapshot)
+        save_csv(shortlist_snapshot, latest_shortlist_csv)
+        save_json(shortlist_snapshot, latest_shortlist_json)
+        save_html(shortlist_snapshot, latest_shortlist_html, meta_snapshot)
         save_variation_summary(snapshot, latest_variation_summary, meta_snapshot)
         save_csv(snapshot, generic_latest_csv)
         last_save_hit = len(all_hits)
@@ -1137,6 +1504,8 @@ def main():
                 idx, batch, parsed, parsed_watch, dur = future.result()
             except Exception as exc:
                 print(f"  [ERR] future failed: {exc}", flush=True)
+                run_logger.error("Batch future failed: %s", exc)
+                append_event(events_path, "batch_error", {"error": str(exc)})
                 continue
 
             with lock:
@@ -1157,6 +1526,7 @@ def main():
                 )
                 log_fh.write(log_line + "\n")
                 log_fh.flush()
+                run_logger.info(log_line)
 
                 # ETA
                 elapsed  = time.time() - start_time
@@ -1185,6 +1555,7 @@ def main():
                 persist_outputs()
 
     log_fh.close()
+    append_event(events_path, "scan_batches_complete", {"scanned": scanned_count, "hits": len(all_hits), "watchlist": len(all_watchlist)})
     print()  # final newline after progress bar
 
     # ── Final saves ───────────────────────────────────────────────────────────
@@ -1196,13 +1567,28 @@ def main():
         "elapsed":       elapsed_str,
     }
 
-    # Sort hits by score desc
-    def safe_score(h):
-        try: return float(h.get("score", 0))
-        except: return 0.0
-    all_hits.sort(key=safe_score, reverse=True)
-    all_watchlist.sort(key=safe_score, reverse=True)
+    valid_hits, issues_hits = validate_rows(all_hits, "HIT")
+    valid_watch, issues_watch = validate_rows(all_watchlist, "WATCHLIST")
+    validation_issues.extend(issues_hits)
+    validation_issues.extend(issues_watch)
+    all_hits, rejected_hits, rejected_map_hits = enrich_and_filter_rows(valid_hits, args, regime, "HIT")
+    all_watchlist, rejected_watch, rejected_map_watch = enrich_and_filter_rows(valid_watch, args, regime, "WATCHLIST")
+    merged_rejected_map = dict(rejected_map_watch)
+    merged_rejected_map.update(rejected_map_hits)
+    all_rejections.extend(rejected_hits)
+    all_rejections.extend(rejected_watch)
+    all_rejections.extend(validation_issues)
+
+    def safe_rank(h):
+        return _to_float(h.get("rankingScore"), _to_float(h.get("score")))
+
+    all_hits.sort(key=safe_rank, reverse=True)
+    all_watchlist.sort(key=safe_rank, reverse=True)
     open_trades = as_open_trade_rows(all_hits)
+    shortlist = apply_portfolio_heat(all_hits, args)
+    included_symbols = {r.get("symbol", "") for r in all_hits} | {r.get("symbol", "") for r in all_watchlist}
+    all_rejections.extend(build_rejection_rows(symbols, included_symbols, merged_rejected_map))
+    run_logger.info("Post-validation kept hits=%s watchlist=%s rejections=%s validationIssues=%s", len(all_hits), len(all_watchlist), len(all_rejections), len(validation_issues))
 
     save_csv(all_hits,  csv_path)
     save_json(all_hits, json_path)
@@ -1213,7 +1599,66 @@ def main():
     save_csv(all_watchlist, watchlist_csv_path)
     save_json(all_watchlist, watchlist_json_path)
     save_html(all_watchlist, watchlist_html_path, meta)
+    save_csv(shortlist, shortlist_csv_path)
+    save_json(shortlist, shortlist_json_path)
+    save_html(shortlist, shortlist_html_path, meta)
+    save_rejections(all_rejections, rejections_csv_path, rejections_json_path)
     save_variation_summary(all_hits, variation_summary_path, meta)
+
+    manifest_payload = {
+        "runId": f"{scan_label}_{timestamp}",
+        "generatedAt": meta["finished"],
+        "marketLabel": market_label,
+        "timeframe": args.timeframe,
+        "setups": args.setups,
+        "lookback": args.lookback,
+        "workers": args.workers,
+        "batch": args.batch,
+        "regime": regime,
+        "filters": {
+            "minPriceFloor": args.min_price_floor,
+            "minAvgVolume": args.min_avg_volume,
+            "minAvgDollarVolume": args.min_avg_dollar_volume,
+            "liquidityLookback": args.liquidity_lookback,
+            "regimeMode": args.regime_mode,
+            "rsWeight": args.rs_weight,
+            "maxPortfolioHeatR": args.max_portfolio_heat_r,
+            "accountSize": args.account_size,
+            "baseRiskPct": args.base_risk_pct,
+        },
+        "counts": {
+            "symbols": total,
+            "hits": len(all_hits),
+            "watchlist": len(all_watchlist),
+            "shortlist": len(shortlist),
+            "rejections": len(all_rejections),
+            "validationIssues": len(validation_issues),
+        },
+        "files": {
+            "hitsCsv": str(csv_path.resolve()),
+            "hitsJson": str(json_path.resolve()),
+            "hitsHtml": str(html_path.resolve()),
+            "watchlistCsv": str(watchlist_csv_path.resolve()),
+            "watchlistJson": str(watchlist_json_path.resolve()),
+            "watchlistHtml": str(watchlist_html_path.resolve()),
+            "shortlistCsv": str(shortlist_csv_path.resolve()),
+            "shortlistJson": str(shortlist_json_path.resolve()),
+            "shortlistHtml": str(shortlist_html_path.resolve()),
+            "rejectionsCsv": str(rejections_csv_path.resolve()),
+            "rejectionsJson": str(rejections_json_path.resolve()),
+            "batchLog": str(log_path.resolve()),
+            "runLog": str(run_log_path.resolve()),
+            "events": str(events_path.resolve()),
+        },
+    }
+    save_manifest(manifest_path, manifest_payload)
+    save_bundle(
+        bundle_path,
+        meta={"scanLabel": scan_label, "elapsed": elapsed_str, "regime": regime},
+        files=manifest_payload["files"],
+        counts=manifest_payload["counts"],
+        validation={"issues": len(validation_issues)},
+    )
 
     # Copy to latest
     save_csv(all_hits, latest_csv)
@@ -1225,7 +1670,19 @@ def main():
     save_csv(all_watchlist, latest_watchlist_csv)
     save_json(all_watchlist, latest_watchlist_json)
     save_html(all_watchlist, latest_watchlist_html, meta)
+    save_csv(shortlist, latest_shortlist_csv)
+    save_json(shortlist, latest_shortlist_json)
+    save_html(shortlist, latest_shortlist_html, meta)
+    save_rejections(all_rejections, latest_rejections_csv, latest_rejections_json)
     save_variation_summary(all_hits, latest_variation_summary, meta)
+    save_manifest(latest_manifest_path, manifest_payload)
+    save_bundle(
+        latest_bundle_path,
+        meta={"scanLabel": scan_label, "elapsed": elapsed_str, "regime": regime},
+        files=manifest_payload["files"],
+        counts=manifest_payload["counts"],
+        validation={"issues": len(validation_issues)},
+    )
     save_csv(all_hits, generic_latest_csv)
 
     # Also keep split setup lists for quick daily review when scanning in both mode.
@@ -1242,6 +1699,8 @@ def main():
     print(f"  Symbols scanned : {total}")
     print(f"  Open trades     : {len(all_hits)}")
     print(f"  Watchlist       : {len(all_watchlist)}")
+    print(f"  Portfolio picks : {len(shortlist)} (max heat {args.max_portfolio_heat_r:.2f}R)")
+    print(f"  Rejections      : {len(all_rejections)}")
     print(f"  Elapsed         : {elapsed_str}")
     print(f"{'═'*72}")
 
@@ -1267,6 +1726,10 @@ def main():
         print(f"  OPEN HTML → {open_trades_html_path.resolve()}")
         print(f"  WATCH CSV → {watchlist_csv_path.resolve()}")
         print(f"  WATCH HTML→ {watchlist_html_path.resolve()}")
+        print(f"  SHORT→ {shortlist_csv_path.resolve()}")
+        print(f"  REJCT→ {rejections_csv_path.resolve()}")
+        print(f"  MANF → {manifest_path.resolve()}")
+        print(f"  BNDL → {bundle_path.resolve()}")
         print(f"  LCSV → {latest_csv.resolve()}")
         print(f"  LJSN → {latest_json.resolve()}")
         print(f"  LHTM → {latest_html.resolve()}")
@@ -1276,6 +1739,10 @@ def main():
     else:
         print("  No filtered breakouts found in today's scan.")
         print(f"  WATCH CNT → {len(all_watchlist)}")
+        print(f"  SHORT CNT → {len(shortlist)}")
+        print(f"  REJCT CNT → {len(all_rejections)}")
+        print(f"  MANF → {manifest_path.resolve()}")
+        print(f"  BNDL → {bundle_path.resolve()}")
         print(f"  LCSV → {latest_csv.resolve()}")
         print(f"  LJSN → {latest_json.resolve()}")
         print(f"  LHTM → {latest_html.resolve()}")

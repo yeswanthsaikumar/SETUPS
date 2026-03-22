@@ -16,7 +16,7 @@ Usage:
     python3 apps/python/cli/run_backtest.py --market india --hold-bars 30 --setups vcp
 """
 
-import argparse, csv, html, json, os, shutil, subprocess, sys, threading, time
+import argparse, csv, html, json, os, random, shutil, subprocess, sys, threading, time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
@@ -57,6 +57,20 @@ def parse_args():
     p.add_argument("--batch",     type=int, default=DEFAULT_BATCH)
     p.add_argument("--cache-dir", default=str(ROOT / "cache"))
     p.add_argument("--output-dir", default=str(ROOT / "output"))
+    p.add_argument("--commission-bps", type=float, default=5.0,
+                   help="Round-trip commission in bps across entry+exit notional")
+    p.add_argument("--slippage-bps", type=float, default=5.0,
+                   help="Round-trip slippage in bps across entry+exit notional")
+    p.add_argument("--fixed-cost", type=float, default=0.0,
+                   help="Fixed cost per trade in account currency")
+    p.add_argument("--walk-forward-folds", type=int, default=5,
+                   help="Sequential walk-forward folds (>=2 enables analysis)")
+    p.add_argument("--monte-carlo-iterations", type=int, default=1000,
+                   help="Monte Carlo iterations for equity-path robustness (0 disables)")
+    p.add_argument("--stability-lookbacks", default="",
+                   help="Comma-separated lookbacks for stability map, e.g. 504,728,900")
+    p.add_argument("--stability-hold-bars", default="",
+                   help="Comma-separated hold bars for stability map, e.g. 12,16,20,24")
     args = p.parse_args()
     return args
 
@@ -71,6 +85,126 @@ def effective_hold_bars(timeframe: str, override: int | None) -> int:
     if override is not None:
         return override
     return DEFAULT_HOLD_BARS_DAILY if timeframe == "daily" else DEFAULT_HOLD_BARS_WEEKLY
+
+
+def parse_int_csv(value: str) -> list[int]:
+    out = []
+    for item in (value or "").split(","):
+        item = item.strip()
+        if not item:
+            continue
+        try:
+            n = int(item)
+            if n > 0:
+                out.append(n)
+        except ValueError:
+            continue
+    return out
+
+
+def apply_execution_costs(trades: list[dict], args) -> list[dict]:
+    out: list[dict] = []
+    total_bps = max(0.0, args.commission_bps) + max(0.0, args.slippage_bps)
+    for t in trades:
+        item = dict(t)
+        entry = float(item.get("entryPrice", 0) or 0)
+        exit_price = float(item.get("exitPrice", 0) or 0)
+        stop = float(item.get("stopPrice", 0) or 0)
+        shares = float(item.get("shares", 0) or 0)
+        gross_pnl = float(item.get("pnl", 0) or 0)
+        risk_amt = max(0.0, (entry - stop) * shares)
+        turnover = max(0.0, entry * shares) + max(0.0, exit_price * shares)
+        variable_cost = turnover * (total_bps / 10_000.0)
+        trade_cost = variable_cost + max(0.0, args.fixed_cost)
+        net_pnl = gross_pnl - trade_cost
+        gross_r = float(item.get("rMultiple", 0) or 0)
+        net_r = (net_pnl / risk_amt) if risk_amt > 0 else gross_r
+        item["cost"] = round(trade_cost, 4)
+        item["grossPnl"] = round(gross_pnl, 4)
+        item["netPnl"] = round(net_pnl, 4)
+        item["grossRMultiple"] = round(gross_r, 5)
+        item["rMultiple"] = round(net_r, 5)
+        item["costBps"] = round(total_bps, 3)
+        out.append(item)
+    return out
+
+
+def run_walk_forward(trades: list[dict], folds: int) -> dict:
+    if folds < 2 or not trades:
+        return {"enabled": False, "folds": 0, "items": []}
+    sorted_trades = sorted(trades, key=lambda t: str(t.get("entryDate", "")))
+    n = len(sorted_trades)
+    chunk = max(1, n // folds)
+    items = []
+    for i in range(1, folds):
+        train_end = min(n, i * chunk)
+        test_end = min(n, (i + 1) * chunk)
+        train = sorted_trades[:train_end]
+        test = sorted_trades[train_end:test_end]
+        if not test:
+            continue
+        m = compute_metrics(test, len(test))
+        items.append({
+            "fold": i,
+            "trainTrades": len(train),
+            "testTrades": len(test),
+            "testWinRate": m.get("winRate", 0.0),
+            "testAvgR": m.get("avgR", 0.0),
+            "testTotalR": m.get("totalR", 0.0),
+            "testMaxDrawdown": m.get("maxDrawdown", 0.0),
+            "testProfitFactor": m.get("profitFactor", 0.0),
+        })
+    return {"enabled": True, "folds": folds, "items": items}
+
+
+def run_monte_carlo(trades: list[dict], iterations: int, seed: int = 42) -> dict:
+    if iterations <= 0 or not trades:
+        return {"enabled": False, "iterations": 0}
+    rng = random.Random(seed)
+    rs = [float(t.get("rMultiple", 0) or 0) for t in trades]
+    n = len(rs)
+    totals: list[float] = []
+    max_dds: list[float] = []
+    for _ in range(iterations):
+        sample = [rs[rng.randrange(n)] for _ in range(n)]
+        total_r = sum(sample)
+        peak = 0.0
+        cum = 0.0
+        max_dd = 0.0
+        for r in sample:
+            cum += r
+            if cum > peak:
+                peak = cum
+            dd = cum - peak
+            if dd < max_dd:
+                max_dd = dd
+        totals.append(total_r)
+        max_dds.append(max_dd)
+
+    def pct(values: list[float], q: float) -> float:
+        if not values:
+            return 0.0
+        arr = sorted(values)
+        idx = int((len(arr) - 1) * q)
+        return round(arr[idx], 4)
+
+    neg_prob = sum(1 for x in totals if x < 0) / len(totals)
+    return {
+        "enabled": True,
+        "iterations": iterations,
+        "seed": seed,
+        "totalR": {
+            "p05": pct(totals, 0.05),
+            "p50": pct(totals, 0.50),
+            "p95": pct(totals, 0.95),
+            "probNegative": round(neg_prob, 4),
+        },
+        "maxDrawdown": {
+            "p05": pct(max_dds, 0.05),
+            "p50": pct(max_dds, 0.50),
+            "p95": pct(max_dds, 0.95),
+        },
+    }
 
 
 # ── Symbol loading ────────────────────────────────────────────────────────────
@@ -172,7 +306,7 @@ def compute_metrics(trades: list[dict], signals: int) -> dict:
         return {}
 
     n       = len(trades)
-    rs      = [t["rMultiple"] for t in trades]
+    rs      = [float(t.get("rMultiple", 0) or 0) for t in trades]
     wins    = [r for r in rs if r > 0]
     losses  = [r for r in rs if r <= 0]
     total_r = sum(rs)
@@ -195,14 +329,14 @@ def compute_metrics(trades: list[dict], signals: int) -> dict:
     monthly: dict[str, float] = {}
     for t in trades:
         ym = str(t.get("entryDate", ""))[:7]
-        monthly[ym] = monthly.get(ym, 0.0) + t["rMultiple"]
+        monthly[ym] = monthly.get(ym, 0.0) + float(t.get("rMultiple", 0) or 0)
 
     # Group metrics helper
     def group_stats(key: str) -> dict:
         g: dict[str, list] = {}
         for t in trades:
             k = str(t.get(key, "?"))
-            g.setdefault(k, []).append(t["rMultiple"])
+            g.setdefault(k, []).append(float(t.get("rMultiple", 0) or 0))
         return {
             k: {
                 "trades": len(v),
@@ -219,6 +353,9 @@ def compute_metrics(trades: list[dict], signals: int) -> dict:
         r = t.get("exitReason", "?")
         exit_counts[r] = exit_counts.get(r, 0) + 1
 
+    total_cost = sum(float(t.get("cost", 0) or 0) for t in trades)
+    avg_cost = (total_cost / n) if n else 0.0
+
     return {
         "signals":      signals,
         "trades":       n,
@@ -229,9 +366,9 @@ def compute_metrics(trades: list[dict], signals: int) -> dict:
         "totalR":       round(total_r, 2),
         "maxDrawdown":  round(max_dd, 3),
         "profitFactor": round(pos_r / neg_r, 2) if neg_r > 0 else 99.0,
-        "avgMae":       round(sum(t["mae"] for t in trades) / n, 2),
-        "avgMfe":       round(sum(t["mfe"] for t in trades) / n, 2),
-        "avgHoldBars":  round(sum(t["holdBars"] for t in trades) / n, 1),
+        "avgMae":       round(sum(float(t.get("mae", 0) or 0) for t in trades) / n, 2),
+        "avgMfe":       round(sum(float(t.get("mfe", 0) or 0) for t in trades) / n, 2),
+        "avgHoldBars":  round(sum(float(t.get("holdBars", 0) or 0) for t in trades) / n, 1),
         "t1HitRate":    round(sum(1 for t in trades if t.get("hitT1")) / n * 100, 1),
         "t2HitRate":    round(sum(1 for t in trades if t.get("hitT2")) / n * 100, 1),
         "t3HitRate":    round(sum(1 for t in trades if t.get("hitT3")) / n * 100, 1),
@@ -241,6 +378,8 @@ def compute_metrics(trades: list[dict], signals: int) -> dict:
         "byRating":     group_stats("setupRating"),
         "byWindow":     group_stats("windowLabel"),
         "exitReasons":  exit_counts,
+        "totalCost":    round(total_cost, 2),
+        "avgCost":      round(avg_cost, 2),
     }
 
 
@@ -821,7 +960,7 @@ def compile_java_sources():
         raise RuntimeError(f"Java compilation failed: {msg[:500]}")
 
 
-def run_single_backtest(args, market: str, timeframe: str) -> dict:
+def run_single_backtest(args, market: str, timeframe: str, enable_advanced: bool = True) -> dict:
     lookback = effective_lookback(timeframe, args.lookback)
     hold_bars = effective_hold_bars(timeframe, args.hold_bars)
     symbols = load_symbols(market)
@@ -836,8 +975,12 @@ def run_single_backtest(args, market: str, timeframe: str) -> dict:
 
     out_html = out_dir / f"backtest_{label}_{timestamp}.html"
     out_csv = out_dir / f"backtest_{label}_{timestamp}.csv"
+    out_walk_forward = out_dir / f"backtest_{label}_{timestamp}_walk_forward.json"
+    out_monte_carlo = out_dir / f"backtest_{label}_{timestamp}_monte_carlo.json"
     latest_h = Path(args.output_dir) / f"backtest_{label}_LATEST.html"
     latest_c = Path(args.output_dir) / f"backtest_{label}_LATEST.csv"
+    latest_wf = Path(args.output_dir) / f"backtest_{label}_walk_forward_LATEST.json"
+    latest_mc = Path(args.output_dir) / f"backtest_{label}_monte_carlo_LATEST.json"
 
     batches = list(chunks(symbols, args.batch))
     total = len(symbols)
@@ -890,7 +1033,11 @@ def run_single_backtest(args, market: str, timeframe: str) -> dict:
             f"All Java backtest batches failed for {market}_{timeframe}. "
             "Verify Java compilation and data-provider connectivity."
         )
+    all_trades = apply_execution_costs(all_trades, args)
     metrics = compute_metrics(all_trades, total_signals)
+
+    walk_forward = run_walk_forward(all_trades, args.walk_forward_folds) if enable_advanced else {"enabled": False, "folds": 0, "items": []}
+    monte_carlo = run_monte_carlo(all_trades, args.monte_carlo_iterations) if enable_advanced else {"enabled": False, "iterations": 0}
 
     if all_trades:
         flat_keys = [
@@ -913,12 +1060,25 @@ def run_single_backtest(args, market: str, timeframe: str) -> dict:
             "hitT2",
             "hitT3",
             "exitReason",
+            "cost",
+            "grossPnl",
+            "netPnl",
+            "grossRMultiple",
+            "costBps",
         ]
         with open(out_csv, "w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=flat_keys, extrasaction="ignore")
             w.writeheader()
             w.writerows(all_trades)
         shutil.copy(out_csv, latest_c)
+
+    if walk_forward.get("enabled"):
+        out_walk_forward.write_text(json.dumps(walk_forward, indent=2))
+        shutil.copy(out_walk_forward, latest_wf)
+
+    if monte_carlo.get("enabled"):
+        out_monte_carlo.write_text(json.dumps(monte_carlo, indent=2))
+        shutil.copy(out_monte_carlo, latest_mc)
 
     run_ctx = SimpleNamespace(
         market=market,
@@ -940,12 +1100,17 @@ def run_single_backtest(args, market: str, timeframe: str) -> dict:
     print(f"  Total R : {metrics.get('totalR',0):+.1f}R")
     print(f"  Max DD  : {metrics.get('maxDrawdown',0):.2f}R")
     print(f"  Profit F: {metrics.get('profitFactor',0):.2f}")
+    print(f"  Cost    : {metrics.get('totalCost',0):,.2f} total / {metrics.get('avgCost',0):,.2f} avg")
     print(
         f"  T1/T2/T3: {metrics.get('t1HitRate',0):.1f}% / {metrics.get('t2HitRate',0):.1f}% / {metrics.get('t3HitRate',0):.1f}%"
     )
     print(f"{'═'*70}")
     print(f"  HTML → {latest_h.resolve()}")
     print(f"  CSV  → {latest_c.resolve()}")
+    if walk_forward.get("enabled"):
+        print(f"  W/F  → {latest_wf.resolve()}")
+    if monte_carlo.get("enabled"):
+        print(f"  MC   → {latest_mc.resolve()}")
 
     return {
         "market": market,
@@ -955,6 +1120,10 @@ def run_single_backtest(args, market: str, timeframe: str) -> dict:
         "metrics": metrics,
         "latestHtml": str(latest_h),
         "latestCsv": str(latest_c),
+        "latestWalkForward": str(latest_wf) if walk_forward.get("enabled") else "",
+        "latestMonteCarlo": str(latest_mc) if monte_carlo.get("enabled") else "",
+        "walkForward": walk_forward,
+        "monteCarlo": monte_carlo,
     }
 
 
@@ -1012,11 +1181,98 @@ def write_matrix_summary(output_dir: Path, runs: list[dict]) -> tuple[Path, Path
     return latest_md, latest_html, latest_json
 
 
+def run_parameter_stability(args, market: str, timeframe: str):
+    lookbacks = parse_int_csv(args.stability_lookbacks)
+    holds = parse_int_csv(args.stability_hold_bars)
+    if not lookbacks:
+        base_look = effective_lookback(timeframe, args.lookback)
+        lookbacks = sorted({max(40, int(base_look * 0.75)), base_look, int(base_look * 1.25)})
+    if not holds:
+        base_hold = effective_hold_bars(timeframe, args.hold_bars)
+        holds = sorted({max(2, base_hold - 4), base_hold, base_hold + 4})
+
+    runs = []
+    for look in lookbacks:
+        for hold in holds:
+            cfg = SimpleNamespace(**vars(args))
+            cfg.lookback = look
+            cfg.hold_bars = hold
+            cfg.walk_forward_folds = 0
+            cfg.monte_carlo_iterations = 0
+            result = run_single_backtest(cfg, market, timeframe, enable_advanced=False)
+            runs.append({
+                "lookback": look,
+                "holdBars": hold,
+                "metrics": result.get("metrics", {}),
+                "latestHtml": result.get("latestHtml", ""),
+                "latestCsv": result.get("latestCsv", ""),
+            })
+
+    ts = datetime.now().strftime("%Y%m%d_%H%M")
+    out_dir = Path(args.output_dir)
+    out_json = out_dir / f"backtest_stability_{market}_{timeframe}_{ts}.json"
+    out_md = out_dir / f"backtest_stability_{market}_{timeframe}_{ts}.md"
+    out_html = out_dir / f"backtest_stability_{market}_{timeframe}_{ts}.html"
+    latest_json = out_dir / f"backtest_stability_{market}_{timeframe}_LATEST.json"
+    latest_md = out_dir / f"backtest_stability_{market}_{timeframe}_LATEST.md"
+    latest_html = out_dir / f"backtest_stability_{market}_{timeframe}_LATEST.html"
+
+    out_json.write_text(json.dumps({"generatedAt": datetime.now().isoformat(timespec="seconds"), "market": market, "timeframe": timeframe, "runs": runs}, indent=2))
+
+    lines = [
+        f"# Parameter Stability Map ({market} {timeframe})",
+        "",
+        f"- Generated: {datetime.now().isoformat(timespec='seconds')}",
+        "- Metric shown in table: Avg R",
+        "",
+        "| Lookback \\ Hold | " + " | ".join(str(h) for h in holds) + " |",
+        "|---" + "|---:" * len(holds) + "|",
+    ]
+    for look in lookbacks:
+        row_vals = []
+        for hold in holds:
+            match = next((r for r in runs if r["lookback"] == look and r["holdBars"] == hold), None)
+            avg_r = match.get("metrics", {}).get("avgR", 0.0) if match else 0.0
+            row_vals.append(f"{avg_r:+.3f}")
+        lines.append(f"| {look} | " + " | ".join(row_vals) + " |")
+    out_md.write_text("\n".join(lines) + "\n")
+
+    rows_html = ""
+    for r in runs:
+        m = r.get("metrics", {})
+        rows_html += (
+            f"<tr><td>{r['lookback']}</td><td>{r['holdBars']}</td><td>{m.get('trades',0)}</td>"
+            f"<td>{m.get('winRate',0):.1f}%</td><td>{m.get('avgR',0):+.3f}</td><td>{m.get('totalR',0):+.1f}</td>"
+            f"<td>{m.get('maxDrawdown',0):.2f}</td><td>{m.get('profitFactor',0):.2f}</td></tr>"
+        )
+    out_html.write_text(
+        "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Parameter Stability Map</title>"
+        "<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0d1117;color:#c9d1d9;padding:24px}"
+        "table{border-collapse:collapse;width:100%}th,td{border:1px solid #30363d;padding:8px;text-align:right}"
+        "th:first-child,td:first-child{text-align:left}th{background:#161b22;color:#79c0ff}</style></head><body>"
+        f"<h1>Parameter Stability Map — {market.upper()} {timeframe.title()}</h1>"
+        f"<p>Generated {datetime.now().isoformat(timespec='seconds')}</p>"
+        "<table><thead><tr><th>Lookback</th><th>Hold Bars</th><th>Trades</th><th>Win Rate</th><th>Avg R</th><th>Total R</th><th>Max DD</th><th>Profit Factor</th></tr></thead>"
+        f"<tbody>{rows_html}</tbody></table></body></html>"
+    )
+
+    latest_json.write_text(out_json.read_text())
+    latest_md.write_text(out_md.read_text())
+    latest_html.write_text(out_html.read_text())
+    print(f"\nStability map markdown: {latest_md.resolve()}")
+    print(f"Stability map html    : {latest_html.resolve()}")
+    print(f"Stability map json    : {latest_json.resolve()}")
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     args = parse_args()
     Path(args.output_dir).mkdir(parents=True, exist_ok=True)
     compile_java_sources()
+
+    if args.stability_lookbacks or args.stability_hold_bars:
+        run_parameter_stability(args, args.market, args.timeframe)
+        return
 
     if args.matrix_all:
         combos = [

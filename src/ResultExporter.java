@@ -45,6 +45,30 @@ public final class ResultExporter {
         }
     }
 
+    public static void exportRejectionsLatest(List<RejectionDiagnostic> rejections, String market, String timeframe) {
+        if (rejections == null) {
+            return;
+        }
+        String normalizedMarket = (market == null || market.isBlank()) ? "us" : market.toLowerCase();
+        String normalizedTimeframe = (timeframe == null || timeframe.isBlank()) ? "daily" : timeframe.toLowerCase();
+        Path latestPath = Paths.get("output", String.format("rejections_%s_%s_LATEST.csv", normalizedMarket, normalizedTimeframe));
+
+        List<String> lines = new ArrayList<>();
+        lines.add("timestamp,symbol,mode,timeframe,reason,details");
+        for (RejectionDiagnostic r : rejections) {
+            lines.add(String.format(
+                    "%s,%s,%s,%s,%s,\"%s\"",
+                    r.getTimestamp(),
+                    r.getSymbol(),
+                    r.getMode(),
+                    r.getTimeframe(),
+                    r.getReason(),
+                    escapeCsv(r.getDetails())
+            ));
+        }
+        writeLines(latestPath, lines);
+    }
+
     private static void writeScanCsv(List<ScanResult> results, Path path) {
         List<String> lines = new ArrayList<>();
         lines.add("symbol,setupType,windowLabel,windowBars,baseRangeHeightPct,contractionDepthPct,rangeContractionCount,volumeContractionCount,contractionPairs,setupRating,date,close,pivot,support,qualityScore,rangeContractionPct,volumeContractionPct,rangeExpansion,entry,stop,shares,target1,target2,target3");
@@ -281,6 +305,13 @@ public final class ResultExporter {
 
     private static String escape(String value) {
         return value.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    private static String escapeCsv(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("\"", "\"\"");
     }
 
     private static String format(double value) {

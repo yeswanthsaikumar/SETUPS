@@ -56,6 +56,33 @@ cd /Users/yeshwantha/IdeaProjects/SETUPS
 python3 apps/python/cli/run_vcp_system.py --skip-us-refresh --timeframes weekly
 ```
 
+## Top-5 Overlay Operations
+
+Top-5 overlays are active in the scan engine:
+
+- rejection diagnostics
+- liquidity filters
+- market regime filter
+- relative-strength ranking
+- portfolio heat shortlist
+
+For strict manual scans (single market/timeframe), run `run_full_us_scan.py` directly with explicit thresholds:
+
+```bash
+cd /Users/yeshwantha/IdeaProjects/SETUPS
+python3 apps/python/cli/run_full_us_scan.py \
+  --symbols data/universes/indian_stock_tickers.csv \
+  --market-label india \
+  --timeframe daily \
+  --setups both \
+  --lookback 252 \
+  --min-avg-volume 100000 \
+  --min-avg-dollar-volume 10000000 \
+  --regime-mode soft \
+  --rs-weight 0.35 \
+  --max-portfolio-heat-r 6
+```
+
 ## Outputs To Check
 
 Always-updated latest files:
@@ -63,6 +90,23 @@ Always-updated latest files:
 ```bash
 ls -lh output/vcp_hits_*_LATEST.csv
 cat output/system_latest_summary.md
+```
+
+Top-5 specific latest files:
+
+```bash
+ls -lh output/portfolio_shortlist_*_LATEST.csv
+ls -lh output/rejections_*_LATEST.csv
+ls -lh output/scan_manifest_*_LATEST.json
+ls -lh output/scan_bundle_*_LATEST.json
+```
+
+Per-run observability artifacts (inside each `output/scan_*` folder):
+
+```bash
+ls -lh output/scan_*/scan.log | tail -5
+ls -lh output/scan_*/events.jsonl | tail -5
+ls -lh output/scan_*/batch_log.txt | tail -5
 ```
 
 If `--setups both`, split lists are also written:

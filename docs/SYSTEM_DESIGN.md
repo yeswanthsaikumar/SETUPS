@@ -727,6 +727,162 @@ The system considers a setup high quality only when all of these line up:
 - breakout/continuation price and volume behavior confirms the signal
 - position sizing remains valid under the risk model
 
+### 3.26 Top-5 production overlays (post-detection layer)
+
+After deterministic setup detection and breakout/watchlist parsing, the Python scan pipeline applies a second-stage overlay in `apps/python/cli/run_full_us_scan.py`.
+
+This layer does **not** replace the Java rule engine. It enhances tradability and selection quality.
+
+#### Overlay functions
+
+- `build_market_regime(...)`
+  - estimates market breadth from sampled symbols
+  - computes `breadth50`, `breadth200`, and a regime score
+  - marks regime as `FAVORABLE` or `UNFAVORABLE`
+
+- `enrich_and_filter_rows(...)`
+  - computes liquidity metrics: `avgVol20`, `avgDollarVol20`
+  - computes relative-strength overlays: `rs3m`, `rs6m`, `rs12m`, `rsScore`
+  - computes `rankingScore` from rule quality + RS weight (+ regime penalty in soft mode)
+  - applies optional liquidity and regime hard filters
+  - emits rejection diagnostics with reason codes
+
+- `apply_portfolio_heat(...)`
+  - computes per-trade risk in R units (`riskR`)
+  - greedily selects top-ranked rows while cumulative heat is below `maxPortfolioHeatR`
+  - outputs a portfolio shortlist with `riskR` and cumulative `heatAfterR`
+
+- `build_rejection_rows(...)`
+  - produces universe-level rejections for symbols with no final eligible output
+
+#### Overlay controls
+
+Primary flags:
+
+- Liquidity: `--min-price-floor`, `--min-avg-volume`, `--min-avg-dollar-volume`, `--liquidity-lookback`
+- Regime: `--regime-mode off|soft|hard`, `--regime-sample`, `--regime-min-breadth50`, `--regime-min-breadth200`
+- Relative strength ranking: `--rs-weight`
+- Heat control: `--max-portfolio-heat-r`, `--account-size`, `--base-risk-pct`
+
+#### Overlay outputs
+
+In addition to base hit/watchlist/open-trade files, each scan now writes:
+
+- `portfolio_shortlist_<label>_LATEST.csv|json|html`
+- `rejections_<label>_LATEST.csv|json`
+
+The system-level orchestrator summary (`run_vcp_system.py`) includes:
+
+- open trades
+- watchlist count
+- portfolio picks
+- rejection count
+
+### 3.27 Structured exports, manifests, validation, and logging
+
+The scan pipeline also emits operations-grade artifacts to improve reliability and post-run diagnostics.
+
+#### Structured exports
+
+For each run, the scanner writes normalized CSV/JSON/HTML outputs for:
+
+- breakout hits
+- open trades
+- watchlist
+- portfolio shortlist
+- rejections
+
+#### Run manifests
+
+Two machine-readable summary files are produced:
+
+- `scan_manifest_*.json`
+  - run metadata (market/timeframe/setups/lookback)
+  - overlay thresholds used
+  - regime snapshot
+  - counts
+  - artifact file paths
+- `scan_bundle_*.json`
+  - compact summary for pipeline consumption
+
+LATEST aliases are also written to `output/scan_manifest_*_LATEST.json` and `output/scan_bundle_*_LATEST.json`.
+
+#### Data validation
+
+Parsed rows are validated before final filtering/export. Current validation checks include:
+
+- symbol presence
+- numeric parseability of key fields (`entry`, `stop`, `shares`, score, targets)
+- trade-plan sanity (`entry > stop`, `shares > 0`)
+
+Validation failures are emitted into `rejections_*` with reason codes such as:
+
+- `INVALID_SYMBOL`
+- `INVALID_NUMERIC`
+- `INVALID_TRADE_PLAN`
+- `INVALID_RISK`
+
+#### Logging
+
+Each scan folder includes:
+
+- `scan.log` (human-readable operational log)
+- `events.jsonl` (structured event stream)
+- `batch_log.txt` (batch progress details)
+
+This logging model supports both manual debugging and automated monitoring.
+
+### 3.28 Backtest robustness layer
+
+The backtest orchestrator (`apps/python/cli/run_backtest.py`) now includes post-simulation robustness analyses.
+
+#### Realistic execution costs
+
+Per trade, the backtest applies:
+
+- round-trip commission bps
+- round-trip slippage bps
+- optional fixed cost per trade
+
+Cost-adjusted metrics are recomputed on net `rMultiple` and net PnL.
+
+#### Enhanced exit simulation
+
+Backtest exits now simulate a staged/trailed management model:
+
+- partial profit-taking: 25% at T1 and 25% at T2
+- trailing stop on remaining position after breakout confirmation
+- trailing stop combines ATR-based and swing-low structure logic
+- setup/timeframe-aware hold rules (VCP vs range expansion, daily vs weekly)
+
+This improves realism compared to single-price all-in/all-out exits.
+
+#### Walk-forward analysis
+
+Trades are sorted by entry date and split into sequential folds.
+
+- each fold uses prior history as train context and next segment as test window
+- fold-level metrics include test win rate, avg R, total R, max drawdown, and profit factor
+- output: `backtest_<market>_<timeframe>_walk_forward_LATEST.json`
+
+#### Monte Carlo robustness
+
+The tool bootstraps trade outcomes across many iterations and reports distributional risk:
+
+- total R percentiles (p05, p50, p95)
+- max-drawdown percentiles (p05, p50, p95)
+- probability of negative total R
+
+Output: `backtest_<market>_<timeframe>_monte_carlo_LATEST.json`
+
+#### Parameter stability map
+
+A stability grid can be run over lookback and hold-bars combinations.
+
+- each grid point runs a full backtest and records key metrics
+- outputs: `backtest_stability_<market>_<timeframe>_LATEST.md|html|json`
+- used to verify that performance is stable across nearby parameter values instead of relying on a single tuned point
+
 ## 4) Runtime Defaults and Modes
 
 - Daily mode: `252` bars (~1 year)

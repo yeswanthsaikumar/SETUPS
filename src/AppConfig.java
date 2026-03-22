@@ -60,6 +60,32 @@ public class AppConfig {
     public final double riskPerTradePct;
     public final double stopBufferPct;
 
+    // ── Exit policy (backtest/runtime) ───────────────────────────────────────
+    // Partial exits: default 25% at T1, 25% at T2, trail remaining 50%
+    public final double partialExitPctAtT1;
+    public final double partialExitPctAtT2;
+
+    // ATR trailing stop policy
+    public final boolean enableAtrTrailingStop;
+    public final int atrTrailPeriodDaily;
+    public final int atrTrailPeriodWeekly;
+    public final double atrTrailMultDailyVcp;
+    public final double atrTrailMultDailyRangeExpansion;
+    public final double atrTrailMultWeeklyVcp;
+    public final double atrTrailMultWeeklyRangeExpansion;
+
+    // Swing-low trailing stop policy
+    public final boolean enableSwingLowTrailingStop;
+    public final int swingLookbackDaily;
+    public final int swingLookbackWeekly;
+    public final double swingStopBufferPct;
+
+    // Time-stop by setup type and timeframe
+    public final int holdBarsDailyVcp;
+    public final int holdBarsDailyRangeExpansion;
+    public final int holdBarsWeeklyVcp;
+    public final int holdBarsWeeklyRangeExpansion;
+
     public AppConfig() {
         this("daily");
     }
@@ -113,5 +139,28 @@ public class AppConfig {
         this.accountSize               = 100_000.0;
         this.riskPerTradePct           = 0.01;
         this.stopBufferPct             = 0.005;
+
+        // Exit policy defaults (safe + configurable)
+        this.partialExitPctAtT1        = 0.25;
+        this.partialExitPctAtT2        = 0.25;
+
+        this.enableAtrTrailingStop     = true;
+        this.atrTrailPeriodDaily       = 14;
+        this.atrTrailPeriodWeekly      = 8;
+        this.atrTrailMultDailyVcp      = 2.0;
+        this.atrTrailMultDailyRangeExpansion = 2.4;
+        this.atrTrailMultWeeklyVcp     = 2.4;
+        this.atrTrailMultWeeklyRangeExpansion = 2.8;
+
+        this.enableSwingLowTrailingStop = true;
+        this.swingLookbackDaily        = 5;
+        this.swingLookbackWeekly       = 3;
+        this.swingStopBufferPct        = 0.005;
+
+        // Setup + timeframe aware hold periods
+        this.holdBarsDailyVcp          = 15;
+        this.holdBarsDailyRangeExpansion = 11;
+        this.holdBarsWeeklyVcp         = 10;
+        this.holdBarsWeeklyRangeExpansion = 8;
     }
 }

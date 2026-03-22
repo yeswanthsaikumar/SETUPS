@@ -144,6 +144,13 @@ def latest_scan_paths(output_dir: Path, market: str, timeframe: str, setups: str
         "openTradesCsv": output_dir / f"open_trades_{label}_LATEST.csv",
         "openTradesJson": output_dir / f"open_trades_{label}_LATEST.json",
         "openTradesHtml": output_dir / f"open_trades_{label}_LATEST.html",
+        "portfolioCsv": output_dir / f"portfolio_shortlist_{label}_LATEST.csv",
+        "portfolioJson": output_dir / f"portfolio_shortlist_{label}_LATEST.json",
+        "portfolioHtml": output_dir / f"portfolio_shortlist_{label}_LATEST.html",
+        "rejectionsCsv": output_dir / f"rejections_{label}_LATEST.csv",
+        "rejectionsJson": output_dir / f"rejections_{label}_LATEST.json",
+        "manifestJson": output_dir / f"scan_manifest_{label}_LATEST.json",
+        "bundleJson": output_dir / f"scan_bundle_{label}_LATEST.json",
     }
 
 
@@ -221,6 +228,8 @@ def run_market_timeframe_scan(args: argparse.Namespace, market: str, timeframe: 
     latest = latest_scan_paths(args.output_dir, market, timeframe, args.setups)
     hits = load_hits_count(latest["json"])
     watchlist_hits = load_hits_count(latest["watchlistJson"])
+    portfolio_hits = load_hits_count(latest["portfolioJson"])
+    rejections = load_hits_count(latest["rejectionsJson"])
     return {
         "market": market,
         "timeframe": timeframe,
@@ -229,6 +238,8 @@ def run_market_timeframe_scan(args: argparse.Namespace, market: str, timeframe: 
         "lookback": lookback,
         "hits": hits,
         "watchlistHits": watchlist_hits,
+        "portfolioPicks": portfolio_hits,
+        "rejections": rejections,
         "setupBreakdown": setup_split_counts(args.output_dir, market, timeframe, args.setups),
         "variationBreakdown": variation_breakdown_from_hits(latest["json"]),
         "files": {key: str(value) for key, value in latest.items()},
@@ -249,15 +260,17 @@ def write_summary(output_dir: Path, results: list[dict]) -> tuple[Path, Path]:
         f"- Scan groups: {len(results)}",
         f"- Total open-trade hits across all groups: {total_hits}",
         f"- Total watchlist candidates across all groups: {sum(item.get('watchlistHits', 0) for item in results)}",
+        f"- Total portfolio picks across all groups: {sum(item.get('portfolioPicks', 0) for item in results)}",
+        f"- Total rejections across all groups: {sum(item.get('rejections', 0) for item in results)}",
         "",
         "## Scan Results",
         "",
-        "| Market | Timeframe | Setups | Open Trades | Watchlist | Symbols File | Latest CSV | Latest HTML |",
-        "|---|---|---|---:|---:|---|---|---|",
+        "| Market | Timeframe | Setups | Open Trades | Watchlist | Portfolio Picks | Rejections | Symbols File | Latest CSV | Latest HTML |",
+        "|---|---|---|---:|---:|---:|---:|---|---|---|",
     ]
     for item in results:
         lines.append(
-            f"| {item['market']} | {item['timeframe']} | {item['setups']} | {item['hits']} | {item.get('watchlistHits', 0)} | `{item['symbols_file']}` | `{item['files']['csv']}` | `{item['files']['html']}` |"
+            f"| {item['market']} | {item['timeframe']} | {item['setups']} | {item['hits']} | {item.get('watchlistHits', 0)} | {item.get('portfolioPicks', 0)} | {item.get('rejections', 0)} | `{item['symbols_file']}` | `{item['files']['csv']}` | `{item['files']['html']}` |"
         )
         variation = item.get("variationBreakdown", {})
         lines.append(f"  - Variations setup: {top_counts_line(variation.get('setup', {}), 3)}")
@@ -278,6 +291,11 @@ def write_summary(output_dir: Path, results: list[dict]) -> tuple[Path, Path]:
         lines.append(f"- Watchlist HTML: `{item['files']['watchlistHtml']}`")
         lines.append(f"- Open Trades CSV: `{item['files']['openTradesCsv']}`")
         lines.append(f"- Open Trades HTML: `{item['files']['openTradesHtml']}`")
+        lines.append(f"- Portfolio Picks CSV: `{item['files']['portfolioCsv']}`")
+        lines.append(f"- Portfolio Picks HTML: `{item['files']['portfolioHtml']}`")
+        lines.append(f"- Rejections CSV: `{item['files']['rejectionsCsv']}`")
+        lines.append(f"- Scan Manifest: `{item['files']['manifestJson']}`")
+        lines.append(f"- Structured Bundle: `{item['files']['bundleJson']}`")
         if item.get("setupBreakdown"):
             lines.append(f"- VCP hits: {item['setupBreakdown'].get('vcp', 0)}")
             lines.append(f"- Range expansion hits: {item['setupBreakdown'].get('range_expansion', 0)}")
@@ -332,7 +350,11 @@ def main():
     print("VCP SYSTEM RUN COMPLETE")
     print("════════════════════════════════════════════════════════════════════════")
     for item in results:
-        print(f"- {item['market'].upper()} {item['timeframe'].upper()} ({item['setups']}): {item['hits']} open trades, {item.get('watchlistHits', 0)} watchlist")
+        print(
+            f"- {item['market'].upper()} {item['timeframe'].upper()} ({item['setups']}): "
+            f"{item['hits']} open trades, {item.get('watchlistHits', 0)} watchlist, "
+            f"{item.get('portfolioPicks', 0)} portfolio picks, {item.get('rejections', 0)} rejections"
+        )
         if item.get("setupBreakdown"):
             print(f"  VCP  → {item['setupBreakdown'].get('vcp', 0)}")
             print(f"  REXP → {item['setupBreakdown'].get('range_expansion', 0)}")

@@ -4,6 +4,9 @@ public class WatchlistResult {
     private final Candle signalCandle;
     private final TradePlan tradePlan;
     private final double distanceToPivotPct;
+    private double alignmentBonus;              // Multi-timeframe alignment score boost
+    private String alignmentReason;             // Why alignment bonus was applied
+    private boolean weeklyAligned;              // Whether weekly structure supports watchlist
 
     public WatchlistResult(String symbol, VcpSetup setup, Candle signalCandle, TradePlan tradePlan, double distanceToPivotPct) {
         this.symbol = symbol;
@@ -11,6 +14,9 @@ public class WatchlistResult {
         this.signalCandle = signalCandle;
         this.tradePlan = tradePlan;
         this.distanceToPivotPct = distanceToPivotPct;
+        this.alignmentBonus = 0.0;
+        this.alignmentReason = "NO_ALIGNMENT";
+        this.weeklyAligned = false;
     }
 
     public String getSymbol() {
@@ -34,12 +40,32 @@ public class WatchlistResult {
     }
 
     public double getQualityScore() {
-        return setup.getQualityScore();
+        return setup.getQualityScore() + alignmentBonus;
+    }
+
+    // ── Multi-timeframe alignment ────────────────────────────────────────────────
+    public double getAlignmentBonus() {
+        return alignmentBonus;
+    }
+
+    public void setAlignmentBonus(double bonus, String reason, boolean aligned) {
+        this.alignmentBonus = Math.max(0.0, bonus);
+        this.alignmentReason = reason == null ? "NO_ALIGNMENT" : reason;
+        this.weeklyAligned = aligned;
+    }
+
+    public String getAlignmentReason() {
+        return alignmentReason;
+    }
+
+    public boolean isWeeklyAligned() {
+        return weeklyAligned;
     }
 
     public String toConsoleLine() {
+        String alignmentTag = alignmentBonus > 0.0 ? String.format(" [MTF: %s (+%.1f)]", alignmentReason, alignmentBonus) : "";
         return String.format(
-                "%s | Type WATCHLIST | Setup %s | Window %s(%d) | Height %.1f%% | Depth %.1f%% | Len %d | Ctr %d/%d | Rating %s | Close %.2f | Pivot %.2f | Dist %.2f%% | Entry %.2f | Score %.1f | Range %.1f%% | Vol %.1f%% | RExp %.2fx | Shares %d | SL %.2f | T1 %.2f T2 %.2f T3 %.2f",
+                "%s | Type WATCHLIST | Setup %s | Window %s(%d) | Height %.1f%% | Depth %.1f%% | Len %d | Ctr %d/%d | Rating %s | Close %.2f | Pivot %.2f | Dist %.2f%% | Entry %.2f | Score %.1f | Range %.1f%% | Vol %.1f%% | RExp %.2fx | Shares %d | SL %.2f | T1 %.2f T2 %.2f T3 %.2f%s",
                 symbol,
                 setup.getSetupType(),
                 setup.getBaseWindowLabel(),
@@ -54,7 +80,7 @@ public class WatchlistResult {
                 setup.getPivotPrice(),
                 distanceToPivotPct * 100.0,
                 tradePlan.getEntry(),
-                setup.getQualityScore(),
+                getQualityScore(),
                 setup.getRangeContraction() * 100.0,
                 setup.getVolumeContraction() * 100.0,
                 setup.getRangeExpansion(),
@@ -62,7 +88,8 @@ public class WatchlistResult {
                 tradePlan.getStopLoss(),
                 tradePlan.getTarget1(),
                 tradePlan.getTarget2(),
-                tradePlan.getTarget3()
+                tradePlan.getTarget3(),
+                alignmentTag
         );
     }
 }
