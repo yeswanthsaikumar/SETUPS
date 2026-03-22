@@ -7,14 +7,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 ARG TARGETARCH
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
-# Set the working directory
-WORKDIR /app
-
-# Copy the project files
-COPY . /app
-
-# Copy the cache directory if it exists
-COPY cache /app/cache
 
 WORKDIR /app
 
@@ -54,6 +46,9 @@ RUN pip install --no-cache-dir -r /app/requirements-web.txt
 COPY . /app
 
 RUN mkdir -p /app/output /app/cache
+
+# Copy the cache directory if it exists
+COPY cache /app/cache
 
 EXPOSE 8000
 
