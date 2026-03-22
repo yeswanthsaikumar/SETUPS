@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SETUPS Web Console</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; background: #0f172a; color: #e2e8f0; }
+    h1, h2 { margin: 0 0 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+    .card { background: #111827; border: 1px solid #334155; border-radius: 10px; padding: 16px; }
+    label { display: block; margin: 8px 0 4px; font-size: 13px; color: #93c5fd; }
+    input, select, button, textarea { width: 100%; box-sizing: border-box; border-radius: 8px; border: 1px solid #475569; background: #0b1220; color: #e2e8f0; padding: 8px; }
+    button { background: #1d4ed8; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; }
+    button:hover { background: #2563eb; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    a { color: #60a5fa; }
+    pre { background: #020617; border: 1px solid #334155; padding: 10px; border-radius: 8px; max-height: 240px; overflow: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #334155; text-align: left; padding: 6px; font-size: 13px; }
+    .status-queued { color: #facc15; }
+    .status-running { color: #38bdf8; }
+    .status-succeeded { color: #4ade80; }
+    .status-failed { color: #f87171; }
+    .muted { color: #94a3b8; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>SETUPS Web Console</h1>
+  <p class="muted">Trigger scans/backtests and open generated reports from one place.</p>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Run Scan</h2>
+      <label>Markets (comma-separated)</label>
+      <input id="scanMarkets" value="india,us" />
+      <label>Timeframes (comma-separated)</label>
+      <input id="scanTimeframes" value="daily,weekly" />
+      <div class="row">
+        <div>
+          <label>Setups</label>
+          <select id="scanSetups">
+            <option value="both">both</option>
+            <option value="vcp">vcp</option>
+            <option value="range_expansion">range_expansion</option>
+          </select>
+        </div>
+        <div>
+          <label>Workers</label>
+          <input id="scanWorkers" type="number" value="4" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Daily lookback</label>
+          <input id="scanDaily" type="number" value="252" />
+        </div>
+        <div>
+          <label>Weekly lookback</label>
+          <input id="scanWeekly" type="number" value="104" />
+        </div>
+      </div>
+      <label>Batch size</label>
+      <input id="scanBatch" type="number" value="25" />
+      <button onclick="startScan()">Start Scan Job</button>
+    </section>
+
+    <section class="card">
+      <h2>Run Backtest</h2>
+      <div class="row">
+        <div>
+          <label>Market</label>
+          <select id="btMarket">
+            <option value="india">india</option>
+            <option value="us">us</option>
+          </select>
+        </div>
+        <div>
+          <label>Timeframe</label>
+          <select id="btTimeframe">
+            <option value="daily">daily</option>
+            <option value="weekly">weekly</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Setups</label>
+          <select id="btSetups">
+            <option value="both">both</option>
+            <option value="vcp">vcp</option>
+            <option value="range_expansion">range_expansion</option>
+          </select>
+        </div>
+        <div>
+          <label>Hold bars (optional)</label>
+          <input id="btHold" type="number" placeholder="auto" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Lookback (optional)</label>
+          <input id="btLookback" type="number" placeholder="auto" />
+        </div>
+        <div>
+          <label>Workers</label>
+          <input id="btWorkers" type="number" value="4" />
+        </div>
+      </div>
+      <label>Batch size</label>
+      <input id="btBatch" type="number" value="20" />
+      <button onclick="startBacktest()">Start Backtest Job</button>
+    </section>
+
+    <section class="card">
+      <h2>Jobs</h2>
+      <button onclick="refreshJobs()">Refresh Jobs</button>
+      <table>
+        <thead><tr><th>ID</th><th>Kind</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="jobsBody"></tbody>
+      </table>
+      <label>Job log tail</label>
+      <pre id="jobLog"></pre>
+    </section>
+
+    <section class="card">
+      <h2>Latest Outputs</h2>
+      <button onclick="refreshOutputs()">Refresh Output Links</button>
+      <div id="outputs"></div>
+    </section>
+  </div>
+
+  <script>
+    async function api(path, opts = {}) {
+      const res = await fetch(path, {
+        headers: { 'Content-Type': 'application/json' },
+        ...opts,
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`HTTP ${res.status} ${txt}`);
+      }
+      return res.json();
+    }
+
+    function csvList(text) {
+      return text.split(',').map(x => x.trim()).filter(Boolean);
+    }
+
+    function toReportUrl(path) {
+      if (!path) return null;
+      if (String(path).startsWith('/reports/')) return path;
+      const parts = String(path).split('/');
+      const name = parts[parts.length - 1];
+      return name ? `/reports/${name}` : null;
+    }
+
+    function appendLinkLine(container, label, url) {
+      if (!url) return;
+      const p = document.createElement('p');
+      p.innerHTML = `${label}: <a href="${url}" target="_blank">open</a>`;
+      container.appendChild(p);
+    }
+
+    function renderScanResults(container, summary) {
+      const results = (summary && summary.results) || [];
+      if (!results.length) {
+        const p = document.createElement('p');
+        p.textContent = 'No detailed scan groups in latest summary.';
+        container.appendChild(p);
+        return;
+      }
+
+      for (const item of results) {
+        const card = document.createElement('div');
+        card.style.border = '1px solid #334155';
+        card.style.borderRadius = '8px';
+        card.style.padding = '10px';
+        card.style.marginBottom = '8px';
+
+        const title = document.createElement('p');
+        title.innerHTML = `<b>${item.market?.toUpperCase?.() || ''} ${item.timeframe?.toUpperCase?.() || ''}</b> · setups=${item.setups || 'both'} · open=${item.hits ?? 0} · watch=${item.watchlistHits ?? 0}`;
+        card.appendChild(title);
+
+        const files = item.files || {};
+        appendLinkLine(card, 'Hits HTML', toReportUrl(files.html));
+        appendLinkLine(card, 'Hits CSV', toReportUrl(files.csv));
+        appendLinkLine(card, 'Watchlist HTML', toReportUrl(files.watchlistHtml));
+        appendLinkLine(card, 'Watchlist CSV', toReportUrl(files.watchlistCsv));
+        appendLinkLine(card, 'Open Trades HTML', toReportUrl(files.openTradesHtml));
+        appendLinkLine(card, 'Open Trades CSV', toReportUrl(files.openTradesCsv));
+        appendLinkLine(card, 'Portfolio HTML', toReportUrl(files.portfolioHtml));
+        appendLinkLine(card, 'Portfolio CSV', toReportUrl(files.portfolioCsv));
+        appendLinkLine(card, 'Rejections CSV', toReportUrl(files.rejectionsCsv));
+        appendLinkLine(card, 'Manifest JSON', toReportUrl(files.manifestJson));
+
+        container.appendChild(card);
+      }
+    }
+
+    async function startScan() {
+      const payload = {
+        markets: csvList(document.getElementById('scanMarkets').value),
+        timeframes: csvList(document.getElementById('scanTimeframes').value),
+        setups: document.getElementById('scanSetups').value,
+        daily_lookback: Number(document.getElementById('scanDaily').value || 252),
+        weekly_lookback: Number(document.getElementById('scanWeekly').value || 104),
+        workers: Number(document.getElementById('scanWorkers').value || 4),
+        batch: Number(document.getElementById('scanBatch').value || 25),
+        skip_us_refresh: true,
+      };
+      await api('/api/jobs/scan', { method: 'POST', body: JSON.stringify(payload) });
+      await refreshJobs();
+    }
+
+    async function startBacktest() {
+      const lookbackRaw = document.getElementById('btLookback').value;
+      const holdRaw = document.getElementById('btHold').value;
+      const payload = {
+        market: document.getElementById('btMarket').value,
+        timeframe: document.getElementById('btTimeframe').value,
+        setups: document.getElementById('btSetups').value,
+        lookback: lookbackRaw ? Number(lookbackRaw) : null,
+        hold_bars: holdRaw ? Number(holdRaw) : null,
+        workers: Number(document.getElementById('btWorkers').value || 4),
+        batch: Number(document.getElementById('btBatch').value || 20),
+      };
+      await api('/api/jobs/backtest', { method: 'POST', body: JSON.stringify(payload) });
+      await refreshJobs();
+    }
+
+    async function refreshJobs() {
+      const data = await api('/api/jobs');
+      const body = document.getElementById('jobsBody');
+      body.innerHTML = '';
+      for (const job of data.jobs) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><code>${job.id.slice(0, 8)}</code></td>
+          <td>${job.kind}</td>
+          <td class="status-${job.status}">${job.status}</td>
+          <td>
+            <button onclick="showLog('${job.id}')">Log</button>
+          </td>
+        `;
+        body.appendChild(tr);
+      }
+    }
+
+    async function showLog(jobId) {
+      const data = await api(`/api/jobs/${jobId}/log`);
+      document.getElementById('jobLog').textContent = data.log || '';
+    }
+
+    async function refreshOutputs() {
+      const node = document.getElementById('outputs');
+      node.innerHTML = '';
+
+      try {
+        const s = await api('/api/outputs/scan/latest');
+        const p = document.createElement('p');
+        p.innerHTML = `Scan summary: <a href="${s.summaryJson}" target="_blank">JSON</a> | <a href="${s.summaryMd}" target="_blank">Markdown</a>`;
+        node.appendChild(p);
+        renderScanResults(node, s.summary);
+      } catch (_) {
+        const p = document.createElement('p');
+        p.textContent = 'No scan summary found yet.';
+        node.appendChild(p);
+      }
+
+      try {
+        const manifests = await api('/api/outputs/scan/manifests');
+        const top = (manifests.items || []).slice(0, 6);
+        if (top.length) {
+          const h = document.createElement('p');
+          h.innerHTML = '<b>Latest Scan Manifests</b>';
+          node.appendChild(h);
+          for (const m of top) {
+            const p = document.createElement('p');
+            p.innerHTML = `${m.updatedAt}: <a href="${m.url}" target="_blank">${m.name}</a>`;
+            node.appendChild(p);
+          }
+        }
+      } catch (_) {
+        // optional section
+      }
+
+      for (const market of ['india', 'us']) {
+        for (const timeframe of ['daily', 'weekly']) {
+          try {
+            const b = await api(`/api/outputs/backtest/latest?market=${market}&timeframe=${timeframe}`);
+            const p = document.createElement('p');
+            const htmlLink = b.html ? `<a href="${b.html}" target="_blank">HTML</a>` : 'HTML N/A';
+            const csvLink = b.csv ? `<a href="${b.csv}" target="_blank">CSV</a>` : 'CSV N/A';
+            p.innerHTML = `Backtest ${b.label}: ${htmlLink} | ${csvLink}`;
+            node.appendChild(p);
+          } catch (_) {
+            // ignore missing labels
+          }
+        }
+      }
+    }
+
+    refreshJobs();
+    refreshOutputs();
+  </script>
+</body>
+</html>
+

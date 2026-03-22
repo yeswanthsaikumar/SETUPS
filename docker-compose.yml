@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  setups-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: setups-web
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./output:/app/output
+      - ./cache:/app/cache
+    restart: unless-stopped
+
