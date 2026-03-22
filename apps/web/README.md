@@ -98,24 +98,71 @@ Check jobs:
 curl http://localhost:8000/api/jobs
 ```
 
-## Docker Run
+## Docker Usage
+
+### Prerequisites
+
+- Docker Desktop (or Docker Engine + Compose plugin) installed and running.
+- Run commands from project root: `/Users/yeshwantha/IdeaProjects/SETUPS`.
+
+### Build Image
 
 ```bash
 cd /Users/yeshwantha/IdeaProjects/SETUPS
 docker build -t setups-web .
-docker run --rm -p 8000:8000 \
+```
+
+### Run Container (direct `docker run`)
+
+```bash
+cd /Users/yeshwantha/IdeaProjects/SETUPS
+docker run --name setups-web --rm -p 8000:8000 \
   -v "$(pwd)/output:/app/output" \
   -v "$(pwd)/cache:/app/cache" \
   setups-web
 ```
 
-Open `http://localhost:8000`
+### Verify Service
+
+```bash
+curl http://localhost:8000/api/health
+```
+
+Open `http://localhost:8000` for UI.
+
+### Stop Service
+
+- If running in foreground: press `Ctrl+C`.
+- If running in detached mode: `docker stop setups-web`.
 
 ## Docker Compose
+
+### Start
 
 ```bash
 cd /Users/yeshwantha/IdeaProjects/SETUPS
 docker compose up --build
+```
+
+### Start in background
+
+```bash
+cd /Users/yeshwantha/IdeaProjects/SETUPS
+docker compose up --build -d
+```
+
+### Check logs
+
+```bash
+cd /Users/yeshwantha/IdeaProjects/SETUPS
+docker compose logs -f
+```
+
+### Stop and remove containers
+
+```bash
+cd /Users/yeshwantha/IdeaProjects/SETUPS
+docker compose down
 ```
 
 ## Online Hosting Notes
@@ -124,6 +171,8 @@ docker compose up --build
 - For production, use persistent volumes so reports/logs survive restarts.
 - For public deployment, add auth/rate-limits in front of job-start endpoints.
 - Health check endpoint for platform probes: `GET /api/health`.
+- Recommended container port: `8000`.
+- Keep `output/` and `cache/` on persistent storage; job history and reports are written there.
 
 ## Output and Logs
 
