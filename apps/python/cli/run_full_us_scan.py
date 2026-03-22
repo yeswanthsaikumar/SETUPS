@@ -55,6 +55,17 @@ JAVA_TIMEOUT_SEC      = 180                   # kill stalled Java process after 
 DEFAULT_LIQ_LOOKBACK  = 20
 DEFAULT_ACCOUNT_SIZE  = 100_000.0
 DEFAULT_BASE_RISK_PCT = 0.01
+WATCHLIST_RANK_WEIGHTS = {
+    "quality": 0.32,
+    "pivotProximity": 0.18,
+    "rsStrength": 0.18,
+    "regimeQuality": 0.12,
+    "weeklyAgreement": 0.10,
+    "volumeDryUp": 0.06,
+    "pivotFreshness": 0.04,
+}
+WATCHLIST_NEAR_PIVOT_BAND_PCT = 0.025
+WATCHLIST_PIVOT_TOUCH_BAND_PCT = 0.01
 # ─────────────────────────────────────────────────────────────────────────────
 
 lock = threading.Lock()
@@ -144,6 +155,54 @@ def _safe_return(closes: list[float], bars: int) -> float:
     return (now / old) - 1.0
 
 
+def _clamp(value: float, low: float = 0.0, high: float = 100.0) -> float:
+    return max(low, min(high, value))
+
+
+def _mean(values: list[float]) -> float:
+    return (sum(values) / len(values)) if values else 0.0
+
+
+def aggregate_weekly_bars(rows: list[dict]) -> list[dict]:
+    weekly: list[dict] = []
+    current: dict | None = None
+    current_key = None
+
+    for row in rows:
+        date_text = str(row.get("date", "")).strip()
+        if not date_text:
+            continue
+        try:
+            dt = datetime.fromisoformat(date_text).date()
+        except ValueError:
+            continue
+
+        key = (dt.isocalendar().year, dt.isocalendar().week)
+        if key != current_key:
+            if current is not None:
+                weekly.append(current)
+            current_key = key
+            current = {
+                "date": dt.isoformat(),
+                "open": _to_float(row.get("open")),
+                "high": _to_float(row.get("high")),
+                "low": _to_float(row.get("low")),
+                "close": _to_float(row.get("close")),
+                "volume": _to_float(row.get("volume")),
+            }
+        else:
+            current["high"] = max(_to_float(current.get("high")), _to_float(row.get("high")))
+            current["low"] = min(_to_float(current.get("low"), 10**12), _to_float(row.get("low"), 10**12))
+            current["close"] = _to_float(row.get("close"))
+            current["volume"] = _to_float(current.get("volume")) + _to_float(row.get("volume"))
+            current["date"] = dt.isoformat()
+
+    if current is not None:
+        weekly.append(current)
+
+    return weekly
+
+
 def _cache_candidates(symbol: str, lookback: int, timeframe: str, cache_dir: str) -> list[Path]:
     cache = Path(cache_dir)
     suffixes = {lookback}
@@ -165,10 +224,18 @@ def load_cached_bars(symbol: str, lookback: int, timeframe: str, cache_dir: str)
                 reader = csv.DictReader(fh)
                 for row in reader:
                     rows.append({
+                        "date": str(row.get("date") or "").strip(),
+                        "open": _to_float(row.get("open")),
+                        "high": _to_float(row.get("high")),
+                        "low": _to_float(row.get("low")),
                         "close": _to_float(row.get("close")),
                         "volume": _to_float(row.get("volume")),
                     })
             if len(rows) >= 30:
+                if timeframe == "weekly":
+                    weekly_rows = aggregate_weekly_bars(rows)
+                    if len(weekly_rows) >= 10:
+                        return weekly_rows
                 return rows
         except Exception:
             continue
@@ -226,6 +293,142 @@ def build_market_regime(symbols: list[str], args) -> dict:
     }
 
 
+def _pivot_freshness_from_tests(test_count: int) -> tuple[str, float]:
+    if test_count <= 1:
+        return "FRESH", 100.0
+    if test_count == 2:
+        return "ACTIVE", 90.0
+    if test_count <= 4:
+        return "RETESTED", 75.0
+    if test_count <= 6:
+        return "WORN", 50.0
+    if test_count <= 9:
+        return "STALE", 30.0
+    return "VERY_STALE", 10.0
+
+
+def compute_watchlist_enrichment(row: dict, bars: list[dict], regime: dict, args) -> dict:
+    pivot = _to_float(row.get("pivot"), 0.0)
+    dist_pct = abs(_to_float(row.get("dist%"), 0.0))
+    quality = _clamp(_to_float(row.get("score"), 0.0))
+    rs_raw = _to_float(row.get("rsScore"), 0.0)
+    rs_rank_score = _clamp(50.0 + (rs_raw * 1.5))
+    regime_support_score = _clamp(_to_float(regime.get("score"), 1.0) * 100.0)
+
+    if regime_support_score >= 70:
+        regime_support = "STRONG"
+    elif regime_support_score >= 55:
+        regime_support = "SUPPORTIVE"
+    elif regime_support_score >= 45:
+        regime_support = "NEUTRAL"
+    else:
+        regime_support = "HEADWIND"
+
+    max_dist_pct = 8.0 if args.timeframe == "weekly" else 6.0
+    pivot_proximity_score = _clamp((1.0 - (dist_pct / max_dist_pct)) * 100.0) if max_dist_pct > 0 else 0.0
+
+    days_near_pivot = 0
+    pivot_test_count = 0
+    if pivot > 0 and bars:
+        recent_window = bars[max(0, len(bars) - 10):]
+        for bar in recent_window:
+            close = _to_float(bar.get("close"))
+            high = _to_float(bar.get("high"), close)
+            if close <= 0:
+                continue
+            dist_to_pivot = (pivot - close) / pivot
+            near_pivot = 0.0 <= dist_to_pivot <= WATCHLIST_NEAR_PIVOT_BAND_PCT
+            shadow_near_pivot = high >= pivot * (1.0 - (WATCHLIST_PIVOT_TOUCH_BAND_PCT / 2.0)) and close <= pivot * 1.01
+            if near_pivot or shadow_near_pivot:
+                days_near_pivot += 1
+
+        for bar in bars[max(0, len(bars) - 30):-1]:
+            close = _to_float(bar.get("close"))
+            high = _to_float(bar.get("high"), close)
+            if close <= 0:
+                continue
+            touched = (
+                (high >= pivot and close <= pivot * 1.005)
+                or abs(close - pivot) <= pivot * WATCHLIST_PIVOT_TOUCH_BAND_PCT
+                or abs(high - pivot) <= pivot * WATCHLIST_PIVOT_TOUCH_BAND_PCT
+            )
+            if touched:
+                pivot_test_count += 1
+
+    pivot_freshness, pivot_freshness_score = _pivot_freshness_from_tests(pivot_test_count)
+
+    volume_dry_up_ratio = 1.0
+    volume_dry_up_score = 50.0
+    if len(bars) >= 25:
+        recent_vol = _mean([_to_float(b.get("volume")) for b in bars[-5:]])
+        prior_vol = _mean([_to_float(b.get("volume")) for b in bars[-25:-5]])
+        if prior_vol > 0:
+            volume_dry_up_ratio = recent_vol / prior_vol
+            volume_dry_up_score = _clamp(((1.25 - volume_dry_up_ratio) / 0.75) * 100.0)
+
+    weekly_agreement = "UNKNOWN"
+    weekly_agreement_score = 50.0
+    if args.timeframe == "weekly":
+        weekly_agreement = "PRIMARY_TIMEFRAME"
+        weekly_agreement_score = 100.0
+    else:
+        weekly_bars = aggregate_weekly_bars(bars)
+        if len(weekly_bars) >= 10:
+            weekly_closes = [_to_float(b.get("close")) for b in weekly_bars if _to_float(b.get("close")) > 0]
+            weekly_highs = [_to_float(b.get("high")) for b in weekly_bars if _to_float(b.get("high")) > 0]
+            if weekly_closes and weekly_highs:
+                close = weekly_closes[-1]
+                ma10 = _mean(weekly_closes[-10:])
+                ma30 = _mean(weekly_closes[-30:]) if len(weekly_closes) >= 30 else _mean(weekly_closes)
+                recent_high = max(weekly_highs[-26:]) if len(weekly_highs) >= 26 else max(weekly_highs)
+                weekly_agreement_score = 0.0
+                if close > ma10:
+                    weekly_agreement_score += 35.0
+                if close > ma30:
+                    weekly_agreement_score += 30.0
+                if len(weekly_closes) >= 30 and ma10 > ma30:
+                    weekly_agreement_score += 20.0
+                if recent_high > 0 and ((recent_high - close) / recent_high) <= 0.08:
+                    weekly_agreement_score += 15.0
+                if len(weekly_closes) >= 3 and weekly_closes[-1] >= weekly_closes[-3]:
+                    weekly_agreement_score += 5.0
+                weekly_agreement_score = _clamp(weekly_agreement_score)
+
+                if weekly_agreement_score >= 85:
+                    weekly_agreement = "STRONG"
+                elif weekly_agreement_score >= 65:
+                    weekly_agreement = "SUPPORTIVE"
+                elif weekly_agreement_score >= 45:
+                    weekly_agreement = "MIXED"
+                else:
+                    weekly_agreement = "WEAK"
+
+    watchlist_quality_score = (
+        WATCHLIST_RANK_WEIGHTS["quality"] * quality
+        + WATCHLIST_RANK_WEIGHTS["pivotProximity"] * pivot_proximity_score
+        + WATCHLIST_RANK_WEIGHTS["rsStrength"] * rs_rank_score
+        + WATCHLIST_RANK_WEIGHTS["regimeQuality"] * regime_support_score
+        + WATCHLIST_RANK_WEIGHTS["weeklyAgreement"] * weekly_agreement_score
+        + WATCHLIST_RANK_WEIGHTS["volumeDryUp"] * volume_dry_up_score
+        + WATCHLIST_RANK_WEIGHTS["pivotFreshness"] * pivot_freshness_score
+    )
+
+    return {
+        "pivotProximityScore": round(pivot_proximity_score, 2),
+        "daysNearPivot": days_near_pivot,
+        "pivotFreshness": pivot_freshness,
+        "pivotFreshnessScore": round(pivot_freshness_score, 2),
+        "regimeSupport": regime_support,
+        "regimeSupportScore": round(regime_support_score, 2),
+        "weeklyAgreement": weekly_agreement,
+        "weeklyAgreementScore": round(weekly_agreement_score, 2),
+        "rsRankScore": round(rs_rank_score, 2),
+        "volumeDryUpScore": round(volume_dry_up_score, 2),
+        "volumeDryUpRatio": round(volume_dry_up_ratio, 3),
+        "watchlistQualityScore": round(watchlist_quality_score, 2),
+    }
+
+
 def enrich_and_filter_rows(rows: list[dict], args, regime: dict, list_type: str) -> tuple[list[dict], list[dict], dict[str, str]]:
     kept: list[dict] = []
     rejected: list[dict] = []
@@ -264,11 +467,14 @@ def enrich_and_filter_rows(rows: list[dict], args, regime: dict, list_type: str)
         row["rs6m"] = round(rs6 * 100.0, 2)
         row["rs12m"] = round(rs12 * 100.0, 2)
         row["rsScore"] = round(rs_score, 2)
+        row.update(compute_watchlist_enrichment(row, bars, regime, args))
 
         quality = _to_float(row.get("score"))
         rank_score = quality + (args.rs_weight * rs_score)
         if regime.get("mode") == "soft" and not regime.get("favorable", True):
             rank_score -= 10.0
+        if str(row.get("listType", list_type)).upper() == "WATCHLIST":
+            rank_score = _to_float(row.get("watchlistQualityScore"), rank_score)
         row["rankingScore"] = round(rank_score, 2)
 
         if latest_close < args.min_price_floor:
@@ -320,6 +526,24 @@ def apply_portfolio_heat(rows: list[dict], args) -> list[dict]:
         item["heatAfterR"] = round(cumulative, 3)
         shortlist.append(item)
     return shortlist
+
+
+def rank_watchlist_rows(rows: list[dict]) -> list[dict]:
+    ranked = sorted(
+        rows,
+        key=lambda r: (
+            _to_float(r.get("watchlistQualityScore"), _to_float(r.get("rankingScore"), _to_float(r.get("score")))),
+            _to_float(r.get("score")),
+            _to_float(r.get("pivotProximityScore")),
+            _to_float(r.get("rsScore")),
+            _to_float(r.get("regimeSupportScore")),
+            _to_float(r.get("weeklyAgreementScore")),
+        ),
+        reverse=True,
+    )
+    for idx, row in enumerate(ranked, start=1):
+        row["watchlistRank"] = idx
+    return ranked
 
 
 def build_rejection_rows(symbols: list[str], included: set[str], rejected_map: dict[str, str]) -> list[dict]:
@@ -641,8 +865,10 @@ def parse_hit(line: str) -> dict:
 
 CSV_FIELDS = [
     "symbol", "listType", "setup", "window", "height%", "depth%", "len", "ctr", "dist%", "rating", "close", "pivot", "entry", "score",
-    "range%", "vol%", "rexp", "shares", "sl", "T1", "T2", "T3", "avgVol20", "avgDollarVol20", "rs3m", "rs6m", "rs12m", "rsScore",
-    "regimeState", "regimeScore", "rankingScore", "riskR", "heatAfterR"
+    "watchlistRank", "watchlistQualityScore", "pivotProximityScore", "daysNearPivot", "pivotFreshness", "pivotFreshnessScore",
+    "range%", "vol%", "rexp", "shares", "sl", "T1", "T2", "T3", "avgVol20", "avgDollarVol20", "rs3m", "rs6m", "rs12m", "rsScore", "rsRankScore",
+    "regimeState", "regimeScore", "regimeSupport", "regimeSupportScore", "weeklyAgreement", "weeklyAgreementScore", "volumeDryUpScore", "volumeDryUpRatio",
+    "rankingScore", "riskR", "heatAfterR"
 ]
 
 
@@ -928,6 +1154,15 @@ def save_html(rows: list[dict], path: Path, meta: dict):
         t3     = r.get("T3") or "?"
         dist   = r.get("dist%") or "?"
         vol    = r.get("vol%") or "?"
+        watch_rank = r.get("watchlistRank") or "-"
+        rank_score = r.get("watchlistQualityScore") or r.get("rankingScore") or "-"
+        pivot_prox = r.get("pivotProximityScore") or "-"
+        days_near_pivot = r.get("daysNearPivot") or "-"
+        pivot_freshness = r.get("pivotFreshness") or "-"
+        weekly_agreement = r.get("weeklyAgreement") or "-"
+        regime_support = r.get("regimeSupport") or "-"
+        rs_score = r.get("rsScore") or "-"
+        vol_dry_up = r.get("volumeDryUpScore") or "-"
 
         setup_desc = (
             "VCP — Volatility Contraction Pattern with tightening range waves into pivot"
@@ -942,6 +1177,10 @@ def save_html(rows: list[dict], path: Path, meta: dict):
             f"Pivot: {pivot}  |  Entry: {entry}  |  Stop Loss: {sl}",
             f"Targets → T1(1R): {t1}  |  T2(2R): {t2}  |  T3(3R): {t3}",
             f"Distance to Pivot: {dist}%",
+            f"Watchlist Rank: {watch_rank}  |  Rank Score: {rank_score}",
+            f"Pivot Proximity Score: {pivot_prox}  |  Days Near Pivot: {days_near_pivot}  |  Pivot Freshness: {pivot_freshness}",
+            f"RS Score: {rs_score}  |  Regime Support: {regime_support}  |  Weekly Agreement: {weekly_agreement}",
+            f"Volume Dry-Up Score: {vol_dry_up}",
         ]
         return " &#10; ".join(lines)
 
@@ -951,7 +1190,7 @@ def save_html(rows: list[dict], path: Path, meta: dict):
         symbol = html.escape(r.get("symbol", ""))
         setup_type = (r.get("setup", "")).upper()
         rating_val = str(r.get("rating", "")).upper()
-        score_val = float(r.get("score", 0))
+        score_val = float(r.get("watchlistQualityScore") or r.get("rankingScore") or r.get("score", 0))
 
         price_link, fund_link = chart_links(r.get("symbol", ""))
         rating_chip = rating_badge(rating_val)
@@ -981,6 +1220,14 @@ def save_html(rows: list[dict], path: Path, meta: dict):
             f"<td>{html.escape(str(r.get('pivot','')))}</td>"
             f"<td>{html.escape(str(r.get('entry','')))}</td>"
             f"<td>{score_chip}</td>"
+            f"<td>{html.escape(str(r.get('watchlistQualityScore', r.get('rankingScore', ''))))}</td>"
+            f"<td>{html.escape(str(r.get('pivotProximityScore','')))}</td>"
+            f"<td>{html.escape(str(r.get('rsScore','')))}</td>"
+            f"<td>{html.escape(str(r.get('regimeSupport','')))}</td>"
+            f"<td>{html.escape(str(r.get('weeklyAgreement','')))}</td>"
+            f"<td>{html.escape(str(r.get('volumeDryUpScore','')))}</td>"
+            f"<td>{html.escape(str(r.get('daysNearPivot','')))}</td>"
+            f"<td>{html.escape(str(r.get('pivotFreshness','')))}</td>"
             f"<td>{html.escape(str(r.get('range%','')))}</td>"
             f"<td>{html.escape(str(r.get('vol%','')))}</td>"
             f"<td>{html.escape(str(r.get('rexp','')))}</td>"
@@ -1182,9 +1429,11 @@ def save_html(rows: list[dict], path: Path, meta: dict):
       #dataTable th:nth-child(16), #dataTable td:nth-child(16),
       #dataTable th:nth-child(17), #dataTable td:nth-child(17),
       #dataTable th:nth-child(18), #dataTable td:nth-child(18),
+      #dataTable th:nth-child(19), #dataTable td:nth-child(19),
       #dataTable th:nth-child(20), #dataTable td:nth-child(20),
       #dataTable th:nth-child(21), #dataTable td:nth-child(21),
       #dataTable th:nth-child(22), #dataTable td:nth-child(22),
+      #dataTable th:nth-child(23), #dataTable td:nth-child(23),
       #dataTable th:nth-child(24), #dataTable td:nth-child(24) {{ display: none; }}
 
       body.show-advanced #dataTable th:nth-child(5), body.show-advanced #dataTable td:nth-child(5),
@@ -1195,9 +1444,11 @@ def save_html(rows: list[dict], path: Path, meta: dict):
       body.show-advanced #dataTable th:nth-child(16), body.show-advanced #dataTable td:nth-child(16),
       body.show-advanced #dataTable th:nth-child(17), body.show-advanced #dataTable td:nth-child(17),
       body.show-advanced #dataTable th:nth-child(18), body.show-advanced #dataTable td:nth-child(18),
+      body.show-advanced #dataTable th:nth-child(19), body.show-advanced #dataTable td:nth-child(19),
       body.show-advanced #dataTable th:nth-child(20), body.show-advanced #dataTable td:nth-child(20),
       body.show-advanced #dataTable th:nth-child(21), body.show-advanced #dataTable td:nth-child(21),
       body.show-advanced #dataTable th:nth-child(22), body.show-advanced #dataTable td:nth-child(22),
+      body.show-advanced #dataTable th:nth-child(23), body.show-advanced #dataTable td:nth-child(23),
       body.show-advanced #dataTable th:nth-child(24), body.show-advanced #dataTable td:nth-child(24) {{ display: table-cell; }}
     }}
 
@@ -1323,7 +1574,7 @@ def save_html(rows: list[dict], path: Path, meta: dict):
     <thead>
       <tr>
         <th>Symbol</th><th>List Type</th><th>Setup</th><th>Window</th><th>Base Height %</th><th>Contraction Depth %</th><th>Base Length</th><th>Contraction Pairs</th><th>Pivot Distance %</th><th>Rating</th><th>Last Close</th><th>Pivot Price</th><th>Planned Entry</th><th>Quality Score</th>
-        <th>Range Contraction %</th><th>Volume Contraction %</th><th>Range Expansion x</th><th>Position Size</th><th>Stop Loss</th>
+        <th>Rank Score</th><th>Pivot Proximity</th><th>RS Score</th><th>Regime Support</th><th>Weekly Agreement</th><th>Volume Dry-Up</th><th>Days Near Pivot</th><th>Pivot Freshness</th><th>Range Contraction %</th><th>Volume Contraction %</th><th>Range Expansion x</th><th>Position Size</th><th>Stop Loss</th>
         <th>Target 1 (1R)</th><th>Target 2 (2R)</th><th>Target 3 (3R)</th><th>Price Charts</th><th>Fundamental Charts</th><th>Trade Reasoning</th>
       </tr>
     </thead>
@@ -1516,11 +1767,11 @@ def save_html(rows: list[dict], path: Path, meta: dict):
 
     function exportToCSV(rows) {{
       const headers = ['Symbol', 'List', 'Setup', 'Window', 'Height%', 'Depth%', 'Len', 'Ctr', 'Dist%',
-        'Rating', 'Close', 'Pivot', 'Entry', 'Score', 'Range%', 'Vol%', 'RExp', 'Shares', 'Stop', 'T1', 'T2', 'T3'];
+        'Rating', 'Close', 'Pivot', 'Entry', 'Score', 'RankScore', 'PivotProx', 'RS', 'Regime', 'Weekly', 'VolDryUp', 'DaysNearPivot', 'PivotFreshness', 'Range%', 'Vol%', 'RExp', 'Shares', 'Stop', 'T1', 'T2', 'T3'];
 
       let csv = headers.join(',') + '\\n';
       rows.forEach(row => {{
-        const cells = Array.from(row.cells).slice(0, 22).map(cell => {{
+        const cells = Array.from(row.cells).slice(0, 30).map(cell => {{
           let text = cell.textContent.trim();
           if (text.includes(',') || text.includes('"')) {{
             text = '"' + text.replace(/"/g, '""') + '"';
@@ -1803,7 +2054,7 @@ def main():
         return _to_float(h.get("rankingScore"), _to_float(h.get("score")))
 
     all_hits.sort(key=safe_rank, reverse=True)
-    all_watchlist.sort(key=safe_rank, reverse=True)
+    all_watchlist = rank_watchlist_rows(all_watchlist)
     open_trades = as_open_trade_rows(all_hits)
     shortlist = apply_portfolio_heat(all_hits, args)
     included_symbols = {r.get("symbol", "") for r in all_hits} | {r.get("symbol", "") for r in all_watchlist}
@@ -1842,6 +2093,7 @@ def main():
             "liquidityLookback": args.liquidity_lookback,
             "regimeMode": args.regime_mode,
             "rsWeight": args.rs_weight,
+            "watchlistRankingWeights": WATCHLIST_RANK_WEIGHTS,
             "maxPortfolioHeatR": args.max_portfolio_heat_r,
             "accountSize": args.account_size,
             "baseRiskPct": args.base_risk_pct,

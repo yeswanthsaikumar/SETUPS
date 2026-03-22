@@ -88,11 +88,15 @@ public class BacktestEngine {
                 ? config.atrTrailPeriodWeekly : config.atrTrailPeriodDaily;
         int swingLookback = "weekly".equalsIgnoreCase(timeframe)
                 ? config.swingLookbackWeekly : config.swingLookbackDaily;
+        int minTrailBars = "weekly".equalsIgnoreCase(timeframe)
+                ? config.minBarsAfterSignalForTrailingWeekly : config.minBarsAfterSignalForTrailingDaily;
         double atrMult = trailingAtrMultiplier(setup);
         double partialT1 = Math.max(0.0, Math.min(1.0, config.partialExitPctAtT1));
         double partialT2 = Math.max(0.0, Math.min(1.0 - partialT1, config.partialExitPctAtT2));
         double breakoutConfirmLevel = entry * (1.0 + config.breakoutBufferPct);
         List<String> tags = new ArrayList<>();
+        String timeStopProfile = timeStopProfile(setup);
+        addTagIfMissing(tags, timeStopProfile);
 
         for (int i = signalIndex + 1; i <= last; i++) {
             Candle c = candles.get(i);
@@ -120,6 +124,11 @@ public class BacktestEngine {
                 remaining -= qty;
                 hitT1 = true;
                 tags.add("PARTIAL_T1");
+                if (config.moveStopToBreakEvenAfterT1) {
+                    double breakEvenStop = entry * (1.0 + config.breakEvenBufferPct);
+                    stop = Math.max(stop, breakEvenStop);
+                    addTagIfMissing(tags, "STOP_TO_BREAKEVEN");
+                }
             }
 
             if (!hitT2 && c.getHigh() >= t2) {
@@ -142,7 +151,9 @@ public class BacktestEngine {
             }
 
             // Enable trailing once breakout is confirmed by close above entry buffer.
-            if (!trailingEnabled && c.getClose() >= breakoutConfirmLevel) {
+            if (!trailingEnabled
+                    && i - signalIndex >= minTrailBars
+                    && (c.getClose() >= breakoutConfirmLevel || hitT1)) {
                 trailingEnabled = true;
                 tags.add("TRAIL_ACTIVE");
             }
@@ -152,12 +163,15 @@ public class BacktestEngine {
                 double atrStop = stop;
                 if (config.enableAtrTrailingStop && atr > 0.0) {
                     atrStop = c.getClose() - (atrMult * atr);
+                    addTagIfMissing(tags, "ATR_TRAIL");
                 }
-                int swingStart = Math.max(signalIndex + 1, i - swingLookback + 1);
-                double swingLow = Indicators.lowestLow(candles, swingStart, i);
+                int swingStart = Math.max(signalIndex + 1, i - swingLookback);
                 double swingStop = stop;
-                if (config.enableSwingLowTrailingStop) {
+                // Structure trailing uses completed bars only (exclude current bar) to avoid same-bar lookahead bias.
+                if (config.enableSwingLowTrailingStop && swingStart <= i - 1) {
+                    double swingLow = Indicators.lowestLow(candles, swingStart, i - 1);
                     swingStop = swingLow * (1.0 - config.swingStopBufferPct);
+                    addTagIfMissing(tags, "SWING_TRAIL");
                 }
                 stop = Math.max(stop, Math.max(atrStop, swingStop));
             }
@@ -171,9 +185,7 @@ public class BacktestEngine {
         double rMultiple = risk <= 0.0 ? 0.0 : (realizedPerShare / risk);
         double pnl       = realizedPerShare * plan.getShares();
         exitPrice = weightedExit;
-        if (!tags.isEmpty() && "TIME_EXIT".equals(reason)) {
-            reason = String.join("+", tags) + "+TIME_EXIT";
-        } else if (!tags.isEmpty() && ("STOP".equals(reason) || "TRAIL_STOP".equals(reason))) {
+        if (!tags.isEmpty()) {
             reason = String.join("+", tags) + "+" + reason;
         }
         return new SimulatedTrade(exitIndex, exitPrice, rMultiple, pnl, reason,
@@ -210,6 +222,30 @@ public class BacktestEngine {
             return config.atrTrailMultDailyRangeExpansion;
         }
         return config.atrTrailMultDailyVcp;
+    }
+
+    private String timeStopProfile(VcpSetup setup) {
+        boolean weeklyTf = "weekly".equalsIgnoreCase(timeframe);
+        boolean rangeExpansion = setup.getSetupType() == VcpSetup.SetupType.RANGE_EXPANSION;
+        if (weeklyTf && rangeExpansion) {
+            return "TIME_PROFILE_WEEKLY_RANGE_EXPANSION";
+        }
+        if (weeklyTf) {
+            return "TIME_PROFILE_WEEKLY_VCP";
+        }
+        if (rangeExpansion) {
+            return "TIME_PROFILE_DAILY_RANGE_EXPANSION";
+        }
+        return "TIME_PROFILE_DAILY_VCP";
+    }
+
+    private void addTagIfMissing(List<String> tags, String tag) {
+        if (tag == null || tag.isBlank()) {
+            return;
+        }
+        if (!tags.contains(tag)) {
+            tags.add(tag);
+        }
     }
 
     private static class SimulatedTrade {

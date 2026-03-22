@@ -80,6 +80,14 @@ public class AppConfig {
     public final int swingLookbackWeekly;
     public final double swingStopBufferPct;
 
+    // Optional break-even upgrade once trade proves itself (typically after T1)
+    public final boolean moveStopToBreakEvenAfterT1;
+    public final double breakEvenBufferPct;
+
+    // Delay trailing activation slightly so we avoid reacting to the first noisy bar
+    public final int minBarsAfterSignalForTrailingDaily;
+    public final int minBarsAfterSignalForTrailingWeekly;
+
     // Time-stop by setup type and timeframe
     public final int holdBarsDailyVcp;
     public final int holdBarsDailyRangeExpansion;
@@ -156,6 +164,11 @@ public class AppConfig {
         this.swingLookbackDaily        = 5;
         this.swingLookbackWeekly       = 3;
         this.swingStopBufferPct        = 0.005;
+
+        this.moveStopToBreakEvenAfterT1 = true;
+        this.breakEvenBufferPct         = weekly ? 0.0015 : 0.001;
+        this.minBarsAfterSignalForTrailingDaily = 2;
+        this.minBarsAfterSignalForTrailingWeekly = 1;
 
         // Setup + timeframe aware hold periods
         this.holdBarsDailyVcp          = 15;
