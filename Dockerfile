@@ -7,6 +7,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 ARG TARGETARCH
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
+# Set the working directory
+WORKDIR /app
+
+# Copy the project files
+COPY . /app
+
+# Copy the cache directory if it exists
+COPY cache /app/cache
+
 WORKDIR /app
 
 RUN set -eux; \
