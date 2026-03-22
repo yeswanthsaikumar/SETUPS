@@ -2,23 +2,26 @@
 # full_scan.sh
 # ─────────────────────────────────────────────────────────────────────────────
 # One-command pipeline:
-#   1. Fetch ~10 000 US stock tickers  →  all_us_stocks.txt
+#   1. Fetch ~10 000 US stock tickers  →  all_us_stocks.txt (conditional: only if
+#      missing or older than 24 hours; use --force-fetch to download fresh)
 #   2. Compile Java sources
 #   3. Run full breakout scan (VCP and/or range expansion) in parallel batches
 #   4. Open the HTML report in the default browser
 #
 # Usage:
 #   chmod +x full_scan.sh
-#   ./full_scan.sh                         # uses all defaults
+#   ./full_scan.sh                         # uses all defaults (smart refresh)
 #   ./full_scan.sh --workers 6 --batch 30  # more parallel workers
-#   ./full_scan.sh --skip-fetch            # skip ticker download (use existing file)
+#   ./full_scan.sh --skip-fetch            # skip ticker download entirely
+#   ./full_scan.sh --force-fetch           # always download fresh tickers
 #
 # Options forwarded to run_full_us_scan.py:
-#   --workers N   parallel Java processes  (default 4)
-#   --batch   N   symbols per Java call    (default 25)
-#   --lookback N  candlestick lookback     (default daily 252 / weekly 104)
-#   --setups MODE setup filter             (both|vcp|range_expansion)
-#   --skip-fetch  don't re-download tickers
+#   --workers N      parallel Java processes  (default 4)
+#   --batch   N      symbols per Java call    (default 25)
+#   --lookback N     candlestick lookback     (default daily 252 / weekly 104)
+#   --setups MODE    setup filter             (both|vcp|range_expansion)
+#   --skip-fetch     don't download tickers (use cached file)
+#   --force-fetch    always download fresh tickers
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -27,12 +30,14 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$ROOT_DIR"
 
 SKIP_FETCH=false
+FORCE_FETCH=false
 SCAN_ARGS=()
 
 for arg in "$@"; do
     case "$arg" in
-        --skip-fetch) SKIP_FETCH=true ;;
-        *)            SCAN_ARGS+=("$arg") ;;
+        --skip-fetch)  SKIP_FETCH=true ;;
+        --force-fetch) FORCE_FETCH=true ;;
+        *)             SCAN_ARGS+=("$arg") ;;
     esac
 done
 
@@ -46,25 +51,56 @@ echo -e "${BOLD}${CYAN}╚══════════════════
 echo ""
 
 # ── STEP 1 : Fetch tickers ────────────────────────────────────────────────────
-if [ "$SKIP_FETCH" = false ]; then
-    echo -e "${BOLD}▶ Step 1/3 — Downloading US stock universe…${RESET}"
-    python3 apps/python/cli/fetch_us_stocks.py
-    echo ""
-else
+if [ "$SKIP_FETCH" = true ]; then
     echo -e "${BOLD}▶ Step 1/3 — Skipped ticker fetch (--skip-fetch)${RESET}"
     if [ -f data/universes/us_stock_tickers.csv ]; then
         LINES=$(tail -n +2 data/universes/us_stock_tickers.csv | wc -l | tr -d ' ')
-        echo "   Using attached data/universes/us_stock_tickers.csv  ($LINES rows)"
+        echo "   Using existing data/universes/us_stock_tickers.csv  ($LINES rows)"
     elif [ -f data/universes/all_us_stocks.txt ]; then
         LINES=$(grep -c -v '^#' data/universes/all_us_stocks.txt || true)
         echo "   Using existing data/universes/all_us_stocks.txt  ($LINES symbols)"
-    elif [ -f data/universes/us_stocks.txt ]; then
-        echo "   all_us_stocks.txt not found, will fall back to us_stocks.txt"
     else
         echo "ERROR: no symbols file found. Remove --skip-fetch to download one." >&2
         exit 1
     fi
     echo ""
+elif [ "$FORCE_FETCH" = true ]; then
+    echo -e "${BOLD}▶ Step 1/3 — Downloading US stock universe (--force-fetch)…${RESET}"
+    python3 apps/python/cli/fetch_us_stocks.py
+    echo ""
+else
+    # Smart refresh: only download if file is missing or older than 24 hours
+    NEEDS_FETCH=false
+
+    if [ -f data/universes/us_stock_tickers.csv ]; then
+        FILE_AGE=$(($(date +%s) - $(stat -f%m data/universes/us_stock_tickers.csv 2>/dev/null || echo 0)))
+    elif [ -f data/universes/all_us_stocks.txt ]; then
+        FILE_AGE=$(($(date +%s) - $(stat -f%m data/universes/all_us_stocks.txt 2>/dev/null || echo 0)))
+    else
+        NEEDS_FETCH=true
+    fi
+
+    if [ "$NEEDS_FETCH" = false ] && [ -z "${FILE_AGE:-}" ]; then
+        NEEDS_FETCH=true
+    fi
+
+    if [ "$NEEDS_FETCH" = true ]; then
+        echo -e "${BOLD}▶ Step 1/3 — Downloading US stock universe (file missing)…${RESET}"
+        python3 apps/python/cli/fetch_us_stocks.py
+        echo ""
+    else
+        # FILE_AGE is in seconds, 24 hours = 86400 seconds
+        HOURS_AGE=$((FILE_AGE / 3600))
+        if [ $FILE_AGE -lt 86400 ]; then
+            echo -e "${BOLD}▶ Step 1/3 — Skipped ticker fetch (file is $HOURS_AGE hours old)${RESET}"
+            echo "   Use --force-fetch to download fresh tickers"
+            echo ""
+        else
+            echo -e "${BOLD}▶ Step 1/3 — Downloading US stock universe (file is $HOURS_AGE hours old)…${RESET}"
+            python3 apps/python/cli/fetch_us_stocks.py
+            echo ""
+        fi
+    fi
 fi
 
 # ── STEP 2 : Compile Java ─────────────────────────────────────────────────────

@@ -14,7 +14,10 @@ Each hit includes a full trade plan (`entry`, `stop`, `shares`, `T1/T2/T3`).
 - `apps/python/lib/` - Python libraries (`fundamentals_provider.py`)
 - `data/universes/` - Symbol universe files (`us_stock_tickers.csv`, `indian_stock_tickers.csv`, `all_us_stocks.txt`)
 - `scripts/` - Shell entry scripts (`daily_vcp.sh`, `full_scan.sh`, `milestone_2_quickstart.sh`)
+- `docs/guides/` - feature guides (MTF, breakout quality, structured exports, data quality)
+- `docs/reference/` - architecture/design references (`HLD`, `LLD`, `SYSTEM_DESIGN`)
 - `docs/runbooks/` - operational runbooks (`DAILY_RUNBOOK.md`)
+- `docs/archive/` - historical implementation snapshots and one-off notes
 - `src/` - Java strategy/scanner engine
 - `cache/`, `output/` - runtime data and reports
 

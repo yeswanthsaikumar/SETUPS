@@ -65,7 +65,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
     parser.add_argument("--us-symbols", default=None, help="Override US symbols file")
     parser.add_argument("--india-symbols", default=None, help="Override Indian symbols file")
-    parser.add_argument("--skip-us-refresh", action="store_true", help="Skip refresh_us_stocks.py before running")
+    parser.add_argument("--skip-us-refresh", action="store_true", help="Skip US universe refresh (use cached file)")
+    parser.add_argument("--force-us-refresh", action="store_true", help="Force refresh of US universe (download fresh)")
     args = parser.parse_args()
 
     if args.workers <= 0:
@@ -90,9 +91,30 @@ def run_command(command: list[str], explanation: str, cwd: Path = ROOT) -> subpr
     return result
 
 
-def refresh_us_universe(skip: bool):
-    if skip or not FETCH_US_SCRIPT.exists():
+def refresh_us_universe(skip: bool, force: bool, refresh_ttl_hours: int = 24):
+    """
+    Refresh US symbol universe only if needed:
+      - skip=True        → skip refresh entirely
+      - force=True       → always refresh
+      - otherwise        → refresh only if file missing or older than refresh_ttl_hours
+    """
+    if skip:
+        print("   (US universe refresh skipped by --skip-us-refresh)")
         return
+
+    if not FETCH_US_SCRIPT.exists():
+        print("   ! fetch_us_stocks.py not found, skipping refresh")
+        return
+
+    # Check if we should refresh based on file age
+    primary_file = DEFAULT_US_SYMBOLS if DEFAULT_US_SYMBOLS.exists() else DEFAULT_US_FALLBACK
+    if not force and primary_file.exists():
+        import time
+        file_age_hours = (time.time() - primary_file.stat().st_mtime) / 3600
+        if file_age_hours < refresh_ttl_hours:
+            print(f"   (US universe is fresh: {primary_file.name} updated {file_age_hours:.1f}h ago, skipping refresh)")
+            return
+
     try:
         run_command([sys.executable, str(FETCH_US_SCRIPT)], "Refreshing US symbol universe")
     except Exception as exc:
@@ -320,7 +342,7 @@ def main():
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    refresh_us_universe(args.skip_us_refresh)
+    refresh_us_universe(args.skip_us_refresh, args.force_us_refresh)
     compile_java()
 
     symbols_by_market = {}
