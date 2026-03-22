@@ -23,6 +23,66 @@ Each hit includes a full trade plan (`entry`, `stop`, `shares`, `T1/T2/T3`).
 
 Primary Python entrypoints now live under `apps/python/cli/`, and shell wrappers live under `scripts/`.
 
+## Web App + Docker (Recommended for Hosting)
+
+The project now includes a web layer:
+
+- Backend API: `apps/web/api/main.py`
+- UI dashboard: `apps/web/ui/index.html`
+- Detailed web docs: `apps/web/README.md`
+
+It wraps your existing scan/backtest engine (no strategy rewrite), and serves generated reports from `output/`.
+
+### Quick Start (Local)
+
+```bash
+cd /Users/yeshwantha/IdeaProjects/SETUPS
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-web.txt
+uvicorn apps.web.api.main:app --host 0.0.0.0 --port 8000
+```
+
+Open `http://localhost:8000`
+
+### Docker Build + Run
+
+```bash
+cd /Users/yeshwantha/IdeaProjects/SETUPS
+docker build -t setups-web .
+docker run --name setups-web --rm -p 8000:8000 \
+  -v "$(pwd)/output:/app/output" \
+  -v "$(pwd)/cache:/app/cache" \
+  setups-web
+```
+
+Verify:
+
+```bash
+curl http://localhost:8000/api/health
+```
+
+### Docker Compose
+
+```bash
+cd /Users/yeshwantha/IdeaProjects/SETUPS
+docker compose up --build -d
+docker compose logs -f
+docker compose down
+```
+
+### Core Web Endpoints
+
+- `GET /api/health`
+- `POST /api/jobs/scan`
+- `POST /api/jobs/backtest`
+- `GET /api/jobs`
+- `GET /api/jobs/{jobId}`
+- `GET /api/jobs/{jobId}/log`
+- `GET /api/outputs/scan/latest`
+- `GET /api/outputs/backtest/latest?market=india|us&timeframe=daily|weekly`
+- `GET /reports/*` (generated report files)
+
 New: each scan now also builds a **watchlist of potential breakouts** near pivot and a separate **open-trades list**.
 
 **🎉 NEW - Milestone 2**: Interactive HTML reports with real-time filtering, sorting, searching, and fundamentals data enrichment!
