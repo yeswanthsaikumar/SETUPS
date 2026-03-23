@@ -101,12 +101,19 @@ EXCLUDED_NAME_TERMS = (
 YAHOO_SUFFIXES = (".NS", ".BO")
 
 
+def normalize_setups_mode(value: str) -> str:
+    mode = (value or "").strip().lower()
+    if mode == "all":
+        return "full"
+    return mode
+
+
 def parse_args():
     p = argparse.ArgumentParser(description="Full market breakout scan")
     p.add_argument("--symbols",   default=None)
     p.add_argument("--timeframe", choices=["daily", "weekly"], default="daily")
-    p.add_argument("--setups", choices=["both", "vcp", "range_expansion", "mean_reversion", "all"], default="both",
-                   help="Setup filter: both|vcp|range_expansion|mean_reversion|all")
+    p.add_argument("--setups", choices=["both", "vcp", "range_expansion", "mean_reversion", "full", "all"], default="full",
+                   help="Setup filter: full|both|vcp|range_expansion|mean_reversion|all(legacy alias for full)")
     p.add_argument("--market-label", default=None, help="Optional market label for output names, e.g. us or india")
     p.add_argument("--exchange-suffix", default=None, help="Optional Yahoo suffix override such as .NS or .BO")
     p.add_argument("--lookback",  type=int, default=DEFAULT_LOOKBACK)
@@ -131,7 +138,8 @@ def parse_args():
     p.add_argument("--account-size", type=float, default=DEFAULT_ACCOUNT_SIZE)
     p.add_argument("--base-risk-pct", type=float, default=DEFAULT_BASE_RISK_PCT, help="Baseline risk-per-trade used to convert risk amount to R")
     args = p.parse_args()
-    if args.setups in {"mean_reversion", "all"} and not _MR_AVAILABLE:
+    args.setups = normalize_setups_mode(args.setups)
+    if args.setups in {"mean_reversion", "full"} and not _MR_AVAILABLE:
         p.error("Mean reversion detector is unavailable; ensure apps/python/lib/mean_reversion_detector.py is importable")
     if args.batch <= 0:
         p.error("--batch must be greater than 0")
@@ -735,7 +743,7 @@ def _java_setups(setups: str) -> str | None:
     """Map --setups value to what Java understands. Returns None to skip Java entirely."""
     if setups == "mean_reversion":
         return None   # Python-only; no Java call needed
-    if setups == "all":
+    if setups == "full":
         return "both"  # Java handles vcp+range_expansion; MR handled by Python
     return setups  # both | vcp | range_expansion – pass through unchanged
 
@@ -2118,7 +2126,7 @@ def main():
     print()  # final newline after progress bar
 
     # ── Mean Reversion Python scan (runs on cached bars, no Java needed) ──────
-    if args.setups in ("mean_reversion", "all"):
+    if args.setups in ("mean_reversion", "full"):
         mr_hits = _run_mr_scan(symbols, args)
         if mr_hits:
             all_hits.extend(mr_hits)
@@ -2252,9 +2260,12 @@ def main():
     )
     save_csv(all_hits, generic_latest_csv)
 
-    # Also keep split setup lists for quick daily review when scanning in both mode.
-    if args.setups == "both":
-        for setup in ("VCP", "RANGE_EXPANSION"):
+    # Also keep split setup lists for quick daily review.
+    if args.setups in {"both", "full"}:
+        setup_names = ["VCP", "RANGE_EXPANSION"]
+        if args.setups == "full":
+            setup_names.append("MEAN_REVERSION")
+        for setup in setup_names:
             filtered = [h for h in all_hits if h.get("setup", "").upper() == setup]
             suffix = setup.lower()
             save_csv(filtered, Path(args.output_dir) / f"vcp_hits_{market_label}_{args.timeframe}_{suffix}_LATEST.csv")

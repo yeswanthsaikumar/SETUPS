@@ -51,6 +51,13 @@ def parse_csv_list(value: str, allowed: set[str]) -> list[str]:
     return normalized
 
 
+def normalize_setup_mode(value: str) -> str:
+    mode = (value or "").strip().lower()
+    if mode == "all":
+        return "full"
+    return mode
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run daily and weekly VCP + range breakout scans for US and Indian stocks")
     parser.add_argument("--markets", default="us,india", help="Comma-separated: us, india, or all")
@@ -61,9 +68,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--weekly-lookback", type=int, default=104, help="Weekly bars lookback (default: 104 = ~2 years)")
     parser.add_argument(
         "--setups",
-        default="both",
-        choices=["both", "vcp", "range_expansion", "mean_reversion", "all"],
-        help="Setup filter: both, vcp, range_expansion, mean_reversion, or all",
+        default="full",
+        choices=["full", "both", "vcp", "range_expansion", "mean_reversion", "all"],
+        help="Setup filter: full, both, vcp, range_expansion, mean_reversion, or all (legacy alias for full)",
     )
     parser.add_argument("--cache-dir", default="cache")
     parser.add_argument("--cache-ttl", type=int, default=360)
@@ -83,6 +90,7 @@ def parse_args() -> argparse.Namespace:
 
     args.markets = parse_csv_list(args.markets, {"us", "india"})
     args.timeframes = parse_csv_list(args.timeframes, {"daily", "weekly"})
+    args.setups = normalize_setup_mode(args.setups)
     args.output_dir = Path(args.output_dir)
     return args
 
@@ -192,11 +200,13 @@ def load_hits_count(path: Path) -> int:
 
 
 def setup_split_counts(output_dir: Path, market: str, timeframe: str, setups: str) -> dict[str, int]:
-    if setups != "both":
+    if setups not in {"both", "full"}:
         return {}
     out = {}
     for key in ("vcp", "range_expansion"):
         out[key] = load_hits_count(output_dir / f"vcp_hits_{market}_{timeframe}_{key}_LATEST.json")
+    if setups == "full":
+        out["mean_reversion"] = load_hits_count(output_dir / f"vcp_hits_{market}_{timeframe}_mean_reversion_LATEST.json")
     return out
 
 
@@ -326,6 +336,8 @@ def write_summary(output_dir: Path, results: list[dict]) -> tuple[Path, Path]:
         if item.get("setupBreakdown"):
             lines.append(f"- VCP hits: {item['setupBreakdown'].get('vcp', 0)}")
             lines.append(f"- Range expansion hits: {item['setupBreakdown'].get('range_expansion', 0)}")
+            if "mean_reversion" in item["setupBreakdown"]:
+                lines.append(f"- Mean reversion hits: {item['setupBreakdown'].get('mean_reversion', 0)}")
         variation = item.get("variationBreakdown", {})
         lines.append(f"- Top setup variations: {top_counts_line(variation.get('setup', {}), 3)}")
         lines.append(f"- Top window variations: {top_counts_line(variation.get('window', {}), 3)}")
@@ -388,6 +400,8 @@ def main():
         if item.get("setupBreakdown"):
             print(f"  VCP  → {item['setupBreakdown'].get('vcp', 0)}")
             print(f"  REXP → {item['setupBreakdown'].get('range_expansion', 0)}")
+            if "mean_reversion" in item["setupBreakdown"]:
+                print(f"  MREV → {item['setupBreakdown'].get('mean_reversion', 0)}")
         variation = item.get("variationBreakdown", {})
         print(f"  VAR  → setup[{top_counts_line(variation.get('setup', {}), 2)}] window[{top_counts_line(variation.get('window', {}), 2)}]")
         print(f"  CSV  → {item['files']['csv']}")

@@ -1,247 +1,175 @@
 # Low-Level Design (LLD)
-## Breakout Swing Trading System (Implementation-Level)
+## SETUPS Swing Trading System
 
 ## 1. Runtime Entry Points
-### 1.1 Python CLI entrypoints
+
+### Python CLI
+
 - `apps/python/cli/run_vcp_system.py`
+- `apps/python/cli/run_full_us_scan.py`
 - `apps/python/cli/run_backtest.py`
 
-### 1.2 Java entry
+### Java Entry
+
 - `src/Main.java`
   - `--mode=scan`
   - `--mode=watchlist`
   - `--mode=backtest`
 
-## 2. Module Breakdown and Contracts
+## 2. `run_vcp_system.py` Contract
 
-## 2.1 `apps/python/cli/run_vcp_system.py`
 Responsibilities:
-- Parse system-run options (`markets`, `timeframes`, `setups`, lookbacks).
-- Resolve universe files.
-- Compile Java classes.
-- Trigger grouped scans via `run_full_us_scan.py`.
-- Write consolidated run summary.
+
+- parse high-level run arguments
+- normalize setup mode (`all -> full`)
+- resolve symbol files
+- compile Java (skip only for `mean_reversion` mode)
+- invoke grouped scans using `run_full_us_scan.py`
+- build `system_latest_summary.{md,json}`
 
 Key functions:
+
 - `parse_args()`
-- `resolve_us_symbols()`, `resolve_india_symbols()`
+- `normalize_setup_mode()`
 - `compile_java()`
 - `run_market_timeframe_scan()`
+- `setup_split_counts()`
 - `write_summary()`
 
-I/O:
-- Input: CLI args + universe files.
-- Output: latest grouped files + `output/system_latest_summary.*`.
+Key mode behavior:
+
+- default setups: `full`
+- accepted setups: `full|both|vcp|range_expansion|mean_reversion|all`
+- `all` is normalized to `full`
+
+## 3. `run_full_us_scan.py` Contract
+
+Responsibilities:
+
+- parse market-scan arguments
+- normalize setup mode (`all -> full`)
+- load and normalize symbols
+- execute Java batches for VCP/range modes
+- execute Python mean reversion detector for full/MR modes
+- perform enrichment, filtering, ranking, heat controls
+- write run artifacts + latest aliases
+
+Key functions:
+
+- `parse_args()`
+- `normalize_setups_mode()`
+- `_java_setups()`
+- `_run_mr_scan()`
+- `scan_batch()`
+- `scan_watchlist_batch()`
+- `enrich_and_filter_rows()`
+- `rank_watchlist_rows()`
+- `apply_portfolio_heat()`
+
+Mode routing logic:
+
+- `mean_reversion` -> no Java scan, Python MR only
+- `full` -> Java `both` + Python MR
+- `both|vcp|range_expansion` -> Java only
+
+## 4. Mean Reversion Detector Contract
+
+File: `apps/python/lib/mean_reversion_detector.py`
+
+Primary APIs:
+
+- `detect_mean_reversion(...) -> Optional[MeanReversionSignal]`
+- `scan_symbols_for_mean_reversion(...) -> list[dict]`
+
+Behavior:
+
+- formula-based (no ML)
+- daily/weekly timeframe-aware parameters
+- weekly aggregation from cached daily bars when needed
+- returns rows aligned to scanner export schema
+
+## 5. Java Core Contract
+
+Main modules:
+
+- `src/ScannerEngine.java`
+- `src/VcpDetector.java`
+- `src/BreakoutEvaluator.java`
+- `src/TradePlanner.java`
+- `src/YahooFinanceProvider.java`
+
+Key behavior:
+
+- evaluate candidate windows
+- score setup quality and rating
+- confirm breakout/continuation
+- construct deterministic trade plan
+
+## 6. Output Artifacts
+
+Per run folder (`output/scan_<label>_<timestamp>/`):
+
+- `vcp_hits_*.{csv,json,html}`
+- `open_trades_*.{csv,json,html}`
+- `watchlist_*.{csv,json,html}`
+- `portfolio_shortlist_*.{csv,json,html}`
+- `rejections_*.{csv,json}`
+- `scan_manifest.json`
+- `scan_bundle_*.json`
+- `scan.log`
+- `events.jsonl`
+- `batch_log.txt`
+
+LATEST aliases in `output/` are always refreshed.
+
+For `full` mode, per-setup split latest files are also written:
+
+- `_vcp_`
+- `_range_expansion_`
+- `_mean_reversion_`
+
+## 7. Data Contracts
+
+Scan row core fields:
+
+- `symbol`, `setup`, `window`, `rating`
+- `close`, `pivot`, `entry`, `sl`, `shares`
+- `T1`, `T2`, `T3`, `score`
+- ranking/enrichment overlays (`rsScore`, `regimeSupport`, `watchlistQualityScore`, etc.)
+
+Rejection row fields:
+
+- `symbol`, `reason`, `source`, `detail`
+
+Manifest highlights:
+
+- run metadata (market, timeframe, setups, lookback, workers)
+- filter configuration snapshot
+- counts (`hits`, `watchlist`, `shortlist`, `rejections`)
+- artifact paths
+
+## 8. Validation and Failure Handling
+
+Validation layers:
+
+- schema/type checks (`validate_rows`)
+- trade-plan sanity (`entry > sl`, positive shares)
+- liquidity/regime filters
 
 Failure behavior:
-- Fails fast on missing symbols/java source.
-- Propagates subprocess failure as runtime error.
 
-## 2.2 `apps/python/cli/run_full_us_scan.py`
-Responsibilities:
-- Load and normalize symbol universe.
-- Split symbols into batches.
-- Execute parallel Java scan and watchlist processes.
-- Parse console-line hits into structured records.
-- Write timestamped and LATEST outputs.
-- Build interactive HTML report.
+- Java process errors surfaced per batch with warnings
+- hard failures in orchestration subprocesses bubble to caller
+- data-quality and filter rejections retained in `rejections_*`
 
-Execution model:
-- ThreadPoolExecutor with `workers`.
-- Each batch invokes Java process with `java -cp src Main ...`.
-- Shared lock for synchronized progress logging.
+## 9. Performance Notes
 
-Output contracts:
-- `vcp_hits_<market>_<timeframe>[_<setup>]_LATEST.{csv,json,html}`
-- `open_trades_<market>_<timeframe>[_<setup>]_LATEST.{csv,json,html}`
-- `watchlist_<market>_<timeframe>[_<setup>]_LATEST.{csv,json,html}`
+- process-level parallelism: `workers x batch`
+- cache-first data retrieval minimizes network IO
+- scanner scales roughly with symbols x windows x timeframes
 
-## 2.3 `src/Main.java`
-Control flow:
-1. Parse `CliOptions`.
-2. Create `AppConfig(timeframe)`.
-3. Build provider (Yahoo or sample).
-4. Build `ScannerEngine`.
-5. Route by mode:
-   - `scan` -> `runScan`
-   - `watchlist` -> `runWatchlist`
-   - `backtest` -> `runBacktest`
+## 10. Known Technical Constraints
 
-## 2.4 `src/CliOptions.java`
-Key parsing rules:
-- Setup normalization: `both`, `vcp`, `range_expansion`.
-- Default lookback by timeframe if absent (`weekly` -> 104).
-- Symbols from `--symbols=...` CSV list.
-
-## 2.5 `src/ScannerEngine.java`
-Core methods:
-- `scan(symbols, lookbackBars, timeframe)`
-- `scanWatchlist(symbols, lookbackBars, timeframe)`
-- `evaluateAtIndex(symbol, candles, idx)`
-- `evaluateWatchlistAtIndex(symbol, candles, idx)`
-
-`evaluateAtIndex` logic:
-1. Slice candles up to index.
-2. `VcpDetector.detect(slice, config, setupFilter)`.
-3. Reject if setup null/score below threshold.
-4. Confirm breakout or near-breakout via `BreakoutEvaluator`.
-5. Build `TradePlan`.
-6. Return `ScanResult`.
-
-`evaluateWatchlistAtIndex` logic:
-1. Detect setup + quality gates.
-2. Reject if already breakout.
-3. Check pivot distance in watchlist band.
-4. Build precomputed breakout trade plan.
-5. Return `WatchlistResult`.
-
-## 2.6 `src/VcpDetector.java`
-Pipeline gates:
-1. Candle count >= minimum window requirement.
-2. Minimum price (`config.minPrice`).
-3. Proximity to annual high (`maxDistanceFrom52WkHighPct`).
-4. Above moving average requirement (`requireAboveMA`, `maPeriod`).
-5. For each configured window:
-   - Build waves and contraction stats.
-   - ATR non-expansion gate.
-   - Compute base geometry, pivot/support.
-   - Evaluate VCP candidate.
-   - Evaluate Range Expansion candidate.
-6. Return best-scoring setup across all windows.
-
-Setup scoring details:
-- VCP score uses range/volume contraction blend plus wick-body adjustment.
-- Range-expansion score blends contraction and expansion strength with capped multipliers.
-- Rating derived from quality + compactness + window bonus.
-
-## 2.7 `src/BreakoutEvaluator.java`
-`isBullishBreakout()` requirements:
-- Close above pivot + breakout buffer.
-- Volume above rolling average x multiplier.
-- Intraday high pierces pivot.
-- For range expansion setups: ATR-relative expansion + strong close in range.
-
-`isNearBreakoutContinuation()` requirements:
-- Close 3%-8% above pivot (configurable).
-- Healthy volume.
-- Price holds pivot region.
-- For range expansion: close-position strength.
-
-## 2.8 `src/TradePlanner.java`
-Formula:
-- `stop = support * (1 - stopBufferPct)`
-- `riskPerShare = entry - stop`
-- `shares = floor((accountSize * riskPerTradePct)/riskPerShare)`
-- `T1 = entry + 1R`, `T2 = entry + 2R`, `T3 = entry + 3R`
-
-Rejects plan if risk/share <= 0 or shares < 1.
-
-## 2.9 `src/YahooFinanceProvider.java`
-Behavior:
-- Cache-first read with TTL check.
-- If stale/missing: fetch Yahoo chart JSON.
-- Parse arrays (`timestamp`, `open`, `high`, `low`, `close`, `volume`).
-- Write normalized CSV cache.
-- Fallback to stale cache if online fetch fails.
-
-Cache key:
-- `<SYMBOL>_<LOOKBACK>.csv`
-
-## 2.10 `apps/python/cli/run_backtest.py` + `src/BacktestEngine.java`
-Backtest mechanics:
-- Python splits symbols into worker batches.
-- Java replay runs at bar index `i` and calls `evaluateAtIndex`.
-- On signal, `simulateTrade` walks forward to stop/target/time exit.
-- Outputs trade-level data with setup metadata and excursion analytics.
-
-Exit priority:
-1. Stop and target same bar -> stop-first (conservative).
-2. Stop.
-3. T3.
-4. T2.
-5. T1.
-6. Time exit.
-
-## 3. Data Structures
-### 3.1 `VcpSetup`
-Fields used downstream:
-- `setupType`, `pivotPrice`, `supportPrice`, `qualityScore`
-- `rangeContraction`, `volumeContraction`, `rangeExpansion`
-- `baseWindowBars`, `baseWindowLabel`
-- `baseRangeHeightPct`, `contractionDepthPct`
-- `setupRating`, contraction counts
-
-### 3.2 `ScanResult`
-Core fields:
-- `symbol`, `setup`, `signalCandle`, `tradePlan`, `signalType`
-
-### 3.3 `WatchlistResult`
-Core fields:
-- `symbol`, `setup`, `signalCandle`, `tradePlan`, `distanceToPivotPct`
-
-### 3.4 `BacktestTrade`
-Core fields:
-- Entry/exit date and price, stop, shares, pnl, R multiple.
-- `setupType`, `setupRating`, `windowLabel`, `qualityScore`.
-- `mae`, `mfe`, `holdBars`, `hitT1/T2/T3`, `exitReason`.
-
-## 4. Important Configuration Surface (`AppConfig`)
-Daily vs Weekly differ for:
-- Consolidation windows.
-- Min quality score.
-- Contraction and expansion thresholds.
-- MA period and annual-high lookback.
-- Breakout/continuation thresholds.
-- Watchlist pivot distance.
-
-High-impact knobs:
-- `minQualityScore`
-- `breakoutBufferPct`
-- `breakoutVolumeMultiplier`
-- `nearBreakoutMinAbovePivotPct` / `nearBreakoutMaxAbovePivotPct`
-- `watchlistMaxDistanceToPivotPct`
-- `riskPerTradePct`
-
-## 5. Sequence Diagrams (Text)
-### 5.1 Scan path
-1. Python runner calls Java per batch.
-2. Java `Main` builds config/engine.
-3. Engine loads candles from provider.
-4. Detector returns best setup or null.
-5. Evaluator confirms breakout/continuation.
-6. Planner builds plan.
-7. Java prints structured line.
-8. Python parses line and persists reports.
-
-### 5.2 Backtest path
-1. Python batches symbols and invokes backtest mode.
-2. Java replays each symbol across bars.
-3. On each signal, simulator evaluates future bars.
-4. Trade is materialized with analytics.
-5. Python aggregates JSON outputs and computes group metrics.
-
-## 6. Error Handling and Edge Cases
-- Missing/invalid symbol files -> Python raises `FileNotFoundError`.
-- Empty or broken Yahoo response -> retry, then stale-cache fallback.
-- Insufficient candles -> symbol skipped.
-- Invalid risk math (negative risk/share) -> trade plan rejected.
-- Batch subprocess non-zero -> batch ignored by orchestrator.
-
-## 7. Performance Notes
-- Parallelism at process level avoids JVM shared-state complexity.
-- Cache reduces repeated API calls and run-to-run latency.
-- Scan cost scales with `symbols x windows x timeframes`.
-- Backtest cost scales with `symbols x bars x forward-hold`.
-
-## 8. Observability Gaps (Current)
-- No per-symbol rejection reason ledger persisted.
-- Limited structured logs for detector-stage failures.
-- No run metadata database (only file artifacts).
-
-## 9. Recommended LLD Enhancements
-1. Add explicit rejection-reason enum and output file per run.
-2. Add `scan_manifest.json` with config hash and runtime metadata.
-3. Add deterministic run IDs and metrics ingestion hooks.
-4. Add contract tests for parser between Java line format and Python parser.
-5. Add schema versioning for JSON outputs.
-
+- output history is filesystem-based (no DB)
+- Java compile required for hybrid/full runs
+- web layer and CLI setup-mode support can diverge if not kept in sync
