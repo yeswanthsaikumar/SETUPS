@@ -32,7 +32,7 @@ public class Main {
         List<RejectionDiagnostic> rejections = scannerEngine.getLastRejections();
         long duration = System.currentTimeMillis() - startTime;
 
-        System.out.println(("weekly".equals(options.timeframe) ? "Weekly" : "Daily") + " VCP + Range Expansion Breakout Scan Results");
+        System.out.println(("weekly".equals(options.timeframe) ? "Weekly" : "Daily") + " VCP + Range Expansion + Mean Reversion Scan Results");
         System.out.println("Setup filter: " + options.setups.toUpperCase());
         System.out.println("================================");
 

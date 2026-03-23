@@ -1,7 +1,8 @@
 public class VcpSetup {
     public enum SetupType {
         VCP,
-        RANGE_EXPANSION
+        RANGE_EXPANSION,
+        MEAN_REVERSION
     }
 
     private final SetupType setupType;

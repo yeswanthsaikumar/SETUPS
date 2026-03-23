@@ -12,6 +12,10 @@ public class BreakoutEvaluator {
         int volumeStart = Math.max(0, baseEnd - volumeLookback + 1);
         double avgVolume = Indicators.averageVolume(candles, volumeStart, baseEnd);
 
+        if (setup.getSetupType() == VcpSetup.SetupType.MEAN_REVERSION) {
+            return classifyMeanReversionRejection(candles, setup, config, avgVolume);
+        }
+
         boolean priceBreakout = latest.getClose() > setup.getPivotPrice() * (1.0 + config.breakoutBufferPct);
         boolean intradayBreak = latest.getHigh() > setup.getPivotPrice();
         boolean volumeBreakout = latest.getVolume() >= avgVolume * config.breakoutVolumeMultiplier;
@@ -50,6 +54,10 @@ public class BreakoutEvaluator {
         int volumeLookback = Math.min(20, baseEnd);
         int volumeStart = Math.max(0, baseEnd - volumeLookback + 1);
         double volume20 = Indicators.averageVolume(candles, volumeStart, baseEnd);
+
+        if (setup.getSetupType() == VcpSetup.SetupType.MEAN_REVERSION) {
+            return isMeanReversionBreakout(candles, setup, config, volume20);
+        }
 
         // Price: latest CLOSE must be above pivot + buffer (0.3%)
         boolean priceBreakout = latest.getClose() > setup.getPivotPrice() * (1.0 + config.breakoutBufferPct);
@@ -90,6 +98,10 @@ public class BreakoutEvaluator {
         int volumeStart = Math.max(0, baseEnd - volumeLookback + 1);
         double avgVolume = Indicators.averageVolume(candles, volumeStart, baseEnd);
 
+        if (setup.getSetupType() == VcpSetup.SetupType.MEAN_REVERSION) {
+            return isNearMeanReversionContinuation(candles, setup, config, avgVolume);
+        }
+
         double pivot = setup.getPivotPrice();
         if (pivot <= 0.0) {
             return false;
@@ -118,5 +130,60 @@ public class BreakoutEvaluator {
         }
 
         return true;
+    }
+
+    private boolean isMeanReversionBreakout(List<Candle> candles, VcpSetup setup, AppConfig config, double avgVolume) {
+        Candle latest = candles.get(candles.size() - 1);
+        Candle prev = candles.get(candles.size() - 2);
+        double pivot = setup.getPivotPrice();
+        if (pivot <= 0.0 || setup.getSupportPrice() <= 0.0) {
+            return false;
+        }
+
+        boolean reclaimTrigger = latest.getClose() >= pivot * (1.0 + config.breakoutBufferPct);
+        boolean bullishReversal = latest.getClose() > latest.getOpen() && latest.getClose() > prev.getClose();
+        boolean heldSupport = latest.getLow() > setup.getSupportPrice() * (1.0 - config.stopBufferPct);
+        boolean volumeConfirmed = latest.getVolume() >= avgVolume * config.meanReversionVolumeMultiplier;
+        return reclaimTrigger && bullishReversal && heldSupport && volumeConfirmed;
+    }
+
+    private boolean isNearMeanReversionContinuation(List<Candle> candles, VcpSetup setup, AppConfig config, double avgVolume) {
+        Candle latest = candles.get(candles.size() - 1);
+        double pivot = setup.getPivotPrice();
+        if (pivot <= 0.0 || setup.getSupportPrice() <= 0.0) {
+            return false;
+        }
+
+        double distanceToTrigger = (pivot - latest.getClose()) / pivot;
+        boolean nearTrigger = distanceToTrigger >= 0.0
+                && distanceToTrigger <= config.meanReversionMaxDistanceToTriggerPct;
+        boolean aboveSupport = latest.getClose() > setup.getSupportPrice() * (1.0 + config.stopBufferPct);
+        boolean volumeHealthy = latest.getVolume() >= avgVolume * config.meanReversionNearVolumeMultiplier;
+        return nearTrigger && aboveSupport && volumeHealthy;
+    }
+
+    private RejectionDiagnostic.Reason classifyMeanReversionRejection(
+            List<Candle> candles,
+            VcpSetup setup,
+            AppConfig config,
+            double avgVolume
+    ) {
+        Candle latest = candles.get(candles.size() - 1);
+        Candle prev = candles.get(candles.size() - 2);
+        double pivot = setup.getPivotPrice();
+
+        boolean reclaimTrigger = pivot > 0.0 && latest.getClose() >= pivot * (1.0 + config.breakoutBufferPct);
+        boolean bullishReversal = latest.getClose() > latest.getOpen() && latest.getClose() > prev.getClose();
+        boolean heldSupport = setup.getSupportPrice() > 0.0
+                && latest.getLow() > setup.getSupportPrice() * (1.0 - config.stopBufferPct);
+        boolean volumeConfirmed = latest.getVolume() >= avgVolume * config.meanReversionVolumeMultiplier;
+
+        if (!volumeConfirmed) {
+            return RejectionDiagnostic.Reason.INSUFFICIENT_VOLUME;
+        }
+        if (!reclaimTrigger || !bullishReversal || !heldSupport) {
+            return RejectionDiagnostic.Reason.NO_BREAKOUT;
+        }
+        return RejectionDiagnostic.Reason.NO_BREAKOUT;
     }
 }

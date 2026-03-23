@@ -182,11 +182,17 @@ public class CliOptions {
             return "both";
         }
         String normalized = setups.trim().toLowerCase().replace('-', '_');
+        if ("meanreversion".equals(normalized)) {
+            normalized = "mean_reversion";
+        }
         if ("vcp".equals(normalized)) {
             return "vcp";
         }
         if ("range_expansion".equals(normalized)) {
             return "range_expansion";
+        }
+        if ("mean_reversion".equals(normalized)) {
+            return "mean_reversion";
         }
         return "both";
     }
