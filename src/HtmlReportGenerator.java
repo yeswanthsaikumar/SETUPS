@@ -381,13 +381,13 @@ public class HtmlReportGenerator {
               </div>
               <div class="hero-stats">
                 <div class="stat-pill">📊 Scanned: 2,100+</div>
-                <div class="stat-pill">✅ Hits: """ + resultCount + """</div>
-                <div class="stat-pill">📍 Market: """ + market.toUpperCase() + """</div>
-                <div class="stat-pill">⏱️ Timeframe: """ + timeframe.toUpperCase() + """</div>
+                <div class="stat-pill">✅ Hits: %d</div>
+                <div class="stat-pill">📍 Market: %s</div>
+                <div class="stat-pill">⏱️ Timeframe: %s</div>
               </div>
             </div>
           </div>
-        """;
+        """.formatted(resultCount, market.toUpperCase(), timeframe.toUpperCase());
     }
 
     private static String getFilteringSummary() {
@@ -445,6 +445,7 @@ public class HtmlReportGenerator {
 
     private static String getAnalyticsSection(List<ScanResult> results) {
         double avgScore = results.stream().mapToDouble(r -> r.getSetup().getQualityScore()).average().orElse(0);
+        double bestScore = results.stream().mapToDouble(r -> r.getSetup().getQualityScore()).max().orElse(0);
         double avgRR = results.stream().mapToDouble(r -> {
             double entry = r.getTradePlan().getEntry();
             double stop = r.getTradePlan().getStopLoss();
@@ -459,22 +460,22 @@ public class HtmlReportGenerator {
           <div class="analytics-grid">
             <div class="stat-card">
               <div class="stat-card-label">Total Setups Found</div>
-              <div class="stat-card-value">""" + results.size() + """</div>
+              <div class="stat-card-value">%d</div>
             </div>
             <div class="stat-card">
               <div class="stat-card-label">Average Quality Score</div>
-              <div class="stat-card-value">""" + String.format("%.1f", avgScore) + """</div>
+              <div class="stat-card-value">%.1f</div>
             </div>
             <div class="stat-card">
               <div class="stat-card-label">Avg Risk/Reward Ratio</div>
-              <div class="stat-card-value">""" + String.format("%.2f", avgRR) + """:1</div>
+              <div class="stat-card-value">%.2f:1</div>
             </div>
             <div class="stat-card">
               <div class="stat-card-label">Best Quality Score</div>
-              <div class="stat-card-value">""" + String.format("%.1f", results.stream().mapToDouble(r -> r.getSetup().getQualityScore()).max().orElse(0)) + """</div>
+              <div class="stat-card-value">%.1f</div>
             </div>
           </div>
-        """;
+        """.formatted(results.size(), avgScore, avgRR, bestScore);
     }
 
     private static String getFilteringLogicDocumentation() {

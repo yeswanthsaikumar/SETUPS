@@ -31,9 +31,11 @@ Web wrapper for your existing scan/backtest engine with:
 - `GET /api/jobs`
 - `GET /api/jobs/{jobId}`
 - `GET /api/jobs/{jobId}/log`
+- `GET /api/stock/analyze?symbol=...&market=india|us&timeframe=daily|weekly&setups=full|both|vcp|range_expansion|mean_reversion|all&source=auto|output|live`
 - `GET /api/outputs/scan/latest`
 - `GET /api/outputs/scan/manifests`
 - `GET /api/outputs/backtest/latest?market=india|us&timeframe=daily|weekly`
+- `GET /api/assistant/scan-brief?market=india|us&timeframe=daily|weekly&setups=full|both|vcp|range_expansion|mean_reversion|all&top_n=12`
 - `GET /` (UI)
 - `GET /reports/*` (generated outputs from `output/`)
 
@@ -69,7 +71,7 @@ curl -X POST http://localhost:8000/api/jobs/scan \
   -d '{
 	"markets": ["india", "us"],
 	"timeframes": ["daily", "weekly"],
-	"setups": "both",
+	"setups": "full",
 	"daily_lookback": 252,
 	"weekly_lookback": 104,
 	"workers": 4,
@@ -77,6 +79,29 @@ curl -X POST http://localhost:8000/api/jobs/scan \
 	"skip_us_refresh": true
   }'
 ```
+
+Get LLM-style trade-plan brief:
+
+```bash
+curl "http://localhost:8000/api/assistant/scan-brief?market=india&timeframe=daily&setups=full&top_n=5"
+```
+
+Analyze a single stock:
+
+```bash
+# auto = use latest outputs first, then rerun existing logic if needed
+curl "http://localhost:8000/api/stock/analyze?symbol=AAPL&market=us&timeframe=daily&setups=full&source=auto"
+
+# force live = rerun existing scanner logic for just this symbol
+curl "http://localhost:8000/api/stock/analyze?symbol=RELIANCE.NS&market=india&timeframe=daily&setups=full&source=live"
+```
+
+In the web UI Stock Analyzer, you can now also choose **compare output vs live** to fetch both sources side by side and inspect differences in:
+
+- status / verdict
+- setup and rating
+- entry / stop / target values
+- provenance (saved output vs fresh live logic)
 
 Start backtest job:
 

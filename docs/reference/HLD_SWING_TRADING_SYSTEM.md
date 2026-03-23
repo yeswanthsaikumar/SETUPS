@@ -1,164 +1,137 @@
 # High-Level Design (HLD)
-## Breakout Swing Trading System (VCP + Range Expansion)
+## SETUPS Swing Trading System
 
-## 1. Purpose and Scope
-This system is a market scanner and decision-support engine for swing trading. It identifies bullish breakout opportunities using VCP and Range Expansion setups across US and India universes, on daily and weekly timeframes.
+## 1. Purpose
 
-Primary goals:
-- Detect high-quality breakout candidates consistently.
-- Produce actionable trade plans (entry, stop, targets, size).
-- Generate open-trade and watchlist outputs for execution workflow.
-- Backtest strategy behavior over historical windows.
+Provide a deterministic, operations-friendly swing-trading scan engine that identifies high-quality candidates across:
 
-Out of scope (current state):
-- Direct broker execution.
-- Intraday execution routing.
-- Transaction cost/slippage-accurate portfolio simulation.
-- Portfolio optimization at account level.
+- `VCP`
+- `RANGE_EXPANSION`
+- `MEAN_REVERSION`
 
-## 2. Business Capabilities
-- Universe management for US and India symbols.
-- Multi-timeframe scanning (`daily`, `weekly`).
-- Multi-setup scanning (`vcp`, `range_expansion`, `both`).
-- Risk-plan generation per signal.
-- Batch-parallel scan orchestration.
-- Report generation (CSV/JSON/HTML interactive views).
-- Backtest replay using same core detection stack.
+for US and India markets on daily and weekly timeframes.
 
-## 3. System Context
+## 2. Scope
+
+In scope:
+
+- batch scanning and ranking
+- trade-plan generation (`entry`, `sl`, `shares`, `T1/T2/T3`)
+- watchlist and shortlist generation
+- rejection diagnostics and structured exports
+- run manifests and event logs
+
+Out of scope:
+
+- direct broker execution
+- account-level optimization and order routing
+- real-time intraday strategy execution
+
+## 3. Canonical Operating Mode
+
+`--setups full` is the canonical mode and executes:
+
+- Java detector path for `VCP` + `RANGE_EXPANSION`
+- Python detector path for `MEAN_REVERSION`
+
+Legacy alias:
+
+- `--setups all` -> normalized to `full`
+
+## 4. System Context
+
 External dependencies:
-- Yahoo Finance chart API (historical candles).
-- Local filesystem for cache and output persistence.
 
-Internal boundaries:
-- Python layer (`apps/python/cli/`): orchestration, batching, report assembly.
-- Java layer (`src/`): strategy logic, signal detection, trade planning, backtest simulation.
+- Yahoo Finance historical data
+- Local filesystem (`cache/`, `output/`)
 
-## 4. Architecture Overview
+Internal layers:
+
+- Python orchestration (`apps/python/cli/`)
+- Java core engine (`src/`)
+- Python mean reversion library (`apps/python/lib/mean_reversion_detector.py`)
+
+## 5. Architecture View
 
 ```text
 User / Scheduler
-  -> run_vcp_system.py (orchestration)
-      -> optional fetch_us_stocks.py
-      -> javac src/*.java
-      -> run_full_us_scan.py (per market/timeframe)
-          -> parallel java -cp src Main --mode=scan/watchlist
-              -> ScannerEngine
-                  -> YahooFinanceProvider (cached candles)
-                  -> VcpDetector
-                  -> BreakoutEvaluator
-                  -> TradePlanner
-          -> result parsing + HTML/CSV/JSON generation
-      -> system summary generation
-
-Backtesting
-  -> run_backtest.py
-      -> parallel java -cp src Main --mode=backtest
-          -> BacktestEngine (replay + trade simulation)
-      -> aggregate metrics + matrix reports
+  -> apps/python/cli/run_vcp_system.py
+      -> optional universe refresh
+      -> Java compile (except mean_reversion-only runs)
+      -> apps/python/cli/run_full_us_scan.py (per market x timeframe)
+          -> java -cp src Main --mode=scan/watchlist (VCP + range expansion)
+          -> Python mean reversion scan (full/mean_reversion)
+          -> ranking, filters, portfolio heat control
+          -> output artifacts + manifests + logs
+      -> output/system_latest_summary.{md,json}
 ```
 
-## 5. Logical Components
-### 5.1 Python Orchestration Layer
+## 6. Logical Components
+
+### 6.1 Orchestration and Scheduling
+
 - `run_vcp_system.py`
-  - Market/timeframe/setup scheduler.
-  - Java compile trigger.
-  - Full-run summary generation.
+  - coordinates market/timeframe groups
+  - handles setup mode normalization
+  - compiles Java for hybrid runs
+  - writes system-level summary
+
 - `run_full_us_scan.py`
-  - Symbol loading and normalization.
-  - Batch splitting and parallel worker execution.
-  - Output consolidation into latest snapshots.
-  - Interactive HTML generation (filters, sorting, export).
-- `run_backtest.py`
-  - Batch-parallel historical replay runs.
-  - Aggregation of trade-level output and metrics.
-  - Interactive HTML performance report.
+  - loads symbols, batches work, runs Java workers
+  - executes mean reversion detector where applicable
+  - enriches/filter/ranks signals
+  - writes HTML/CSV/JSON and operational manifests
 
-### 5.2 Java Strategy Layer
-- `Main`
-  - Entry point for `scan`, `watchlist`, `backtest` modes.
-- `CliOptions`
-  - Parses runtime params and normalizes setup/timeframe.
-- `ScannerEngine`
-  - Drives symbol-by-symbol evaluation.
-- `VcpDetector`
-  - Detects and scores setup candidates (multi-window, dynamic thresholds).
-- `BreakoutEvaluator`
-  - Confirms breakout/continuation conditions.
-- `TradePlanner`
-  - Computes stop, risk/share, position size, T1/T2/T3.
-- `BacktestEngine`
-  - Historical replay, signal-to-exit simulation.
+### 6.2 Detection Engines
 
-### 5.3 Data and Storage
-- Inputs: `data/universes/*.csv`, `*.txt`
-- Cache: `cache/<SYMBOL>_<LOOKBACK>.csv`
-- Outputs: `output/*LATEST*`, run folders `output/scan_*`, `output/backtest_*`
+- Java (`src/`)
+  - `VcpDetector`, `BreakoutEvaluator`, `TradePlanner`, `ScannerEngine`
+- Python (`apps/python/lib/mean_reversion_detector.py`)
+  - deterministic mean reversion setup detector
+  - timeframe-aware daily/weekly bar handling
 
-## 6. Key End-to-End Flows
-### 6.1 Daily Production Scan
-1. Parse run command and validate arguments.
-2. Optionally refresh US symbol universe.
-3. Compile Java sources.
-4. For each market x timeframe:
-   - Load symbols.
-   - Execute parallel Java scan batches.
-   - Execute parallel watchlist batches.
-   - Parse and persist outputs.
-5. Build system summary.
+### 6.3 Data and Persistence
 
-### 6.2 Signal Evaluation (per symbol)
-1. Load candles from cache or Yahoo.
-2. Validate trend and quality prerequisites.
-3. Evaluate multi-window setup candidates.
-4. Select best-scoring setup.
-5. Confirm breakout or near-breakout.
-6. Build trade plan.
-7. Emit result or reject.
+- universe files: `data/universes/`
+- cache files: `cache/<SYMBOL>_<LOOKBACK>.csv`
+- run outputs: `output/scan_*`
+- latest aliases: `output/*_LATEST.*`
+- metadata: `scan_manifest_*`, `scan_bundle_*`, `events.jsonl`, `scan.log`
 
-### 6.3 Backtest Replay
-1. For each symbol, iterate bars across lookback.
-2. Run same detector/evaluator on each index.
-3. If signal exists, simulate forward exit path.
-4. Track R-multiple, MAE/MFE, target milestones.
-5. Aggregate cross-symbol metrics and produce reports.
+## 7. Primary User Flows
 
-## 7. Core Design Decisions
-- Single detector stack for live scan and backtest to reduce logic drift.
-- Local file cache to reduce API latency and external dependency risk.
-- Batch-parallel orchestration at Python layer for scale and recoverability.
-- Separation of concerns:
-  - Detection and scoring in Java.
-  - Multi-market automation and reporting in Python.
+### 7.1 Daily Operations Flow
+
+1. Run `run_vcp_system.py --setups full`
+2. For each market x timeframe group:
+   - detect candidates
+   - apply overlays (liquidity, regime, RS, heat)
+   - export final artifacts
+3. Review `system_latest_summary.md`
+4. Review open trades, watchlist, shortlist
+
+### 7.2 Single-Scope Diagnostic Flow
+
+1. Run `run_full_us_scan.py` for one market/timeframe
+2. Inspect run folder (`scan_*`)
+3. Use `rejections_*`, `scan_manifest.json`, `events.jsonl` for diagnosis
 
 ## 8. Non-Functional Characteristics
-- Performance: worker x batch model supports large universes.
-- Reliability: retries + cache fallback on data fetch.
-- Operability: timestamped outputs and latest aliases simplify daily use.
-- Extensibility: setup filter and modular detector/evaluator/planner design.
 
-## 9. Current Constraints and Risks
-- No portfolio-level risk budgeting (signals are independent).
-- No transaction-cost/slippage model in live recommendations.
-- Dependence on Yahoo data quality and symbol mappings.
-- No persistent database/history warehouse (filesystem only).
-- Limited observability for rejection reasons at symbol level.
+- deterministic formulas (no ML in live signal path)
+- cache-first operation for repeatability and speed
+- process-level parallelism via worker/batch model
+- explainable outputs through reason fields and tooltips
 
-## 10. Security and Compliance Notes
-- No credentials required for current public data flow.
-- No order placement by default (analysis-only system).
-- Ensure compliance with local market regulations before automation/execution.
+## 9. Risks and Constraints
 
-## 11. Target HLD Evolution (Next Stage)
-- Add portfolio construction service.
-- Add regime filter service (market breadth/volatility trend).
-- Add execution adapter (paper + broker abstraction).
-- Add experiment framework for parameter variants and A/B runs.
-- Add metadata store (SQLite/Postgres) for audit and analytics.
+- dependency on data quality from Yahoo + symbol mapping
+- compile-time dependency for Java components in hybrid/full mode
+- no persistent DB; filesystem-only operational history
 
-## 12. Success Metrics
-- Signal quality: win rate, avg R, profit factor by setup/window.
-- Stability: daily run success rate, API/cache failure rates.
-- Usability: review-to-decision time from report open to shortlist.
-- Risk quality: drawdown and exposure consistency after portfolio layer.
+## 10. Evolution Direction
 
+- add API/UI parity for full setup mode in web layer where needed
+- add persistent run metadata store (SQLite/Postgres)
+- add tighter portfolio construction constraints across correlated symbols
+- add formal contract tests between Java line format and Python parser
