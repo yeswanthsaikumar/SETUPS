@@ -1,4 +1,6 @@
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Detects a bullish Volatility Contraction Pattern (VCP) setup.
@@ -11,6 +13,14 @@ import java.util.List;
  *  5. Minimum price filter: skips penny stocks.
  */
 public class VcpDetector {
+    private final Map<VcpSetup.SetupType, SetupDetector> detectorRegistry;
+
+    public VcpDetector() {
+        this.detectorRegistry = new EnumMap<>(VcpSetup.SetupType.class);
+        detectorRegistry.put(VcpSetup.SetupType.VCP, this::detectClassicVcp);
+        detectorRegistry.put(VcpSetup.SetupType.RANGE_EXPANSION, this::detectRangeExpansionSetup);
+        detectorRegistry.put(VcpSetup.SetupType.MEAN_REVERSION, this::detectMeanReversionSetup);
+    }
 
     public VcpSetup detect(List<Candle> candles, AppConfig config) {
         return detect(candles, config, "both");
@@ -121,84 +131,173 @@ public class VcpDetector {
         ContractionStats contractionStats = calculateContractionStats(waveRanges, waveVolumes);
         int requiredContractionPairs = requiredContractionPairs(config, windowDays, contractionStats.totalPairs);
 
-        VcpSetup bestSetup = null;
-
-        // ── Setup A: classic VCP contraction breakout base ───────────────────
         int breakoutIndex = consolidationEnd + 1;
-        double wickBodyAdjustment = computeWickBodyAdjustment(candles, breakoutIndex, config);
+        SetupDetectionContext ctx = new SetupDetectionContext(
+                candles,
+                config,
+                windowDays,
+                consolidationStart,
+                consolidationEnd,
+                breakoutIndex,
+                pivot,
+                support,
+                rangeContraction,
+                volumeContraction,
+                baseRangeHeightPct,
+                contractionDepthPct,
+                windowLabel,
+                requiredRangeContraction,
+                requiredVolumeContraction,
+                requiredRangeExpansion,
+                requiredExpansionVolume,
+                requiredContractionPairs,
+                contractionStats,
+                computeRangeExpansion(candles, consolidationEnd),
+                computeBreakoutVolumeExpansion(candles, consolidationEnd),
+                computeWickBodyAdjustment(candles, breakoutIndex, config)
+        );
 
-        if (allowsSetupType(setupFilter, VcpSetup.SetupType.VCP)
-                && isBaseHeightAccepted(config, VcpSetup.SetupType.VCP, windowDays, baseRangeHeightPct)
-                && isWaveContractionAccepted(contractionStats, config)
-                && contractionStats.rangeContractions >= requiredContractionPairs
-                && rangeContraction >= requiredRangeContraction
-                && volumeContraction >= requiredVolumeContraction) {
-            double baseBonus = windowDays <= 20 ? 5.0 : windowDays <= 30 ? 2.0 : 0.0;
-            double vcpScore = ((rangeContraction * 0.6) + (volumeContraction * 0.4)) * 100.0 + baseBonus + wickBodyAdjustment;
-            if (vcpScore >= config.minQualityScore) {
-                String setupRating = rateSetup(vcpScore, baseRangeHeightPct, contractionDepthPct, windowDays);
-                bestSetup = new VcpSetup(
-                        VcpSetup.SetupType.VCP,
-                        pivot,
-                        support,
-                        vcpScore,
-                        rangeContraction,
-                        volumeContraction,
-                        0.0,
-                        windowDays,
-                        windowLabel,
-                        baseRangeHeightPct,
-                        contractionDepthPct,
-                        setupRating,
-                        contractionStats.rangeContractions,
-                        contractionStats.volumeContractions,
-                        contractionStats.totalPairs
-                );
+        VcpSetup bestSetup = null;
+        for (Map.Entry<VcpSetup.SetupType, SetupDetector> entry : detectorRegistry.entrySet()) {
+            if (!allowsSetupType(setupFilter, entry.getKey())) {
+                continue;
+            }
+            VcpSetup candidate = entry.getValue().detect(ctx);
+            if (candidate != null && (bestSetup == null || candidate.getQualityScore() > bestSetup.getQualityScore())) {
+                bestSetup = candidate;
             }
         }
-
-        // ── Setup B: contraction then range-expansion breakout entry ─────────
-        double rangeExpansion = computeRangeExpansion(candles, consolidationEnd);
-        double expansionVolume = computeBreakoutVolumeExpansion(candles, consolidationEnd);
-
-        if (allowsSetupType(setupFilter, VcpSetup.SetupType.RANGE_EXPANSION)
-                && isBaseHeightAccepted(config, VcpSetup.SetupType.RANGE_EXPANSION, windowDays, baseRangeHeightPct)
-                && rangeContraction >= (requiredRangeContraction * 0.75)
-                && rangeExpansion >= requiredRangeExpansion
-                && expansionVolume >= requiredExpansionVolume) {
-            double expansionScore = (
-                    (rangeContraction * 0.35)
-                    + (volumeContraction * 0.15)
-                    + (Math.min(rangeExpansion / requiredRangeExpansion, 2.0) * 0.35)
-                    + (Math.min(expansionVolume / requiredExpansionVolume, 2.0) * 0.15)
-            ) * 100.0 + wickBodyAdjustment;
-
-            if (expansionScore >= config.minQualityScore) {
-                String setupRating = rateSetup(expansionScore, baseRangeHeightPct, contractionDepthPct, windowDays);
-                VcpSetup expansionSetup = new VcpSetup(
-                        VcpSetup.SetupType.RANGE_EXPANSION,
-                        pivot,
-                        support,
-                        expansionScore,
-                        rangeContraction,
-                        volumeContraction,
-                        rangeExpansion,
-                        windowDays,
-                        windowLabel,
-                        baseRangeHeightPct,
-                        contractionDepthPct,
-                        setupRating,
-                        contractionStats.rangeContractions,
-                        contractionStats.volumeContractions,
-                        contractionStats.totalPairs
-                );
-                if (bestSetup == null || expansionSetup.getQualityScore() > bestSetup.getQualityScore()) {
-                    bestSetup = expansionSetup;
-                }
-            }
-        }
-
         return bestSetup;
+    }
+
+    private VcpSetup detectClassicVcp(SetupDetectionContext ctx) {
+        if (!isBaseHeightAccepted(ctx.config, VcpSetup.SetupType.VCP, ctx.windowDays, ctx.baseRangeHeightPct)
+                || !isWaveContractionAccepted(ctx.contractionStats, ctx.config)
+                || ctx.contractionStats.rangeContractions < ctx.requiredContractionPairs
+                || ctx.rangeContraction < ctx.requiredRangeContraction
+                || ctx.volumeContraction < ctx.requiredVolumeContraction) {
+            return null;
+        }
+
+        double baseBonus = ctx.windowDays <= 20 ? 5.0 : ctx.windowDays <= 30 ? 2.0 : 0.0;
+        double score = ((ctx.rangeContraction * 0.6) + (ctx.volumeContraction * 0.4)) * 100.0 + baseBonus + ctx.wickBodyAdjustment;
+        if (score < ctx.config.minQualityScore) {
+            return null;
+        }
+
+        return buildSetup(ctx, VcpSetup.SetupType.VCP, score, 0.0);
+    }
+
+    private VcpSetup detectRangeExpansionSetup(SetupDetectionContext ctx) {
+        if (!isBaseHeightAccepted(ctx.config, VcpSetup.SetupType.RANGE_EXPANSION, ctx.windowDays, ctx.baseRangeHeightPct)
+                || ctx.rangeContraction < (ctx.requiredRangeContraction * 0.75)
+                || ctx.rangeExpansion < ctx.requiredRangeExpansion
+                || ctx.expansionVolume < ctx.requiredExpansionVolume) {
+            return null;
+        }
+
+        double score = (
+                (ctx.rangeContraction * 0.35)
+                        + (ctx.volumeContraction * 0.15)
+                        + (Math.min(ctx.rangeExpansion / ctx.requiredRangeExpansion, 2.0) * 0.35)
+                        + (Math.min(ctx.expansionVolume / ctx.requiredExpansionVolume, 2.0) * 0.15)
+        ) * 100.0 + ctx.wickBodyAdjustment;
+
+        if (score < ctx.config.minQualityScore) {
+            return null;
+        }
+        return buildSetup(ctx, VcpSetup.SetupType.RANGE_EXPANSION, score, ctx.rangeExpansion);
+    }
+
+    private VcpSetup detectMeanReversionSetup(SetupDetectionContext ctx) {
+        if (!isBaseHeightAccepted(ctx.config, VcpSetup.SetupType.MEAN_REVERSION, ctx.windowDays, ctx.baseRangeHeightPct)
+                || ctx.breakoutIndex <= 0
+                || ctx.breakoutIndex >= ctx.candles.size()) {
+            return null;
+        }
+
+        Candle breakout = ctx.candles.get(ctx.breakoutIndex);
+        Candle prior = ctx.candles.get(ctx.breakoutIndex - 1);
+
+        int meanPeriod = Math.max(6, Math.min(20, ctx.windowDays / 3));
+        double reversionMean = Indicators.movingAverage(ctx.candles, ctx.consolidationEnd, meanPeriod);
+        if (reversionMean <= 0.0) {
+            return null;
+        }
+
+        double pullbackPct = (reversionMean - ctx.supportPrice) / reversionMean;
+        if (pullbackPct < ctx.config.meanReversionMinPullbackPct || pullbackPct > ctx.config.meanReversionMaxPullbackPct) {
+            return null;
+        }
+
+        double recoveryPct = prior.getClose() <= 0.0 ? 0.0 : (breakout.getClose() - prior.getClose()) / prior.getClose();
+        if (recoveryPct < ctx.config.meanReversionMinRecoveryPct) {
+            return null;
+        }
+
+        int triggerStart = Math.max(ctx.consolidationStart, ctx.breakoutIndex - 3);
+        double triggerPrice = Indicators.highestHigh(ctx.candles, triggerStart, ctx.breakoutIndex - 1);
+        if (triggerPrice <= ctx.supportPrice) {
+            return null;
+        }
+
+        int volStart = Math.max(ctx.consolidationStart, ctx.breakoutIndex - 10);
+        double avgVolume = Indicators.averageVolume(ctx.candles, volStart, ctx.breakoutIndex - 1);
+        double volumeRecovery = avgVolume <= 0.0 ? 0.0 : breakout.getVolume() / avgVolume;
+        if (volumeRecovery < ctx.config.meanReversionNearVolumeMultiplier) {
+            return null;
+        }
+
+        double span = Math.max(1e-6, (ctx.config.meanReversionMaxPullbackPct - ctx.config.meanReversionMinPullbackPct) / 2.0);
+        double targetPullback = (ctx.config.meanReversionMaxPullbackPct + ctx.config.meanReversionMinPullbackPct) / 2.0;
+        double pullbackFit = clamp01(1.0 - Math.abs(pullbackPct - targetPullback) / span);
+        double structureScore = clamp01(ctx.rangeContraction / Math.max(0.001, ctx.requiredRangeContraction)) * 10.0;
+        double pullbackScore = pullbackFit * 22.0;
+        double recoveryScore = Math.min(2.0, recoveryPct / Math.max(0.001, ctx.config.meanReversionMinRecoveryPct)) * 12.0;
+        double volumeScore = Math.min(2.0, volumeRecovery / Math.max(0.001, ctx.config.meanReversionVolumeMultiplier)) * 8.0;
+
+        double score = pullbackScore + recoveryScore + volumeScore + structureScore + ctx.wickBodyAdjustment;
+        if (score < ctx.config.minQualityScore) {
+            return null;
+        }
+
+        return new VcpSetup(
+                VcpSetup.SetupType.MEAN_REVERSION,
+                triggerPrice,
+                ctx.supportPrice,
+                score,
+                ctx.rangeContraction,
+                ctx.volumeContraction,
+                Math.max(0.0, recoveryPct),
+                ctx.windowDays,
+                ctx.windowLabel,
+                ctx.baseRangeHeightPct,
+                ctx.contractionDepthPct,
+                rateSetup(score, ctx.baseRangeHeightPct, ctx.contractionDepthPct, ctx.windowDays),
+                ctx.contractionStats.rangeContractions,
+                ctx.contractionStats.volumeContractions,
+                ctx.contractionStats.totalPairs
+        );
+    }
+
+    private VcpSetup buildSetup(SetupDetectionContext ctx, VcpSetup.SetupType setupType, double score, double rangeExpansion) {
+        return new VcpSetup(
+                setupType,
+                ctx.pivotPrice,
+                ctx.supportPrice,
+                score,
+                ctx.rangeContraction,
+                ctx.volumeContraction,
+                rangeExpansion,
+                ctx.windowDays,
+                ctx.windowLabel,
+                ctx.baseRangeHeightPct,
+                ctx.contractionDepthPct,
+                rateSetup(score, ctx.baseRangeHeightPct, ctx.contractionDepthPct, ctx.windowDays),
+                ctx.contractionStats.rangeContractions,
+                ctx.contractionStats.volumeContractions,
+                ctx.contractionStats.totalPairs
+        );
     }
 
     private boolean isWaveContractionAccepted(ContractionStats stats, AppConfig config) {
@@ -324,6 +423,12 @@ public class VcpDetector {
             maxHeight += weekly ? 6.0 : 5.0;
         }
 
+        // Mean-reversion entries can accept a bit wider pullback structures.
+        if (type == VcpSetup.SetupType.MEAN_REVERSION) {
+            minHeight = Math.max(weekly ? 4.0 : 3.0, minHeight - 2.0);
+            maxHeight += weekly ? 8.0 : 6.0;
+        }
+
         return baseHeightPct >= minHeight && baseHeightPct <= maxHeight;
     }
 
@@ -363,7 +468,15 @@ public class VcpDetector {
         if ("range_expansion".equals(normalized)) {
             return setupType == VcpSetup.SetupType.RANGE_EXPANSION;
         }
+        if ("mean_reversion".equals(normalized)) {
+            return setupType == VcpSetup.SetupType.MEAN_REVERSION;
+        }
         return true;
+    }
+
+    private double clamp01(double value) {
+        if (value < 0.0) return 0.0;
+        return Math.min(1.0, value);
     }
 
     private double safeRatioReduction(double first, double last) {
@@ -428,5 +541,82 @@ public class VcpDetector {
         private int rangeMisses;
         private int volumeMisses;
         private int totalPairs;
+    }
+
+    private interface SetupDetector {
+        VcpSetup detect(SetupDetectionContext ctx);
+    }
+
+    private static final class SetupDetectionContext {
+        private final List<Candle> candles;
+        private final AppConfig config;
+        private final int windowDays;
+        private final int consolidationStart;
+        private final int consolidationEnd;
+        private final int breakoutIndex;
+        private final double pivotPrice;
+        private final double supportPrice;
+        private final double rangeContraction;
+        private final double volumeContraction;
+        private final double baseRangeHeightPct;
+        private final double contractionDepthPct;
+        private final String windowLabel;
+        private final double requiredRangeContraction;
+        private final double requiredVolumeContraction;
+        private final double requiredRangeExpansion;
+        private final double requiredExpansionVolume;
+        private final int requiredContractionPairs;
+        private final ContractionStats contractionStats;
+        private final double rangeExpansion;
+        private final double expansionVolume;
+        private final double wickBodyAdjustment;
+
+        private SetupDetectionContext(
+                List<Candle> candles,
+                AppConfig config,
+                int windowDays,
+                int consolidationStart,
+                int consolidationEnd,
+                int breakoutIndex,
+                double pivotPrice,
+                double supportPrice,
+                double rangeContraction,
+                double volumeContraction,
+                double baseRangeHeightPct,
+                double contractionDepthPct,
+                String windowLabel,
+                double requiredRangeContraction,
+                double requiredVolumeContraction,
+                double requiredRangeExpansion,
+                double requiredExpansionVolume,
+                int requiredContractionPairs,
+                ContractionStats contractionStats,
+                double rangeExpansion,
+                double expansionVolume,
+                double wickBodyAdjustment
+        ) {
+            this.candles = candles;
+            this.config = config;
+            this.windowDays = windowDays;
+            this.consolidationStart = consolidationStart;
+            this.consolidationEnd = consolidationEnd;
+            this.breakoutIndex = breakoutIndex;
+            this.pivotPrice = pivotPrice;
+            this.supportPrice = supportPrice;
+            this.rangeContraction = rangeContraction;
+            this.volumeContraction = volumeContraction;
+            this.baseRangeHeightPct = baseRangeHeightPct;
+            this.contractionDepthPct = contractionDepthPct;
+            this.windowLabel = windowLabel;
+            this.requiredRangeContraction = requiredRangeContraction;
+            this.requiredVolumeContraction = requiredVolumeContraction;
+            this.requiredRangeExpansion = requiredRangeExpansion;
+            this.requiredExpansionVolume = requiredExpansionVolume;
+            this.requiredContractionPairs = requiredContractionPairs;
+            this.contractionStats = contractionStats;
+            this.rangeExpansion = rangeExpansion;
+            this.expansionVolume = expansionVolume;
+            this.wickBodyAdjustment = wickBodyAdjustment;
+        }
     }
 }

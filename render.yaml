@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: setups-web
+    runtime: docker
+    plan: starter
+    region: singapore
+    healthCheckPath: /api/health
+    autoDeploy: true
+    # Optional persistent disk for scan/backtest outputs.
+    # Render supports one disk per service; this keeps output history across deploys.
+    disk:
+      name: setups-data
+      mountPath: /app/output
+      sizeGB: 5
+

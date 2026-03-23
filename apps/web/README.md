@@ -174,6 +174,42 @@ docker compose down
 - Recommended container port: `8000`.
 - Keep `output/` and `cache/` on persistent storage; job history and reports are written there.
 
+## Deploy on Render
+
+### Option A: Blueprint (recommended)
+
+This repo now includes `render.yaml` at project root.
+
+1. Push code to GitHub/GitLab.
+2. In Render, choose **New +** -> **Blueprint**.
+3. Select your repo and apply the blueprint.
+4. Render will build from `Dockerfile` and run health check on `/api/health`.
+
+### Option B: Manual Web Service
+
+1. In Render, create **Web Service** from your repo.
+2. Environment: **Docker**.
+3. Leave build/start commands empty (uses `Dockerfile`).
+4. Set Health Check Path: `/api/health`.
+5. Create service.
+
+### Render persistence notes
+
+- Current `render.yaml` mounts a disk at `/app/output` to persist reports/logs.
+- `cache/` remains ephemeral unless you also persist it in your own custom setup.
+- Your app uses Render-provided `PORT` automatically via Docker `CMD`.
+
+### Verify after deploy
+
+```bash
+curl https://<your-render-service>.onrender.com/api/health
+```
+
+Open:
+
+- `https://<your-render-service>.onrender.com/` (UI)
+- `https://<your-render-service>.onrender.com/api/jobs` (jobs)
+
 ## Output and Logs
 
 - Job logs: `output/web_jobs/`

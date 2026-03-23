@@ -19,6 +19,12 @@ public class AppConfig {
     public final double minRangeExpansionMultiplier;
     public final double minExpansionVolumeMultiplier;
     public final double minExpansionClosePosition;
+    public final double meanReversionMinPullbackPct;
+    public final double meanReversionMaxPullbackPct;
+    public final double meanReversionMinRecoveryPct;
+    public final double meanReversionVolumeMultiplier;
+    public final double meanReversionNearVolumeMultiplier;
+    public final double meanReversionMaxDistanceToTriggerPct;
     public final int wickBiasLookbackBars;
     public final double bodyDirectionalWeight;
     public final double lowerWickPositiveWeight;
@@ -71,8 +77,10 @@ public class AppConfig {
     public final int atrTrailPeriodWeekly;
     public final double atrTrailMultDailyVcp;
     public final double atrTrailMultDailyRangeExpansion;
+    public final double atrTrailMultDailyMeanReversion;
     public final double atrTrailMultWeeklyVcp;
     public final double atrTrailMultWeeklyRangeExpansion;
+    public final double atrTrailMultWeeklyMeanReversion;
 
     // Swing-low trailing stop policy
     public final boolean enableSwingLowTrailingStop;
@@ -91,8 +99,10 @@ public class AppConfig {
     // Time-stop by setup type and timeframe
     public final int holdBarsDailyVcp;
     public final int holdBarsDailyRangeExpansion;
+    public final int holdBarsDailyMeanReversion;
     public final int holdBarsWeeklyVcp;
     public final int holdBarsWeeklyRangeExpansion;
+    public final int holdBarsWeeklyMeanReversion;
 
     public AppConfig() {
         this("daily");
@@ -118,6 +128,12 @@ public class AppConfig {
         this.minRangeExpansionMultiplier = weekly ? 1.15 : 1.25;
         this.minExpansionVolumeMultiplier = weekly ? 1.05 : 1.10;
         this.minExpansionClosePosition = 0.60;
+        this.meanReversionMinPullbackPct = weekly ? 0.03 : 0.04;
+        this.meanReversionMaxPullbackPct = weekly ? 0.18 : 0.14;
+        this.meanReversionMinRecoveryPct = weekly ? 0.015 : 0.01;
+        this.meanReversionVolumeMultiplier = weekly ? 0.95 : 1.00;
+        this.meanReversionNearVolumeMultiplier = weekly ? 0.90 : 0.95;
+        this.meanReversionMaxDistanceToTriggerPct = weekly ? 0.035 : 0.025;
         this.wickBiasLookbackBars      = weekly ? 2 : 3;
         this.bodyDirectionalWeight     = 1.0;
         this.lowerWickPositiveWeight   = 1.25;
@@ -157,8 +173,10 @@ public class AppConfig {
         this.atrTrailPeriodWeekly      = 8;
         this.atrTrailMultDailyVcp      = 2.0;
         this.atrTrailMultDailyRangeExpansion = 2.4;
+        this.atrTrailMultDailyMeanReversion = 1.8;
         this.atrTrailMultWeeklyVcp     = 2.4;
         this.atrTrailMultWeeklyRangeExpansion = 2.8;
+        this.atrTrailMultWeeklyMeanReversion = 2.1;
 
         this.enableSwingLowTrailingStop = true;
         this.swingLookbackDaily        = 5;
@@ -173,7 +191,9 @@ public class AppConfig {
         // Setup + timeframe aware hold periods
         this.holdBarsDailyVcp          = 15;
         this.holdBarsDailyRangeExpansion = 11;
+        this.holdBarsDailyMeanReversion = 8;
         this.holdBarsWeeklyVcp         = 10;
         this.holdBarsWeeklyRangeExpansion = 8;
+        this.holdBarsWeeklyMeanReversion = 6;
     }
 }

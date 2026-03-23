@@ -195,13 +195,18 @@ public class BacktestEngine {
     private int resolveHoldDays(VcpSetup setup) {
         boolean weeklyTf = "weekly".equalsIgnoreCase(timeframe);
         boolean rangeExpansion = setup.getSetupType() == VcpSetup.SetupType.RANGE_EXPANSION;
+        boolean meanReversion = setup.getSetupType() == VcpSetup.SetupType.MEAN_REVERSION;
         int profileHold;
         if (weeklyTf && rangeExpansion) {
             profileHold = config.holdBarsWeeklyRangeExpansion;
+        } else if (weeklyTf && meanReversion) {
+            profileHold = config.holdBarsWeeklyMeanReversion;
         } else if (weeklyTf) {
             profileHold = config.holdBarsWeeklyVcp;
         } else if (rangeExpansion) {
             profileHold = config.holdBarsDailyRangeExpansion;
+        } else if (meanReversion) {
+            profileHold = config.holdBarsDailyMeanReversion;
         } else {
             profileHold = config.holdBarsDailyVcp;
         }
@@ -212,8 +217,12 @@ public class BacktestEngine {
     private double trailingAtrMultiplier(VcpSetup setup) {
         boolean weeklyTf = "weekly".equalsIgnoreCase(timeframe);
         boolean rangeExpansion = setup.getSetupType() == VcpSetup.SetupType.RANGE_EXPANSION;
+        boolean meanReversion = setup.getSetupType() == VcpSetup.SetupType.MEAN_REVERSION;
         if (weeklyTf && rangeExpansion) {
             return config.atrTrailMultWeeklyRangeExpansion;
+        }
+        if (weeklyTf && meanReversion) {
+            return config.atrTrailMultWeeklyMeanReversion;
         }
         if (weeklyTf) {
             return config.atrTrailMultWeeklyVcp;
@@ -221,20 +230,30 @@ public class BacktestEngine {
         if (rangeExpansion) {
             return config.atrTrailMultDailyRangeExpansion;
         }
+        if (meanReversion) {
+            return config.atrTrailMultDailyMeanReversion;
+        }
         return config.atrTrailMultDailyVcp;
     }
 
     private String timeStopProfile(VcpSetup setup) {
         boolean weeklyTf = "weekly".equalsIgnoreCase(timeframe);
         boolean rangeExpansion = setup.getSetupType() == VcpSetup.SetupType.RANGE_EXPANSION;
+        boolean meanReversion = setup.getSetupType() == VcpSetup.SetupType.MEAN_REVERSION;
         if (weeklyTf && rangeExpansion) {
             return "TIME_PROFILE_WEEKLY_RANGE_EXPANSION";
+        }
+        if (weeklyTf && meanReversion) {
+            return "TIME_PROFILE_WEEKLY_MEAN_REVERSION";
         }
         if (weeklyTf) {
             return "TIME_PROFILE_WEEKLY_VCP";
         }
         if (rangeExpansion) {
             return "TIME_PROFILE_DAILY_RANGE_EXPANSION";
+        }
+        if (meanReversion) {
+            return "TIME_PROFILE_DAILY_MEAN_REVERSION";
         }
         return "TIME_PROFILE_DAILY_VCP";
     }
