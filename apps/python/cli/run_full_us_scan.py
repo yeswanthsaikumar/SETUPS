@@ -37,6 +37,19 @@ from pathlib import Path
 from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "apps" / "python" / "lib"))
+
+try:
+    from mean_reversion_detector import (
+        detect_mean_reversion,
+        scan_symbols_for_mean_reversion,
+        _load_bars as _mr_load_bars,
+        _signal_to_dict as _mr_signal_to_dict,
+    )
+    _MR_AVAILABLE = True
+except ImportError as _mr_err:
+    _MR_AVAILABLE = False
+    print(f"[WARN] mean_reversion_detector not available: {_mr_err}", file=sys.stderr)
 
 # ── DEFAULTS ──────────────────────────────────────────────────────────────────
 DEFAULT_SYMBOLS_FILE  = str(ROOT / "data" / "universes" / "all_us_stocks.txt")
@@ -92,7 +105,8 @@ def parse_args():
     p = argparse.ArgumentParser(description="Full market breakout scan")
     p.add_argument("--symbols",   default=None)
     p.add_argument("--timeframe", choices=["daily", "weekly"], default="daily")
-    p.add_argument("--setups", choices=["both", "vcp", "range_expansion"], default="both")
+    p.add_argument("--setups", choices=["both", "vcp", "range_expansion", "mean_reversion", "all"], default="both",
+                   help="Setup filter: both|vcp|range_expansion|mean_reversion|all")
     p.add_argument("--market-label", default=None, help="Optional market label for output names, e.g. us or india")
     p.add_argument("--exchange-suffix", default=None, help="Optional Yahoo suffix override such as .NS or .BO")
     p.add_argument("--lookback",  type=int, default=DEFAULT_LOOKBACK)
@@ -100,6 +114,7 @@ def parse_args():
     p.add_argument("--cache-dir", default=DEFAULT_CACHE_DIR)
     p.add_argument("--cache-ttl", "--cache-ttl-min", dest="cache_ttl", type=int, default=DEFAULT_CACHE_TTL_MIN)
     p.add_argument("--batch",     type=int, default=DEFAULT_BATCH_SIZE)
+    p.add_argument("--mr-min-score", type=float, default=35.0, help="Minimum quality score for mean reversion setups (default: 35)")
     p.add_argument("--workers",   type=int, default=DEFAULT_WORKERS)
     p.add_argument("--output-dir", default=str(ROOT / "output"))
     p.add_argument("--no-watchlist", action="store_true", help="Skip watchlist generation and only produce breakout/open-trade hits")
@@ -116,6 +131,8 @@ def parse_args():
     p.add_argument("--account-size", type=float, default=DEFAULT_ACCOUNT_SIZE)
     p.add_argument("--base-risk-pct", type=float, default=DEFAULT_BASE_RISK_PCT, help="Baseline risk-per-trade used to convert risk amount to R")
     args = p.parse_args()
+    if args.setups in {"mean_reversion", "all"} and not _MR_AVAILABLE:
+        p.error("Mean reversion detector is unavailable; ensure apps/python/lib/mean_reversion_detector.py is importable")
     if args.batch <= 0:
         p.error("--batch must be greater than 0")
     if args.workers <= 0:
@@ -508,9 +525,13 @@ def apply_portfolio_heat(rows: list[dict], args) -> list[dict]:
         return []
     sorted_rows = sorted(rows, key=lambda r: _to_float(r.get("rankingScore"), _to_float(r.get("score"))), reverse=True)
     shortlist: list[dict] = []
+    selected_symbols: set[str] = set()
     cumulative = 0.0
     denom = args.account_size * args.base_risk_pct
     for row in sorted_rows:
+        symbol = str(row.get("symbol", "")).strip().upper()
+        if symbol and symbol in selected_symbols:
+            continue
         entry = _to_float(row.get("entry"))
         stop = _to_float(row.get("sl"))
         shares = _to_float(row.get("shares"))
@@ -525,6 +546,8 @@ def apply_portfolio_heat(rows: list[dict], args) -> list[dict]:
         item["riskR"] = round(risk_r, 3)
         item["heatAfterR"] = round(cumulative, 3)
         shortlist.append(item)
+        if symbol:
+            selected_symbols.add(symbol)
     return shortlist
 
 
@@ -708,14 +731,48 @@ def chunks(lst, n):
         yield lst[i:i + n]
 
 
+def _java_setups(setups: str) -> str | None:
+    """Map --setups value to what Java understands. Returns None to skip Java entirely."""
+    if setups == "mean_reversion":
+        return None   # Python-only; no Java call needed
+    if setups == "all":
+        return "both"  # Java handles vcp+range_expansion; MR handled by Python
+    return setups  # both | vcp | range_expansion – pass through unchanged
+
+
+def _run_mr_scan(symbols: list[str], args) -> list[dict]:
+    """Run Python mean reversion scan on all symbols from cache."""
+    if not _MR_AVAILABLE:
+        print("  [WARN] mean_reversion_detector not available – skipping MR scan", flush=True)
+        return []
+    print(f"\n  Running Python mean reversion scan on {len(symbols)} symbols from cache…", flush=True)
+    t0 = time.time()
+    mr_hits = scan_symbols_for_mean_reversion(
+        symbols,
+        cache_dir=args.cache_dir,
+        lookback=args.lookback,
+        timeframe=args.timeframe,
+        account_size=args.account_size,
+        base_risk_pct=args.base_risk_pct,
+        min_price_floor=args.min_price_floor,
+        min_score=getattr(args, "mr_min_score", 35.0),
+    )
+    elapsed = time.time() - t0
+    print(f"  Mean reversion scan done in {elapsed:.1f}s → {len(mr_hits)} hits", flush=True)
+    return mr_hits
+
+
 def scan_batch(batch: list[str], args) -> list[str]:
     """Invoke Java scanner for one batch; return raw hit lines."""
+    java_setup = _java_setups(args.setups)
+    if java_setup is None:
+        return []   # mean_reversion only – no Java
     cmd = [
         "java", "-cp", "src", "Main",
         "--mode=scan",
         "--provider=yahoo",
         f"--timeframe={args.timeframe}",
-        f"--setups={args.setups}",
+        f"--setups={java_setup}",
         f"--symbols={','.join(batch)}",
         f"--lookback={args.lookback}",
         f"--retries={args.retries}",
@@ -748,12 +805,15 @@ def scan_batch(batch: list[str], args) -> list[str]:
 
 def scan_watchlist_batch(batch: list[str], args) -> list[str]:
     """Invoke Java watchlist mode for one batch; return raw watchlist lines."""
+    java_setup = _java_setups(args.setups)
+    if java_setup is None:
+        return []   # mean_reversion only – no Java
     cmd = [
         "java", "-cp", "src", "Main",
         "--mode=watchlist",
         "--provider=yahoo",
         f"--timeframe={args.timeframe}",
-        f"--setups={args.setups}",
+        f"--setups={java_setup}",
         f"--symbols={','.join(batch)}",
         f"--lookback={args.lookback}",
         f"--retries={args.retries}",
@@ -864,11 +924,13 @@ def parse_hit(line: str) -> dict:
 
 
 CSV_FIELDS = [
-    "symbol", "listType", "setup", "window", "height%", "depth%", "len", "ctr", "dist%", "rating", "close", "pivot", "entry", "score",
+    "symbol", "listType", "setup", "setupSubtype", "window", "height%", "depth%", "len", "ctr", "dist%", "rating", "close", "pivot", "entry", "score",
     "watchlistRank", "watchlistQualityScore", "pivotProximityScore", "daysNearPivot", "pivotFreshness", "pivotFreshnessScore",
     "range%", "vol%", "rexp", "shares", "sl", "T1", "T2", "T3", "avgVol20", "avgDollarVol20", "rs3m", "rs6m", "rs12m", "rsScore", "rsRankScore",
     "regimeState", "regimeScore", "regimeSupport", "regimeSupportScore", "weeklyAgreement", "weeklyAgreementScore", "volumeDryUpScore", "volumeDryUpRatio",
-    "rankingScore", "riskR", "heatAfterR"
+    "rankingScore", "riskR", "heatAfterR",
+    # Mean reversion specific
+    "mrSubtype", "mrRsi", "mrSma20", "mrSma50", "mrSma200", "mrAtr", "mrLowerBB", "mrUpperBB", "mrBbPct", "mrVolRatio", "mrPullbackVolRatio",
 ]
 
 
@@ -1139,6 +1201,7 @@ def save_html(rows: list[dict], path: Path, meta: dict):
     def build_scan_reason(r: dict) -> str:
         """Generate a hover tooltip describing why this setup was flagged as a breakout."""
         setup = (r.get("setup") or r.get("setupType") or "?").upper()
+        subtype = r.get("mrSubtype") or r.get("setupSubtype") or "-"
         rating = r.get("rating") or "?"
         window = r.get("window") or "?"
         height = r.get("height%") or "?"
@@ -1163,25 +1226,49 @@ def save_html(rows: list[dict], path: Path, meta: dict):
         regime_support = r.get("regimeSupport") or "-"
         rs_score = r.get("rsScore") or "-"
         vol_dry_up = r.get("volumeDryUpScore") or "-"
+        mr_rsi = r.get("mrRsi") or "-"
+        mr_vol_ratio = r.get("mrVolRatio") or "-"
+        mr_pullback_vol_ratio = r.get("mrPullbackVolRatio") or "-"
 
-        setup_desc = (
-            "VCP — Volatility Contraction Pattern with tightening range waves into pivot"
-            if setup == "VCP"
-            else "Range Expansion Breakout — narrow base with wide-range breakout candle above pivot"
-        )
-        lines = [
-            f"Setup: {setup_desc}",
-            f"Rating: {rating}  |  Window: {window}  |  Quality Score: {score}",
-            f"Base Height: {height}%  |  Contraction Depth: {depth}%  |  Contraction Pairs: {ctr}",
-            f"Range Expansion: {rexp}x  |  Volume vs Avg: {vol}%",
-            f"Pivot: {pivot}  |  Entry: {entry}  |  Stop Loss: {sl}",
-            f"Targets → T1(1R): {t1}  |  T2(2R): {t2}  |  T3(3R): {t3}",
-            f"Distance to Pivot: {dist}%",
+        if setup == "VCP":
+            setup_desc = "VCP — Volatility Contraction Pattern with tightening range waves into pivot"
+            lines = [
+                f"Setup: {setup_desc}",
+                f"Rating: {rating}  |  Window: {window}  |  Quality Score: {score}",
+                f"Base Height: {height}%  |  Contraction Depth: {depth}%  |  Contraction Pairs: {ctr}",
+                f"Range Expansion: {rexp}x  |  Volume vs Avg: {vol}%",
+                f"Pivot: {pivot}  |  Entry: {entry}  |  Stop Loss: {sl}",
+                f"Targets → T1(1R): {t1}  |  T2(2R): {t2}  |  T3(3R): {t3}",
+                f"Distance to Pivot: {dist}%",
+            ]
+        elif setup == "MEAN_REVERSION":
+            setup_desc = "Mean Reversion — pullback into the mean within a broader uptrend, looking for bullish snap-back"
+            lines = [
+                f"Setup: {setup_desc}",
+                f"Subtype: {subtype}  |  Rating: {rating}  |  Window: {window}  |  Quality Score: {score}",
+                f"Pullback Depth: {height}%  |  Band Width: {depth}%  |  RSI: {mr_rsi}",
+                f"Mean (Pivot): {pivot}  |  Entry: {entry}  |  Stop Loss: {sl}",
+                f"Targets → T1(mean): {t1}  |  T2: {t2}  |  T3: {t3}",
+                f"Distance to Mean: {dist}%  |  Signal Volume vs Avg: {mr_vol_ratio}x  |  Pullback Volume vs Avg: {mr_pullback_vol_ratio}x",
+            ]
+        else:
+            setup_desc = "Range Expansion Breakout — narrow base with wide-range breakout candle above pivot"
+            lines = [
+                f"Setup: {setup_desc}",
+                f"Rating: {rating}  |  Window: {window}  |  Quality Score: {score}",
+                f"Base Height: {height}%  |  Contraction Depth: {depth}%  |  Contraction Pairs: {ctr}",
+                f"Range Expansion: {rexp}x  |  Volume vs Avg: {vol}%",
+                f"Pivot: {pivot}  |  Entry: {entry}  |  Stop Loss: {sl}",
+                f"Targets → T1(1R): {t1}  |  T2(2R): {t2}  |  T3(3R): {t3}",
+                f"Distance to Pivot: {dist}%",
+            ]
+
+        lines.extend([
             f"Watchlist Rank: {watch_rank}  |  Rank Score: {rank_score}",
             f"Pivot Proximity Score: {pivot_prox}  |  Days Near Pivot: {days_near_pivot}  |  Pivot Freshness: {pivot_freshness}",
             f"RS Score: {rs_score}  |  Regime Support: {regime_support}  |  Weekly Agreement: {weekly_agreement}",
             f"Volume Dry-Up Score: {vol_dry_up}",
-        ]
+        ])
         return " &#10; ".join(lines)
 
     # Build table rows with data attributes
@@ -1502,6 +1589,7 @@ def save_html(rows: list[dict], path: Path, meta: dict):
       <button class="filter-btn active" data-setup="all">All</button>
       <button class="filter-btn" data-setup="VCP">VCP</button>
       <button class="filter-btn" data-setup="RANGE_EXPANSION">Range Exp</button>
+      <button class="filter-btn" data-setup="MEAN_REVERSION">Mean Rev</button>
     </div>
     <div class="control-group">
       <label class="control-label">List:</label>
@@ -2028,6 +2116,13 @@ def main():
     log_fh.close()
     append_event(events_path, "scan_batches_complete", {"scanned": scanned_count, "hits": len(all_hits), "watchlist": len(all_watchlist)})
     print()  # final newline after progress bar
+
+    # ── Mean Reversion Python scan (runs on cached bars, no Java needed) ──────
+    if args.setups in ("mean_reversion", "all"):
+        mr_hits = _run_mr_scan(symbols, args)
+        if mr_hits:
+            all_hits.extend(mr_hits)
+            append_event(events_path, "mr_scan_complete", {"mrHits": len(mr_hits)})
 
     # ── Final saves ───────────────────────────────────────────────────────────
     elapsed_total = time.time() - start_time

@@ -59,7 +59,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch", type=int, default=25)
     parser.add_argument("--daily-lookback", type=int, default=252, help="Daily bars lookback (default: 252 = ~1 year)")
     parser.add_argument("--weekly-lookback", type=int, default=104, help="Weekly bars lookback (default: 104 = ~2 years)")
-    parser.add_argument("--setups", default="both", choices=["both", "vcp", "range_expansion"], help="Setup filter: both, vcp, or range_expansion")
+    parser.add_argument(
+        "--setups",
+        default="both",
+        choices=["both", "vcp", "range_expansion", "mean_reversion", "all"],
+        help="Setup filter: both, vcp, range_expansion, mean_reversion, or all",
+    )
     parser.add_argument("--cache-dir", default="cache")
     parser.add_argument("--cache-ttl", type=int, default=360)
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
@@ -343,7 +348,10 @@ def main():
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     refresh_us_universe(args.skip_us_refresh, args.force_us_refresh)
-    compile_java()
+    if args.setups != "mean_reversion":
+        compile_java()
+    else:
+        print("   (Java compilation skipped for --setups mean_reversion)")
 
     symbols_by_market = {}
     if "us" in args.markets:
