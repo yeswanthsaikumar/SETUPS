@@ -10,6 +10,7 @@ public class ScannerEngine {
     private final AppConfig config;
     private final String setupFilter;
     private final MultiTimeframeAlignmentAnalyzer alignmentAnalyzer;
+    private final FollowThroughDetector followThroughDetector;
     private final List<RejectionDiagnostic> lastRejections;
 
     public ScannerEngine(
@@ -29,6 +30,7 @@ public class ScannerEngine {
         this.alignmentAnalyzer = new MultiTimeframeAlignmentAnalyzer(
                 marketDataProvider, vcpDetector, breakoutEvaluator, config
         );
+        this.followThroughDetector = new FollowThroughDetector(breakoutEvaluator, vcpDetector);
         this.lastRejections = new ArrayList<>();
     }
 

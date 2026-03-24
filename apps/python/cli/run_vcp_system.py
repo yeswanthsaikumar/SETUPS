@@ -62,8 +62,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run daily and weekly VCP + range breakout scans for US and Indian stocks")
     parser.add_argument("--markets", default="us,india", help="Comma-separated: us, india, or all")
     parser.add_argument("--timeframes", default="daily,weekly", help="Comma-separated: daily, weekly, or all")
-    parser.add_argument("--workers", type=int, default=4)
-    parser.add_argument("--batch", type=int, default=25)
+    parser.add_argument("--workers", type=int, default=6)
+    parser.add_argument("--batch", type=int, default=40)
     parser.add_argument("--daily-lookback", type=int, default=252, help="Daily bars lookback (default: 252 = ~1 year)")
     parser.add_argument("--weekly-lookback", type=int, default=104, help="Weekly bars lookback (default: 104 = ~2 years)")
     parser.add_argument(

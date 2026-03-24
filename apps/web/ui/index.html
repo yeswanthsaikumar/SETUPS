@@ -23,6 +23,21 @@
     .status-succeeded { color: #4ade80; }
     .status-failed { color: #f87171; }
     .muted { color: #94a3b8; font-size: 12px; }
+    .btn-sm { width: auto !important; padding: 4px 10px !important; margin-top: 0 !important; font-size: 12px; }
+    .btn-danger { background: #7f1d1d !important; }
+    .btn-danger:hover { background: #991b1b !important; }
+    .btn-teal { background: #0f766e !important; }
+    .btn-teal:hover { background: #0d9488 !important; }
+    #logPanel { border-top: 1px solid #334155; margin-top: 12px; padding-top: 10px; }
+    #logPanel.hidden { display: none; }
+    #logHeader { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; font-size: 13px; }
+    #logHeaderLabel { color: #93c5fd; font-weight: bold; }
+    #logHeaderMeta { color: #94a3b8; font-size: 12px; }
+    #jobLog { max-height: 420px; overflow: auto; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+    .spinner { display: inline-block; width: 10px; height: 10px; border: 2px solid #334155; border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 4px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .pulse { animation: pulse 1.2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 
     /* Stock Analyzer styles */
     .analyzer-full { grid-column: 1 / -1; }
@@ -156,13 +171,31 @@
 
     <section class="card">
       <h2>Jobs</h2>
-      <button onclick="refreshJobs()">Refresh Jobs</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+        <button class="btn-sm" onclick="refreshJobs()">↺ Refresh Jobs</button>
+        <button class="btn-sm btn-danger" onclick="clearJobsTable()">✕ Clear List</button>
+      </div>
       <table>
-        <thead><tr><th>ID</th><th>Kind</th><th>Status</th><th>Actions</th></tr></thead>
+        <thead><tr><th>ID</th><th>Kind</th><th>Status</th><th>Started</th><th>Log</th></tr></thead>
         <tbody id="jobsBody"></tbody>
       </table>
-      <label>Job log tail</label>
-      <pre id="jobLog"></pre>
+
+      <!-- Log panel (hidden until a job is clicked) -->
+      <div id="logPanel" class="hidden">
+        <div id="logHeader">
+          <div>
+            <span id="logHeaderLabel">Job Log</span>
+            <span id="logSpinner" class="spinner" style="display:none;"></span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <span id="logHeaderMeta"></span>
+            <button class="btn-sm btn-teal" onclick="scrollLogToBottom()" title="Scroll to bottom">⬇ Bottom</button>
+            <button class="btn-sm" id="tailToggleBtn" onclick="toggleTailing()" style="display:none;">⏹ Stop Live Tail</button>
+            <button class="btn-sm btn-danger" onclick="closeLog()">✕ Close</button>
+          </div>
+        </div>
+        <pre id="jobLog"></pre>
+      </div>
     </section>
 
     <section class="card">
@@ -406,27 +439,141 @@
       await refreshJobs();
     }
 
+    // ── Jobs ────────────────────────────────────────────────────────────────
+    let _activeLogJobId = null;
+    let _tailIntervalId = null;
+    let _jobPollId = null;
+
+    function _statusHtml(status) {
+      const icons = { queued: '⏳', running: '🔄', succeeded: '✅', failed: '❌' };
+      return `<span class="status-${status}">${icons[status] || ''} ${status}</span>`;
+    }
+
     async function refreshJobs() {
-      const data = await api('/api/jobs');
+      let data;
+      try { data = await api('/api/jobs'); }
+      catch (err) { console.error('refreshJobs error:', err); return; }
+
       const body = document.getElementById('jobsBody');
       body.innerHTML = '';
-      for (const job of data.jobs) {
+      const jobs = data.jobs || [];
+      for (const job of jobs) {
+        const isActive = _activeLogJobId === job.id;
         const tr = document.createElement('tr');
+        if (isActive) tr.style.background = '#0f2744';
         tr.innerHTML = `
-          <td><code>${job.id.slice(0, 8)}</code></td>
+          <td><code title="${job.id}">${job.id.slice(0, 8)}</code></td>
           <td>${job.kind}</td>
-          <td class="status-${job.status}">${job.status}</td>
+          <td>${_statusHtml(job.status)}</td>
+          <td class="muted">${job.started_at ? job.started_at.replace('T', ' ') : '—'}</td>
           <td>
-            <button onclick="showLog('${job.id}')">Log</button>
-          </td>
-        `;
+            <button class="btn-sm${isActive ? ' btn-teal' : ''}"
+              onclick="showLog('${job.id}', '${job.kind}', '${job.status}')">
+              ${isActive ? '▶ Viewing' : '📋 Log'}
+            </button>
+          </td>`;
         body.appendChild(tr);
+      }
+
+      // Automatically refresh every 5s while any job is running
+      const anyRunning = jobs.some(j => j.status === 'queued' || j.status === 'running');
+      if (anyRunning && !_jobPollId) {
+        _jobPollId = setInterval(async () => {
+          await refreshJobs();
+          // If we're tailing and the active job is no longer running, stop
+          if (_activeLogJobId) {
+            const active = (data.jobs || []).find(j => j.id === _activeLogJobId);
+            if (active && active.status !== 'running' && active.status !== 'queued') {
+              await fetchLog(_activeLogJobId);   // final snapshot
+              stopTailing();
+            }
+          }
+        }, 5000);
+      } else if (!anyRunning && _jobPollId) {
+        clearInterval(_jobPollId);
+        _jobPollId = null;
       }
     }
 
-    async function showLog(jobId) {
-      const data = await api(`/api/jobs/${jobId}/log`);
-      document.getElementById('jobLog').textContent = data.log || '';
+    async function fetchLog(jobId) {
+      const logEl = document.getElementById('jobLog');
+      const spinner = document.getElementById('logSpinner');
+      spinner.style.display = 'inline-block';
+      try {
+        const data = await api(`/api/jobs/${jobId}/log?tail_lines=400`);
+        const wasAtBottom = logEl.scrollHeight - logEl.scrollTop <= logEl.clientHeight + 60;
+        logEl.textContent = data.log || '(log is empty — job may just have started)';
+        if (wasAtBottom) scrollLogToBottom();
+      } catch (err) {
+        logEl.textContent = `⚠️ Could not load log: ${err.message}`;
+      } finally {
+        spinner.style.display = 'none';
+      }
+    }
+
+    async function showLog(jobId, kind, status) {
+      _activeLogJobId = jobId;
+      stopTailing();
+
+      // Show panel
+      const panel = document.getElementById('logPanel');
+      panel.classList.remove('hidden');
+      document.getElementById('logHeaderLabel').textContent =
+        `Log — ${kind} ${jobId.slice(0, 8)}`;
+      document.getElementById('logHeaderMeta').textContent = status;
+      document.getElementById('logHeaderMeta').className =
+        `status-${status} muted`;
+
+      // Show/hide live tail button based on status
+      const tailBtn = document.getElementById('tailToggleBtn');
+      if (status === 'running' || status === 'queued') {
+        tailBtn.style.display = '';
+        tailBtn.textContent = '⏹ Stop Live Tail';
+        startTailing(jobId);
+      } else {
+        tailBtn.style.display = 'none';
+      }
+
+      await fetchLog(jobId);
+      refreshJobs();   // highlight the row
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function startTailing(jobId) {
+      stopTailing();
+      _tailIntervalId = setInterval(() => fetchLog(jobId), 3000);
+    }
+
+    function stopTailing() {
+      if (_tailIntervalId) { clearInterval(_tailIntervalId); _tailIntervalId = null; }
+      const tailBtn = document.getElementById('tailToggleBtn');
+      if (tailBtn) tailBtn.textContent = '▶ Resume Live Tail';
+    }
+
+    function toggleTailing() {
+      if (_tailIntervalId) {
+        stopTailing();
+      } else if (_activeLogJobId) {
+        startTailing(_activeLogJobId);
+        document.getElementById('tailToggleBtn').textContent = '⏹ Stop Live Tail';
+      }
+    }
+
+    function closeLog() {
+      stopTailing();
+      _activeLogJobId = null;
+      document.getElementById('logPanel').classList.add('hidden');
+      document.getElementById('jobLog').textContent = '';
+      refreshJobs();
+    }
+
+    function clearJobsTable() {
+      document.getElementById('jobsBody').innerHTML = '';
+    }
+
+    function scrollLogToBottom() {
+      const el = document.getElementById('jobLog');
+      el.scrollTop = el.scrollHeight;
     }
 
     async function refreshOutputs() {

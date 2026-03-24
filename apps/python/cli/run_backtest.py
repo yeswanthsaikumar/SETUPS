@@ -259,7 +259,8 @@ def run_batch(
 ) -> Path | None:
     out_prefix = str(work_dir / f"batch_{batch_num:04d}")
     cmd = [
-        "java", "-cp", "src", "Main",
+        "java", "-XX:+TieredCompilation", "-XX:TieredStopAtLevel=1", "-Xms32m", "-Xmx256m",
+        "-cp", "src", "Main",
         "--mode=backtest",
         "--provider=yahoo",
         f"--timeframe={timeframe}",
