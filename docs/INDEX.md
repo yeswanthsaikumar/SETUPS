@@ -4,6 +4,7 @@
 
 - `docs/README.md` - system overview and core commands
 - `docs/GETTING_STARTED.md` - quickest path to first successful run
+- `docs/guides/COMPREHENSIVE_GUIDE.md` - detailed onboarding and system guide
 - `docs/runbooks/DAILY_RUNBOOK.md` - daily operating sequence
 
 ## Quick Start

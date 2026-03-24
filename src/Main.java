@@ -21,6 +21,10 @@ public class Main {
             runBacktest(options, provider, scannerEngine);
         } else if ("watchlist".equals(options.mode)) {
             runWatchlist(options, scannerEngine);
+        } else if ("followthrough".equals(options.mode)) {
+            runFollowThrough(options, scannerEngine);
+        } else if ("combined".equals(options.mode)) {
+            runCombined(options, scannerEngine);
         } else {
             runScan(options, scannerEngine);
         }
@@ -140,6 +144,30 @@ public class Main {
 
         ResultExporter.exportWatchlistResults(results, options.exportFormat, options.outPrefix);
         ResultExporter.exportRejectionsLatest(rejections, inferMarket(options.symbols), options.timeframe);
+    }
+
+    private static void runFollowThrough(CliOptions options, ScannerEngine scannerEngine) {
+        // Implement follow-through analysis logic here
+        System.out.println("Follow-through analysis is not yet implemented.");
+    }
+
+    /**
+     * Combined mode: runs scan + watchlist in a SINGLE JVM instance.
+     * Outputs scan results first (BREAKOUT/NEAR_BREAKOUT lines), then watchlist lines.
+     * This is called by Python's scan_combined_batch() to halve JVM launch overhead.
+     */
+    private static void runCombined(CliOptions options, ScannerEngine scannerEngine) {
+        // --- SCAN pass ---
+        List<ScanResult> scanResults = scannerEngine.scan(options.symbols, options.lookbackDays, options.timeframe);
+        for (ScanResult result : scanResults) {
+            System.out.println(result.toConsoleLine());
+        }
+
+        // --- WATCHLIST pass ---
+        List<WatchlistResult> watchResults = scannerEngine.scanWatchlist(options.symbols, options.lookbackDays, options.timeframe);
+        for (WatchlistResult result : watchResults) {
+            System.out.println(result.toConsoleLine());
+        }
     }
 
     private static String inferMarket(List<String> symbols) {

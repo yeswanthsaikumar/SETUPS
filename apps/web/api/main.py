@@ -37,8 +37,8 @@ class ScanJobRequest(BaseModel):
     setups: Literal["full", "both", "vcp", "range_expansion", "mean_reversion", "all"] = "full"
     daily_lookback: int = 252
     weekly_lookback: int = 104
-    workers: int = 4
-    batch: int = 25
+    workers: int = 6
+    batch: int = 40
     skip_us_refresh: bool = True
 
 
@@ -121,8 +121,13 @@ if OUTPUT_DIR.exists():
     app.mount("/reports", StaticFiles(directory=str(OUTPUT_DIR)), name="reports")
 
 
+def _ensure_parent_dir(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+
 def _run_job(job_id: str, command: list[str], log_file: Path) -> None:
     jobs.update(job_id, status="running", started_at=datetime.now().isoformat(timespec="seconds"))
+    _ensure_parent_dir(log_file)
     with open(log_file, "w", encoding="utf-8") as fh:
         fh.write("$ " + " ".join(command) + "\n\n")
         fh.flush()
@@ -139,6 +144,7 @@ def _run_job(job_id: str, command: list[str], log_file: Path) -> None:
 def _submit_job(kind: Literal["scan", "backtest"], command: list[str]) -> JobRecord:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_file = WEB_JOBS_DIR / f"{kind}_{timestamp}_{uuid.uuid4().hex[:8]}.log"
+    _ensure_parent_dir(log_file)
     job = jobs.create(kind=kind, command=command, log_file=log_file)
     thread = threading.Thread(target=_run_job, args=(job.id, command, log_file), daemon=True)
     thread.start()

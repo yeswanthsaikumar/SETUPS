@@ -60,11 +60,14 @@ DEFAULT_LOOKBACK      = 252
 DEFAULT_RETRIES       = 3
 DEFAULT_CACHE_DIR     = str(ROOT / "cache")
 DEFAULT_CACHE_TTL_MIN = 360                   # 6 hours
-DEFAULT_BATCH_SIZE    = 25                    # symbols per Java process
-DEFAULT_WORKERS       = 4                     # concurrent Java processes
-SAVE_EVERY_N_HITS     = 20                    # flush CSV every N new hits
-SAVE_EVERY_N_BATCHES  = 10                    # refresh output files even if hit count is unchanged
-JAVA_TIMEOUT_SEC      = 180                   # kill stalled Java process after 3 min
+DEFAULT_BATCH_SIZE    = 40                    # symbols per Java process (larger = fewer JVM launches)
+DEFAULT_WORKERS       = 6                     # concurrent Java processes
+SAVE_EVERY_N_HITS     = 30                    # flush CSV every N new hits
+SAVE_EVERY_N_BATCHES  = 15                    # refresh output files even if hit count is unchanged
+JAVA_TIMEOUT_SEC      = 240                   # kill stalled Java process after 4 min (larger batches)
+# JVM flags: -client + TieredStopAtLevel=1 disables full JIT for short-lived batch processes
+# This cuts JVM startup from ~2s to ~0.5s at the cost of peak throughput (irrelevant for batch mode)
+JVM_FAST_FLAGS        = ["-XX:+TieredCompilation", "-XX:TieredStopAtLevel=1", "-Xms32m", "-Xmx256m"]
 DEFAULT_LIQ_LOOKBACK  = 20
 DEFAULT_ACCOUNT_SIZE  = 100_000.0
 DEFAULT_BASE_RISK_PCT = 0.01
@@ -272,6 +275,25 @@ def build_market_regime(symbols: list[str], args) -> dict:
         return {"mode": "off", "favorable": True, "breadth50": 1.0, "breadth200": 1.0, "score": 1.0, "sampled": 0}
 
     sample = symbols[: max(10, min(len(symbols), args.regime_sample))]
+
+    def _load_symbol(sym: str):
+        bars = load_cached_bars(sym, args.lookback, args.timeframe, args.cache_dir)
+        if len(bars) < 210:
+            return None
+        closes = [b["close"] for b in bars if b.get("close", 0) > 0]
+        if len(closes) < 210:
+            return None
+        close = closes[-1]
+        ma50 = sum(closes[-50:]) / 50
+        ma200 = sum(closes[-200:]) / 200
+        return {
+            "above50": close > ma50,
+            "above200": close > ma200,
+            "rs3m": _safe_return(closes, 63),
+            "rs6m": _safe_return(closes, 126),
+            "rs12m": _safe_return(closes, 252),
+        }
+
     above50 = 0
     above200 = 0
     valid = 0
@@ -279,24 +301,20 @@ def build_market_regime(symbols: list[str], args) -> dict:
     rs_pool_6m: list[float] = []
     rs_pool_12m: list[float] = []
 
-    for sym in sample:
-        bars = load_cached_bars(sym, args.lookback, args.timeframe, args.cache_dir)
-        if len(bars) < 210:
-            continue
-        closes = [b["close"] for b in bars if b.get("close", 0) > 0]
-        if len(closes) < 210:
-            continue
-        close = closes[-1]
-        ma50 = sum(closes[-50:]) / 50
-        ma200 = sum(closes[-200:]) / 200
-        valid += 1
-        if close > ma50:
-            above50 += 1
-        if close > ma200:
-            above200 += 1
-        rs_pool_3m.append(_safe_return(closes, 63))
-        rs_pool_6m.append(_safe_return(closes, 126))
-        rs_pool_12m.append(_safe_return(closes, 252))
+    # ⚡ Parallel CSV reads — uses up to min(workers, 16) threads
+    regime_workers = min(getattr(args, "workers", DEFAULT_WORKERS), 16)
+    with ThreadPoolExecutor(max_workers=regime_workers) as ex:
+        for result in ex.map(_load_symbol, sample):
+            if result is None:
+                continue
+            valid += 1
+            if result["above50"]:
+                above50 += 1
+            if result["above200"]:
+                above200 += 1
+            rs_pool_3m.append(result["rs3m"])
+            rs_pool_6m.append(result["rs6m"])
+            rs_pool_12m.append(result["rs12m"])
 
     if valid == 0:
         return {"mode": args.regime_mode, "favorable": True, "breadth50": 1.0, "breadth200": 1.0, "score": 1.0, "sampled": 0,
@@ -776,7 +794,7 @@ def scan_batch(batch: list[str], args) -> list[str]:
     if java_setup is None:
         return []   # mean_reversion only – no Java
     cmd = [
-        "java", "-cp", "src", "Main",
+        "java", *JVM_FAST_FLAGS, "-cp", "src", "Main",
         "--mode=scan",
         "--provider=yahoo",
         f"--timeframe={args.timeframe}",
@@ -817,7 +835,7 @@ def scan_watchlist_batch(batch: list[str], args) -> list[str]:
     if java_setup is None:
         return []   # mean_reversion only – no Java
     cmd = [
-        "java", "-cp", "src", "Main",
+        "java", *JVM_FAST_FLAGS, "-cp", "src", "Main",
         "--mode=watchlist",
         "--provider=yahoo",
         f"--timeframe={args.timeframe}",
@@ -848,10 +866,102 @@ def scan_watchlist_batch(batch: list[str], args) -> list[str]:
     except Exception as exc:
         with lock:
             print(f"  [WARN] watchlist batch error: {exc}", flush=True)
+
+
+def scan_combined_batch(batch: list[str], args) -> tuple[list[str], list[str]]:
+    """
+    ⚡ FAST PATH: Run scan + watchlist in a SINGLE JVM call (--mode=combined).
+    This halves the JVM startup overhead vs. two separate calls.
+    Returns (scan_hits, watchlist_hits).
+    """
+    java_setup = _java_setups(args.setups)
+    if java_setup is None:
+        return [], []   # mean_reversion only – no Java
+    cmd = [
+        "java", *JVM_FAST_FLAGS, "-cp", "src", "Main",
+        "--mode=combined",
+        "--provider=yahoo",
+        f"--timeframe={args.timeframe}",
+        f"--setups={java_setup}",
+        f"--symbols={','.join(batch)}",
+        f"--lookback={args.lookback}",
+        f"--retries={args.retries}",
+        f"--cache-dir={args.cache_dir}",
+        f"--cache-ttl-min={args.cache_ttl}",
+    ]
+    try:
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=int(JAVA_TIMEOUT_SEC * 1.5),
+            cwd=ROOT,
+        )
+        combined_output = (proc.stdout or "") + "\n" + (proc.stderr or "")
+        if proc.returncode != 0:
+            with lock:
+                print(f"  [WARN] Java combined batch exited with code {proc.returncode} for {','.join(batch[:5])}", flush=True)
+        lines = combined_output.splitlines()
+        hits = [
+            line.strip()
+            for line in lines
+            if " Close " in line and " Pivot " in line and " T1 " in line
+            and "| Type WATCHLIST |" not in line
+        ]
+        watchlist_hits = [
+            line.strip()
+            for line in lines
+            if "| Type WATCHLIST |" in line and " T1 " in line
+        ]
+        return hits, watchlist_hits
+    except subprocess.TimeoutExpired:
+        with lock:
+            print(f"  [WARN] combined batch timed out for {','.join(batch[:5])}", flush=True)
+        return [], []
+    except Exception as exc:
+        with lock:
+            print(f"  [WARN] combined batch error: {exc}", flush=True)
+        return [], []
+
+
+def scan_followthrough_batch(batch: list[str], args) -> list[str]:
+    """Invoke Java follow-through/continuation scanner for one batch; return raw hit lines."""
+    java_setup = _java_setups(args.setups)
+    if java_setup is None:
+        return []   # mean_reversion only – no Java
+    cmd = [
+        "java", *JVM_FAST_FLAGS, "-cp", "src", "Main",
+        "--mode=followthrough",
+        "--provider=yahoo",
+        f"--timeframe={args.timeframe}",
+        f"--setups={java_setup}",
+        f"--symbols={','.join(batch)}",
+        f"--lookback={args.lookback}",
+        f"--retries={args.retries}",
+        f"--cache-dir={args.cache_dir}",
+        f"--cache-ttl-min={args.cache_ttl}",
+    ]
+    try:
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=JAVA_TIMEOUT_SEC,
+            cwd=ROOT,
+        )
+        combined = (proc.stdout or "") + "\n" + (proc.stderr or "")
+        if proc.returncode != 0:
+            with lock:
+                print(f"  [WARN] Java follow-through batch exited with code {proc.returncode} for {','.join(batch[:5])}", flush=True)
+        # Follow-through hits will have "Follow-through" in reason and signal info
+        return [line.strip() for line in combined.splitlines() if "Follow-through" in line and " T1 " in line]
+    except subprocess.TimeoutExpired:
+        with lock:
+            print(f"  [WARN] follow-through batch timed out after {JAVA_TIMEOUT_SEC}s for {','.join(batch[:5])}", flush=True)
         return []
     except Exception as exc:
         with lock:
-            print(f"  [WARN] batch error: {exc}", flush=True)
+            print(f"  [WARN] follow-through batch error: {exc}", flush=True)
         return []
 
 
@@ -2001,8 +2111,13 @@ def main():
     def process_batch(batch_idx_batch):
         idx, batch = batch_idx_batch
         t0   = time.time()
-        hits = scan_batch(batch, args)
-        watchlist_hits = [] if args.no_watchlist else scan_watchlist_batch(batch, args)
+        if args.no_watchlist:
+            # scan only — no watchlist needed
+            hits = scan_batch(batch, args)
+            watchlist_hits = []
+        else:
+            # ⚡ Combined mode: single JVM call for scan + watchlist
+            hits, watchlist_hits = scan_combined_batch(batch, args)
         dur  = time.time() - t0
         parsed = [parse_hit(h) for h in hits]
         parsed_watch = [parse_hit(h) for h in watchlist_hits]
@@ -2030,33 +2145,42 @@ def main():
             "total_scanned": scanned_count,
             "elapsed": elapsed_snapshot,
         }
+
+        # Always write fast CSV + JSON
         save_csv(snapshot, csv_path)
         save_json(snapshot, json_path)
-        save_html(snapshot, html_path, meta_snapshot)
         save_csv(open_trade_snapshot, open_trades_csv_path)
         save_json(open_trade_snapshot, open_trades_json_path)
-        save_html(open_trade_snapshot, open_trades_html_path, meta_snapshot)
         save_csv(watch_snapshot, watchlist_csv_path)
         save_json(watch_snapshot, watchlist_json_path)
-        save_html(watch_snapshot, watchlist_html_path, meta_snapshot)
         save_csv(shortlist_snapshot, shortlist_csv_path)
         save_json(shortlist_snapshot, shortlist_json_path)
-        save_html(shortlist_snapshot, shortlist_html_path, meta_snapshot)
         save_variation_summary(snapshot, variation_summary_path, meta_snapshot)
         save_csv(snapshot, latest_csv)
         save_json(snapshot, latest_json)
-        save_html(snapshot, latest_html, meta_snapshot)
         save_csv(open_trade_snapshot, latest_open_trades_csv)
         save_json(open_trade_snapshot, latest_open_trades_json)
-        save_html(open_trade_snapshot, latest_open_trades_html, meta_snapshot)
         save_csv(watch_snapshot, latest_watchlist_csv)
         save_json(watch_snapshot, latest_watchlist_json)
-        save_html(watch_snapshot, latest_watchlist_html, meta_snapshot)
         save_csv(shortlist_snapshot, latest_shortlist_csv)
         save_json(shortlist_snapshot, latest_shortlist_json)
-        save_html(shortlist_snapshot, latest_shortlist_html, meta_snapshot)
         save_variation_summary(snapshot, latest_variation_summary, meta_snapshot)
         save_csv(snapshot, generic_latest_csv)
+
+        # ⚡ HTML is expensive to generate — only write on final forced save or every 5th interim
+        # This avoids blocking the scan loop with large HTML builds every 30 hits
+        interim_save_count = (batch_done // SAVE_EVERY_N_BATCHES)
+        write_html = force or (interim_save_count % 5 == 0)
+        if write_html:
+            save_html(snapshot, html_path, meta_snapshot)
+            save_html(open_trade_snapshot, open_trades_html_path, meta_snapshot)
+            save_html(watch_snapshot, watchlist_html_path, meta_snapshot)
+            save_html(shortlist_snapshot, shortlist_html_path, meta_snapshot)
+            save_html(snapshot, latest_html, meta_snapshot)
+            save_html(open_trade_snapshot, latest_open_trades_html, meta_snapshot)
+            save_html(watch_snapshot, latest_watchlist_html, meta_snapshot)
+            save_html(shortlist_snapshot, latest_shortlist_html, meta_snapshot)
+
         last_save_hit = len(all_hits)
         last_save_batch = batch_done
 
