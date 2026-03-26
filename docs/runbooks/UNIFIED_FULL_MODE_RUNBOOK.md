@@ -1,123 +1,60 @@
-# Unified Full Mode Runbook
-## VCP + Range Expansion + Mean Reversion
+# Full Mode Runbook
 
-## Purpose
+> Most daily operations: see `docs/runbooks/DAILY_RUNBOOK.md`.  
+> This doc covers advanced validation and per-setup metrics.
 
-This runbook standardizes execution for the unified mode:
-
-- setup mode: `full`
-- markets: configurable (`india`, `us`)
-- timeframes: configurable (`daily`, `weekly`)
-
-## 1) Canonical Production Command
+## Canonical Command
 
 ```bash
 cd /Users/yeshwantha/IdeaProjects/SETUPS
-python3 apps/python/cli/run_vcp_system.py \
-  --markets india,us \
-  --timeframes daily,weekly \
-  --setups full \
-  --daily-lookback 252 \
-  --weekly-lookback 104 \
-  --skip-us-refresh
+./run_master.sh
 ```
 
-## 2) India-Only Full Mode
+## Execution Flow
+
+1. `run_vcp_system.py` orchestrates 4 scans: India/US × daily/weekly
+2. Each scan compiles Java, then calls `run_full_us_scan.py`
+3. Java handles VCP · Range Expansion · Breakout Pullback (batched, parallel workers)
+4. Python handles Mean Reversion — merged into the same hit list
+5. Overlays, ranking, portfolio heat shortlist applied per scan
+6. `*_LATEST.*` aliases written; `system_run_*/summary.md` refreshed
+7. `generate_master_report.py` merges all outputs + fetches fundamentals (parallel)
+8. `output/master_report_LATEST.html` ready
+
+## Validate Generated Files
 
 ```bash
-python3 apps/python/cli/run_vcp_system.py \
-  --markets india \
-  --timeframes daily,weekly \
-  --setups full \
-  --daily-lookback 252 \
-  --weekly-lookback 104 \
-  --skip-us-refresh
+ls output | grep 'vcp_hits_.*_LATEST.json'
+ls output | grep 'watchlist_.*_LATEST.html'
+ls output | grep 'portfolio_shortlist_.*_LATEST.csv'
+ls output | grep 'breakout_performance_.*_LATEST.html'
+ls output | grep 'master_report_LATEST.html'
 ```
 
-## 3) Execution Flow (What Happens)
-
-1. setup mode normalization (`all -> full`)
-2. Java compile
-3. grouped scans (`market x timeframe`) using `run_full_us_scan.py`
-4. Java scan/watchlist runs for VCP/range-expansion
-5. Python MR scan runs and merges into hit list
-6. overlays/ranking/shortlist applied
-7. latest aliases and system summary refreshed
-
-## 4) Success Criteria
-
-- no runtime exception from orchestrator
-- `output/system_latest_summary.md` updated
-- expected `*_full_LATEST.*` files exist
-- manifests updated for each group
-
-## 5) Validate Generated Files
-
-```bash
-ls -1 output | grep 'vcp_hits_.*_full_LATEST.json'
-ls -1 output | grep 'watchlist_.*_full_LATEST.html'
-ls -1 output | grep 'portfolio_shortlist_.*_full_LATEST.csv'
-ls -1 output | grep 'scan_manifest_.*_full_LATEST.json'
-```
-
-## 6) Setup Split Verification (Full Mode)
-
-```bash
-ls -1 output | grep '_vcp_LATEST.json'
-ls -1 output | grep '_range_expansion_LATEST.json'
-ls -1 output | grep '_mean_reversion_LATEST.json'
-```
-
-## 7) Quick Metrics Snapshot
+## Quick Hit Count by Setup
 
 ```bash
 python3 - <<'PY'
 import json
 from pathlib import Path
 out = Path('output')
-for tf in ('daily','weekly'):
-    p = out / f'vcp_hits_india_{tf}_full_LATEST.json'
-    if not p.exists():
-        print(tf.upper(), 'missing')
-        continue
-    rows = json.loads(p.read_text())
-    b = {}
-    for r in rows:
-        k = str(r.get('setup','UNKNOWN')).upper()
-        b[k] = b.get(k, 0) + 1
-    print(tf.upper(), 'hits=', len(rows), 'setups=', b)
+for market in ('india', 'us'):
+    for tf in ('daily', 'weekly'):
+        p = out / f'vcp_hits_{market}_{tf}_full_LATEST.json'
+        if not p.exists():
+            print(f'{market.upper()} {tf.upper()} — missing'); continue
+        rows = json.loads(p.read_text())
+        b = {}
+        for r in rows:
+            k = str(r.get('setup', 'UNKNOWN')).upper()
+            b[k] = b.get(k, 0) + 1
+        print(f'{market.upper()} {tf.upper()} total={len(rows)} {b}')
 PY
 ```
 
-## 8) If Orchestrator Compile Fails
+## Success Criteria
 
-Run direct scanner commands per market/timeframe:
-
-```bash
-python3 apps/python/cli/run_full_us_scan.py \
-  --symbols data/universes/indian_stock_tickers.csv \
-  --market-label india \
-  --timeframe daily \
-  --setups full \
-  --lookback 252 \
-  --workers 4 \
-  --batch 25 \
-  --cache-dir cache \
-  --output-dir output
-```
-
-```bash
-python3 apps/python/cli/run_full_us_scan.py \
-  --symbols data/universes/indian_stock_tickers.csv \
-  --market-label india \
-  --timeframe weekly \
-  --setups full \
-  --lookback 104 \
-  --workers 4 \
-  --batch 25 \
-  --cache-dir cache \
-  --output-dir output
-```
-
-See `docs/runbooks/TROUBLESHOOTING.md` for root-cause workflows.
-
+- No fatal exception from orchestrator
+- `output/master_report_LATEST.html` present and > 1 MB
+- `output/system_run_*/summary.md` updated today
+- All four market × timeframe hit JSONs present

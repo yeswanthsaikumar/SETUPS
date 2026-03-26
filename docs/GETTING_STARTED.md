@@ -1,111 +1,75 @@
-# Getting Started (Current System)
+# Getting Started
 
-## Goal
-
-Run your first successful scan using the current unified mode:
-
-- `VCP`
-- `RANGE_EXPANSION`
-- `MEAN_REVERSION`
-
-in one command (`--setups full`).
-
-## 1) First Run (Recommended)
+## One Command to Run Everything
 
 ```bash
 cd /Users/yeshwantha/IdeaProjects/SETUPS
-python3 apps/python/cli/run_vcp_system.py --setups full --skip-us-refresh
+./run_master.sh
 ```
 
-What this does:
+This runs India + US, daily + weekly, all four setups (VCP · Range Expansion · Mean Reversion · Breakout Pullback), enriches results with fundamentals, and opens the master HTML report automatically.
 
-- runs India + US
-- runs daily + weekly
-- uses lookbacks: daily `252`, weekly `104`
-- writes consolidated outputs to `output/`
+---
 
-## 2) Open Results
+## What You Get
+
+`output/master_report_LATEST.html` — a single interactive report with:
+- All signals across markets and timeframes in one table
+- Entry price and pre-calculated position size (at 1% risk)
+- Fundamentals (EPS, Revenue, Debt, Sector via yfinance)
+- Filters by list type, setup, market, rating, sector, score
+- CSV export button
+
+---
+
+## Verify Outputs
 
 ```bash
-open output/system_latest_summary.md
-open output/vcp_hits_india_daily_full_LATEST.html
-open output/vcp_hits_india_weekly_full_LATEST.html
+ls -1t output | head -15
+open output/master_report_LATEST.html
+cat output/system_latest_summary.md
 ```
 
-## 3) Verify Outputs Exist
+---
+
+## Scope Variants
 
 ```bash
-ls -1 output | grep 'vcp_hits_.*_full_LATEST.html'
-ls -1 output | grep 'watchlist_.*_full_LATEST.html'
-ls -1 output | grep 'portfolio_shortlist_.*_full_LATEST.json'
+./run_master.sh --markets india          # India only
+./run_master.sh --timeframes daily       # daily only
+./run_master.sh --setups vcp             # VCP only
+./run_master.sh --skip-fundamentals      # faster run
+./run_master.sh --account-size 2000000   # ₹20L portfolio
 ```
 
-## 4) Run a Smaller Scope (Fast Validation)
+---
 
-India only:
+## If the Run Fails at Java Compile
 
-```bash
-python3 apps/python/cli/run_vcp_system.py \
-  --markets india \
-  --timeframes daily,weekly \
-  --setups full \
-  --skip-us-refresh
-```
-
-Daily only:
-
-```bash
-python3 apps/python/cli/run_vcp_system.py \
-  --markets india,us \
-  --timeframes daily \
-  --setups full \
-  --skip-us-refresh
-```
-
-## 5) Setup Modes Cheat Sheet
-
-- `full` - VCP + range expansion + mean reversion (default)
-- `both` - VCP + range expansion only
-- `vcp` - VCP only
-- `range_expansion` - range expansion only
-- `mean_reversion` - mean reversion only
-- `all` - alias of `full`
-
-## 6) If `run_vcp_system.py` Fails at Java Compile
-
-Use direct scanner fallback for execution continuity:
+Run the direct scanner as a fallback:
 
 ```bash
 python3 apps/python/cli/run_full_us_scan.py \
   --symbols data/universes/indian_stock_tickers.csv \
-  --market-label india \
-  --timeframe daily \
-  --setups full \
-  --lookback 252 \
-  --workers 4 \
-  --batch 25 \
-  --cache-dir cache \
-  --output-dir output
+  --market-label india --timeframe daily \
+  --setups full --lookback 252 \
+  --workers 4 --batch 25 \
+  --cache-dir cache --output-dir output
 ```
+
+Then generate the report manually:
 
 ```bash
-python3 apps/python/cli/run_full_us_scan.py \
-  --symbols data/universes/indian_stock_tickers.csv \
-  --market-label india \
-  --timeframe weekly \
-  --setups full \
-  --lookback 104 \
-  --workers 4 \
-  --batch 25 \
-  --cache-dir cache \
-  --output-dir output
+python3 apps/python/cli/generate_master_report.py \
+  --output-dir output --cache-dir cache
 ```
 
-## 7) Where to Go Next
+Fix the Java source, recompile with `javac src/*.java`, then rerun `./run_master.sh`.
 
-- Architecture: `docs/reference/HLD_SWING_TRADING_SYSTEM.md`
-- Implementation details: `docs/reference/LLD_SWING_TRADING_SYSTEM.md`
-- Strategy formulas: `docs/reference/SYSTEM_DESIGN.md`
-- Daily operations: `docs/runbooks/DAILY_RUNBOOK.md`
-- Full mode operations: `docs/runbooks/UNIFIED_FULL_MODE_RUNBOOK.md`
-- Troubleshooting: `docs/runbooks/TROUBLESHOOTING.md`
+---
+
+## Next Steps
+
+- Daily workflow → `docs/runbooks/DAILY_RUNBOOK.md`
+- Troubleshooting → `docs/runbooks/TROUBLESHOOTING.md`
+- System design → `docs/reference/SYSTEM_DESIGN.md`
