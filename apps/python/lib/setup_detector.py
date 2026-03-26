@@ -32,8 +32,9 @@ from typing import Optional, Union
 
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-_SETUP_TYPE_MR = "MEAN_REVERSION"
-_SETUP_TYPE_BO = "BREAKOUT"
+_SETUP_TYPE_MR   = "MEAN_REVERSION"
+_SETUP_TYPE_BO   = "BREAKOUT"
+_SETUP_TYPE_ABFP = "BREAKOUT_PULLBACK"
 _DEFAULT_RSI_PERIOD = 14
 _DEFAULT_BB_PERIOD = 20
 _DEFAULT_BB_STD = 2.0
@@ -515,6 +516,217 @@ def detect_breakout(
     return sig
 
 
+def detect_breakout_pullback(
+    symbol: str,
+    bars: list[dict],
+    timeframe: str,
+    params: dict,
+    account_size: float,
+    base_risk_pct: float,
+    min_price_floor: float,
+) -> Optional[TradeSignal]:
+    """
+    First Pullback After Breakout (BREAKOUT_PULLBACK / ABFP) setup.
+
+    Identifies stocks that:
+    1. Had a confirmed breakout 5–50 bars ago (closed above a 20-bar high on volume).
+    2. Made follow-through highs after the breakout (breakout was "real").
+    3. Are now in a FIRST controlled pullback (3–25 bars, 2–15 % depth).
+    4. Pullback is holding ABOVE the original breakout level (former resistance → support).
+    5. Volume is drying up during the pullback (healthy consolidation).
+
+    Entry logic:
+    - Enter just above current price as price firms up.
+    - Stop below the breakout level (the support line) - 0.5 ATR.
+    - T1 at the prior post-breakout peak; T2/T3 project beyond it.
+    """
+    if len(bars) < int(params["min_bars"]):
+        return None
+
+    closes  = [float(b["close"])          for b in bars]
+    highs   = [float(b["high"])           for b in bars]
+    lows    = [float(b["low"])            for b in bars]
+    volumes = [float(b.get("volume", 0.0)) for b in bars]
+
+    sma50   = _sma(closes, int(params["sma_med"]))
+    sma200  = _sma(closes, int(params["sma_long"]))
+    atr_val = _atr(bars[-(int(params["atr_period"]) + 20):], int(params["atr_period"]))
+    current_close = closes[-1]
+
+    if current_close < min_price_floor or sma200 <= 0 or current_close < sma200 * 0.90:
+        return None
+
+    avg_vol_20 = _sma(volumes[-21:-1], 20) if len(volumes) >= 21 else _sma(volumes, len(volumes))
+    if avg_vol_20 <= 0:
+        return None
+
+    # ── Step 1: Find a confirmed breakout 5–50 bars ago ──────────────────────
+    BO_MIN, BO_MAX = 5, 50
+    n = len(bars)
+
+    breakout_idx          = None
+    breakout_level        = None
+    breakout_bar_vol_ratio = 0.0
+
+    for offset in range(BO_MIN, min(BO_MAX + 1, n - 24)):
+        idx = n - offset
+        if idx < 21:
+            continue
+        prior_high = max(highs[max(0, idx - 20):idx])
+        if prior_high <= 0:
+            continue
+        bar_close  = closes[idx]
+        bar_high   = highs[idx]
+        bar_vol    = volumes[idx]
+        pre_avg    = _sma(volumes[max(0, idx - 21):idx - 1], min(20, idx - 1)) if idx >= 2 else 0.0
+        vol_at_bo  = bar_vol / pre_avg if pre_avg > 0 else 1.0
+        # Breakout: bar cleared prior resistance on above-average volume
+        if (bar_close > prior_high * 1.003 or bar_high > prior_high * 1.003) and vol_at_bo >= 1.1:
+            breakout_idx           = idx
+            breakout_level         = prior_high
+            breakout_bar_vol_ratio = vol_at_bo
+            break  # most-recent qualifying breakout
+
+    if breakout_idx is None:
+        return None
+
+    # ── Step 2: Confirm post-breakout follow-through ──────────────────────────
+    post_start  = breakout_idx + 1
+    post_n      = n - post_start
+    if post_n < 3:
+        return None
+
+    post_highs  = highs[post_start:]
+    post_lows   = lows[post_start:]
+    post_closes = closes[post_start:]
+    post_vols   = volumes[post_start:]
+
+    peak_high             = max(post_highs)
+    peak_local_idx        = post_highs.index(peak_high)
+    breakout_bar_high     = highs[breakout_idx]
+
+    # Follow-through requires peak at least 1 % above the breakout bar's high
+    if peak_high < breakout_bar_high * 1.01:
+        return None
+
+    # ── Step 3: Confirm first controlled pullback ─────────────────────────────
+    bars_since_peak     = post_n - 1 - peak_local_idx
+    pullback_depth_pct  = (peak_high - current_close) / peak_high if peak_high > 0 else 0.0
+
+    if pullback_depth_pct < 0.02 or pullback_depth_pct > 0.15:
+        return None
+    if bars_since_peak < 3 or bars_since_peak > 25:
+        return None
+    # Must still be above the breakout support level
+    if current_close < breakout_level * 0.985:
+        return None
+    # Low of current bar must not violate support
+    if lows[-1] < breakout_level * 0.97:
+        return None
+
+    # ── Step 4: Volume dry-up during pullback ─────────────────────────────────
+    pullback_vols      = post_vols[peak_local_idx:]
+    pullback_vol_avg   = statistics.mean(pullback_vols) if pullback_vols else avg_vol_20
+    pullback_vol_ratio = pullback_vol_avg / avg_vol_20 if avg_vol_20 > 0 else 1.0
+    vol_dry_up         = pullback_vol_ratio < 0.85
+
+    # ── Step 5: Scoring ───────────────────────────────────────────────────────
+    score = 50.0
+
+    if current_close > sma50:  score += 8.0
+    if current_close > sma200: score += 8.0
+
+    # Original breakout volume quality
+    if breakout_bar_vol_ratio >= 2.0:   score += 12.0
+    elif breakout_bar_vol_ratio >= 1.5: score += 8.0
+    elif breakout_bar_vol_ratio >= 1.2: score += 4.0
+
+    # Volume dry-up during pullback (most important quality indicator)
+    if vol_dry_up:                     score += 12.0
+    elif pullback_vol_ratio < 1.0:     score += 5.0
+
+    # Shallow pullback (tighter = more bullish)
+    if pullback_depth_pct < 0.05:      score += 8.0
+    elif pullback_depth_pct < 0.08:    score += 4.0
+
+    # Proximity to breakout level (near support = lower-risk entry)
+    dist_from_bo = (current_close - breakout_level) / breakout_level if breakout_level > 0 else 0.1
+    if dist_from_bo < 0.03:   score += 5.0
+    elif dist_from_bo < 0.06: score += 2.0
+
+    # Shorter pullback duration is more bullish
+    if bars_since_peak <= 8:    score += 5.0
+    elif bars_since_peak <= 15: score += 2.0
+
+    # Current bar not collapsing
+    if closes[-1] >= closes[-2] * 0.998: score += 2.0
+
+    # ── Step 6: Trade plan ────────────────────────────────────────────────────
+    if atr_val <= 0:
+        return None
+
+    entry = current_close + 0.15 * atr_val
+    sl    = breakout_level - 0.5 * atr_val
+    if sl <= 0 or sl >= entry:
+        sl = entry - 2.0 * atr_val
+    if sl >= entry or entry <= 0 or sl <= 0:
+        return None
+
+    risk   = entry - sl
+    shares = max(1, int(math.floor((account_size * base_risk_pct) / risk)))
+
+    t1 = max(peak_high,          entry + risk)
+    t2 = max(peak_high * 1.05,   entry + 2 * risk)
+    t3 = entry + 3 * risk
+
+    # ── Step 7: Build signal ──────────────────────────────────────────────────
+    dollar_vols       = [c * v for c, v in zip(closes, volumes)]
+    avg_dollar_vol_20 = _sma(dollar_vols[-21:-1], 20) if len(dollar_vols) >= 21 else _sma(dollar_vols, len(dollar_vols))
+    min_after         = min(post_lows) if post_lows else lows[-1]
+    days_above_pivot  = sum(1 for x in closes[-20:] if breakout_level and x >= breakout_level)
+    run_from_bo_pct   = (peak_high - breakout_level) / breakout_level * 100.0 if breakout_level > 0 else 0.0
+
+    sig = TradeSignal(
+        symbol=symbol,
+        subtype="FIRST_PULLBACK",
+        setup=_SETUP_TYPE_ABFP,
+        window=timeframe.upper(),
+        rating=_rating_from_score(score),
+        score=round(score, 2),
+        close=round(current_close, 4),
+        entry=round(entry, 4),
+        sl=round(sl, 4),
+        pivot=round(breakout_level, 4),
+        T1=round(t1, 4),
+        T2=round(t2, 4),
+        T3=round(t3, 4),
+        shares=shares,
+        atr=round(atr_val, 4),
+        sma50=round(sma50, 4),
+        sma200=round(sma200, 4),
+        max_after_breakout=round(peak_high, 4),
+        min_after_breakout=round(min_after, 4),
+        avg_vol_20=round(avg_vol_20, 2),
+        last_volume=round(volumes[-1], 2),
+        avg_dollar_vol_20=round(avg_dollar_vol_20, 2),
+        last_dollar_vol=round(dollar_vols[-1], 2),
+        days_above_pivot=days_above_pivot,
+        distance_from_pivot=round(dist_from_bo * 100.0, 2),
+        height_pct=round(pullback_depth_pct * 100.0, 2),  # depth of pullback from post-breakout peak
+        depth_pct=round(run_from_bo_pct, 2),               # run from BO level to peak (extension)
+        vol_ratio=round(volumes[-1] / avg_vol_20 if avg_vol_20 > 0 else 1.0, 3),
+        pullback_vol_ratio=round(pullback_vol_ratio, 3),
+        length=bars_since_peak,
+    )
+
+    try:
+        sig.breakoutDate = bars[breakout_idx]["date"]
+    except Exception:
+        sig.breakoutDate = None
+
+    return sig
+
+
 # ── Batch scanner ─────────────────────────────────────────────────────────────
 
 def scan_symbols(
@@ -533,7 +745,7 @@ def scan_symbols(
     Returns a list of dicts compatible with the main pipeline CSV_FIELDS schema.
     """
     if setup_types is None:
-        setup_types = [_SETUP_TYPE_MR, _SETUP_TYPE_BO]
+        setup_types = [_SETUP_TYPE_MR, _SETUP_TYPE_BO, _SETUP_TYPE_ABFP]
 
     cache = Path(cache_dir)
     results: list[dict] = []
@@ -551,6 +763,10 @@ def scan_symbols(
 
         if _SETUP_TYPE_BO in setup_types:
             sig = detect_breakout(symbol, bars, timeframe, params, account_size, base_risk_pct, min_price_floor)
+            if sig: signals.append(sig)
+
+        if _SETUP_TYPE_ABFP in setup_types:
+            sig = detect_breakout_pullback(symbol, bars, timeframe, params, account_size, base_risk_pct, min_price_floor)
             if sig: signals.append(sig)
 
         for sig in signals:
@@ -632,6 +848,16 @@ def _signal_to_dict(sig: TradeSignal) -> dict:
     if sig.setup == _SETUP_TYPE_BO:
         data.update({
             "boMaxAfter": str(sig.max_after_breakout or ""), "boMinAfter": str(sig.min_after_breakout or ""),
+        })
+    # Add ABFP-specific fields
+    if sig.setup == _SETUP_TYPE_ABFP:
+        data.update({
+            "abfpPeakHigh":       str(sig.max_after_breakout or ""),
+            "abfpPullbackDepth%": str(sig.height_pct),
+            "abfpRunFromBO%":     str(sig.depth_pct),
+            "abfpBarsSincePeak":  str(sig.length),
+            "abfpPullbackVolRatio": str(sig.pullback_vol_ratio or ""),
+            "abfpBreakoutDate":   str(getattr(sig, "breakoutDate", "") or ""),
         })
     # Add liquidity / pivot enrichment fields
     data.update({

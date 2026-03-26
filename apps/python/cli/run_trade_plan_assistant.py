@@ -28,7 +28,7 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Summarize latest trade plans and pivot distance in natural-language form")
     p.add_argument("--market", choices=["india", "us"], default="india")
     p.add_argument("--timeframe", choices=["daily", "weekly"], default="daily")
-    p.add_argument("--setups", choices=["full", "both", "vcp", "range_expansion", "mean_reversion", "all"], default="full")
+    p.add_argument("--setups", choices=["full", "both", "vcp", "range_expansion", "mean_reversion", "breakout_pullback", "all"], default="full")
     p.add_argument("--top-n", type=int, default=12)
     p.add_argument("--output-dir", default=str(ROOT / "output"))
     p.add_argument("--format", choices=["text", "json"], default="text")
