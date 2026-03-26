@@ -812,8 +812,22 @@ def _load_bars(symbol: str, lookback: int, timeframe: str, cache: Path) -> list[
         if p.exists():
             try:
                 with open(p, newline="") as fh:
-                    rows = [{k: v for k, v in row.items() if k} for row in csv.DictReader(fh)]
-                rows = [r for r in rows if float(r.get("close", 0)) > 0]
+                    rows = []
+                    for row in csv.DictReader(fh):
+                        try:
+                            close = float(row.get("close") or 0)
+                        except (ValueError, TypeError):
+                            continue
+                        if close <= 0:
+                            continue
+                        rows.append({
+                            "date":   str(row.get("date") or "").strip(),
+                            "open":   float(row.get("open") or 0),
+                            "high":   float(row.get("high") or 0),
+                            "low":    float(row.get("low") or 0),
+                            "close":  close,
+                            "volume": float(row.get("volume") or 0),
+                        })
 
                 if timeframe == "weekly":
                     rows = aggregate_weekly(rows)
