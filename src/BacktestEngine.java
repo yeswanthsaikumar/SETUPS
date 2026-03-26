@@ -1,5 +1,7 @@
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class BacktestEngine {
     private final MarketDataProvider marketDataProvider;
@@ -7,18 +9,25 @@ public class BacktestEngine {
     private final String timeframe;
     private final int holdDays;
     private final AppConfig config;
+    private final String benchmarkSymbol;
 
     public BacktestEngine(MarketDataProvider marketDataProvider, ScannerEngine scannerEngine,
-                          String timeframe, int holdDays, double targetR) {
+                          String timeframe, int holdDays, String benchmarkSymbol) {
         this.marketDataProvider = marketDataProvider;
         this.scannerEngine = scannerEngine;
         this.timeframe = timeframe;
         this.holdDays = Math.max(2, holdDays);
         this.config = new AppConfig(timeframe);
+        this.benchmarkSymbol = benchmarkSymbol == null ? "" : benchmarkSymbol.trim();
     }
 
     public BacktestReport run(List<String> symbols, int lookbackDays) {
         BacktestReport report = new BacktestReport();
+        String resolvedBenchmark = resolveBenchmarkSymbol(symbols);
+        List<Candle> benchmarkCandles = "weekly".equalsIgnoreCase(timeframe)
+                ? marketDataProvider.getWeeklyCandles(resolvedBenchmark, lookbackDays)
+                : marketDataProvider.getDailyCandles(resolvedBenchmark, lookbackDays);
+        Map<java.time.LocalDate, Integer> benchmarkByDate = buildDateIndex(benchmarkCandles);
 
         for (String symbol : symbols) {
             List<Candle> candles = "weekly".equalsIgnoreCase(timeframe)
@@ -35,11 +44,16 @@ public class BacktestEngine {
                 TradePlan plan = signal.getTradePlan();
                 VcpSetup setup = signal.getSetup();
                 SimulatedTrade sim = simulateTrade(candles, i, plan, setup);
+                java.time.LocalDate entryDate = candles.get(i).getDate();
+                java.time.LocalDate exitDate = candles.get(sim.exitIndex).getDate();
+                double benchmarkReturn = benchmarkReturnPct(benchmarkCandles, benchmarkByDate, entryDate, exitDate);
+                double tradeReturnPct = plan.getEntry() <= 0.0 ? 0.0 : ((sim.exitPrice / plan.getEntry()) - 1.0) * 100.0;
+                double alphaPct = tradeReturnPct - benchmarkReturn;
 
                 report.addTrade(new BacktestTrade(
                         symbol,
-                        candles.get(i).getDate(),
-                        candles.get(sim.exitIndex).getDate(),
+                        entryDate,
+                        exitDate,
                         plan.getEntry(), sim.exitPrice, plan.getStopLoss(), plan.getShares(),
                         sim.rMultiple, sim.pnl, sim.exitReason,
                         // setup metadata
@@ -49,7 +63,10 @@ public class BacktestEngine {
                         setup.getQualityScore(),
                         // analytics
                         sim.mae, sim.mfe, sim.holdBars,
-                        sim.hitT1, sim.hitT2, sim.hitT3
+                        sim.hitT1, sim.hitT2, sim.hitT3,
+                        benchmarkReturn,
+                        alphaPct,
+                        marketStrengthScore(benchmarkCandles, benchmarkByDate, entryDate)
                 ));
 
                 i = sim.exitIndex + 1;
@@ -57,6 +74,76 @@ public class BacktestEngine {
         }
 
         return report;
+    }
+
+    private Map<java.time.LocalDate, Integer> buildDateIndex(List<Candle> candles) {
+        Map<java.time.LocalDate, Integer> map = new HashMap<>();
+        for (int i = 0; i < candles.size(); i++) {
+            map.put(candles.get(i).getDate(), i);
+        }
+        return map;
+    }
+
+    private double benchmarkReturnPct(
+            List<Candle> benchmark,
+            Map<java.time.LocalDate, Integer> benchmarkByDate,
+            java.time.LocalDate entryDate,
+            java.time.LocalDate exitDate
+    ) {
+        Integer entryIdx = benchmarkByDate.get(entryDate);
+        Integer exitIdx = benchmarkByDate.get(exitDate);
+        if (entryIdx == null || exitIdx == null || entryIdx < 0 || exitIdx < entryIdx || exitIdx >= benchmark.size()) {
+            return 0.0;
+        }
+        double entry = benchmark.get(entryIdx).getClose();
+        double exit = benchmark.get(exitIdx).getClose();
+        if (entry <= 0.0) {
+            return 0.0;
+        }
+        return ((exit / entry) - 1.0) * 100.0;
+    }
+
+    private double marketStrengthScore(
+            List<Candle> benchmark,
+            Map<java.time.LocalDate, Integer> benchmarkByDate,
+            java.time.LocalDate entryDate
+    ) {
+        Integer idx = benchmarkByDate.get(entryDate);
+        if (idx == null || idx < 0 || idx >= benchmark.size()) {
+            return 0.0;
+        }
+        double close = benchmark.get(idx).getClose();
+        if (close <= 0.0) {
+            return 0.0;
+        }
+
+        int lookback20 = Math.max(0, idx - 20);
+        double momentum20 = 0.0;
+        double close20 = benchmark.get(lookback20).getClose();
+        if (close20 > 0.0) {
+            momentum20 = ((close / close20) - 1.0) * 100.0;
+        }
+
+        double ma50 = Indicators.movingAverage(benchmark, idx, 50);
+        double trendScore = ma50 > 0.0 && close >= ma50 ? 2.0 : -2.0;
+        return momentum20 + trendScore;
+    }
+
+    private String resolveBenchmarkSymbol(List<String> symbols) {
+        if (!benchmarkSymbol.isBlank()) {
+            return benchmarkSymbol;
+        }
+        int indiaVotes = 0;
+        int usVotes = 0;
+        for (String symbol : symbols) {
+            String s = symbol == null ? "" : symbol.trim().toUpperCase();
+            if (s.endsWith(".NS") || s.endsWith(".BO")) {
+                indiaVotes++;
+            } else {
+                usVotes++;
+            }
+        }
+        return indiaVotes > usVotes ? "^NSEI" : "SPY";
     }
 
     private SimulatedTrade simulateTrade(List<Candle> candles, int signalIndex, TradePlan plan, VcpSetup setup) {

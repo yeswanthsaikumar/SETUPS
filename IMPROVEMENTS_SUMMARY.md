@@ -152,6 +152,37 @@ New documentation added under `docs/`:
 
 ---
 
+## How Breakout Stocks and Their Performance Are Stored and Saved in HTML Pages
+
+### 1. Data Preparation
+- The scan process collects all breakout hits and stores them as a list of dictionaries (`all_hits`).
+- For open trades, the function `as_open_trade_rows(snapshot)` is used to add post-breakout tracking fields (distance from breakout, % gain/loss, days since breakout, etc.).
+- This processed list is called `open_trade_snapshot`.
+
+### 2. Saving Performance Data
+- The function `save_breakout_performance(open_trade_snapshot, path)` writes the open trade snapshot to a CSV file, including all post-breakout performance metrics.
+- The CSV fields include: symbol, breakoutDate, entry, close, distance_from_breakout, pct_gain_since_breakout, days_since_breakout, max_after_breakout, min_after_breakout, setup, rating, window, listType.
+
+### 3. Saving HTML Reports
+- The function `save_html(rows, path, meta)` generates an interactive HTML report from the given rows (e.g., `open_trade_snapshot`).
+- This HTML includes:
+  - A summary of analytics (counts, averages, rating distribution, etc.).
+  - A sortable/filterable table with all breakout stocks and their performance fields.
+  - Links to Yahoo Finance and TradingView for each symbol.
+  - Tooltips and badges for setup type, rating, and other attributes.
+- The HTML is saved to files like `breakout_performance_{label}_{timestamp}.html` and `breakout_performance_{label}_LATEST.html`.
+
+### 4. File Locations
+- CSV and HTML files are saved in the `output/` directory, with both timestamped and `LATEST` versions for easy access.
+
+### 5. Code References
+- Data preparation: `as_open_trade_rows()`
+- CSV save: `save_breakout_performance()`
+- HTML save: `save_html()`
+- Main usage: see lines around 2180–2240 in `apps/python/cli/run_full_us_scan.py`
+
+---
+
 ## Quick Reference
 
 ```bash
@@ -167,4 +198,3 @@ source .venv/bin/activate && uvicorn apps.web.api.main:app --host 0.0.0.0 --port
 # Smoke test
 source .venv/bin/activate && python apps/web/scripts/smoke_test.py
 ```
-

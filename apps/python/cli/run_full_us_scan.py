@@ -48,8 +48,32 @@ try:
     )
     _MR_AVAILABLE = True
 except ImportError as _mr_err:
-    _MR_AVAILABLE = False
-    print(f"[WARN] mean_reversion_detector not available: {_mr_err}", file=sys.stderr)
+    # Fallback: try to use the pure-Python `setup_detector` which provides
+    # detect_mean_reversion and a scan_symbols wrapper. This lets the CLI run
+    # in mean_reversion mode even when mean_reversion_detector.py is absent.
+    try:
+        from setup_detector import detect_mean_reversion as _sd_detect_mr, scan_symbols as _sd_scan_symbols
+
+        def scan_symbols_for_mean_reversion(symbols, cache_dir, lookback, timeframe, account_size, base_risk_pct, min_price_floor, min_score=35.0):
+            # Use setup_detector.scan_symbols but request only mean-reversion setups
+            return _sd_scan_symbols(symbols, cache_dir, lookback, timeframe=timeframe, account_size=account_size, base_risk_pct=base_risk_pct, min_price_floor=min_price_floor, min_score=min_score, setup_types=["MEAN_REVERSION"])
+
+        # Provide minimal aliases for loader and signal conversion if needed elsewhere
+        _mr_load_bars = None
+        _mr_signal_to_dict = None
+        detect_mean_reversion = _sd_detect_mr
+        _MR_AVAILABLE = True
+        print(f"[INFO] mean_reversion_detector not found; falling back to setup_detector for MR scans", file=sys.stderr)
+    except Exception as _sd_err:
+        _MR_AVAILABLE = False
+        print(f"[WARN] mean_reversion_detector not available: {_mr_err}; fallback also failed: {_sd_err}", file=sys.stderr)
+
+# Optional pure-Python breakout detector (complements Java scanner)
+try:
+    from setup_detector import scan_symbols as py_scan_symbols
+    _PY_BO_AVAILABLE = True
+except ImportError:
+    _PY_BO_AVAILABLE = False
 
 # ── DEFAULTS ──────────────────────────────────────────────────────────────────
 DEFAULT_SYMBOLS_FILE  = str(ROOT / "data" / "universes" / "all_us_stocks.txt")
@@ -1052,6 +1076,7 @@ CSV_FIELDS = [
 ]
 
 
+
 REJECTION_FIELDS = ["symbol", "reason", "source", "detail"]
 
 
@@ -1134,8 +1159,119 @@ def as_open_trade_rows(rows: list[dict]) -> list[dict]:
     for row in rows:
         item = dict(row)
         item["listType"] = "OPEN_TRADE"
+        # Add post-breakout tracking fields
+        try:
+            entry = float(item.get("entry", 0))
+            close = float(item.get("close", 0))
+            breakout_date = item.get("breakoutDate") or item.get("date")
+            # Distance from breakout (current price vs breakout price)
+            item["distance_from_breakout"] = close - entry
+            # % gain/loss since breakout
+            item["pct_gain_since_breakout"] = ((close - entry) / entry * 100) if entry else 0
+            # Days since breakout (if date fields available)
+            from datetime import datetime
+            if breakout_date:
+                try:
+                    d0 = datetime.strptime(str(breakout_date), "%Y-%m-%d")
+                    d1 = datetime.now()
+                    item["days_since_breakout"] = (d1 - d0).days
+                except Exception:
+                    item["days_since_breakout"] = "?"
+            else:
+                item["days_since_breakout"] = "?"
+            # Placeholder for max/min after breakout (to be filled by further logic if available)
+            item["max_after_breakout"] = item.get("max_after_breakout", "")
+            item["min_after_breakout"] = item.get("min_after_breakout", "")
+        except Exception:
+            item["distance_from_breakout"] = "?"
+            item["pct_gain_since_breakout"] = "?"
+            item["days_since_breakout"] = "?"
+            item["max_after_breakout"] = "?"
+            item["min_after_breakout"] = "?"
         out.append(item)
     return out
+def save_breakout_performance(rows: list[dict], path: Path):
+    """Save post-breakout performance tracking to a segregated CSV file."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # Define fields for the performance report
+    fields = [
+        "symbol", "breakoutDate", "entry", "close", "distance_from_breakout", "pct_gain_since_breakout", "days_since_breakout", "max_after_breakout", "min_after_breakout", "setup", "rating", "window", "listType",
+        # enrichment
+        "avgVol20", "lastVol", "avgDollarVol20", "lastDollarVol", "daysAbovePivot", "distFromPivot%"
+    ]
+    with open(path, "w", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fields, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def gather_past_breakouts(seed_path: Path, days: int = 30) -> list[dict]:
+    """Search for breakout_performance_*.csv files near seed_path and in default output folder,
+    return rows whose breakoutDate is within the past `days` days.
+    """
+    candidates: list[Path] = []
+    seen = set()
+    # Search the seed directory and its parents up to project root
+    p = seed_path
+    for _ in range(6):
+        if not p:
+            break
+        try:
+            for f in p.glob('breakout_performance_*.csv'):
+                if f.exists() and str(f) not in seen:
+                    candidates.append(f)
+                    seen.add(str(f))
+        except Exception:
+            pass
+        if p.parent == p:
+            break
+        p = p.parent
+
+    # Also look in the project's default output directory (covers LATEST files)
+    try:
+        out_root = ROOT / 'output'
+        for f in out_root.rglob('breakout_performance_*.csv'):
+            if f.exists() and str(f) not in seen:
+                candidates.append(f)
+                seen.add(str(f))
+    except Exception:
+        pass
+
+    recent: list[dict] = []
+    cutoff = datetime.now().date() - timedelta(days=days)
+    for csv_path in candidates:
+        try:
+            with open(csv_path, newline='') as fh:
+                reader = csv.DictReader(fh)
+                for row in reader:
+                    bd = row.get('breakoutDate') or row.get('date')
+                    if not bd:
+                        continue
+                    try:
+                        # Accept YYYY-MM-DD or ISO formats
+                        d = datetime.fromisoformat(str(bd)).date()
+                    except Exception:
+                        try:
+                            d = datetime.strptime(str(bd), '%Y-%m-%d').date()
+                        except Exception:
+                            continue
+                    if d >= cutoff:
+                        # Normalise numeric fields
+                        for k in ('pct_gain_since_breakout', 'distance_from_breakout'):
+                            try:
+                                row[k] = float(str(row.get(k, '')).replace('%', ''))
+                            except Exception:
+                                pass
+                        row['_source_file'] = str(csv_path.name)
+                        recent.append(row)
+        except Exception:
+            continue
+    # Deduplicate by symbol+breakoutDate keeping latest seen
+    dedup = {}
+    for r in recent:
+        key = (r.get('symbol'), r.get('breakoutDate'))
+        dedup[key] = r
+    return list(dedup.values())
 
 
 def save_csv(rows: list[dict], path: Path):
@@ -1405,6 +1541,56 @@ def save_html(rows: list[dict], path: Path, meta: dict):
         list_type_chip = f"<span class='{list_type_css}'>{html.escape(list_type_raw)}</span>"
         score_chip = f"<span class='score-chip'>{html.escape(str(r.get('score','')))}</span>"
 
+        # Fallback computations for display when source fields are missing
+        def _safe_float(key, default=None):
+            try:
+                v = r.get(key)
+                if v is None or v == "":
+                    return default
+                return float(str(v).replace('%','').replace(',',''))
+            except Exception:
+                return default
+
+        close_val = _safe_float('close')
+        pivot_val = _safe_float('pivot')
+        entry_val = _safe_float('entry')
+        dist_pct = r.get('dist%') or r.get('distFromPivot%') or r.get('distFromPivot')
+        # compute dist% if missing and pivot available
+        if (dist_pct is None or dist_pct == '') and pivot_val and close_val:
+            try:
+                dist_pct = (close_val - pivot_val) / pivot_val * 100.0
+                dist_pct = f"{dist_pct:.2f}%"
+            except Exception:
+                dist_pct = ''
+        # breakout metrics
+        pct_gain = r.get('pct_gain_since_breakout')
+        days_since_breakout = r.get('days_since_breakout')
+        if (not pct_gain or pct_gain == '') and entry_val and close_val:
+            try:
+                pct_gain = (close_val - entry_val) / entry_val * 100.0
+                pct_gain = f"{pct_gain:.2f}%"
+            except Exception:
+                pct_gain = ''
+        if (not days_since_breakout or days_since_breakout == ''):
+            bd = r.get('breakoutDate') or r.get('date')
+            if bd:
+                try:
+                    d0 = datetime.fromisoformat(str(bd)).date()
+                    days_since_breakout = (datetime.now().date() - d0).days
+                except Exception:
+                    days_since_breakout = ''
+
+        max_after = r.get('max_after_breakout') or r.get('maxAfterBreakout') or ''
+        min_after = r.get('min_after_breakout') or r.get('minAfterBreakout') or ''
+        avgVol20 = r.get('avgVol20') or r.get('avgVol') or ''
+        lastVol = r.get('lastVol') or r.get('lastVolume') or ''
+
+        # Normalize display strings
+        def _disp(x):
+            if x is None or x == "":
+                return "-"
+            return html.escape(str(x))
+
         rows_html += (
             f"<tr data-symbol='{html.escape(r.get('symbol', ''))}' "
             f"data-setup-type='{setup_type}' "
@@ -1415,32 +1601,32 @@ def save_html(rows: list[dict], path: Path, meta: dict):
             f"<td>{list_type_chip}</td>"
             f"<td>{html.escape(setup_type)}</td>"
             f"<td>{html.escape(str(r.get('window','')))}</td>"
-            f"<td>{html.escape(str(r.get('height%','')))}</td>"
-            f"<td>{html.escape(str(r.get('depth%','')))}</td>"
-            f"<td>{html.escape(str(r.get('len','')))}</td>"
-            f"<td>{html.escape(str(r.get('ctr','')))}</td>"
-            f"<td>{html.escape(str(r.get('dist%','')))}</td>"
+            f"<td>{_disp(r.get('height%'))}</td>"
+            f"<td>{_disp(r.get('depth%'))}</td>"
+            f"<td>{_disp(r.get('len'))}</td>"
+            f"<td>{_disp(r.get('ctr'))}</td>"
+            f"<td>{_disp(dist_pct)}</td>"
             f"<td>{rating_chip}</td>"
-            f"<td>{html.escape(str(r.get('close','')))}</td>"
-            f"<td>{html.escape(str(r.get('pivot','')))}</td>"
-            f"<td>{html.escape(str(r.get('entry','')))}</td>"
+            f"<td>{_disp(close_val)}</td>"
+            f"<td>{_disp(pivot_val)}</td>"
+            f"<td>{_disp(entry_val)}</td>"
             f"<td>{score_chip}</td>"
-            f"<td>{html.escape(str(r.get('watchlistQualityScore', r.get('rankingScore', ''))))}</td>"
-            f"<td>{html.escape(str(r.get('pivotProximityScore','')))}</td>"
-            f"<td>{html.escape(str(r.get('rsScore','')))}</td>"
-            f"<td>{html.escape(str(r.get('regimeSupport','')))}</td>"
-            f"<td>{html.escape(str(r.get('weeklyAgreement','')))}</td>"
-            f"<td>{html.escape(str(r.get('volumeDryUpScore','')))}</td>"
-            f"<td>{html.escape(str(r.get('daysNearPivot','')))}</td>"
-            f"<td>{html.escape(str(r.get('pivotFreshness','')))}</td>"
-            f"<td>{html.escape(str(r.get('range%','')))}</td>"
-            f"<td>{html.escape(str(r.get('vol%','')))}</td>"
-            f"<td>{html.escape(str(r.get('rexp','')))}</td>"
-            f"<td>{html.escape(str(r.get('shares','')))}</td>"
-            f"<td>{html.escape(str(r.get('sl','')))}</td>"
-            f"<td>{html.escape(str(r.get('T1','')))}</td>"
-            f"<td>{html.escape(str(r.get('T2','')))}</td>"
-            f"<td>{html.escape(str(r.get('T3','')))}</td>"
+            f"<td>{_disp(r.get('watchlistQualityScore', r.get('rankingScore', '')))}</td>"
+            f"<td>{_disp(r.get('pivotProximityScore'))}</td>"
+            f"<td>{_disp(r.get('rsScore'))}</td>"
+            f"<td>{_disp(r.get('regimeSupport'))}</td>"
+            f"<td>{_disp(r.get('weeklyAgreement'))}</td>"
+            f"<td>{_disp(r.get('volumeDryUpScore'))}</td>"
+            f"<td>{_disp(r.get('daysNearPivot'))}</td>"
+            f"<td>{_disp(r.get('pivotFreshness'))}</td>"
+            f"<td>{_disp(r.get('range%'))}</td>"
+            f"<td>{_disp(r.get('vol%'))}</td>"
+            f"<td>{_disp(r.get('rexp'))}</td>"
+            f"<td>{_disp(r.get('shares'))}</td>"
+            f"<td>{_disp(r.get('sl'))}</td>"
+            f"<td>{_disp(r.get('T1'))}</td>"
+            f"<td>{_disp(r.get('T2'))}</td>"
+            f"<td>{_disp(r.get('T3'))}</td>"
             f"<td class='links'>{price_link}</td>"
             f"<td class='links'>{fund_link}</td>"
             f"<td style='text-align:center'><span class='reason-icon' title='{reason_tooltip}' "
@@ -1459,6 +1645,75 @@ def save_html(rows: list[dict], path: Path, meta: dict):
     for setup in sorted(setup_counts.keys()):
         count = setup_counts[setup]
         setup_pie += f"<div class='pie-item'><span class='pie-label'>{setup}</span><span class='pie-count'>{count}</span></div>\n"
+
+    # If this report is an Open Trades monitor, accumulate recent breakouts from past performance files
+    past_breakouts_html = ""
+    try:
+        is_open_trades = any(str(r.get('listType','')).upper() == 'OPEN_TRADE' for r in rows)
+        if is_open_trades:
+            recent = gather_past_breakouts(path, days=30)
+            if recent:
+                # limit to 20 entries sorted by pct gain desc
+                recent_sorted = sorted(recent, key=lambda r: _to_float(r.get('pct_gain_since_breakout'), 0.0), reverse=True)[:20]
+                past_rows = []
+
+                def _fmt(val, digits=2, suffix=''):
+                    if val is None or val == '':
+                        return '-'
+                    try:
+                        f = float(val)
+                        if abs(f) >= 100 or f == int(f):
+                            s = f"{int(f)}"
+                        else:
+                            s = f"{f:.{digits}f}"
+                        return html.escape(s) + suffix
+                    except Exception:
+                        return html.escape(str(val))
+
+                for r in recent_sorted:
+                    sym = html.escape(str(r.get('symbol','')))
+                    bd = html.escape(str(r.get('breakoutDate') or r.get('date','')))
+                    pct = _fmt(r.get('pct_gain_since_breakout'), digits=2, suffix='%')
+                    days_sb = _fmt(r.get('days_since_breakout'), digits=0)
+                    entry = _fmt(r.get('entry'))
+                    close = _fmt(r.get('close'))
+                    setup = html.escape(str(r.get('setup','')))
+                    rating = html.escape(str(r.get('rating','')))
+                    src = html.escape(str(r.get('_source_file','')))
+                    max_after = _fmt(r.get('max_after_breakout'))
+                    min_after = _fmt(r.get('min_after_breakout'))
+                    avgVol20 = _fmt(r.get('avgVol20'), digits=0)
+                    lastVol = _fmt(r.get('lastVol'), digits=0)
+                    dist_from_pivot = _fmt(r.get('distFromPivot%') or r.get('distFromPivot') or r.get('distFromPivotPercent'))
+
+                    past_rows.append(
+                        f"<tr>"
+                        f"<td><b>{sym}</b></td>"
+                        f"<td>{html.escape(setup)}</td>"
+                        f"<td>{bd}</td>"
+                        f"<td style='text-align:right'>{entry}</td>"
+                        f"<td style='text-align:right'>{close}</td>"
+                        f"<td style='text-align:right'>{pct}</td>"
+                        f"<td style='text-align:right'>{days_sb}</td>"
+                        f"<td style='text-align:right'>{max_after}</td>"
+                        f"<td style='text-align:right'>{min_after}</td>"
+                        f"<td style='text-align:right'>{avgVol20}</td>"
+                        f"<td style='text-align:right'>{lastVol}</td>"
+                        f"<td style='text-align:right'>{dist_from_pivot}</td>"
+                        f"</tr>"
+                    )
+
+                past_breakouts_html = (
+                    "<h2>Recent Breakouts (Past 30 days)</h2>"
+                    "<div class='table-wrap' style='margin-bottom:12px'>"
+                    "<table id='recentBreakouts' style='min-width:900px'>"
+                    "<thead><tr><th>Symbol</th><th>Setup</th><th>Breakout Date</th><th>Entry</th><th>Close</th><th>% Gain</th><th>Days</th><th>Max</th><th>Min</th><th>avgVol20</th><th>lastVol</th><th>distFromPivot%</th></tr></thead>"
+                    "<tbody>"
+                    + "\n".join(past_rows)
+                    + "\n</tbody></table></div>"
+                )
+    except Exception:
+        past_breakouts_html = ""
 
     html_doc = f"""<!DOCTYPE html>
 <html lang="en">
@@ -1690,6 +1945,7 @@ def save_html(rows: list[dict], path: Path, meta: dict):
     <b>Range Expansion x</b> (breakout candle expansion factor),
     <b>💡 Trade Reasoning</b> (hover to see full setup logic, entry, stop, and targets).
   </div>
+  {past_breakouts_html}
 
   <!-- Controls -->
   <div class="controls">
@@ -1779,7 +2035,7 @@ def save_html(rows: list[dict], path: Path, meta: dict):
   <table id="dataTable">
     <thead>
       <tr>
-        <th>Symbol</th><th>List Type</th><th>Setup</th><th>Window</th><th>Base Height %</th><th>Contraction Depth %</th><th>Base Length</th><th>Contraction Pairs</th><th>Pivot Distance %</th><th>Rating</th><th>Last Close</th><th>Pivot Price</th><th>Planned Entry</th><th>Quality Score</th>
+        <th>Symbol</th><th>List Type</th><th>Setup</th><th>Window</th><th>Base Height %</th><th>Contraction Depth %</th><th>Base Length</th><th>Contraction Pairs</th><th>Pivot Distance %</th><th>Rating</th><th>Last Close</th><th>Pivot Price</th><th>Planned Entry</th><th>Pct since Breakout</th><th>Days since Breakout</th><th>Max After</th><th>Min After</th><th>avgVol20</th><th>lastVol</th><th>Quality Score</th>
         <th>Rank Score</th><th>Pivot Proximity</th><th>RS Score</th><th>Regime Support</th><th>Weekly Agreement</th><th>Volume Dry-Up</th><th>Days Near Pivot</th><th>Pivot Freshness</th><th>Range Contraction %</th><th>Volume Contraction %</th><th>Range Expansion x</th><th>Position Size</th><th>Stop Loss</th>
         <th>Target 1 (1R)</th><th>Target 2 (2R)</th><th>Target 3 (3R)</th><th>Price Charts</th><th>Fundamental Charts</th><th>Trade Reasoning</th>
       </tr>
@@ -1790,7 +2046,9 @@ def save_html(rows: list[dict], path: Path, meta: dict):
   </div>
   <div class="row-count">Showing <span id="visibleCount">{len(rows)}</span> of <span id="totalCount">{len(rows)}</span> rows</div>
   <div class="mobile-note" id="mobileHint">Tip: swipe table horizontally. Use <b>☰ Columns</b> to show advanced fields on tablet/mobile.</div>
+
   <div id="emptyState" class="empty-state">No rows match current filters. Try lowering Min Score or resetting filters.</div>
+
 
   <script>
     // Data for filtering and sorting
@@ -2139,6 +2397,29 @@ def main():
         watch_snapshot = sorted(all_watchlist, key=safe_score, reverse=True)
         shortlist_snapshot = apply_portfolio_heat(snapshot, args)
         open_trade_snapshot = as_open_trade_rows(snapshot)
+
+
+        # Save breakout performance tracking to a segregated file
+        breakout_perf_path = out_dir / f"breakout_performance_{scan_label}_{timestamp}.csv"
+        latest_breakout_perf_path = Path(args.output_dir) / f"breakout_performance_{scan_label}_LATEST.csv"
+        breakout_perf_html_path = out_dir / f"breakout_performance_{scan_label}_{timestamp}.html"
+        latest_breakout_perf_html_path = Path(args.output_dir) / f"breakout_performance_{scan_label}_LATEST.html"
+        save_breakout_performance(open_trade_snapshot, breakout_perf_path)
+        save_breakout_performance(open_trade_snapshot, latest_breakout_perf_path)
+
+        # HTML is expensive to generate — only write on final forced save or every 5th interim
+        interim_save_count = (batch_done // SAVE_EVERY_N_BATCHES)
+        write_html = force or (interim_save_count % 5 == 0)
+        if write_html:
+            save_html(snapshot, html_path, meta_snapshot)
+            save_html(open_trade_snapshot, open_trades_html_path, meta_snapshot)
+            save_html(watch_snapshot, watchlist_html_path, meta_snapshot)
+            save_html(shortlist_snapshot, shortlist_html_path, meta_snapshot)
+            save_html(snapshot, latest_html, meta_snapshot)
+            save_html(open_trade_snapshot, latest_open_trades_html, meta_snapshot)
+            save_html(watch_snapshot, latest_watchlist_html, meta_snapshot)
+            save_html(shortlist_snapshot, latest_shortlist_html, meta_snapshot)
+
         elapsed_snapshot = str(timedelta(seconds=int(time.time() - start_time)))
         meta_snapshot = {
             "finished": datetime.now().isoformat(timespec="seconds"),
@@ -2166,6 +2447,9 @@ def main():
         save_json(shortlist_snapshot, latest_shortlist_json)
         save_variation_summary(snapshot, latest_variation_summary, meta_snapshot)
         save_csv(snapshot, generic_latest_csv)
+        # Now that meta_snapshot is defined and all other saves are done, save breakout performance HTML
+        save_html(open_trade_snapshot, breakout_perf_html_path, meta_snapshot)
+        save_html(open_trade_snapshot, latest_breakout_perf_html_path, meta_snapshot)
 
         # ⚡ HTML is expensive to generate — only write on final forced save or every 5th interim
         # This avoids blocking the scan loop with large HTML builds every 30 hits
@@ -2255,6 +2539,31 @@ def main():
         if mr_hits:
             all_hits.extend(mr_hits)
             append_event(events_path, "mr_scan_complete", {"mrHits": len(mr_hits)})
+
+    # ── Python breakout detector (optional) ─────────────────────────────────
+    # Use the Python breakout detector to catch cases the Java scanner may miss
+    # (e.g., breakout followed by a shallow pullback but still above breakout bar high).
+    if _PY_BO_AVAILABLE and args.setups in ("full", "both"):
+        try:
+            py_bo_hits = py_scan_symbols(
+                symbols,
+                cache_dir=args.cache_dir,
+                lookback=args.lookback,
+                timeframe=args.timeframe,
+                account_size=args.account_size,
+                base_risk_pct=args.base_risk_pct,
+                min_price_floor=args.min_price_floor,
+                min_score=35.0,
+                setup_types=["BREAKOUT"],
+            )
+            # Merge python breakout hits if symbol not already present
+            existing = {h.get("symbol") for h in all_hits}
+            new_hits = [h for h in py_bo_hits if h.get("symbol") not in existing]
+            if new_hits:
+                all_hits.extend(new_hits)
+                append_event(events_path, "py_bo_scan_complete", {"pyBoHits": len(new_hits)})
+        except Exception as exc:
+            print(f"[WARN] python breakout scan failed: {exc}", flush=True)
 
     # ── Final saves ───────────────────────────────────────────────────────────
     elapsed_total = time.time() - start_time

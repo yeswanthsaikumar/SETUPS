@@ -663,70 +663,93 @@ public class HtmlReportGenerator {
         html.append("  <table id=\"dataTable\">\n");
         html.append("    <thead>\n");
         html.append("      <tr>\n");
-        
-        // Primary columns (always visible)
+        // All columns from SignalExport and nested details
         html.append("        <th>Symbol</th>\n");
-        html.append("        <th>Setup</th>\n");
-        html.append("        <th>Quality</th>\n");
-        html.append("        <th>Entry</th>\n");
-        html.append("        <th>Stop</th>\n");
+        html.append("        <th>Signal Type</th>\n");
+        html.append("        <th>Base Score</th>\n");
+        html.append("        <th>Alignment Bonus</th>\n");
+        html.append("        <th>Final Score</th>\n");
+        html.append("        <th>Quality Rating</th>\n");
+        html.append("        <th>Quality Score</th>\n");
+        html.append("        <th>Setup Type</th>\n");
+        html.append("        <th>Window</th>\n");
+        html.append("        <th>Window Bars</th>\n");
+        html.append("        <th>Range Height %</th>\n");
+        html.append("        <th>Contraction Depth %</th>\n");
+        html.append("        <th>Range Contraction</th>\n");
+        html.append("        <th>Volume Contraction</th>\n");
+        html.append("        <th>Range Expansion</th>\n");
+        html.append("        <th>Setup Rating</th>\n");
+        html.append("        <th>Pivot Price</th>\n");
+        html.append("        <th>Close Price</th>\n");
+        html.append("        <th>Entry Price</th>\n");
+        html.append("        <th>Close-Pivot Dist %</th>\n");
+        html.append("        <th>Pivot Test Count</th>\n");
+        html.append("        <th>MultiTF Align</th>\n");
+        html.append("        <th>Weekly Align Bonus</th>\n");
+        html.append("        <th>Weekly Structure</th>\n");
+        html.append("        <th>Trade Entry</th>\n");
+        html.append("        <th>Stop Loss</th>\n");
+        html.append("        <th>Shares</th>\n");
         html.append("        <th>Target 1</th>\n");
-        
-        // Secondary columns (visible on hover)
-        html.append("        <th class=\"col-hidden\">📊 Window</th>\n");
-        html.append("        <th class=\"col-hidden\">📉 Range Cont %</th>\n");
-        html.append("        <th class=\"col-hidden\">📊 Vol Cont %</th>\n");
-        html.append("        <th class=\"col-hidden\">Pairs</th>\n");
-        html.append("        <th class=\"col-hidden\">Breakout Range</th>\n");
-        html.append("        <th class=\"col-hidden\">R:R Ratio</th>\n");
-        html.append("        <th class=\"col-hidden\">Details</th>\n");
-        
+        html.append("        <th>Target 2</th>\n");
+        html.append("        <th>Target 3</th>\n");
+        html.append("        <th>R:R T1</th>\n");
+        html.append("        <th>R:R T2</th>\n");
+        html.append("        <th>R:R T3</th>\n");
+        html.append("        <th>Data Quality</th>\n");
+        html.append("        <th>Data Errors</th>\n");
+        html.append("        <th>Data Warnings</th>\n");
         html.append("      </tr>\n");
         html.append("    </thead>\n");
         html.append("    <tbody>\n");
-        
         for (ScanResult result : results) {
             html.append("      <tr>\n");
-            html.append("        <td class=\"col-primary\">").append(result.getSymbol()).append("</td>\n");
-            html.append("        <td>").append(result.getSetup().getSetupType()).append("</td>\n");
+            html.append("        <td>").append(result.getSymbol()).append("</td>\n");
+            html.append("        <td>").append(result.getSignalType()).append("</td>\n");
+            html.append("        <td>").append(String.format("%.2f", result.getSetup().getQualityScore())).append("</td>\n");
+            html.append("        <td>").append(String.format("%.2f", result.getAlignmentBonus())).append("</td>\n");
+            html.append("        <td>").append(String.format("%.2f", result.getQualityScore())).append("</td>\n");
             html.append("        <td><span class=\"rating rating-").append(getRatingClass(result.getSetup().getSetupRating())).append("\">").append(result.getSetup().getSetupRating()).append("</span></td>\n");
+            html.append("        <td>").append(String.format("%.1f", result.getSetup().getQualityScore())).append("</td>\n");
+            html.append("        <td>").append(result.getSetup().getSetupType()).append("</td>\n");
+            html.append("        <td>").append(result.getSetup().getBaseWindowLabel()).append("</td>\n");
+            html.append("        <td>").append(result.getSetup().getBaseWindowBars()).append("</td>\n");
+            html.append("        <td>").append(String.format("%.2f%%", result.getSetup().getBaseRangeHeightPct())).append("</td>\n");
+            html.append("        <td>").append(String.format("%.2f%%", result.getSetup().getContractionDepthPct())).append("</td>\n");
+            html.append("        <td>").append(String.format("%.2f%%", result.getSetup().getRangeContraction() * 100)).append("</td>\n");
+            html.append("        <td>").append(String.format("%.2f%%", result.getSetup().getVolumeContraction() * 100)).append("</td>\n");
+            html.append("        <td>").append(String.format("%.2f%%", result.getSetup().getRangeExpansion() * 100)).append("</td>\n");
+            html.append("        <td>").append(result.getSetup().getSetupRating()).append("</td>\n");
+            html.append("        <td>").append(String.format("%.2f", result.getSetup().getPivotPrice())).append("</td>\n");
+            html.append("        <td>").append(result.getSignalCandle() != null ? String.format("%.2f", result.getSignalCandle().getClose()) : "").append("</td>\n");
+            html.append("        <td>").append(String.format("%.2f", result.getTradePlan().getEntry())).append("</td>\n");
+            html.append("        <td>").append(result.getSignalCandle() != null && result.getSetup().getPivotPrice() > 0 ? String.format("%.2f%%", (result.getSignalCandle().getClose() - result.getSetup().getPivotPrice()) / result.getSetup().getPivotPrice() * 100) : "").append("</td>\n");
+            html.append("        <td>").append(result.getSetup().getRangeContractionCount()).append("</td>\n");
+            html.append("        <td>").append(result.getAlignmentReason() != null ? result.getAlignmentReason() : "").append("</td>\n");
+            html.append("        <td>").append(result.getAlignmentBonus()).append("</td>\n");
+            html.append("        <td>").append(result.isWeeklyAligned() ? "Aligned" : "Not aligned").append("</td>\n");
             html.append("        <td>").append(String.format("%.2f", result.getTradePlan().getEntry())).append("</td>\n");
             html.append("        <td>").append(String.format("%.2f", result.getTradePlan().getStopLoss())).append("</td>\n");
+            html.append("        <td>").append(result.getTradePlan().getShares()).append("</td>\n");
             html.append("        <td>").append(String.format("%.2f", result.getTradePlan().getTarget1())).append("</td>\n");
-            
-            // Hidden columns (revealed on hover)
-            html.append("        <td class=\"col-hidden\">").append(result.getSetup().getBaseWindowLabel()).append("</td>\n");
-            html.append("        <td class=\"col-hidden\">").append(String.format("%.1f%%", result.getSetup().getRangeContraction() * 100)).append("</td>\n");
-            html.append("        <td class=\"col-hidden\">").append(String.format("%.1f%%", result.getSetup().getVolumeContraction() * 100)).append("</td>\n");
-            html.append("        <td class=\"col-hidden\">").append(result.getSetup().getContractionPairs()).append("</td>\n");
-            html.append("        <td class=\"col-hidden\">").append(String.format("%.1f%%", result.getSetup().getRangeExpansion() * 100)).append("</td>\n");
-            
-            double rr = calculateRiskReward(result);
-            html.append("        <td class=\"col-hidden\">").append(String.format("%.2f:1", rr)).append("</td>\n");
-            
-            html.append("        <td class=\"col-hidden hover-detail\">\n");
-            html.append("          <span>💡 Tap to see full logic</span>\n");
-            html.append("          <div class=\"hover-detail-content\">\n");
-            html.append("            <strong>Setup Details:</strong><br>\n");
-            html.append("            • Base Window: ").append(result.getSetup().getBaseWindowLabel()).append("<br>\n");
-            html.append("            • Range Contraction: ").append(String.format("%.1f%%", result.getSetup().getRangeContraction() * 100)).append("<br>\n");
-            html.append("            • Volume Contraction: ").append(String.format("%.1f%%", result.getSetup().getVolumeContraction() * 100)).append("<br>\n");
-            html.append("            • Contraction Pairs: ").append(result.getSetup().getContractionPairs()).append("<br>\n");
-            html.append("            <br><strong>Trade Plan:</strong><br>\n");
-            html.append("            • Pivot: ").append(String.format("%.2f", result.getSetup().getPivotPrice())).append("<br>\n");
-            html.append("            • Support: ").append(String.format("%.2f", result.getSetup().getSupportPrice())).append("<br>\n");
-            html.append("            • Shares: ").append(result.getTradePlan().getShares()).append("<br>\n");
-            html.append("            • Risk/Reward: ").append(String.format("%.2f:1", rr)).append("\n");
-            html.append("          </div>\n");
-            html.append("        </td>\n");
-            
+            html.append("        <td>").append(String.format("%.2f", result.getTradePlan().getTarget2())).append("</td>\n");
+            html.append("        <td>").append(String.format("%.2f", result.getTradePlan().getTarget3())).append("</td>\n");
+            double rr1 = (result.getTradePlan().getEntry() > result.getTradePlan().getStopLoss()) ? (result.getTradePlan().getTarget1() - result.getTradePlan().getEntry()) / (result.getTradePlan().getEntry() - result.getTradePlan().getStopLoss()) : 0;
+            double rr2 = (result.getTradePlan().getEntry() > result.getTradePlan().getStopLoss()) ? (result.getTradePlan().getTarget2() - result.getTradePlan().getEntry()) / (result.getTradePlan().getEntry() - result.getTradePlan().getStopLoss()) : 0;
+            double rr3 = (result.getTradePlan().getEntry() > result.getTradePlan().getStopLoss()) ? (result.getTradePlan().getTarget3() - result.getTradePlan().getEntry()) / (result.getTradePlan().getEntry() - result.getTradePlan().getStopLoss()) : 0;
+            html.append("        <td>").append(String.format("%.2f:1", rr1)).append("</td>\n");
+            html.append("        <td>").append(String.format("%.2f:1", rr2)).append("</td>\n");
+            html.append("        <td>").append(String.format("%.2f:1", rr3)).append("</td>\n");
+            // Data quality (placeholder, as ScanResult does not expose directly)
+            html.append("        <td>").append("OK").append("</td>\n");
+            html.append("        <td>").append("").append("</td>\n"); // Data Errors placeholder
+            html.append("        <td>").append("").append("</td>\n"); // Data Warnings placeholder
             html.append("      </tr>\n");
         }
-        
         html.append("    </tbody>\n");
         html.append("  </table>\n");
         html.append("</div>\n");
-        
         return html.toString();
     }
 

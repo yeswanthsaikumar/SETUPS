@@ -16,6 +16,11 @@ public class CliOptions {
     public final long cacheTtlMinutes;
     public final int backtestHoldDays;
     public final double backtestTargetR;
+    public final boolean lookbackProvided;
+    public final int alreadyBreakoutMinBars;
+    public final int alreadyBreakoutMaxBars;
+    public final int backtestYears;
+    public final String benchmarkSymbol;
 
     private CliOptions(
             String mode,
@@ -30,7 +35,12 @@ public class CliOptions {
             String cacheDir,
             long cacheTtlMinutes,
             int backtestHoldDays,
-            double backtestTargetR
+            double backtestTargetR,
+            boolean lookbackProvided,
+            int alreadyBreakoutMinBars,
+            int alreadyBreakoutMaxBars,
+            int backtestYears,
+            String benchmarkSymbol
     ) {
         this.mode = mode;
         this.provider = provider;
@@ -45,6 +55,11 @@ public class CliOptions {
         this.cacheTtlMinutes = cacheTtlMinutes;
         this.backtestHoldDays = backtestHoldDays;
         this.backtestTargetR = backtestTargetR;
+        this.lookbackProvided = lookbackProvided;
+        this.alreadyBreakoutMinBars = alreadyBreakoutMinBars;
+        this.alreadyBreakoutMaxBars = alreadyBreakoutMaxBars;
+        this.backtestYears = backtestYears;
+        this.benchmarkSymbol = benchmarkSymbol;
     }
 
     public static CliOptions parse(String[] args) {
@@ -62,6 +77,10 @@ public class CliOptions {
         long cacheTtlMinutes = 360;
         int backtestHoldDays = 15;
         double backtestTargetR = 2.0;
+        int alreadyBreakoutMinBars = 14;
+        int alreadyBreakoutMaxBars = 20;
+        int backtestYears = 2;
+        String benchmarkSymbol = "";
 
         List<String> positional = new ArrayList<>();
 
@@ -98,6 +117,14 @@ public class CliOptions {
                 backtestHoldDays = parseInt(value(arg), backtestHoldDays);
             } else if (arg.startsWith("--backtest-target-r=")) {
                 backtestTargetR = parseDouble(value(arg), backtestTargetR);
+            } else if (arg.startsWith("--already-breakout-min-bars=")) {
+                alreadyBreakoutMinBars = parseInt(value(arg), alreadyBreakoutMinBars);
+            } else if (arg.startsWith("--already-breakout-max-bars=")) {
+                alreadyBreakoutMaxBars = parseInt(value(arg), alreadyBreakoutMaxBars);
+            } else if (arg.startsWith("--backtest-years=")) {
+                backtestYears = parseInt(value(arg), backtestYears);
+            } else if (arg.startsWith("--benchmark=")) {
+                benchmarkSymbol = value(arg);
             }
         }
 
@@ -114,6 +141,10 @@ public class CliOptions {
             symbols = List.of("NVCP", "VCPX", "ALPHA", "BETA", "OMEGA", "DELTA", "GAMMA");
         }
 
+        alreadyBreakoutMinBars = Math.max(1, alreadyBreakoutMinBars);
+        alreadyBreakoutMaxBars = Math.max(alreadyBreakoutMinBars, alreadyBreakoutMaxBars);
+        backtestYears = Math.max(1, backtestYears);
+
         return new CliOptions(
                 mode.toLowerCase(),
                 provider.toLowerCase(),
@@ -127,7 +158,12 @@ public class CliOptions {
                 cacheDir,
                 cacheTtlMinutes,
                 backtestHoldDays,
-                backtestTargetR
+                backtestTargetR,
+                lookbackProvided,
+                alreadyBreakoutMinBars,
+                alreadyBreakoutMaxBars,
+                backtestYears,
+                benchmarkSymbol.trim()
         );
     }
 

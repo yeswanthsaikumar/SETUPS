@@ -45,6 +45,18 @@ public final class ResultExporter {
         }
     }
 
+    public static void exportAlreadyBreakoutResults(List<AlreadyBreakoutResult> results, String format, String outPrefix) {
+        if ("none".equals(format)) {
+            return;
+        }
+        if ("csv".equals(format) || "both".equals(format)) {
+            writeAlreadyBreakoutCsv(results, Paths.get(outPrefix + "_already_breakout.csv"));
+        }
+        if ("json".equals(format) || "both".equals(format)) {
+            writeAlreadyBreakoutJson(results, Paths.get(outPrefix + "_already_breakout.json"));
+        }
+    }
+
     public static void exportRejectionsLatest(List<RejectionDiagnostic> rejections, String market, String timeframe) {
         if (rejections == null) {
             return;
@@ -148,16 +160,17 @@ public final class ResultExporter {
         List<String> lines = new ArrayList<>();
         lines.add("symbol,setupType,setupRating,windowLabel,qualityScore," +
                   "entryDate,exitDate,entryPrice,exitPrice,stopPrice,shares," +
-                  "rMultiple,pnl,holdBars,mae,mfe,hitT1,hitT2,hitT3,exitReason");
+                  "rMultiple,pnl,holdBars,mae,mfe,benchmarkReturnPct,alphaPct,marketStrengthScore,hitT1,hitT2,hitT3,exitReason");
         for (BacktestTrade t : report.getTrades()) {
             lines.add(String.format(
-                    "%s,%s,%s,%s,%.2f,%s,%s,%.5f,%.5f,%.5f,%d,%.4f,%.2f,%d,%.2f,%.2f,%b,%b,%b,%s",
+                    "%s,%s,%s,%s,%.2f,%s,%s,%.5f,%.5f,%.5f,%d,%.4f,%.2f,%d,%.2f,%.2f,%.2f,%.2f,%.2f,%b,%b,%b,%s",
                     t.getSymbol(), t.getSetupType(), t.getSetupRating(), t.getWindowLabel(),
                     t.getQualityScore(),
                     t.getEntryDate(), t.getExitDate(),
                     t.getEntryPrice(), t.getExitPrice(), t.getStopPrice(), t.getShares(),
                     t.getRMultiple(), t.getPnl(), t.getHoldBars(),
                     t.getMae(), t.getMfe(),
+                    t.getBenchmarkReturnPct(), t.getAlphaPct(), t.getMarketStrengthScore(),
                     t.isHitT1(), t.isHitT2(), t.isHitT3(),
                     t.getExitReason()
             ));
@@ -179,6 +192,10 @@ public final class ResultExporter {
         sb.append("  \"avgMae\": ").append(format(report.getAvgMae())).append(",\n");
         sb.append("  \"avgMfe\": ").append(format(report.getAvgMfe())).append(",\n");
         sb.append("  \"avgHoldBars\": ").append(format(report.getAvgHoldBars())).append(",\n");
+        sb.append("  \"avgBenchmarkReturnPct\": ").append(format(report.getAvgBenchmarkReturnPct())).append(",\n");
+        sb.append("  \"avgAlphaPct\": ").append(format(report.getAvgAlphaPct())).append(",\n");
+        sb.append("  \"alphaWinRate\": ").append(format(report.getAlphaWinRate())).append(",\n");
+        sb.append("  \"avgMarketStrengthScore\": ").append(format(report.getAvgMarketStrengthScore())).append(",\n");
         sb.append("  \"t1HitCount\": ").append(report.getT1HitCount()).append(",\n");
         sb.append("  \"t2HitCount\": ").append(report.getT2HitCount()).append(",\n");
         sb.append("  \"t3HitCount\": ").append(report.getT3HitCount()).append(",\n");
@@ -204,6 +221,9 @@ public final class ResultExporter {
             sb.append("      \"holdBars\": ").append(t.getHoldBars()).append(",\n");
             sb.append("      \"mae\": ").append(format(t.getMae())).append(",\n");
             sb.append("      \"mfe\": ").append(format(t.getMfe())).append(",\n");
+            sb.append("      \"benchmarkReturnPct\": ").append(format(t.getBenchmarkReturnPct())).append(",\n");
+            sb.append("      \"alphaPct\": ").append(format(t.getAlphaPct())).append(",\n");
+            sb.append("      \"marketStrengthScore\": ").append(format(t.getMarketStrengthScore())).append(",\n");
             sb.append("      \"hitT1\": ").append(t.isHitT1()).append(",\n");
             sb.append("      \"hitT2\": ").append(t.isHitT2()).append(",\n");
             sb.append("      \"hitT3\": ").append(t.isHitT3()).append(",\n");
@@ -281,6 +301,61 @@ public final class ResultExporter {
             sb.append("    \"target1\": ").append(format(r.getTradePlan().getTarget1())).append(",\n");
             sb.append("    \"target2\": ").append(format(r.getTradePlan().getTarget2())).append(",\n");
             sb.append("    \"target3\": ").append(format(r.getTradePlan().getTarget3())).append("\n");
+            sb.append("  }");
+            if (i < results.size() - 1) {
+                sb.append(",");
+            }
+            sb.append("\n");
+        }
+        sb.append("]\n");
+        writeLines(path, List.of(sb.toString()));
+    }
+
+    private static void writeAlreadyBreakoutCsv(List<AlreadyBreakoutResult> results, Path path) {
+        List<String> lines = new ArrayList<>();
+        lines.add("symbol,setupType,windowLabel,setupRating,qualityScore,breakoutDate,barsSinceBreakout,breakoutPrice,latestDate,latestClose,returnSinceBreakoutPct,maxGainPct,maxDrawdownPct,pivotHoldRatePct");
+        for (AlreadyBreakoutResult r : results) {
+            lines.add(String.format(
+                    "%s,%s,%s,%s,%.2f,%s,%d,%.5f,%s,%.5f,%.2f,%.2f,%.2f,%.2f",
+                    r.getSymbol(),
+                    r.getSetup().getSetupType(),
+                    r.getSetup().getBaseWindowLabel(),
+                    r.getSetup().getSetupRating(),
+                    r.getSetup().getQualityScore(),
+                    r.getBreakoutDate(),
+                    r.getBarsSinceBreakout(),
+                    r.getBreakoutPrice(),
+                    r.getLatestCandle().getDate(),
+                    r.getLatestCandle().getClose(),
+                    r.getReturnSinceBreakoutPct(),
+                    r.getMaxGainPct(),
+                    r.getMaxDrawdownPct(),
+                    r.getPivotHoldRatePct()
+            ));
+        }
+        writeLines(path, lines);
+    }
+
+    private static void writeAlreadyBreakoutJson(List<AlreadyBreakoutResult> results, Path path) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[\n");
+        for (int i = 0; i < results.size(); i++) {
+            AlreadyBreakoutResult r = results.get(i);
+            sb.append("  {\n");
+            sb.append("    \"symbol\": \"").append(escape(r.getSymbol())).append("\",\n");
+            sb.append("    \"setupType\": \"").append(r.getSetup().getSetupType()).append("\",\n");
+            sb.append("    \"windowLabel\": \"").append(escape(r.getSetup().getBaseWindowLabel())).append("\",\n");
+            sb.append("    \"setupRating\": \"").append(escape(r.getSetup().getSetupRating())).append("\",\n");
+            sb.append("    \"qualityScore\": ").append(format(r.getSetup().getQualityScore())).append(",\n");
+            sb.append("    \"breakoutDate\": \"").append(r.getBreakoutDate()).append("\",\n");
+            sb.append("    \"barsSinceBreakout\": ").append(r.getBarsSinceBreakout()).append(",\n");
+            sb.append("    \"breakoutPrice\": ").append(format(r.getBreakoutPrice())).append(",\n");
+            sb.append("    \"latestDate\": \"").append(r.getLatestCandle().getDate()).append("\",\n");
+            sb.append("    \"latestClose\": ").append(format(r.getLatestCandle().getClose())).append(",\n");
+            sb.append("    \"returnSinceBreakoutPct\": ").append(format(r.getReturnSinceBreakoutPct())).append(",\n");
+            sb.append("    \"maxGainPct\": ").append(format(r.getMaxGainPct())).append(",\n");
+            sb.append("    \"maxDrawdownPct\": ").append(format(r.getMaxDrawdownPct())).append(",\n");
+            sb.append("    \"pivotHoldRatePct\": ").append(format(r.getPivotHoldRatePct())).append("\n");
             sb.append("  }");
             if (i < results.size() - 1) {
                 sb.append(",");
