@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from utils import to_float as _to_float
+
 ALLOWED_SETUPS = {"VCP", "RANGE_EXPANSION", "MEAN_REVERSION"}
 
 
@@ -16,15 +18,6 @@ class BriefSummary:
     setup_counts: dict[str, int]
     lines: list[str]
 
-
-def _to_float(value: Any, default: float = 0.0) -> float:
-    try:
-        if value is None:
-            return default
-        text = str(value).strip().replace("%", "").replace(",", "")
-        return float(text)
-    except Exception:
-        return default
 
 
 def _load_json_rows(path: Path) -> list[dict]:

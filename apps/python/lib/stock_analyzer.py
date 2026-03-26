@@ -46,18 +46,11 @@ ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from utils import to_float as _to_float
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-def _to_float(value: Any, default: float = 0.0) -> float:
-    try:
-        if value is None:
-            return default
-        text = str(value).strip().replace("%", "").replace(",", "").replace("x", "")
-        return float(text)
-    except Exception:
-        return default
 
 
 def _load_json(path: Path) -> list[dict] | dict | None:

@@ -37,43 +37,43 @@ from pathlib import Path
 from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(ROOT / "apps" / "python" / "lib"))
+LIB_DIR = ROOT / "apps" / "python" / "lib"
+import sys as _sys
+if str(LIB_DIR) not in _sys.path:
+    _sys.path.insert(0, str(LIB_DIR))
 
-try:
-    from mean_reversion_detector import (
-        detect_mean_reversion,
-        scan_symbols_for_mean_reversion,
-        _load_bars as _mr_load_bars,
-        _signal_to_dict as _mr_signal_to_dict,
+from setup_detector import (
+    detect_mean_reversion,
+    scan_symbols as py_scan_symbols,
+    _load_bars as _mr_load_bars,
+    _signal_to_dict as _mr_signal_to_dict,
+)
+from utils import (
+    to_float as _to_float,
+    safe_return as _safe_return,
+    clamp as _clamp,
+    mean as _mean,
+    chunks,
+    aggregate_weekly_bars,
+    load_cached_bars,
+    progress_bar,
+)
+
+_MR_AVAILABLE = True
+_PY_BO_AVAILABLE = True
+
+
+def scan_symbols_for_mean_reversion(symbols, cache_dir, lookback, timeframe, account_size, base_risk_pct, min_price_floor, min_score=35.0):
+    """Scan symbols for mean-reversion setups using the unified setup_detector."""
+    return py_scan_symbols(
+        symbols, cache_dir, lookback,
+        timeframe=timeframe,
+        account_size=account_size,
+        base_risk_pct=base_risk_pct,
+        min_price_floor=min_price_floor,
+        min_score=min_score,
+        setup_types=["MEAN_REVERSION"],
     )
-    _MR_AVAILABLE = True
-except ImportError as _mr_err:
-    # Fallback: try to use the pure-Python `setup_detector` which provides
-    # detect_mean_reversion and a scan_symbols wrapper. This lets the CLI run
-    # in mean_reversion mode even when mean_reversion_detector.py is absent.
-    try:
-        from setup_detector import detect_mean_reversion as _sd_detect_mr, scan_symbols as _sd_scan_symbols
-
-        def scan_symbols_for_mean_reversion(symbols, cache_dir, lookback, timeframe, account_size, base_risk_pct, min_price_floor, min_score=35.0):
-            # Use setup_detector.scan_symbols but request only mean-reversion setups
-            return _sd_scan_symbols(symbols, cache_dir, lookback, timeframe=timeframe, account_size=account_size, base_risk_pct=base_risk_pct, min_price_floor=min_price_floor, min_score=min_score, setup_types=["MEAN_REVERSION"])
-
-        # Provide minimal aliases for loader and signal conversion if needed elsewhere
-        _mr_load_bars = None
-        _mr_signal_to_dict = None
-        detect_mean_reversion = _sd_detect_mr
-        _MR_AVAILABLE = True
-        print(f"[INFO] mean_reversion_detector not found; falling back to setup_detector for MR scans", file=sys.stderr)
-    except Exception as _sd_err:
-        _MR_AVAILABLE = False
-        print(f"[WARN] mean_reversion_detector not available: {_mr_err}; fallback also failed: {_sd_err}", file=sys.stderr)
-
-# Optional pure-Python breakout detector (complements Java scanner)
-try:
-    from setup_detector import scan_symbols as py_scan_symbols
-    _PY_BO_AVAILABLE = True
-except ImportError:
-    _PY_BO_AVAILABLE = False
 
 # ── DEFAULTS ──────────────────────────────────────────────────────────────────
 DEFAULT_SYMBOLS_FILE  = str(ROOT / "data" / "universes" / "all_us_stocks.txt")
@@ -186,112 +186,6 @@ def parse_args():
         args.symbols = str((ROOT / args.symbols).resolve())
     return args
 
-
-def _to_float(value, default=0.0):
-    try:
-        if value is None:
-            return default
-        text = str(value).strip().replace("%", "").replace(",", "")
-        return float(text)
-    except Exception:
-        return default
-
-
-def _safe_return(closes: list[float], bars: int) -> float:
-    if bars <= 0 or len(closes) <= bars:
-        return 0.0
-    old = closes[-bars - 1]
-    now = closes[-1]
-    if old <= 0:
-        return 0.0
-    return (now / old) - 1.0
-
-
-def _clamp(value: float, low: float = 0.0, high: float = 100.0) -> float:
-    return max(low, min(high, value))
-
-
-def _mean(values: list[float]) -> float:
-    return (sum(values) / len(values)) if values else 0.0
-
-
-def aggregate_weekly_bars(rows: list[dict]) -> list[dict]:
-    weekly: list[dict] = []
-    current: dict | None = None
-    current_key = None
-
-    for row in rows:
-        date_text = str(row.get("date", "")).strip()
-        if not date_text:
-            continue
-        try:
-            dt = datetime.fromisoformat(date_text).date()
-        except ValueError:
-            continue
-
-        key = (dt.isocalendar().year, dt.isocalendar().week)
-        if key != current_key:
-            if current is not None:
-                weekly.append(current)
-            current_key = key
-            current = {
-                "date": dt.isoformat(),
-                "open": _to_float(row.get("open")),
-                "high": _to_float(row.get("high")),
-                "low": _to_float(row.get("low")),
-                "close": _to_float(row.get("close")),
-                "volume": _to_float(row.get("volume")),
-            }
-        else:
-            current["high"] = max(_to_float(current.get("high")), _to_float(row.get("high")))
-            current["low"] = min(_to_float(current.get("low"), 10**12), _to_float(row.get("low"), 10**12))
-            current["close"] = _to_float(row.get("close"))
-            current["volume"] = _to_float(current.get("volume")) + _to_float(row.get("volume"))
-            current["date"] = dt.isoformat()
-
-    if current is not None:
-        weekly.append(current)
-
-    return weekly
-
-
-def _cache_candidates(symbol: str, lookback: int, timeframe: str, cache_dir: str) -> list[Path]:
-    cache = Path(cache_dir)
-    suffixes = {lookback}
-    if timeframe == "weekly":
-        suffixes.add(max(lookback * 7, lookback + 60))
-    suffixes.update({252, 728})
-    files = [cache / f"{symbol}_{n}.csv" for n in sorted(suffixes)]
-    existing = [p for p in files if p.exists()]
-    if existing:
-        return existing
-    return sorted(cache.glob(f"{symbol}_*.csv"))
-
-
-def load_cached_bars(symbol: str, lookback: int, timeframe: str, cache_dir: str) -> list[dict]:
-    for path in _cache_candidates(symbol, lookback, timeframe, cache_dir):
-        try:
-            rows = []
-            with open(path, newline="") as fh:
-                reader = csv.DictReader(fh)
-                for row in reader:
-                    rows.append({
-                        "date": str(row.get("date") or "").strip(),
-                        "open": _to_float(row.get("open")),
-                        "high": _to_float(row.get("high")),
-                        "low": _to_float(row.get("low")),
-                        "close": _to_float(row.get("close")),
-                        "volume": _to_float(row.get("volume")),
-                    })
-            if len(rows) >= 30:
-                if timeframe == "weekly":
-                    weekly_rows = aggregate_weekly_bars(rows)
-                    if len(weekly_rows) >= 10:
-                        return weekly_rows
-                return rows
-        except Exception:
-            continue
-    return []
 
 
 def build_market_regime(symbols: list[str], args) -> dict:
@@ -776,10 +670,6 @@ def infer_market_label(source_path: str) -> str:
     return "market"
 
 
-def chunks(lst, n):
-    for i in range(0, len(lst), n):
-        yield lst[i:i + n]
-
 
 def _java_setups(setups: str) -> str | None:
     """Map --setups value to what Java understands. Returns None to skip Java entirely."""
@@ -947,46 +837,6 @@ def scan_combined_batch(batch: list[str], args) -> tuple[list[str], list[str]]:
             print(f"  [WARN] combined batch error: {exc}", flush=True)
         return [], []
 
-
-def scan_followthrough_batch(batch: list[str], args) -> list[str]:
-    """Invoke Java follow-through/continuation scanner for one batch; return raw hit lines."""
-    java_setup = _java_setups(args.setups)
-    if java_setup is None:
-        return []   # mean_reversion only – no Java
-    cmd = [
-        "java", *JVM_FAST_FLAGS, "-cp", "src", "Main",
-        "--mode=followthrough",
-        "--provider=yahoo",
-        f"--timeframe={args.timeframe}",
-        f"--setups={java_setup}",
-        f"--symbols={','.join(batch)}",
-        f"--lookback={args.lookback}",
-        f"--retries={args.retries}",
-        f"--cache-dir={args.cache_dir}",
-        f"--cache-ttl-min={args.cache_ttl}",
-    ]
-    try:
-        proc = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=JAVA_TIMEOUT_SEC,
-            cwd=ROOT,
-        )
-        combined = (proc.stdout or "") + "\n" + (proc.stderr or "")
-        if proc.returncode != 0:
-            with lock:
-                print(f"  [WARN] Java follow-through batch exited with code {proc.returncode} for {','.join(batch[:5])}", flush=True)
-        # Follow-through hits will have "Follow-through" in reason and signal info
-        return [line.strip() for line in combined.splitlines() if "Follow-through" in line and " T1 " in line]
-    except subprocess.TimeoutExpired:
-        with lock:
-            print(f"  [WARN] follow-through batch timed out after {JAVA_TIMEOUT_SEC}s for {','.join(batch[:5])}", flush=True)
-        return []
-    except Exception as exc:
-        with lock:
-            print(f"  [WARN] follow-through batch error: {exc}", flush=True)
-        return []
 
 
 def parse_hit(line: str) -> dict:
@@ -2264,12 +2114,6 @@ def save_html(rows: list[dict], path: Path, meta: dict):
 """
     path.write_text(html_doc)
 
-
-def progress_bar(done: int, total: int, width: int = 40) -> str:
-    pct   = done / total if total else 0
-    filled = int(width * pct)
-    bar   = "█" * filled + "░" * (width - filled)
-    return f"[{bar}] {done}/{total} ({pct*100:.1f}%)"
 
 
 def main():
