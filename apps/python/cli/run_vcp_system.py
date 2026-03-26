@@ -69,8 +69,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--setups",
         default="full",
-        choices=["full", "both", "vcp", "range_expansion", "mean_reversion", "all"],
-        help="Setup filter: full, both, vcp, range_expansion, mean_reversion, or all (legacy alias for full)",
+        choices=["full", "both", "vcp", "range_expansion", "mean_reversion", "breakout_pullback", "all"],
+        help="Setup filter: full, both, vcp, range_expansion, mean_reversion, breakout_pullback, or all (legacy alias for full)",
     )
     parser.add_argument("--cache-dir", default="cache")
     parser.add_argument("--cache-ttl", type=int, default=360)

@@ -44,6 +44,7 @@ if str(LIB_DIR) not in _sys.path:
 
 from setup_detector import (
     detect_mean_reversion,
+    detect_breakout_pullback,
     scan_symbols as py_scan_symbols,
     _load_bars as _mr_load_bars,
     _signal_to_dict as _mr_signal_to_dict,
@@ -73,6 +74,19 @@ def scan_symbols_for_mean_reversion(symbols, cache_dir, lookback, timeframe, acc
         min_price_floor=min_price_floor,
         min_score=min_score,
         setup_types=["MEAN_REVERSION"],
+    )
+
+
+def scan_symbols_for_breakout_pullback(symbols, cache_dir, lookback, timeframe, account_size, base_risk_pct, min_price_floor, min_score=40.0):
+    """Scan symbols for first-pullback-after-breakout setups using the unified setup_detector."""
+    return py_scan_symbols(
+        symbols, cache_dir, lookback,
+        timeframe=timeframe,
+        account_size=account_size,
+        base_risk_pct=base_risk_pct,
+        min_price_floor=min_price_floor,
+        min_score=min_score,
+        setup_types=["BREAKOUT_PULLBACK"],
     )
 
 # ── DEFAULTS ──────────────────────────────────────────────────────────────────
@@ -139,8 +153,8 @@ def parse_args():
     p = argparse.ArgumentParser(description="Full market breakout scan")
     p.add_argument("--symbols",   default=None)
     p.add_argument("--timeframe", choices=["daily", "weekly"], default="daily")
-    p.add_argument("--setups", choices=["both", "vcp", "range_expansion", "mean_reversion", "full", "all"], default="full",
-                   help="Setup filter: full|both|vcp|range_expansion|mean_reversion|all(legacy alias for full)")
+    p.add_argument("--setups", choices=["both", "vcp", "range_expansion", "mean_reversion", "breakout_pullback", "full", "all"], default="full",
+                   help="Setup filter: full|both|vcp|range_expansion|mean_reversion|breakout_pullback|all(legacy alias for full)")
     p.add_argument("--market-label", default=None, help="Optional market label for output names, e.g. us or india")
     p.add_argument("--exchange-suffix", default=None, help="Optional Yahoo suffix override such as .NS or .BO")
     p.add_argument("--lookback",  type=int, default=DEFAULT_LOOKBACK)
@@ -166,8 +180,8 @@ def parse_args():
     p.add_argument("--base-risk-pct", type=float, default=DEFAULT_BASE_RISK_PCT, help="Baseline risk-per-trade used to convert risk amount to R")
     args = p.parse_args()
     args.setups = normalize_setups_mode(args.setups)
-    if args.setups in {"mean_reversion", "full"} and not _MR_AVAILABLE:
-        p.error("Mean reversion detector is unavailable; ensure apps/python/lib/setup_detector.py is importable")
+    if args.setups in {"mean_reversion", "breakout_pullback", "full"} and not _MR_AVAILABLE:
+        p.error("Mean reversion / breakout pullback detector is unavailable; ensure apps/python/lib/setup_detector.py is importable")
     if args.batch <= 0:
         p.error("--batch must be greater than 0")
     if args.workers <= 0:
@@ -673,10 +687,10 @@ def infer_market_label(source_path: str) -> str:
 
 def _java_setups(setups: str) -> str | None:
     """Map --setups value to what Java understands. Returns None to skip Java entirely."""
-    if setups == "mean_reversion":
+    if setups in ("mean_reversion", "breakout_pullback"):
         return None   # Python-only; no Java call needed
     if setups == "full":
-        return "both"  # Java handles vcp+range_expansion; MR handled by Python
+        return "both"  # Java handles vcp+range_expansion; MR+ABFP handled by Python
     return setups  # both | vcp | range_expansion – pass through unchanged
 
 
@@ -700,6 +714,28 @@ def _run_mr_scan(symbols: list[str], args) -> list[dict]:
     elapsed = time.time() - t0
     print(f"  Mean reversion scan done in {elapsed:.1f}s → {len(mr_hits)} hits", flush=True)
     return mr_hits
+
+
+def _run_abfp_scan(symbols: list[str], args) -> list[dict]:
+    """Run Python first-pullback-after-breakout scan on all symbols from cache."""
+    if not _PY_BO_AVAILABLE:
+        print("  [WARN] setup_detector not available – skipping ABFP scan", flush=True)
+        return []
+    print(f"\n  Running Python breakout-pullback (ABFP) scan on {len(symbols)} symbols from cache…", flush=True)
+    t0 = time.time()
+    abfp_hits = scan_symbols_for_breakout_pullback(
+        symbols,
+        cache_dir=args.cache_dir,
+        lookback=args.lookback,
+        timeframe=args.timeframe,
+        account_size=args.account_size,
+        base_risk_pct=args.base_risk_pct,
+        min_price_floor=args.min_price_floor,
+        min_score=40.0,
+    )
+    elapsed = time.time() - t0
+    print(f"  Breakout-pullback scan done in {elapsed:.1f}s → {len(abfp_hits)} hits", flush=True)
+    return abfp_hits
 
 
 def scan_batch(batch: list[str], args) -> list[str]:
@@ -923,6 +959,8 @@ CSV_FIELDS = [
     "rankingScore", "riskR", "heatAfterR",
     # Mean reversion specific
     "mrSubtype", "mrRsi", "mrSma20", "mrSma50", "mrSma200", "mrAtr", "mrLowerBB", "mrUpperBB", "mrBbPct", "mrVolRatio", "mrPullbackVolRatio",
+    # Breakout pullback (ABFP) specific
+    "abfpPeakHigh", "abfpPullbackDepth%", "abfpRunFromBO%", "abfpBarsSincePeak", "abfpPullbackVolRatio", "abfpBreakoutDate",
 ]
 
 
@@ -1355,6 +1393,25 @@ def save_html(rows: list[dict], path: Path, meta: dict):
                 f"Targets → T1(mean): {t1}  |  T2: {t2}  |  T3: {t3}",
                 f"Distance to Mean: {dist}%  |  Signal Volume vs Avg: {mr_vol_ratio}x  |  Pullback Volume vs Avg: {mr_pullback_vol_ratio}x",
             ]
+        elif setup == "BREAKOUT_PULLBACK":
+            abfp_peak        = r.get("abfpPeakHigh") or "-"
+            abfp_pb_depth    = r.get("abfpPullbackDepth%") or height or "-"
+            abfp_run         = r.get("abfpRunFromBO%") or depth or "-"
+            abfp_bars_peak   = r.get("abfpBarsSincePeak") or r.get("len") or "-"
+            abfp_pb_vol      = r.get("abfpPullbackVolRatio") or mr_pullback_vol_ratio or "-"
+            abfp_bo_date     = r.get("abfpBreakoutDate") or r.get("breakoutDate") or "-"
+            setup_desc = "First Pullback After Breakout — stock cleared prior resistance on volume, ran higher, now in controlled first pullback back to the breakout support zone"
+            lines = [
+                f"Setup: {setup_desc}",
+                f"Rating: {rating}  |  Window: {window}  |  Quality Score: {score}",
+                f"Breakout Date: {abfp_bo_date}  |  Breakout Level (Pivot/Support): {pivot}",
+                f"Post-Breakout Peak: {abfp_peak}  |  Run from BO to Peak: {abfp_run}%",
+                f"Current Pullback Depth (from Peak): {abfp_pb_depth}%  |  Bars Since Peak: {abfp_bars_peak}",
+                f"Pullback Volume vs Avg: {abfp_pb_vol}x  (dry-up = healthy consolidation)",
+                f"Entry: {entry}  |  Stop Loss (below BO support): {sl}",
+                f"Targets → T1(prior peak): {t1}  |  T2: {t2}  |  T3: {t3}",
+                f"Distance Above BO Support: {dist}%",
+            ]
         else:
             setup_desc = "Range Expansion Breakout — narrow base with wide-range breakout candle above pivot"
             lines = [
@@ -1479,6 +1536,7 @@ def save_html(rows: list[dict], path: Path, meta: dict):
             f"<td>{_disp(r.get('T3'))}</td>"
             f"<td class='links'>{price_link}</td>"
             f"<td class='links'>{fund_link}</td>"
+            f"<td style='font-size:0.78em;white-space:nowrap;color:#555'>{html.escape(str(r.get('fundSummary') or '—'))}</td>"
             f"<td style='text-align:center'><span class='reason-icon' title='{reason_tooltip}' "
             f"style='cursor:help;font-size:1.1em'>💡</span></td>"
             f"</tr>\n"
@@ -2384,6 +2442,16 @@ def main():
             all_hits.extend(mr_hits)
             append_event(events_path, "mr_scan_complete", {"mrHits": len(mr_hits)})
 
+    # ── Breakout Pullback Python scan (ABFP – first pullback after breakout) ──
+    if args.setups in ("breakout_pullback", "full"):
+        abfp_hits = _run_abfp_scan(symbols, args)
+        if abfp_hits:
+            # Deduplicate: skip symbols already present from Java/MR scan
+            existing = {h.get("symbol") for h in all_hits}
+            new_abfp = [h for h in abfp_hits if h.get("symbol") not in existing]
+            all_hits.extend(new_abfp)
+            append_event(events_path, "abfp_scan_complete", {"abfpHits": len(new_abfp), "abfpTotal": len(abfp_hits)})
+
     # ── Python breakout detector (optional) ─────────────────────────────────
     # Use the Python breakout detector to catch cases the Java scanner may miss
     # (e.g., breakout followed by a shallow pullback but still above breakout bar high).
@@ -2538,10 +2606,12 @@ def main():
     save_csv(all_hits, generic_latest_csv)
 
     # Also keep split setup lists for quick daily review.
-    if args.setups in {"both", "full"}:
+    if args.setups in {"both", "full", "breakout_pullback"}:
         setup_names = ["VCP", "RANGE_EXPANSION"]
         if args.setups == "full":
-            setup_names.append("MEAN_REVERSION")
+            setup_names += ["MEAN_REVERSION", "BREAKOUT_PULLBACK"]
+        elif args.setups == "breakout_pullback":
+            setup_names = ["BREAKOUT_PULLBACK"]
         for setup in setup_names:
             filtered = [h for h in all_hits if h.get("setup", "").upper() == setup]
             suffix = setup.lower()
