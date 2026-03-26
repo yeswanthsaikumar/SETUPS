@@ -23,6 +23,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "apps" / "python" / "lib"))
+from utils import chunks, progress_bar as progress, to_float as _to_float
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
 DEFAULT_DAILY_LOOKBACK  = 728   # ~2 years of daily bars
@@ -240,10 +242,6 @@ def load_symbols(market: str) -> list[str]:
                 symbols.append(sym)
     return symbols
 
-
-def chunks(lst, n):
-    for i in range(0, len(lst), n):
-        yield lst[i:i + n]
 
 
 # ── Java batch runner ─────────────────────────────────────────────────────────
@@ -943,12 +941,6 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
 
 
 # ── Progress bar ──────────────────────────────────────────────────────────────
-def progress(done, total, width=40):
-    pct  = done / total if total else 0
-    fill = int(width * pct)
-    bar  = "█" * fill + "░" * (width - fill)
-    return f"[{bar}] {done}/{total} ({pct*100:.1f}%)"
-
 
 def compile_java_sources():
     java_files = sorted(str(p) for p in (ROOT / "src").glob("*.java"))
