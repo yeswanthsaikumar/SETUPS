@@ -167,7 +167,7 @@ def parse_args():
     args = p.parse_args()
     args.setups = normalize_setups_mode(args.setups)
     if args.setups in {"mean_reversion", "full"} and not _MR_AVAILABLE:
-        p.error("Mean reversion detector is unavailable; ensure apps/python/lib/mean_reversion_detector.py is importable")
+        p.error("Mean reversion detector is unavailable; ensure apps/python/lib/setup_detector.py is importable")
     if args.batch <= 0:
         p.error("--batch must be greater than 0")
     if args.workers <= 0:
@@ -683,7 +683,7 @@ def _java_setups(setups: str) -> str | None:
 def _run_mr_scan(symbols: list[str], args) -> list[dict]:
     """Run Python mean reversion scan on all symbols from cache."""
     if not _MR_AVAILABLE:
-        print("  [WARN] mean_reversion_detector not available – skipping MR scan", flush=True)
+        print("  [WARN] setup_detector not available – skipping MR scan", flush=True)
         return []
     print(f"\n  Running Python mean reversion scan on {len(symbols)} symbols from cache…", flush=True)
     t0 = time.time()
