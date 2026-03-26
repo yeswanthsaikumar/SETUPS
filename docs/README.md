@@ -1,141 +1,80 @@
 # SETUPS Trading System
 
-Unified swing-trading scanner for US and India markets with three setup families:
+Swing-trading scanner for US and India markets.  
+**Single command to run, single HTML file to review.**
 
-- `VCP` (volatility contraction breakout)
-- `RANGE_EXPANSION` (contraction + expansion breakout)
-- `MEAN_REVERSION` (pullback snap-back in trend)
+## Setup Families
 
-The canonical mode is `--setups full`, which runs all three in one pass.
+| Setup | Description |
+|---|---|
+| `VCP` | Volatility contraction breakout |
+| `RANGE_EXPANSION` | Contraction + expansion breakout |
+| `MEAN_REVERSION` | Pullback snap-back in trend |
+| `BREAKOUT_PULLBACK` | First pullback after an initial breakout |
 
-## What This System Produces
+`--setups full` runs all four in one pass (default).
 
-- Open trade candidates with trade plan (`entry`, `sl`, `shares`, `T1/T2/T3`)
-- Watchlist candidates near pivot
-- Portfolio shortlist constrained by portfolio heat
-- Rejection diagnostics (validation + liquidity + regime + quality)
-- Interactive HTML reports + structured CSV/JSON exports
-- Run manifests and event logs for operations and audit
+## What the System Produces
 
-## Runtime Architecture
+- **`output/master_report_LATEST.html`** — single interactive report with all markets, timeframes and setups merged; includes entry price, position size, fundamentals, filters and CSV export
+- Per-setup raw files: `vcp_hits`, `watchlist`, `open_trades`, `portfolio_shortlist`, `rejections` in JSON/CSV/HTML
 
-```text
-run_vcp_system.py (orchestrator)
-  -> optional universe refresh
-  -> javac src/*.java (unless mean_reversion-only mode)
-  -> run_full_us_scan.py (per market x timeframe)
-       -> Java scan/watchlist for VCP + range expansion
-       -> Python mean reversion detector (for full/mean_reversion modes)
-  -> output/*LATEST* + system summary
+## Architecture
+
 ```
-
-## Setup Modes
-
-- `full` (default): VCP + range expansion + mean reversion
-- `both`: VCP + range expansion (legacy behavior)
-- `vcp`: VCP only
-- `range_expansion`: range expansion only
-- `mean_reversion`: mean reversion only
-- `all`: legacy alias of `full`
+run_master.sh
+  ├─ run_vcp_system.py            ← orchestrator
+  │    ├─ javac src/*.java
+  │    └─ run_full_us_scan.py     ← per market × timeframe
+  │         ├─ Java: VCP · Range · Breakout Pullback
+  │         └─ Python: Mean Reversion
+  └─ generate_master_report.py    ← merges + enriches → master HTML
+```
 
 ## Quick Start
 
 ```bash
 cd /Users/yeshwantha/IdeaProjects/SETUPS
-python3 apps/python/cli/run_vcp_system.py --skip-us-refresh
+./run_master.sh
 ```
 
-Open latest reports:
+Opens `output/master_report_LATEST.html` in your browser.
+
+## Common Commands
 
 ```bash
-open output/vcp_hits_india_daily_full_LATEST.html
-open output/vcp_hits_india_weekly_full_LATEST.html
+./run_master.sh                          # India + US, daily + weekly, all setups
+./run_master.sh --markets india          # India only
+./run_master.sh --markets us             # US only
+./run_master.sh --skip-fundamentals      # faster, no yfinance calls
+./run_master.sh --account-size 2000000   # ₹20L portfolio
+./run_master.sh --setups vcp             # VCP only
 ```
 
-## Core Commands
+## Setup Modes
 
-Run full India + US, daily + weekly:
+- `full` (default) — all four setups
+- `vcp` — VCP only
+- `range_expansion` — Range Expansion only
+- `mean_reversion` — Mean Reversion only
+- `breakout_pullback` — Breakout Pullback only
+- `both` — VCP + Range Expansion (legacy)
 
-```bash
-python3 apps/python/cli/run_vcp_system.py \
-  --markets india,us \
-  --timeframes daily,weekly \
-  --setups full \
-  --daily-lookback 252 \
-  --weekly-lookback 104 \
-  --skip-us-refresh
-```
+## Output Files
 
-India only, all setups:
+| File | Description |
+|---|---|
+| `output/master_report_LATEST.html` | **Primary review file** |
+| `output/vcp_hits_*_LATEST.{csv,json,html}` | Breakout signals |
+| `output/watchlist_*_LATEST.*` | Near-pivot candidates |
+| `output/open_trades_*_LATEST.*` | Active position tracking |
+| `output/portfolio_shortlist_*_LATEST.*` | Portfolio heat-constrained shortlist |
+| `output/rejections_*_LATEST.{csv,json}` | Filter rejection diagnostics |
+| `output/system_latest_summary.md` | Run summary |
 
-```bash
-python3 apps/python/cli/run_vcp_system.py \
-  --markets india \
-  --timeframes daily,weekly \
-  --setups full \
-  --skip-us-refresh
-```
+## Documentation
 
-Mean reversion only:
-
-```bash
-python3 apps/python/cli/run_vcp_system.py \
-  --markets india,us \
-  --timeframes daily,weekly \
-  --setups mean_reversion \
-  --skip-us-refresh
-```
-
-Direct scanner for one market/timeframe:
-
-```bash
-python3 apps/python/cli/run_full_us_scan.py \
-  --symbols data/universes/indian_stock_tickers.csv \
-  --market-label india \
-  --timeframe daily \
-  --setups full \
-  --lookback 252 \
-  --workers 4 \
-  --batch 25 \
-  --cache-dir cache \
-  --output-dir output
-```
-
-## Output Contract (LATEST)
-
-For each `{market}_{timeframe}_{mode}` label (for `full`, suffix is `_full`):
-
-- `vcp_hits_*_LATEST.{csv,json,html}`
-- `open_trades_*_LATEST.{csv,json,html}`
-- `watchlist_*_LATEST.{csv,json,html}`
-- `portfolio_shortlist_*_LATEST.{csv,json,html}`
-- `rejections_*_LATEST.{csv,json}`
-- `scan_manifest_*_LATEST.json`
-- `scan_bundle_*_LATEST.json`
-
-Additional per-setup splits for `full` mode:
-
-- `vcp_hits_{market}_{timeframe}_vcp_LATEST.{csv,json}`
-- `vcp_hits_{market}_{timeframe}_range_expansion_LATEST.{csv,json}`
-- `vcp_hits_{market}_{timeframe}_mean_reversion_LATEST.{csv,json}`
-
-System-level summary:
-
-- `output/system_latest_summary.md`
-- `output/system_latest_summary.json`
-
-## Documentation Map
-
-- `docs/INDEX.md`: master index
-- `docs/GETTING_STARTED.md`: onboarding
-- `docs/reference/HLD_SWING_TRADING_SYSTEM.md`: high-level design
-- `docs/reference/LLD_SWING_TRADING_SYSTEM.md`: low-level design
-- `docs/reference/SYSTEM_DESIGN.md`: formulas and decision rules
-- `docs/runbooks/DAILY_RUNBOOK.md`: daily operations
-- `docs/runbooks/UNIFIED_FULL_MODE_RUNBOOK.md`: full-mode runbook
-- `docs/runbooks/TROUBLESHOOTING.md`: troubleshooting guide
-
-## Web and Docker
-
-Web layer is under `apps/web/` and serves generated reports from `output/`.
-Use `apps/web/README.md` for API, Docker, and deployment instructions.
+- `docs/runbooks/DAILY_RUNBOOK.md` — daily operations and review guide
+- `docs/runbooks/TROUBLESHOOTING.md` — diagnostics and recovery
+- `docs/INDEX.md` — full doc map
+- `docs/reference/SYSTEM_DESIGN.md` — scoring formulas and filter logic

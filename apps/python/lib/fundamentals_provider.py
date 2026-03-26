@@ -13,6 +13,8 @@ from __future__ import annotations
 import json
 import logging
 import time
+import warnings
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -101,8 +103,10 @@ class FundamentalsProvider:
             return {"symbol": symbol, "error": "yfinance_unavailable"}
 
         try:
-            t = yf.Ticker(symbol)
-            info = t.info or {}
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                t = yf.Ticker(symbol)
+                info = t.info or {}
         except Exception as e:
             return {"symbol": symbol, "error": str(e)}
 
@@ -117,20 +121,26 @@ class FundamentalsProvider:
         mc = _safe(info, "marketCap")
         result["market_cap"]  = mc
 
-        # ── EPS / Earnings growth ─────────────────────────────────────────────
-        # Quarterly EPS: last 4 quarters from info or quarterly_earnings
+        # ── EPS / Earnings growth (use income_stmt instead of deprecated quarterly_earnings) ──
         eps_q_growth_qoq = None
         eps_q_growth_yoy = None
         try:
-            qe = t.quarterly_earnings
-            if qe is not None and not qe.empty and "Earnings" in qe.columns:
-                vals = qe["Earnings"].dropna().tolist()
-                if len(vals) >= 2:
-                    eps_q_growth_qoq = _pct(vals[-1], vals[-2])
-                if len(vals) >= 5:
-                    eps_q_growth_yoy = _pct(vals[-1], vals[-5])
-                elif len(vals) >= 4:
-                    eps_q_growth_yoy = _pct(vals[-1], vals[-4])
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                qf = t.quarterly_income_stmt
+            if qf is not None and not qf.empty:
+                eps_row = None
+                for label in ["Net Income", "Net Income Common Stockholders", "Basic EPS", "Diluted EPS"]:
+                    if label in qf.index:
+                        eps_row = qf.loc[label].dropna()
+                        break
+                if eps_row is not None and len(eps_row) >= 2:
+                    vals = eps_row.tolist()
+                    eps_q_growth_qoq = _pct(vals[0], vals[1])
+                if eps_row is not None and len(eps_row) >= 5:
+                    eps_q_growth_yoy = _pct(vals[0], vals[4])
+                elif eps_row is not None and len(eps_row) >= 4:
+                    eps_q_growth_yoy = _pct(vals[0], vals[3])
         except Exception:
             pass
 
@@ -149,12 +159,14 @@ class FundamentalsProvider:
         # ── Revenue growth ────────────────────────────────────────────────────
         rev_yoy = None
         try:
-            qf = t.quarterly_financials
-            if qf is not None and not qf.empty:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                qfin = t.quarterly_financials
+            if qfin is not None and not qfin.empty:
                 rev_row = None
                 for label in ["Total Revenue", "Revenue"]:
-                    if label in qf.index:
-                        rev_row = qf.loc[label].dropna()
+                    if label in qfin.index:
+                        rev_row = qfin.loc[label].dropna()
                         break
                 if rev_row is not None and len(rev_row) >= 5:
                     rev_yoy = _pct(rev_row.iloc[0], rev_row.iloc[4])
@@ -176,7 +188,9 @@ class FundamentalsProvider:
         # ── Debt trend ────────────────────────────────────────────────────────
         debt_trend_pct = None
         try:
-            bs = t.quarterly_balance_sheet
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                bs = t.quarterly_balance_sheet
             if bs is not None and not bs.empty:
                 debt_row = None
                 for label in ["Total Debt", "Long Term Debt", "LongTermDebt"]:
@@ -197,11 +211,41 @@ class FundamentalsProvider:
         self._save_cache(symbol, result)
         return result
 
-    def fetch_batch(self, symbols: list[str], delay_s: float = 0.3) -> dict[str, dict]:
-        out: dict[str, dict] = {}
-        for sym in symbols:
-            out[sym] = self.fetch(sym)
-            time.sleep(delay_s)
+    def fetch_batch(self, symbols: list[str], workers: int = 20, show_progress: bool = True) -> dict[str, dict]:
+        """Fetch fundamentals for all symbols in parallel using a thread pool."""
+        total = len(symbols)
+        if total == 0:
+            return {}
+
+        # Split into cached vs. needs-fetch to avoid unnecessary threads
+        needs_fetch = [s for s in symbols if self._load_cache(s) is None]
+        cached_results = {s: self._load_cache(s) for s in symbols if s not in needs_fetch}
+
+        if show_progress and needs_fetch:
+            print(f"  Fetching fundamentals for {len(needs_fetch)} symbols "
+                  f"({total - len(needs_fetch)} cached) …", flush=True)
+
+        out: dict[str, dict] = dict(cached_results)
+
+        if not needs_fetch:
+            return out
+
+        done = 0
+        with ThreadPoolExecutor(max_workers=min(workers, len(needs_fetch))) as pool:
+            futures = {pool.submit(self.fetch, sym): sym for sym in needs_fetch}
+            for future in as_completed(futures):
+                sym = futures[future]
+                try:
+                    out[sym] = future.result()
+                except Exception as e:
+                    out[sym] = {"symbol": sym, "error": str(e)}
+                done += 1
+                if show_progress and done % 50 == 0:
+                    print(f"    fundamentals {done}/{len(needs_fetch)} …", flush=True)
+
+        if show_progress and needs_fetch:
+            print(f"  Fundamentals complete ({total} symbols)", flush=True)
+
         return out
 
 

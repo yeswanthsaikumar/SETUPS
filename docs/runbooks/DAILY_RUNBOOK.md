@@ -1,143 +1,110 @@
-# Daily Runbook
-## SETUPS Full-Mode Operations
+# Daily Runbook — SETUPS Scanner
 
-## 1) Standard Daily Run (After Market Close)
+## System Overview
+
+```
+run_master.sh
+  ├─ run_vcp_system.py          ← orchestrator (markets × timeframes)
+  │    └─ run_full_us_scan.py   ← per scan (India daily/weekly, US daily/weekly)
+  │         ├─ Java  → VCP · Range Expansion · Breakout Pullback
+  │         └─ Python → Mean Reversion (on cached OHLCV bars)
+  └─ generate_master_report.py
+       ├─ merges all *_LATEST.json (BREAKOUT · WATCHLIST · OPEN_TRADE · PORTFOLIO)
+       ├─ enriches with fundamentals via yfinance (parallel 20 workers, cached 24 h)
+       └─ output/master_report_LATEST.html  ← single daily review file
+```
+
+**Setup families:** `VCP` · `RANGE_EXPANSION` · `MEAN_REVERSION` · `BREAKOUT_PULLBACK`  
+**List types:** `BREAKOUT` (fresh signal) · `WATCHLIST` (near trigger) · `OPEN_TRADE` (entered) · `PORTFOLIO` (shortlist)
+
+---
+
+## 1. Standard Daily Run
 
 ```bash
 cd /Users/yeshwantha/IdeaProjects/SETUPS
-python3 apps/python/cli/run_vcp_system.py --setups full --skip-us-refresh
+./run_master.sh
 ```
 
-This runs:
+Runs all 4 scans (India+US × daily+weekly), fetches fundamentals, builds master report, opens it automatically.
 
-- markets: US + India
-- timeframes: daily + weekly
-- setups: VCP + range expansion + mean reversion
-
-## 2) Primary Verification
-
+**Full explicit form** (same as above):
 ```bash
-cat output/system_latest_summary.md
-ls -1 output | grep '_full_LATEST.html'
-```
-
-Open key reports:
-
-```bash
-open output/vcp_hits_india_daily_full_LATEST.html
-open output/watchlist_india_daily_full_LATEST.html
-open output/portfolio_shortlist_india_daily_full_LATEST.html
-```
-
-## 3) Core Command Matrix
-
-India only:
-
-```bash
+source .venv/bin/activate
 python3 apps/python/cli/run_vcp_system.py \
-  --markets india \
-  --timeframes daily,weekly \
-  --setups full \
-  --skip-us-refresh
-```
-
-US only:
-
-```bash
-python3 apps/python/cli/run_vcp_system.py \
-  --markets us \
-  --timeframes daily,weekly \
-  --setups full \
-  --skip-us-refresh
-```
-
-Daily only:
-
-```bash
-python3 apps/python/cli/run_vcp_system.py \
-  --markets india,us \
-  --timeframes daily \
-  --setups full \
-  --skip-us-refresh
-```
-
-Weekly only:
-
-```bash
-python3 apps/python/cli/run_vcp_system.py \
-  --markets india,us \
-  --timeframes weekly \
-  --setups full \
-  --skip-us-refresh
-```
-
-## 4) Setup-Specific Runs
-
-VCP only:
-
-```bash
-python3 apps/python/cli/run_vcp_system.py --setups vcp --skip-us-refresh
-```
-
-Range expansion only:
-
-```bash
-python3 apps/python/cli/run_vcp_system.py --setups range_expansion --skip-us-refresh
-```
-
-Mean reversion only:
-
-```bash
-python3 apps/python/cli/run_vcp_system.py --setups mean_reversion --skip-us-refresh
-```
-
-## 5) Strict Filter Profile (Execution-Ready)
-
-Use direct scanner for tighter control:
-
-```bash
-python3 apps/python/cli/run_full_us_scan.py \
-  --symbols data/universes/indian_stock_tickers.csv \
-  --market-label india \
-  --timeframe daily \
-  --setups full \
-  --lookback 252 \
-  --min-price-floor 20 \
-  --min-avg-volume 200000 \
-  --min-avg-dollar-volume 5000000 \
-  --regime-mode soft \
-  --rs-weight 0.35 \
-  --max-portfolio-heat-r 6 \
-  --workers 4 \
-  --batch 25 \
-  --cache-dir cache \
+  --markets india,us --timeframes daily,weekly \
+  --setups full --workers 6 --batch 40 \
+  --skip-us-refresh --daily-lookback 252 --weekly-lookback 104 \
   --output-dir output
+
+python3 apps/python/cli/generate_master_report.py \
+  --output-dir output --cache-dir cache \
+  --account-size 1000000 --risk-pct 0.01
+
+open output/master_report_LATEST.html
 ```
 
-## 6) Artifacts to Review Daily
+---
 
-- `output/system_latest_summary.md`
-- `output/vcp_hits_*_full_LATEST.{csv,json,html}`
-- `output/open_trades_*_full_LATEST.{csv,json,html}`
-- `output/watchlist_*_full_LATEST.{csv,json,html}`
-- `output/portfolio_shortlist_*_full_LATEST.{csv,json,html}`
-- `output/rejections_*_LATEST.{csv,json}`
-- `output/scan_manifest_*_LATEST.json`
+## 2. Common Variants
 
-## 7) Troubleshooting Fast Path
+| Goal | Command |
+|---|---|
+| Default run | `./run_master.sh` |
+| Skip fundamentals (faster) | `./run_master.sh --skip-fundamentals` |
+| India only | `./run_master.sh --markets india` |
+| US only | `./run_master.sh --markets us` |
+| Daily only | `./run_master.sh --timeframes daily` |
+| VCP only | `./run_master.sh --setups vcp` |
+| Larger portfolio | `./run_master.sh --account-size 2000000` |
+| More parallelism | `./run_master.sh --workers 8 --batch 50` |
+| Force-refresh US tickers | `./run_master.sh --force-us-refresh` |
 
-If orchestrator fails at Java compile:
+---
 
-1. run direct scanner fallback (`run_full_us_scan.py`) for required market/timeframe
-2. check `scan.log`, `events.jsonl`, and `rejections_*`
-3. fix Java source compile issue and retry orchestrator
+## 3. Reading the Master Report
 
-See detailed playbooks in `docs/runbooks/TROUBLESHOOTING.md`.
+Open: `output/master_report_LATEST.html`
 
-## 8) End-of-Day Checklist
+**Review order:** `OPEN_TRADE` → `BREAKOUT` → `WATCHLIST`
 
-- run completed with no fatal error
-- summary updated in `output/system_latest_summary.md`
-- at least one report opened and reviewed
-- rejection file checked for unusual spikes
-- shortlist reviewed for risk concentration
+| Column | What to look for |
+|---|---|
+| Rating | Focus `A+` / `A` first |
+| Rank Score | Higher = better quality + fundamentals |
+| Entry / SL | Entry level and stop loss |
+| Shares / Pos Value | Pre-sized at your risk% |
+| % Gain / Days Held | Performance of open positions |
+| Regime | Prefer `STRONG` or `FAVORABLE` |
+| Dist Pivot | Closer to 0% = tighter entry |
+| Fundamentals | EPS/Rev growth, Debt trend, PE, MCap |
+
+**Available filters:** List Type · Setup · Market · Timeframe · Rating · Sector · Min Score · Symbol  
+**CSV export** button for offline analysis.
+
+---
+
+## 4. Output Files
+
+| File | Description |
+|---|---|
+| `output/master_report_LATEST.html` | **Primary review file** — all markets/setups merged |
+| `output/vcp_hits_*_LATEST.json` | Raw hits per market × timeframe |
+| `output/open_trades_*_LATEST.json` | Active position tracking |
+| `output/watchlist_*_LATEST.json` | Near-trigger watchlist |
+| `output/portfolio_shortlist_*_LATEST.csv` | Top picks by portfolio heat |
+| `output/breakout_performance_*_LATEST.html` | % gain & days held per open trade |
+| `output/rejections_*_LATEST.csv` | Rejection diagnostics |
+| `output/system_run_*/summary.md` | Orchestrator run summary |
+
+---
+
+## 5. Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| Java compile error | `javac src/*.java` → fix error → rerun |
+| Stale US symbols | `./run_master.sh --force-us-refresh` |
+| Fundamentals slow | Parallel (20 workers) — ~15 s for 1674 symbols |
+| 401 yfinance errors | Rate-limit noise — cached results used; retries next run |
+| Scan process killed / timeout | Run step-by-step using explicit commands in §1 |

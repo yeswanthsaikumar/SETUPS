@@ -1498,12 +1498,14 @@ def save_html(rows: list[dict], path: Path, meta: dict):
                 return "-"
             return html.escape(str(x))
 
+        fund_auto = html.escape(str(r.get('fundSummary') or '—'))
         rows_html += (
             f"<tr data-symbol='{html.escape(r.get('symbol', ''))}' "
             f"data-setup-type='{setup_type}' "
             f"data-rating='{rating_val}' "
             f"data-list-type='{list_type_raw}' "
-            f"data-score='{score_val}'>"
+            f"data-score='{score_val}' "
+            f"data-base-score='{score_val}'>"
             f"<td><b>{symbol}</b></td>"
             f"<td>{list_type_chip}</td>"
             f"<td>{html.escape(setup_type)}</td>"
@@ -1517,6 +1519,12 @@ def save_html(rows: list[dict], path: Path, meta: dict):
             f"<td>{_disp(close_val)}</td>"
             f"<td>{_disp(pivot_val)}</td>"
             f"<td>{_disp(entry_val)}</td>"
+            f"<td>{_disp(pct_gain)}</td>"
+            f"<td>{_disp(days_since_breakout)}</td>"
+            f"<td>{_disp(max_after)}</td>"
+            f"<td>{_disp(min_after)}</td>"
+            f"<td>{_disp(avgVol20)}</td>"
+            f"<td>{_disp(lastVol)}</td>"
             f"<td>{score_chip}</td>"
             f"<td>{_disp(r.get('watchlistQualityScore', r.get('rankingScore', '')))}</td>"
             f"<td>{_disp(r.get('pivotProximityScore'))}</td>"
@@ -1536,7 +1544,10 @@ def save_html(rows: list[dict], path: Path, meta: dict):
             f"<td>{_disp(r.get('T3'))}</td>"
             f"<td class='links'>{price_link}</td>"
             f"<td class='links'>{fund_link}</td>"
-            f"<td style='font-size:0.78em;white-space:nowrap;color:#555'>{html.escape(str(r.get('fundSummary') or '—'))}</td>"
+            f"<td class='fund-cell' data-auto='{fund_auto}'>"
+            f"<button class='fund-edit-btn' onclick='openFundCard(this,\"{symbol}\")' title='Edit fundamentals notes &amp; score. Saved to browser.'>📊</button>"
+            f"<span class='fund-auto-snippet'>{fund_auto[:60]}{'…' if len(fund_auto) > 60 else ''}</span>"
+            f"</td>"
             f"<td style='text-align:center'><span class='reason-icon' title='{reason_tooltip}' "
             f"style='cursor:help;font-size:1.1em'>💡</span></td>"
             f"</tr>\n"
@@ -1770,6 +1781,48 @@ def save_html(rows: list[dict], path: Path, meta: dict):
     .empty-state {{ display:none; margin-top:12px; border:1px dashed #35506f; border-radius:10px; padding:12px; color:#9ecbff; background:#0f1a28; }}
     .mobile-note {{ display:none; margin-top:8px; color:#8fb9e7; font-size:.85em; }}
 
+    /* Fundamentals Card */
+    .fund-cell {{ text-align:left; min-width:120px; }}
+    .fund-edit-btn {{ background:none; border:1px solid #2a3f5a; border-radius:5px; color:#58a6ff; cursor:pointer; padding:3px 7px; font-size:0.82em; margin-right:5px; transition:background 0.2s; }}
+    .fund-edit-btn:hover {{ background:#1f6feb22; }}
+    .fund-edit-btn.has-notes {{ border-color:#3fb95099; color:#7ee787; }}
+    .fund-edit-btn.score-high {{ background:#23863622; border-color:#3fb95099; }}
+    .fund-edit-btn.score-mid  {{ background:#9e6a0322; border-color:#d2992299; }}
+    .fund-edit-btn.score-low  {{ background:#da363322; border-color:#f8514999; }}
+    .fund-auto-snippet {{ font-size:0.72em; color:#4a6070; display:block; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
+    .fund-overlay {{ display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.6); z-index:998; }}
+    .fund-card {{
+      display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+      z-index:999; background:#111926; border:1px solid #30363d; border-radius:14px;
+      padding:22px; width:460px; max-width:95vw; max-height:90vh; overflow-y:auto;
+      box-shadow:0 20px 60px rgba(0,0,0,.7);
+    }}
+    .fund-card h3 {{ color:#9ecbff; font-size:1em; margin:0 0 4px; }}
+    .fund-card .fund-sym {{ color:#7ee787; font-weight:700; font-size:1.15em; }}
+    .fund-card .auto-data-box {{ background:#0d1117; border:1px solid #21262d; border-radius:6px; padding:8px; font-size:0.78em; color:#6e7f8d; margin:8px 0 12px; word-break:break-word; }}
+    .fund-card label {{ color:#8b949e; font-size:0.82em; display:block; margin-top:10px; margin-bottom:3px; font-weight:600; }}
+    .fund-card textarea {{ width:100%; background:#0d1117; border:1px solid #30363d; border-radius:6px; color:#c9d1d9; padding:7px; font-size:0.82em; resize:vertical; min-height:46px; font-family:inherit; }}
+    .fund-card textarea:focus {{ border-color:#58a6ff; outline:none; }}
+    .fund-score-row {{ display:flex; align-items:center; gap:10px; margin-top:12px; }}
+    .fund-score-row input[type=range] {{ flex:1; }}
+    .fund-score-badge {{ background:#0f1b2a; border:1px solid #2f445a; border-radius:6px; padding:3px 10px; color:#f2cc60; font-weight:700; font-size:1.05em; min-width:36px; text-align:center; }}
+    .fund-enhanced-score {{ color:#79c0ff; font-size:0.82em; margin-top:6px; }}
+    .fund-card .btn-row {{ display:flex; gap:8px; margin-top:14px; }}
+    .fund-card .save-btn {{ flex:1; background:#1f6feb; color:#fff; border:none; border-radius:7px; padding:8px; cursor:pointer; font-weight:700; font-size:0.9em; }}
+    .fund-card .save-btn:hover {{ background:#388bfd; }}
+    .fund-card .close-btn {{ background:transparent; color:#8b949e; border:1px solid #30363d; border-radius:7px; padding:8px 16px; cursor:pointer; font-size:0.9em; }}
+    .fund-card .close-btn:hover {{ background:#21262d; }}
+    .fund-card .clear-btn {{ background:transparent; color:#f85149; border:1px solid #da363322; border-radius:7px; padding:8px 10px; cursor:pointer; font-size:0.85em; }}
+    .enhanced-score-pill {{ display:inline-block; background:#1e2f4a; border:1px solid #2f445a; border-radius:6px; padding:1px 6px; color:#79c0ff; font-size:0.75em; margin-left:4px; font-variant-numeric:tabular-nums; }}
+    .col-legend {{ background:#111926; border:1px solid #21262d; border-radius:10px; padding:14px 18px; margin-bottom:20px; }}
+    .col-legend-toggle {{ background:none; border:none; color:#58a6ff; cursor:pointer; font-size:0.9em; font-weight:600; padding:0; }}
+    .col-legend-body {{ display:none; margin-top:10px; }}
+    .col-legend-body.open {{ display:block; }}
+    .col-legend dl {{ display:grid; grid-template-columns:170px 1fr; gap:4px 12px; font-size:0.80em; }}
+    .col-legend dt {{ color:#79c0ff; font-weight:600; padding-top:3px; }}
+    .col-legend dd {{ color:#8b949e; margin:0; padding-top:3px; border-bottom:1px solid #1a2233; }}
+
+
     /* Keep key identity columns visible while horizontally scrolling */
     #dataTable th:nth-child(1), #dataTable td:nth-child(1) {{
       position: sticky; left: 0; z-index: 3; background: #111926;
@@ -1855,7 +1908,80 @@ def save_html(rows: list[dict], path: Path, meta: dict):
   </div>
   {past_breakouts_html}
 
-  <!-- Controls -->
+  <!-- Column Legend (collapsible) -->
+  <div class="col-legend">
+    <button class="col-legend-toggle" onclick="toggleLegend()">📖 Column Guide — click to expand/collapse</button>
+    <div class="col-legend-body" id="colLegendBody">
+      <dl>
+        <dt>Symbol</dt><dd>Stock ticker symbol (e.g. GRANULES.NS for NSE India)</dd>
+        <dt>List Type</dt><dd>OPEN_TRADE = active position; WATCHLIST = candidate on watch; BREAKOUT = fresh signal</dd>
+        <dt>Setup</dt><dd>Pattern: VCP = Volatility Contraction, RANGE_EXPANSION = wide-range candle breakout, MEAN_REVERSION = pullback to mean, BREAKOUT_PULLBACK = first pullback after breakout</dd>
+        <dt>Window</dt><dd>Price analysis window (WEEKLY, DAILY, WEEK(N), Q1–Q4 = quarterly)</dd>
+        <dt>Base Height %</dt><dd>Full consolidation range height as % of price. Tighter bases (smaller %) produce cleaner breakouts</dd>
+        <dt>Contraction Depth %</dt><dd>Deepest VCP squeeze depth. Higher depth = stronger compression = bigger potential move</dd>
+        <dt>Base Length</dt><dd>Number of bars (days or weeks) in the consolidation. Longer bases hold more energy</dd>
+        <dt>Contraction Pairs</dt><dd>Count of consecutive range+volume contraction pairs. More pairs = better VCP structure</dd>
+        <dt>Pivot Distance %</dt><dd>Current price distance above (+) or below (-) the pivot/entry level. Negative = below pivot, not yet triggered</dd>
+        <dt>Rating</dt><dd>A+ = top quality, A = strong, B = moderate, C = marginal, D = weak. Based on composite score</dd>
+        <dt>Last Close</dt><dd>Most recent closing price</dd>
+        <dt>Pivot Price</dt><dd>Key breakout pivot or support zone price level. The decision point for the setup</dd>
+        <dt>Planned Entry</dt><dd>Recommended entry price. For breakouts: buy above pivot; pullbacks: at pullback support</dd>
+        <dt>Pct since Breakout</dt><dd>% gain or loss since the entry/breakout date. Positive = winning, negative = gave back</dd>
+        <dt>Days since Breakout</dt><dd>Calendar days since the breakout signal was triggered</dd>
+        <dt>Max After</dt><dd>Maximum closing price reached after the breakout (best unrealized gain reached)</dd>
+        <dt>Min After</dt><dd>Minimum closing price after breakout (worst drawdown, useful for stop review)</dd>
+        <dt>avgVol20</dt><dd>20-session average trading volume. Baseline for judging volume spikes</dd>
+        <dt>lastVol</dt><dd>Most recent session volume. Compare vs avgVol20: &gt;1.5× on breakout = confirmed</dd>
+        <dt>Quality Score</dt><dd>Composite score (0–100) from contraction quality + volume behavior + breakout timing</dd>
+        <dt>Rank Score</dt><dd>Final weighted ranking score used for table ordering. Includes multi-timeframe bonus</dd>
+        <dt>Pivot Proximity</dt><dd>Score (0–100) for how close price is to the pivot. 100 = at pivot, lower = extended</dd>
+        <dt>RS Score</dt><dd>Relative Strength vs market. Higher = stock outperforming the market</dd>
+        <dt>Regime Support</dt><dd>Market regime context: STRONG / NEUTRAL / WEAK. Breakouts work best in STRONG regime</dd>
+        <dt>Weekly Agreement</dt><dd>Whether weekly chart structure confirms the entry timeframe signal</dd>
+        <dt>Volume Dry-Up</dt><dd>Score for volume contraction into the pivot (higher = better coiling, ideal before breakout)</dd>
+        <dt>Days Near Pivot</dt><dd>How many consecutive days price held near the pivot level (more = tested & held support)</dd>
+        <dt>Pivot Freshness</dt><dd>FRESH = just formed, ACTIVE = holding at pivot, RETESTED = confirmed support on multiple touches</dd>
+        <dt>Range Contraction %</dt><dd>% contraction in candle range from wave 1 to last wave of base (higher = tighter coil)</dd>
+        <dt>Volume Contraction %</dt><dd>% contraction in average volume across base waves (higher = more dry-up)</dd>
+        <dt>Range Expansion x</dt><dd>Breakout candle range vs average. &gt;1.5× = strong expansion; &gt;2× = power breakout</dd>
+        <dt>Position Size</dt><dd>Suggested shares for ₹10L portfolio with 1% risk/trade (₹10,000 max risk)</dd>
+        <dt>Stop Loss</dt><dd>Stop-loss price. Place stop order below this. Risk = Entry − Stop per share</dd>
+        <dt>Target 1 / 2 / 3</dt><dd>Profit targets at 1R, 2R, 3R. R = Entry − Stop. Scale out at each target</dd>
+        <dt>Price Charts</dt><dd>Links to Yahoo Finance and TradingView chart pages</dd>
+        <dt>Fundamental Charts</dt><dd>Links to Yahoo Finance financials, key stats, balance sheet, cash flow</dd>
+        <dt>Fundamentals ✏️</dt><dd>Click 📊 to add/edit earnings notes, debt trend, sector tailwinds, triggers. Score (1–10) boosts Enhanced Rank by up to +15%</dd>
+        <dt>Trade Reasoning</dt><dd>Hover 💡 for full setup rationale: setup type, entry logic, stop placement, targets, and all quality metrics</dd>
+      </dl>
+    </div>
+  </div>
+
+  <!-- Fund Card Modal -->
+  <div class="fund-overlay" id="fundOverlay" onclick="closeFundCard()"></div>
+  <div class="fund-card" id="fundCard">
+    <h3>📊 Fundamentals Notes — <span class="fund-sym" id="fundCardSym"></span></h3>
+    <div class="auto-data-box" id="fundAutoData">Loading…</div>
+    <label>📈 Earnings Growth (EPS / Revenue trend):</label>
+    <textarea id="fundEarnings" placeholder="e.g. EPS +35% YoY Q3FY25; Rev +22% YoY; margins expanding…"></textarea>
+    <label>💳 Debt / Balance Sheet:</label>
+    <textarea id="fundDebt" placeholder="e.g. D/E ratio falling; net cash positive; debt paid down 20%…"></textarea>
+    <label>🌊 Sector Tailwinds:</label>
+    <textarea id="fundTailwinds" placeholder="e.g. Pharma US tariff benefit; capex cycle revival; China+1 play…"></textarea>
+    <label>🚀 Major Triggers / Catalysts:</label>
+    <textarea id="fundTriggers" placeholder="e.g. New product launch Q1; order win ₹500 Cr; management guidance raised…"></textarea>
+    <div class="fund-score-row">
+      <label style="margin:0;min-width:130px">Fundamentals Rating (1–10):</label>
+      <input type="range" id="fundScore" min="1" max="10" value="5">
+      <div class="fund-score-badge" id="fundScoreDisplay">5</div>
+    </div>
+    <div class="fund-enhanced-score" id="fundEnhancedPreview"></div>
+    <div class="btn-row">
+      <button class="save-btn" onclick="saveFundCard()">💾 Save to Browser</button>
+      <button class="clear-btn" onclick="clearFundCard()">🗑 Clear</button>
+      <button class="close-btn" onclick="closeFundCard()">✕ Close</button>
+    </div>
+    <div style="font-size:0.72em;color:#4a6070;margin-top:8px">Saved in browser localStorage. Persists across sessions. Affects Enhanced Rank Score (+0–15%).</div>
+  </div>
+
   <div class="controls">
     <div class="control-group">
       <label class="control-label">Search:</label>
@@ -1943,9 +2069,9 @@ def save_html(rows: list[dict], path: Path, meta: dict):
   <table id="dataTable">
     <thead>
       <tr>
-        <th>Symbol</th><th>List Type</th><th>Setup</th><th>Window</th><th>Base Height %</th><th>Contraction Depth %</th><th>Base Length</th><th>Contraction Pairs</th><th>Pivot Distance %</th><th>Rating</th><th>Last Close</th><th>Pivot Price</th><th>Planned Entry</th><th>Pct since Breakout</th><th>Days since Breakout</th><th>Max After</th><th>Min After</th><th>avgVol20</th><th>lastVol</th><th>Quality Score</th>
-        <th>Rank Score</th><th>Pivot Proximity</th><th>RS Score</th><th>Regime Support</th><th>Weekly Agreement</th><th>Volume Dry-Up</th><th>Days Near Pivot</th><th>Pivot Freshness</th><th>Range Contraction %</th><th>Volume Contraction %</th><th>Range Expansion x</th><th>Position Size</th><th>Stop Loss</th>
-        <th>Target 1 (1R)</th><th>Target 2 (2R)</th><th>Target 3 (3R)</th><th>Price Charts</th><th>Fundamental Charts</th><th>Trade Reasoning</th>
+        <th title="Stock ticker symbol">Symbol</th><th title="Trade status: OPEN_TRADE (active position), WATCHLIST (candidate), BREAKOUT (fresh signal)">List Type</th><th title="Setup pattern detected">Setup</th><th title="Price analysis timeframe window">Window</th><th title="Base consolidation height as % of price (tighter = better)">Base Height %</th><th title="Deepest VCP contraction depth from base high to low (higher = stronger squeeze)">Contraction Depth %</th><th title="Number of bars in the consolidation base">Base Length</th><th title="Number of range+volume contraction pairs observed">Contraction Pairs</th><th title="Current price distance above/below the pivot entry point (negative = below pivot)">Pivot Distance %</th><th title="Setup quality grade: A+ best, D worst">Rating</th><th title="Most recent closing price">Last Close</th><th title="Key pivot / breakout level or support zone">Pivot Price</th><th title="Recommended entry price (buy above this on confirmation)">Planned Entry</th><th title="% gain/loss since the breakout date (computed from entry vs close)">Pct since Breakout</th><th title="Calendar days elapsed since the breakout signal date">Days since Breakout</th><th title="Maximum price reached after the breakout (peak gain %)">Max After</th><th title="Minimum price reached after breakout (worst drawdown close)">Min After</th><th title="20-day average daily volume (liquidity indicator)">avgVol20</th><th title="Most recent session's trading volume">lastVol</th><th title="Composite breakout quality score: contraction strength + timing + volume signals">Quality Score</th>
+        <th title="Weighted ranking score used for sorting: quality score + multi-timeframe bonus + proximity bonus">Rank Score</th><th title="How close price is to the pivot point (100 = at pivot, lower = extended)">Pivot Proximity</th><th title="Relative Strength score vs market benchmark">RS Score</th><th title="Macro market regime: STRONG / NEUTRAL / WEAK / FAVORABLE / UNFAVORABLE">Regime Support</th><th title="Whether weekly chart structure agrees with the daily/entry signal">Weekly Agreement</th><th title="Volume dry-up score: how much volume has contracted vs average (higher = better coiling)">Volume Dry-Up</th><th title="Number of days price has stayed near the pivot level">Days Near Pivot</th><th title="Freshness of the pivot: FRESH (just formed), ACTIVE (holding), RETESTED (confirmed support)">Pivot Freshness</th><th title="% contraction in candle range from first to last wave of the base">Range Contraction %</th><th title="% contraction in average volume from first to last wave of the base">Volume Contraction %</th><th title="Breakout candle range expansion factor vs average range (>1.5x = strong expansion)">Range Expansion x</th><th title="Suggested position size in shares for ₹10L portfolio at 1% risk">Position Size</th><th title="Stop-loss price level (place stop order below this)">Stop Loss</th>
+        <th title="Target 1: 1R reward (risk = Entry − Stop)">Target 1 (1R)</th><th title="Target 2: 2R reward">Target 2 (2R)</th><th title="Target 3: 3R reward">Target 3 (3R)</th><th title="Links to Yahoo Finance chart and TradingView chart">Price Charts</th><th title="Links to Yahoo Finance fundamentals pages">Fundamental Charts</th><th title="Click 📊 to view/edit earnings notes, sector tailwinds, debt trend, triggers. Saved in browser. Score affects Enhanced Rank.">Fundamentals ✏️</th><th title="Hover 💡 to see full setup rationale, entry logic, stop placement, targets, and all quality metrics">Trade Reasoning</th>
       </tr>
     </thead>
     <tbody id="tableBody">
@@ -2166,6 +2292,132 @@ def save_html(rows: list[dict], path: Path, meta: dict):
       link.click();
       document.body.removeChild(link);
     }}
+
+    // ── Column Legend ─────────────────────────────────────────────────────────
+    function toggleLegend() {{
+      const body = document.getElementById('colLegendBody');
+      body.classList.toggle('open');
+    }}
+
+    // ── Fundamentals Card ─────────────────────────────────────────────────────
+    const FUND_KEY = 'fundNotes2_';
+    let _activeSym = null;
+
+    function openFundCard(btn, sym) {{
+      _activeSym = sym;
+      const saved = JSON.parse(localStorage.getItem(FUND_KEY + sym) || '{{}}');
+      const autoTd = btn.closest('td');
+      const autoText = autoTd ? (autoTd.dataset.auto || '—') : '—';
+
+      document.getElementById('fundCardSym').textContent = sym;
+      document.getElementById('fundAutoData').textContent = autoText;
+      document.getElementById('fundEarnings').value  = saved.earnings  || '';
+      document.getElementById('fundDebt').value      = saved.debt      || '';
+      document.getElementById('fundTailwinds').value = saved.tailwinds || '';
+      document.getElementById('fundTriggers').value  = saved.triggers  || '';
+      const sc = saved.score || 5;
+      document.getElementById('fundScore').value = sc;
+      document.getElementById('fundScoreDisplay').textContent = sc;
+
+      // Enhanced score preview
+      const baseRow = document.querySelector(`tr[data-symbol="${{sym}}"]`);
+      const baseScore = baseRow ? parseFloat(baseRow.dataset.baseScore || baseRow.dataset.score || 0) : 0;
+      const enhanced = (baseScore * (1 + (sc - 1) * 0.015)).toFixed(1);
+      document.getElementById('fundEnhancedPreview').textContent =
+        `Base Score: ${{baseScore.toFixed(1)}} → Enhanced: ${{enhanced}} (fund weight: +${{((sc-1)*1.5).toFixed(0)}}%)`;
+
+      document.getElementById('fundOverlay').style.display = 'block';
+      document.getElementById('fundCard').style.display    = 'block';
+    }}
+
+    document.getElementById('fundScore').addEventListener('input', function() {{
+      const sc = parseInt(this.value);
+      document.getElementById('fundScoreDisplay').textContent = sc;
+      const baseRow = _activeSym ? document.querySelector(`tr[data-symbol="${{_activeSym}}"]`) : null;
+      const baseScore = baseRow ? parseFloat(baseRow.dataset.baseScore || baseRow.dataset.score || 0) : 0;
+      const enhanced = (baseScore * (1 + (sc - 1) * 0.015)).toFixed(1);
+      document.getElementById('fundEnhancedPreview').textContent =
+        `Base Score: ${{baseScore.toFixed(1)}} → Enhanced: ${{enhanced}} (fund weight: +${{((sc-1)*1.5).toFixed(0)}}%)`;
+    }});
+
+    function closeFundCard() {{
+      document.getElementById('fundOverlay').style.display = 'none';
+      document.getElementById('fundCard').style.display    = 'none';
+      _activeSym = null;
+    }}
+
+    function saveFundCard() {{
+      if (!_activeSym) return;
+      const sc = parseInt(document.getElementById('fundScore').value);
+      const data = {{
+        earnings:  document.getElementById('fundEarnings').value.trim(),
+        debt:      document.getElementById('fundDebt').value.trim(),
+        tailwinds: document.getElementById('fundTailwinds').value.trim(),
+        triggers:  document.getElementById('fundTriggers').value.trim(),
+        score:     sc,
+        updated:   new Date().toISOString().slice(0,10),
+      }};
+      localStorage.setItem(FUND_KEY + _activeSym, JSON.stringify(data));
+      applyFundScores();
+      closeFundCard();
+    }}
+
+    function clearFundCard() {{
+      if (!_activeSym) return;
+      if (!confirm('Clear all fundamentals notes for ' + _activeSym + '?')) return;
+      localStorage.removeItem(FUND_KEY + _activeSym);
+      document.getElementById('fundEarnings').value  = '';
+      document.getElementById('fundDebt').value      = '';
+      document.getElementById('fundTailwinds').value = '';
+      document.getElementById('fundTriggers').value  = '';
+      document.getElementById('fundScore').value = 5;
+      document.getElementById('fundScoreDisplay').textContent = '5';
+      applyFundScores();
+      closeFundCard();
+    }}
+
+    function applyFundScores() {{
+      document.querySelectorAll('#tableBody tr').forEach(row => {{
+        const sym = row.dataset.symbol;
+        if (!sym) return;
+        const saved = JSON.parse(localStorage.getItem(FUND_KEY + sym) || '{{}}');
+        const sc = saved.score || 0;
+        const baseScore = parseFloat(row.dataset.baseScore || row.dataset.score || 0);
+        const enhanced = sc > 0 ? baseScore * (1 + (sc - 1) * 0.015) : baseScore;
+
+        // Update data-score so sort/filter uses enhanced score
+        row.dataset.score = enhanced.toFixed(2);
+
+        // Update button style
+        const btn = row.querySelector('.fund-edit-btn');
+        if (btn) {{
+          btn.classList.remove('has-notes','score-high','score-mid','score-low');
+          if (sc >= 8)      {{ btn.classList.add('score-high'); btn.title = `Fund Score: ${{sc}}/10 — click to edit`; }}
+          else if (sc >= 5) {{ btn.classList.add('score-mid');  btn.title = `Fund Score: ${{sc}}/10 — click to edit`; }}
+          else if (sc >= 1) {{ btn.classList.add('score-low');  btn.title = `Fund Score: ${{sc}}/10 — click to edit`; }}
+          const hasNotes = saved.earnings || saved.debt || saved.tailwinds || saved.triggers;
+          if (hasNotes) btn.classList.add('has-notes');
+
+          // Show badge
+          let badge = btn.nextElementSibling && btn.nextElementSibling.classList.contains('enhanced-score-pill')
+            ? btn.nextElementSibling : null;
+          if (sc > 0) {{
+            if (!badge) {{
+              badge = document.createElement('span');
+              badge.className = 'enhanced-score-pill';
+              btn.parentNode.insertBefore(badge, btn.nextSibling);
+            }}
+            badge.textContent = `★${{sc}} → ${{enhanced.toFixed(1)}}`;
+            badge.title = `Fund score ${{sc}}/10 boosts rank: ${{baseScore.toFixed(1)}} → ${{enhanced.toFixed(1)}}`;
+          }} else if (badge) {{
+            badge.remove();
+          }}
+        }}
+      }});
+    }}
+
+    // Init on page load
+    applyFundScores();
   </script>
 </body>
 </html>
@@ -2309,18 +2561,6 @@ def main():
         save_breakout_performance(open_trade_snapshot, breakout_perf_path)
         save_breakout_performance(open_trade_snapshot, latest_breakout_perf_path)
 
-        # HTML is expensive to generate — only write on final forced save or every 5th interim
-        interim_save_count = (batch_done // SAVE_EVERY_N_BATCHES)
-        write_html = force or (interim_save_count % 5 == 0)
-        if write_html:
-            save_html(snapshot, html_path, meta_snapshot)
-            save_html(open_trade_snapshot, open_trades_html_path, meta_snapshot)
-            save_html(watch_snapshot, watchlist_html_path, meta_snapshot)
-            save_html(shortlist_snapshot, shortlist_html_path, meta_snapshot)
-            save_html(snapshot, latest_html, meta_snapshot)
-            save_html(open_trade_snapshot, latest_open_trades_html, meta_snapshot)
-            save_html(watch_snapshot, latest_watchlist_html, meta_snapshot)
-            save_html(shortlist_snapshot, latest_shortlist_html, meta_snapshot)
 
         elapsed_snapshot = str(timedelta(seconds=int(time.time() - start_time)))
         meta_snapshot = {
