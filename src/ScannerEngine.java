@@ -10,7 +10,6 @@ public class ScannerEngine {
     private final AppConfig config;
     private final String setupFilter;
     private final MultiTimeframeAlignmentAnalyzer alignmentAnalyzer;
-    private final FollowThroughDetector followThroughDetector;
     private final List<RejectionDiagnostic> lastRejections;
 
     public ScannerEngine(
@@ -30,7 +29,6 @@ public class ScannerEngine {
         this.alignmentAnalyzer = new MultiTimeframeAlignmentAnalyzer(
                 marketDataProvider, vcpDetector, breakoutEvaluator, config
         );
-        this.followThroughDetector = new FollowThroughDetector(breakoutEvaluator, vcpDetector);
         this.lastRejections = new ArrayList<>();
     }
 
@@ -110,6 +108,48 @@ public class ScannerEngine {
                 Comparator.comparingDouble(WatchlistResult::getQualityScore).reversed()
                         .thenComparingDouble(WatchlistResult::getDistanceToPivotPct)
         );
+        return results;
+    }
+
+    public List<AlreadyBreakoutResult> scanAlreadyBreakout(
+            List<String> symbols,
+            int lookbackBars,
+            String timeframe,
+            int minBarsSinceBreakout,
+            int maxBarsSinceBreakout
+    ) {
+        List<AlreadyBreakoutResult> results = new ArrayList<>();
+        lastRejections.clear();
+
+        int minBars = Math.max(1, minBarsSinceBreakout);
+        int maxBars = Math.max(minBars, maxBarsSinceBreakout);
+
+        for (String symbol : symbols) {
+            try {
+                List<Candle> candles = loadCandles(symbol, lookbackBars, timeframe);
+                AlreadyBreakoutResult result = evaluateAlreadyBreakoutAtIndex(
+                        symbol,
+                        candles,
+                        candles.size() - 1,
+                        minBars,
+                        maxBars
+                );
+                if (result != null) {
+                    results.add(result);
+                }
+            } catch (RuntimeException ex) {
+                System.err.println("Skipping symbol due to data error: " + symbol + " | " + ex.getMessage());
+                lastRejections.add(new RejectionDiagnostic(
+                        symbol,
+                        "already_breakout",
+                        timeframe,
+                        RejectionDiagnostic.Reason.DATA_ERROR,
+                        ex.getMessage()
+                ));
+            }
+        }
+
+        results.sort(Comparator.comparingDouble(AlreadyBreakoutResult::getReturnSinceBreakoutPct).reversed());
         return results;
     }
 
@@ -214,6 +254,84 @@ public class ScannerEngine {
         }
 
         return result;
+    }
+
+    public AlreadyBreakoutResult evaluateAlreadyBreakoutAtIndex(
+            String symbol,
+            List<Candle> candles,
+            int endIndexInclusive,
+            int minBarsSinceBreakout,
+            int maxBarsSinceBreakout
+    ) {
+        if (candles == null || candles.isEmpty() || endIndexInclusive < 0 || endIndexInclusive >= candles.size()) {
+            return null;
+        }
+
+        int minBars = Math.max(1, minBarsSinceBreakout);
+        int maxBars = Math.max(minBars, maxBarsSinceBreakout);
+        if (endIndexInclusive - minBars < 10) {
+            return null;
+        }
+
+        int newestBreakoutIndex = endIndexInclusive - minBars;
+        int oldestBreakoutIndex = Math.max(10, endIndexInclusive - maxBars);
+        for (int breakoutIdx = newestBreakoutIndex; breakoutIdx >= oldestBreakoutIndex; breakoutIdx--) {
+            ScanResult historicalSignal = evaluateAtIndex(symbol, candles, breakoutIdx);
+            if (historicalSignal == null || !"BREAKOUT".equalsIgnoreCase(historicalSignal.getSignalType())) {
+                continue;
+            }
+            VcpSetup setup = historicalSignal.getSetup();
+
+            Candle breakoutCandle = candles.get(breakoutIdx);
+            Candle latestCandle = candles.get(endIndexInclusive);
+            double breakoutPrice = breakoutCandle.getClose();
+            if (breakoutPrice <= 0.0) {
+                continue;
+            }
+
+            int barsSinceBreakout = endIndexInclusive - breakoutIdx;
+            double returnSinceBreakoutPct = ((latestCandle.getClose() / breakoutPrice) - 1.0) * 100.0;
+            double maxGainPct = Double.NEGATIVE_INFINITY;
+            double maxDrawdownPct = Double.POSITIVE_INFINITY;
+            int pivotHoldBars = 0;
+            int observedBars = 0;
+            double pivotFloor = setup.getPivotPrice() * (1.0 - config.breakoutBufferPct);
+
+            for (int i = breakoutIdx + 1; i <= endIndexInclusive; i++) {
+                Candle c = candles.get(i);
+                double gainPct = ((c.getHigh() / breakoutPrice) - 1.0) * 100.0;
+                double drawdownPct = ((c.getLow() / breakoutPrice) - 1.0) * 100.0;
+                maxGainPct = Math.max(maxGainPct, gainPct);
+                maxDrawdownPct = Math.min(maxDrawdownPct, drawdownPct);
+                if (c.getLow() >= pivotFloor) {
+                    pivotHoldBars++;
+                }
+                observedBars++;
+            }
+
+            if (maxGainPct == Double.NEGATIVE_INFINITY) {
+                maxGainPct = returnSinceBreakoutPct;
+            }
+            if (maxDrawdownPct == Double.POSITIVE_INFINITY) {
+                maxDrawdownPct = returnSinceBreakoutPct;
+            }
+            double pivotHoldRatePct = observedBars == 0 ? 100.0 : (pivotHoldBars * 100.0) / observedBars;
+
+            return new AlreadyBreakoutResult(
+                    symbol,
+                    setup,
+                    breakoutCandle.getDate(),
+                    breakoutPrice,
+                    latestCandle,
+                    barsSinceBreakout,
+                    returnSinceBreakoutPct,
+                    maxGainPct,
+                    maxDrawdownPct,
+                    pivotHoldRatePct
+            );
+        }
+
+        return null;
     }
 
     private RejectionDiagnostic diagnoseScanRejection(String symbol, List<Candle> candles, int endIndexInclusive, String timeframe) {

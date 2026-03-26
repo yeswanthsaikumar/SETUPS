@@ -23,6 +23,9 @@ public class BacktestTrade {
     private final boolean hitT1;
     private final boolean hitT2;
     private final boolean hitT3;
+    private final double benchmarkReturnPct;
+    private final double alphaPct;
+    private final double marketStrengthScore;
 
     public BacktestTrade(
             String symbol, LocalDate entryDate, LocalDate exitDate,
@@ -30,7 +33,8 @@ public class BacktestTrade {
             double rMultiple, double pnl, String exitReason,
             String setupType, String setupRating, String windowLabel, double qualityScore,
             double mae, double mfe, int holdBars,
-            boolean hitT1, boolean hitT2, boolean hitT3
+            boolean hitT1, boolean hitT2, boolean hitT3,
+            double benchmarkReturnPct, double alphaPct, double marketStrengthScore
     ) {
         this.symbol = symbol;
         this.entryDate = entryDate;
@@ -52,6 +56,9 @@ public class BacktestTrade {
         this.hitT1 = hitT1;
         this.hitT2 = hitT2;
         this.hitT3 = hitT3;
+        this.benchmarkReturnPct = benchmarkReturnPct;
+        this.alphaPct = alphaPct;
+        this.marketStrengthScore = marketStrengthScore;
     }
 
     public String getSymbol()      { return symbol; }
@@ -74,14 +81,24 @@ public class BacktestTrade {
     public boolean isHitT1()       { return hitT1; }
     public boolean isHitT2()       { return hitT2; }
     public boolean isHitT3()       { return hitT3; }
+    public double getBenchmarkReturnPct() { return benchmarkReturnPct; }
+    public double getAlphaPct()    { return alphaPct; }
+    public double getMarketStrengthScore() { return marketStrengthScore; }
+
+    public double getTradeReturnPct() {
+        if (entryPrice <= 0.0) {
+            return 0.0;
+        }
+        return ((exitPrice / entryPrice) - 1.0) * 100.0;
+    }
 
     public String toConsoleLine() {
         return String.format(
-                "%s | %s | %s | Entry %s %.2f | Exit %s %.2f | R %.2f | PnL %.2f | Hold %d | %s",
+                "%s | %s | %s | Entry %s %.2f | Exit %s %.2f | R %.2f | Alpha %.2f%% | PnL %.2f | Hold %d | %s",
                 symbol, setupType, setupRating,
                 entryDate, entryPrice,
                 exitDate, exitPrice,
-                rMultiple, pnl, holdBars, exitReason
+                rMultiple, alphaPct, pnl, holdBars, exitReason
         );
     }
 }

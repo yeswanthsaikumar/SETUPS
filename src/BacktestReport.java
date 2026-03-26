@@ -63,12 +63,32 @@ public class BacktestReport {
     public long getT1HitCount() { return trades.stream().filter(BacktestTrade::isHitT1).count(); }
     public long getT2HitCount() { return trades.stream().filter(BacktestTrade::isHitT2).count(); }
     public long getT3HitCount() { return trades.stream().filter(BacktestTrade::isHitT3).count(); }
+    public double getAvgBenchmarkReturnPct() {
+        return trades.isEmpty() ? 0.0 :
+                trades.stream().mapToDouble(BacktestTrade::getBenchmarkReturnPct).average().orElse(0.0);
+    }
+    public double getAvgAlphaPct() {
+        return trades.isEmpty() ? 0.0 :
+                trades.stream().mapToDouble(BacktestTrade::getAlphaPct).average().orElse(0.0);
+    }
+    public double getAlphaWinRate() {
+        if (trades.isEmpty()) {
+            return 0.0;
+        }
+        long winners = trades.stream().filter(t -> t.getAlphaPct() > 0.0).count();
+        return winners * 100.0 / trades.size();
+    }
+    public double getAvgMarketStrengthScore() {
+        return trades.isEmpty() ? 0.0 :
+                trades.stream().mapToDouble(BacktestTrade::getMarketStrengthScore).average().orElse(0.0);
+    }
 
     public String toSummaryLine() {
         return String.format(
-                "Signals %d | Trades %d | WinRate %.1f%% | AvgR %.2f | TotalR %.2f | MaxDD %.2fR | PF %.2f | PnL %.2f",
+                "Signals %d | Trades %d | WinRate %.1f%% | AvgR %.2f | TotalR %.2f | MaxDD %.2fR | PF %.2f | PnL %.2f | AvgAlpha %.2f%% | AlphaWin %.1f%% | MktScore %.2f",
                 signals, getTradeCount(), getWinRate(), getAverageR(),
-                getTotalR(), getMaxDrawdown(), getProfitFactor(), getTotalPnl()
+                getTotalR(), getMaxDrawdown(), getProfitFactor(), getTotalPnl(),
+                getAvgAlphaPct(), getAlphaWinRate(), getAvgMarketStrengthScore()
         );
     }
 }
