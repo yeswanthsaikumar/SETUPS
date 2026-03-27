@@ -74,6 +74,48 @@ public final class Indicators {
     }
 
     /**
+     * Exponential moving average of close prices ending at endIndex (inclusive).
+     */
+    public static double exponentialMovingAverage(List<Candle> candles, int endIndex, int period) {
+        if (endIndex < 0 || endIndex >= candles.size() || period <= 0) {
+            return 0.0;
+        }
+        int seedEnd = period - 1;
+        if (endIndex < seedEnd) {
+            return movingAverage(candles, endIndex, endIndex + 1);
+        }
+
+        double ema = averageClose(candles, 0, seedEnd);
+        double alpha = 2.0 / (period + 1.0);
+        for (int i = seedEnd + 1; i <= endIndex; i++) {
+            ema = (candles.get(i).getClose() * alpha) + (ema * (1.0 - alpha));
+        }
+        return ema;
+    }
+
+    /**
+     * Mean candle range % (high-low)/close * 100 over lookback bars ending at endIndex.
+     */
+    public static double averageRangePct(List<Candle> candles, int endIndex, int lookback) {
+        if (candles == null || candles.isEmpty() || endIndex < 0 || endIndex >= candles.size()) {
+            return 0.0;
+        }
+        int period = Math.max(1, lookback);
+        int start = Math.max(0, endIndex - period + 1);
+        double sum = 0.0;
+        int count = 0;
+        for (int i = start; i <= endIndex; i++) {
+            Candle c = candles.get(i);
+            if (c.getClose() <= 0.0) {
+                continue;
+            }
+            sum += ((c.getHigh() - c.getLow()) / c.getClose()) * 100.0;
+            count++;
+        }
+        return count == 0 ? 0.0 : (sum / count);
+    }
+
+    /**
      * Highest high over the full list (used for 52-week high).
      */
     public static double highestHigh(List<Candle> candles) {

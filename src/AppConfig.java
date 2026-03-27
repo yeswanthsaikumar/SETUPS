@@ -60,6 +60,7 @@ public class AppConfig {
     public final double nearBreakoutMaxAbovePivotPct;
     public final double nearBreakoutVolumeMultiplier;
     public final double watchlistMaxDistanceToPivotPct;
+    public final double maxBreakoutEntryDistancePct;
 
     // ── Trade plan ───────────────────────────────────────────────────────────
     public final double accountSize;
@@ -91,6 +92,17 @@ public class AppConfig {
     // Optional break-even upgrade once trade proves itself (typically after T1)
     public final boolean moveStopToBreakEvenAfterT1;
     public final double breakEvenBufferPct;
+
+    // Structure-first trailing policy
+    public final double structureStopBufferLowVolPct;
+    public final double structureStopBufferMedVolPct;
+    public final double structureStopBufferHighVolPct;
+    public final double structureTrailPctLowVol;
+    public final double structureTrailPctMedVol;
+    public final double structureTrailPctHighVol;
+    public final int structureVolatilityLookbackBars;
+    public final double strongTrendMarketScoreThreshold;
+    public final double emaTrailBufferPct;
 
     // Delay trailing activation slightly so we avoid reacting to the first noisy bar
     public final int minBarsAfterSignalForTrailingDaily;
@@ -159,6 +171,7 @@ public class AppConfig {
         this.nearBreakoutMaxAbovePivotPct = 0.08;
         this.nearBreakoutVolumeMultiplier = weekly ? 1.00 : 1.05;
         this.watchlistMaxDistanceToPivotPct = weekly ? 0.08 : 0.06;
+        this.maxBreakoutEntryDistancePct = weekly ? 0.06 : 0.05;
 
         this.accountSize               = 100_000.0;
         this.riskPerTradePct           = 0.01;
@@ -185,6 +198,17 @@ public class AppConfig {
 
         this.moveStopToBreakEvenAfterT1 = true;
         this.breakEvenBufferPct         = weekly ? 0.0015 : 0.001;
+
+        this.structureStopBufferLowVolPct = 0.001;
+        this.structureStopBufferMedVolPct = 0.003;
+        this.structureStopBufferHighVolPct = weekly ? 0.010 : 0.007;
+        this.structureTrailPctLowVol = 0.05;
+        this.structureTrailPctMedVol = 0.06;
+        this.structureTrailPctHighVol = 0.08;
+        this.structureVolatilityLookbackBars = weekly ? 8 : 14;
+        this.strongTrendMarketScoreThreshold = weekly ? 3.0 : 4.0;
+        this.emaTrailBufferPct = weekly ? 0.005 : 0.003;
+
         this.minBarsAfterSignalForTrailingDaily = 2;
         this.minBarsAfterSignalForTrailingWeekly = 1;
 

@@ -26,6 +26,15 @@ public class BacktestTrade {
     private final double benchmarkReturnPct;
     private final double alphaPct;
     private final double marketStrengthScore;
+    private final double rewardToRiskT1;
+    private final double positionRiskAmount;
+    private final double positionNotional;
+    private final double pivotPrice;
+    private final double pivotDistancePct;
+    private final String structureStopModel;
+    private final String entryMarketRegime;
+    private final double relativeStrengthScore;
+    private final String macroTrigger;
 
     public BacktestTrade(
             String symbol, LocalDate entryDate, LocalDate exitDate,
@@ -34,7 +43,11 @@ public class BacktestTrade {
             String setupType, String setupRating, String windowLabel, double qualityScore,
             double mae, double mfe, int holdBars,
             boolean hitT1, boolean hitT2, boolean hitT3,
-            double benchmarkReturnPct, double alphaPct, double marketStrengthScore
+            double benchmarkReturnPct, double alphaPct, double marketStrengthScore,
+            double rewardToRiskT1, double positionRiskAmount, double positionNotional,
+            double pivotPrice, double pivotDistancePct,
+            String structureStopModel, String entryMarketRegime,
+            double relativeStrengthScore, String macroTrigger
     ) {
         this.symbol = symbol;
         this.entryDate = entryDate;
@@ -59,6 +72,15 @@ public class BacktestTrade {
         this.benchmarkReturnPct = benchmarkReturnPct;
         this.alphaPct = alphaPct;
         this.marketStrengthScore = marketStrengthScore;
+        this.rewardToRiskT1 = rewardToRiskT1;
+        this.positionRiskAmount = positionRiskAmount;
+        this.positionNotional = positionNotional;
+        this.pivotPrice = pivotPrice;
+        this.pivotDistancePct = pivotDistancePct;
+        this.structureStopModel = structureStopModel;
+        this.entryMarketRegime = entryMarketRegime;
+        this.relativeStrengthScore = relativeStrengthScore;
+        this.macroTrigger = macroTrigger;
     }
 
     public String getSymbol()      { return symbol; }
@@ -84,6 +106,15 @@ public class BacktestTrade {
     public double getBenchmarkReturnPct() { return benchmarkReturnPct; }
     public double getAlphaPct()    { return alphaPct; }
     public double getMarketStrengthScore() { return marketStrengthScore; }
+    public double getRewardToRiskT1() { return rewardToRiskT1; }
+    public double getPositionRiskAmount() { return positionRiskAmount; }
+    public double getPositionNotional() { return positionNotional; }
+    public double getPivotPrice() { return pivotPrice; }
+    public double getPivotDistancePct() { return pivotDistancePct; }
+    public String getStructureStopModel() { return structureStopModel; }
+    public String getEntryMarketRegime() { return entryMarketRegime; }
+    public double getRelativeStrengthScore() { return relativeStrengthScore; }
+    public String getMacroTrigger() { return macroTrigger; }
 
     public double getTradeReturnPct() {
         if (entryPrice <= 0.0) {

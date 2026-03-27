@@ -1,4 +1,3 @@
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -7,16 +6,17 @@ public class BacktestEngine {
     private final MarketDataProvider marketDataProvider;
     private final ScannerEngine scannerEngine;
     private final String timeframe;
-    private final int holdDays;
     private final AppConfig config;
     private final String benchmarkSymbol;
 
     public BacktestEngine(MarketDataProvider marketDataProvider, ScannerEngine scannerEngine,
                           String timeframe, int holdDays, String benchmarkSymbol) {
+        if (holdDays < 1) {
+            throw new IllegalArgumentException("Invalid holdDays");
+        }
         this.marketDataProvider = marketDataProvider;
         this.scannerEngine = scannerEngine;
         this.timeframe = timeframe;
-        this.holdDays = Math.max(2, holdDays);
         this.config = new AppConfig(timeframe);
         this.benchmarkSymbol = benchmarkSymbol == null ? "" : benchmarkSymbol.trim();
     }
@@ -43,12 +43,26 @@ public class BacktestEngine {
                 report.addSignal();
                 TradePlan plan = signal.getTradePlan();
                 VcpSetup setup = signal.getSetup();
-                SimulatedTrade sim = simulateTrade(candles, i, plan, setup);
                 java.time.LocalDate entryDate = candles.get(i).getDate();
+                double entryMarketStrength = marketStrengthScore(benchmarkCandles, benchmarkByDate, entryDate);
+                double relativeStrengthScore = relativeStrengthScore(candles, i, benchmarkCandles, benchmarkByDate, entryDate);
+                SimulatedTrade sim = simulateTrade(candles, i, plan, entryMarketStrength);
                 java.time.LocalDate exitDate = candles.get(sim.exitIndex).getDate();
                 double benchmarkReturn = benchmarkReturnPct(benchmarkCandles, benchmarkByDate, entryDate, exitDate);
                 double tradeReturnPct = plan.getEntry() <= 0.0 ? 0.0 : ((sim.exitPrice / plan.getEntry()) - 1.0) * 100.0;
                 double alphaPct = tradeReturnPct - benchmarkReturn;
+                double riskPerShare = Math.max(0.0, plan.getEntry() - plan.getStopLoss());
+                double rewardToRiskT1 = riskPerShare > 0.0
+                        ? Math.max(0.0, (plan.getTarget1() - plan.getEntry()) / riskPerShare)
+                        : 0.0;
+                double positionRiskAmount = riskPerShare * plan.getShares();
+                double positionNotional = plan.getEntry() * plan.getShares();
+                double pivot = setup.getPivotPrice();
+                double pivotDistancePct = pivot > 0.0
+                        ? ((plan.getEntry() / pivot) - 1.0) * 100.0
+                        : 0.0;
+                String entryMarketRegime = classifyEntryMarketRegime(entryMarketStrength);
+                String macroTrigger = classifyMacroTrigger(entryMarketRegime, relativeStrengthScore);
 
                 report.addTrade(new BacktestTrade(
                         symbol,
@@ -66,10 +80,20 @@ public class BacktestEngine {
                         sim.hitT1, sim.hitT2, sim.hitT3,
                         benchmarkReturn,
                         alphaPct,
-                        marketStrengthScore(benchmarkCandles, benchmarkByDate, entryDate)
+                        entryMarketStrength,
+                        rewardToRiskT1,
+                        positionRiskAmount,
+                        positionNotional,
+                        pivot,
+                        pivotDistancePct,
+                        sim.exitReason,
+                        entryMarketRegime,
+                        relativeStrengthScore,
+                        macroTrigger
                 ));
 
-                i = sim.exitIndex + 1;
+                // Walk every bar so backtest includes all system-signaled entries.
+                i++;
             }
         }
 
@@ -146,212 +170,189 @@ public class BacktestEngine {
         return indiaVotes > usVotes ? "^NSEI" : "SPY";
     }
 
-    private SimulatedTrade simulateTrade(List<Candle> candles, int signalIndex, TradePlan plan, VcpSetup setup) {
-        double entry  = plan.getEntry();
-        double initialStop = plan.getStopLoss();
-        double stop   = initialStop;
-        double risk   = entry - initialStop;
-        double t1     = plan.getTarget1();
-        double t2     = plan.getTarget2();
-        double t3     = plan.getTarget3();
+    private double relativeStrengthScore(
+            List<Candle> symbolCandles,
+            int symbolIdx,
+            List<Candle> benchmark,
+            Map<java.time.LocalDate, Integer> benchmarkByDate,
+            java.time.LocalDate entryDate
+    ) {
+        int stockLookback = Math.max(0, symbolIdx - 20);
+        double stockClose = symbolCandles.get(symbolIdx).getClose();
+        double stockOldClose = symbolCandles.get(stockLookback).getClose();
+        if (stockClose <= 0.0 || stockOldClose <= 0.0) {
+            return 0.0;
+        }
+        double stockMomentum = ((stockClose / stockOldClose) - 1.0) * 100.0;
 
-        int effectiveHold = resolveHoldDays(setup);
-        int last = Math.min(candles.size() - 1, signalIndex + effectiveHold);
-        int exitIndex  = last;
+        Integer benchIdx = benchmarkByDate.get(entryDate);
+        if (benchIdx == null || benchIdx < 0 || benchIdx >= benchmark.size()) {
+            return stockMomentum;
+        }
+        int benchLookback = Math.max(0, benchIdx - 20);
+        double benchClose = benchmark.get(benchIdx).getClose();
+        double benchOldClose = benchmark.get(benchLookback).getClose();
+        if (benchClose <= 0.0 || benchOldClose <= 0.0) {
+            return stockMomentum;
+        }
+        double benchMomentum = ((benchClose / benchOldClose) - 1.0) * 100.0;
+        return stockMomentum - benchMomentum;
+    }
+
+    private String classifyEntryMarketRegime(double marketStrength) {
+        if (marketStrength >= config.strongTrendMarketScoreThreshold) {
+            return "TAILWIND";
+        }
+        if (marketStrength <= -2.0) {
+            return "HEADWIND";
+        }
+        return "NEUTRAL";
+    }
+
+    private String classifyMacroTrigger(String marketRegime, double rsScore) {
+        if ("TAILWIND".equals(marketRegime) && rsScore >= 2.0) {
+            return "MACRO+MARKET_TAILWIND";
+        }
+        if ("TAILWIND".equals(marketRegime)) {
+            return "MACRO_TAILWIND";
+        }
+        if (rsScore >= 2.0) {
+            return "MARKET_RELATIVE_STRENGTH";
+        }
+        return "NO_CLEAR_TAILWIND";
+    }
+
+    private SimulatedTrade simulateTrade(
+            List<Candle> candles,
+            int signalIndex,
+            TradePlan plan,
+            double entryMarketStrength
+    ) {
+        double entry = plan.getEntry();
+        double initialStop = resolveInitialStructureStop(candles, signalIndex, entry, plan.getStopLoss());
+        double risk = entry - initialStop;
+        if (risk <= 0.0) {
+            initialStop = Math.min(plan.getStopLoss(), entry * 0.995);
+            risk = Math.max(0.000001, entry - initialStop);
+        }
+
+        double t1 = plan.getTarget1();
+        double t2 = plan.getTarget2();
+        double t3 = plan.getTarget3();
+
+        int last = candles.size() - 1;
+        int exitIndex = last;
         double exitPrice = candles.get(last).getClose();
-        String reason  = "TIME_EXIT";
+        String reason = "DATA_END_EXIT";
 
-        boolean hitT1 = false, hitT2 = false, hitT3 = false;
-        double mae = 0.0, mfe = 0.0;
+        boolean hitT1 = false;
+        boolean hitT2 = false;
+        boolean hitT3 = false;
+        double mae = 0.0;
+        double mfe = 0.0;
 
-        // Partial exit model:
-        // - config.partialExitPctAtT1 at T1
-        // - config.partialExitPctAtT2 at T2
-        // - remaining trails using ATR and/or swing-low after breakout confirmation
-        double remaining = 1.0;
-        double realizedPerShare = 0.0;
-        boolean trailingEnabled = false;
-        int atrPeriod = "weekly".equalsIgnoreCase(timeframe)
-                ? config.atrTrailPeriodWeekly : config.atrTrailPeriodDaily;
-        int swingLookback = "weekly".equalsIgnoreCase(timeframe)
-                ? config.swingLookbackWeekly : config.swingLookbackDaily;
-        int minTrailBars = "weekly".equalsIgnoreCase(timeframe)
-                ? config.minBarsAfterSignalForTrailingWeekly : config.minBarsAfterSignalForTrailingDaily;
-        double atrMult = trailingAtrMultiplier(setup);
-        double partialT1 = Math.max(0.0, Math.min(1.0, config.partialExitPctAtT1));
-        double partialT2 = Math.max(0.0, Math.min(1.0 - partialT1, config.partialExitPctAtT2));
-        double breakoutConfirmLevel = entry * (1.0 + config.breakoutBufferPct);
-        List<String> tags = new ArrayList<>();
-        String timeStopProfile = timeStopProfile(setup);
-        addTagIfMissing(tags, timeStopProfile);
+        double highestHigh = candles.get(signalIndex).getHigh();
+        double trailingPct = trailingPercentForSignal(candles, signalIndex);
+        boolean supportiveTrend = entryMarketStrength >= config.strongTrendMarketScoreThreshold;
 
         for (int i = signalIndex + 1; i <= last; i++) {
             Candle c = candles.get(i);
 
-            // Max adverse / favorable excursion (% from entry)
-            if (entry > 0) {
-                mae = Math.max(mae, Math.max(0.0, (entry - c.getLow())  / entry) * 100.0);
+            if (entry > 0.0) {
+                mae = Math.max(mae, Math.max(0.0, (entry - c.getLow()) / entry) * 100.0);
                 mfe = Math.max(mfe, Math.max(0.0, (c.getHigh() - entry) / entry) * 100.0);
             }
 
-            // Conservative: stop executes before any target fills on same bar.
-            if (remaining > 0.0 && c.getLow() <= stop) {
-                realizedPerShare += remaining * (stop - entry);
-                remaining = 0.0;
-                exitIndex = i;
-                exitPrice = stop;
-                reason = trailingEnabled ? "TRAIL_STOP" : "STOP";
-                tags.add(reason);
-                break;
-            }
-
+            highestHigh = Math.max(highestHigh, c.getHigh());
             if (!hitT1 && c.getHigh() >= t1) {
-                double qty = Math.min(remaining, partialT1);
-                realizedPerShare += qty * (t1 - entry);
-                remaining -= qty;
                 hitT1 = true;
-                tags.add("PARTIAL_T1");
-                if (config.moveStopToBreakEvenAfterT1) {
-                    double breakEvenStop = entry * (1.0 + config.breakEvenBufferPct);
-                    stop = Math.max(stop, breakEvenStop);
-                    addTagIfMissing(tags, "STOP_TO_BREAKEVEN");
-                }
             }
-
             if (!hitT2 && c.getHigh() >= t2) {
-                double qty = Math.min(remaining, partialT2);
-                realizedPerShare += qty * (t2 - entry);
-                remaining -= qty;
                 hitT2 = true;
-                tags.add("PARTIAL_T2");
             }
-
-            if (c.getHigh() >= t3) {
+            if (!hitT3 && c.getHigh() >= t3) {
                 hitT3 = true;
             }
 
-            if (remaining <= 0.0) {
+            double activeStop = initialStop;
+            String activeReason = "STRUCTURE_BREAK_INITIAL";
+
+            // Winners move to a dynamic trail from the highest-high structure.
+            if (highestHigh >= entry + risk) {
+                double trailStop = highestHigh * (1.0 - trailingPct);
+                if (trailStop > activeStop) {
+                    activeStop = trailStop;
+                    activeReason = "STRUCTURE_BREAK_TRAIL";
+                }
+            }
+
+            // In strong market trend context, a rising EMA10 acts as dynamic structure support.
+            if (supportiveTrend) {
+                double ema10 = Indicators.exponentialMovingAverage(candles, i, 10);
+                double ema10Prev = Indicators.exponentialMovingAverage(candles, Math.max(0, i - 1), 10);
+                boolean emaRising = ema10 > 0.0 && ema10 >= ema10Prev;
+                if (emaRising) {
+                    double emaStop = ema10 * (1.0 - config.emaTrailBufferPct);
+                    if (emaStop > activeStop) {
+                        activeStop = emaStop;
+                        activeReason = "STRUCTURE_BREAK_EMA10";
+                    }
+                }
+            }
+
+            if (c.getLow() <= activeStop) {
                 exitIndex = i;
-                exitPrice = c.getClose();
-                reason = "TARGET_T2_FULLY_EXITED";
+                exitPrice = activeStop;
+                reason = activeReason;
                 break;
             }
-
-            // Enable trailing once breakout is confirmed by close above entry buffer.
-            if (!trailingEnabled
-                    && i - signalIndex >= minTrailBars
-                    && (c.getClose() >= breakoutConfirmLevel || hitT1)) {
-                trailingEnabled = true;
-                tags.add("TRAIL_ACTIVE");
-            }
-
-            if (trailingEnabled) {
-                double atr = Indicators.averageTrueRange(candles, i, atrPeriod);
-                double atrStop = stop;
-                if (config.enableAtrTrailingStop && atr > 0.0) {
-                    atrStop = c.getClose() - (atrMult * atr);
-                    addTagIfMissing(tags, "ATR_TRAIL");
-                }
-                int swingStart = Math.max(signalIndex + 1, i - swingLookback);
-                double swingStop = stop;
-                // Structure trailing uses completed bars only (exclude current bar) to avoid same-bar lookahead bias.
-                if (config.enableSwingLowTrailingStop && swingStart <= i - 1) {
-                    double swingLow = Indicators.lowestLow(candles, swingStart, i - 1);
-                    swingStop = swingLow * (1.0 - config.swingStopBufferPct);
-                    addTagIfMissing(tags, "SWING_TRAIL");
-                }
-                stop = Math.max(stop, Math.max(atrStop, swingStop));
-            }
         }
 
-        int holdBars    = exitIndex - signalIndex;
-        if (remaining > 0.0) {
-            realizedPerShare += remaining * (exitPrice - entry);
-        }
-        double weightedExit = entry + realizedPerShare;
+        int holdBars = exitIndex - signalIndex;
+        double realizedPerShare = exitPrice - entry;
         double rMultiple = risk <= 0.0 ? 0.0 : (realizedPerShare / risk);
-        double pnl       = realizedPerShare * plan.getShares();
-        exitPrice = weightedExit;
-        if (!tags.isEmpty()) {
-            reason = String.join("+", tags) + "+" + reason;
-        }
+        double pnl = realizedPerShare * plan.getShares();
+
         return new SimulatedTrade(exitIndex, exitPrice, rMultiple, pnl, reason,
                 hitT1, hitT2, hitT3, mae, mfe, holdBars);
     }
 
-    private int resolveHoldDays(VcpSetup setup) {
-        boolean weeklyTf = "weekly".equalsIgnoreCase(timeframe);
-        boolean rangeExpansion = setup.getSetupType() == VcpSetup.SetupType.RANGE_EXPANSION;
-        boolean meanReversion = setup.getSetupType() == VcpSetup.SetupType.MEAN_REVERSION;
-        int profileHold;
-        if (weeklyTf && rangeExpansion) {
-            profileHold = config.holdBarsWeeklyRangeExpansion;
-        } else if (weeklyTf && meanReversion) {
-            profileHold = config.holdBarsWeeklyMeanReversion;
-        } else if (weeklyTf) {
-            profileHold = config.holdBarsWeeklyVcp;
-        } else if (rangeExpansion) {
-            profileHold = config.holdBarsDailyRangeExpansion;
-        } else if (meanReversion) {
-            profileHold = config.holdBarsDailyMeanReversion;
+    private double resolveInitialStructureStop(List<Candle> candles, int signalIndex, double entry, double fallbackStop) {
+        Candle signal = candles.get(signalIndex);
+        double avgRangePct = Indicators.averageRangePct(candles, signalIndex, config.structureVolatilityLookbackBars);
+        double bufferPct;
+        if (avgRangePct < 1.8) {
+            bufferPct = config.structureStopBufferLowVolPct;
+        } else if (avgRangePct < 3.5) {
+            bufferPct = config.structureStopBufferMedVolPct;
         } else {
-            profileHold = config.holdBarsDailyVcp;
+            bufferPct = config.structureStopBufferHighVolPct;
         }
-        // Keep CLI holdDays as a global cap for backward-compatible control.
-        return Math.max(2, Math.min(profileHold, holdDays));
+
+        double stop = signal.getLow() * (1.0 - bufferPct);
+        double atr = Indicators.averageTrueRange(candles, signalIndex, config.atrTrailPeriodDaily);
+        if (avgRangePct >= 3.5 && atr > 0.0) {
+            // Volatile candles get a wider structure line to avoid noise exits.
+            stop = Math.min(stop, entry - (2.0 * atr));
+        }
+        if (stop <= 0.0 || stop >= entry) {
+            stop = fallbackStop;
+        }
+        if (stop <= 0.0 || stop >= entry) {
+            stop = entry * 0.995;
+        }
+        return stop;
     }
 
-    private double trailingAtrMultiplier(VcpSetup setup) {
-        boolean weeklyTf = "weekly".equalsIgnoreCase(timeframe);
-        boolean rangeExpansion = setup.getSetupType() == VcpSetup.SetupType.RANGE_EXPANSION;
-        boolean meanReversion = setup.getSetupType() == VcpSetup.SetupType.MEAN_REVERSION;
-        if (weeklyTf && rangeExpansion) {
-            return config.atrTrailMultWeeklyRangeExpansion;
+    private double trailingPercentForSignal(List<Candle> candles, int signalIndex) {
+        double avgRangePct = Indicators.averageRangePct(candles, signalIndex, config.structureVolatilityLookbackBars);
+        if (avgRangePct < 1.8) {
+            return config.structureTrailPctLowVol;
         }
-        if (weeklyTf && meanReversion) {
-            return config.atrTrailMultWeeklyMeanReversion;
+        if (avgRangePct < 3.5) {
+            return config.structureTrailPctMedVol;
         }
-        if (weeklyTf) {
-            return config.atrTrailMultWeeklyVcp;
-        }
-        if (rangeExpansion) {
-            return config.atrTrailMultDailyRangeExpansion;
-        }
-        if (meanReversion) {
-            return config.atrTrailMultDailyMeanReversion;
-        }
-        return config.atrTrailMultDailyVcp;
-    }
-
-    private String timeStopProfile(VcpSetup setup) {
-        boolean weeklyTf = "weekly".equalsIgnoreCase(timeframe);
-        boolean rangeExpansion = setup.getSetupType() == VcpSetup.SetupType.RANGE_EXPANSION;
-        boolean meanReversion = setup.getSetupType() == VcpSetup.SetupType.MEAN_REVERSION;
-        if (weeklyTf && rangeExpansion) {
-            return "TIME_PROFILE_WEEKLY_RANGE_EXPANSION";
-        }
-        if (weeklyTf && meanReversion) {
-            return "TIME_PROFILE_WEEKLY_MEAN_REVERSION";
-        }
-        if (weeklyTf) {
-            return "TIME_PROFILE_WEEKLY_VCP";
-        }
-        if (rangeExpansion) {
-            return "TIME_PROFILE_DAILY_RANGE_EXPANSION";
-        }
-        if (meanReversion) {
-            return "TIME_PROFILE_DAILY_MEAN_REVERSION";
-        }
-        return "TIME_PROFILE_DAILY_VCP";
-    }
-
-    private void addTagIfMissing(List<String> tags, String tag) {
-        if (tag == null || tag.isBlank()) {
-            return;
-        }
-        if (!tags.contains(tag)) {
-            tags.add(tag);
-        }
+        return config.structureTrailPctHighVol;
     }
 
     private static class SimulatedTrade {

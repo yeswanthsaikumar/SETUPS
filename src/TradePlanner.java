@@ -1,6 +1,10 @@
 public class TradePlanner {
     public TradePlan buildPlan(double entryPrice, VcpSetup setup, AppConfig config) {
-        double stop = computeStopPrice(entryPrice, setup, config);
+        return buildPlan(entryPrice, setup, null, false, config);
+    }
+
+    public TradePlan buildPlan(double entryPrice, VcpSetup setup, Candle signalCandle, boolean triggeredBreakout, AppConfig config) {
+        double stop = computeStopPrice(entryPrice, setup, signalCandle, triggeredBreakout, config);
         double riskPerShare = entryPrice - stop;
         if (riskPerShare <= 0.0) {
             return null;
@@ -19,7 +23,19 @@ public class TradePlanner {
         return new TradePlan(entryPrice, stop, shares, t1, t2, t3);
     }
 
-    private double computeStopPrice(double entryPrice, VcpSetup setup, AppConfig config) {
+    private double computeStopPrice(
+            double entryPrice,
+            VcpSetup setup,
+            Candle signalCandle,
+            boolean triggeredBreakout,
+            AppConfig config
+    ) {
+        if (triggeredBreakout && signalCandle != null && signalCandle.getLow() > 0.0) {
+            // Fresh breakouts anchor risk to the breakout-day structure low.
+            double breakoutStructureStop = signalCandle.getLow() * (1.0 - config.stopBufferPct);
+            return Math.min(breakoutStructureStop, entryPrice * 0.995);
+        }
+
         double supportStop = setup.getSupportPrice() * (1.0 - config.stopBufferPct);
         if (setup.getSetupType() != VcpSetup.SetupType.MEAN_REVERSION) {
             return supportStop;
