@@ -11,20 +11,39 @@ public class BreakoutEvaluator {
         int volumeLookback = Math.min(20, baseEnd);
         int volumeStart = Math.max(0, baseEnd - volumeLookback + 1);
         double avgVolume = Indicators.averageVolume(candles, volumeStart, baseEnd);
+        double pivot = setup.getPivotPrice();
 
         if (setup.getSetupType() == VcpSetup.SetupType.MEAN_REVERSION) {
             return classifyMeanReversionRejection(candles, setup, config, avgVolume);
         }
 
-        boolean priceBreakout = latest.getClose() > setup.getPivotPrice() * (1.0 + config.breakoutBufferPct);
-        boolean intradayBreak = latest.getHigh() > setup.getPivotPrice();
+        boolean priceBreakout = latest.getClose() > pivot * (1.0 + config.breakoutBufferPct);
+        boolean intradayBreak = latest.getHigh() > pivot;
         boolean volumeBreakout = latest.getVolume() >= avgVolume * config.breakoutVolumeMultiplier;
+        double candleRange = Math.max(0.0, latest.getHigh() - latest.getLow());
+        double closeInRange = candleRange <= 0.0 ? 0.0 : (latest.getClose() - latest.getLow()) / candleRange;
+        boolean strongClose = closeInRange >= config.minExpansionClosePosition;
+        boolean bullishCandle = latest.getClose() >= latest.getOpen();
+        boolean notExtended = pivot > 0.0
+                && ((latest.getClose() - pivot) / pivot) <= config.maxBreakoutEntryDistancePct;
+        double ema10 = Indicators.exponentialMovingAverage(candles, candles.size() - 1, 10);
+        double ema10Prev = Indicators.exponentialMovingAverage(candles, Math.max(0, candles.size() - 2), 10);
+        boolean emaTrendSupport = ema10 > 0.0 && latest.getClose() >= ema10 && ema10 >= ema10Prev;
 
         if (!volumeBreakout) {
             return RejectionDiagnostic.Reason.INSUFFICIENT_VOLUME;
         }
         if (!priceBreakout || !intradayBreak) {
             return RejectionDiagnostic.Reason.NO_BREAKOUT;
+        }
+        if (!strongClose || !bullishCandle) {
+            return RejectionDiagnostic.Reason.NO_BREAKOUT;
+        }
+        if (!notExtended) {
+            return RejectionDiagnostic.Reason.TOO_FAR_FROM_PIVOT;
+        }
+        if (!emaTrendSupport) {
+            return RejectionDiagnostic.Reason.BELOW_MA;
         }
 
         if (setup.getSetupType() == VcpSetup.SetupType.RANGE_EXPANSION) {
@@ -34,7 +53,6 @@ public class BreakoutEvaluator {
             if (!expandedRange) {
                 return RejectionDiagnostic.Reason.ATR_EXPANDING;
             }
-            double closeInRange = breakoutRange <= 0.0 ? 0.0 : (latest.getClose() - latest.getLow()) / breakoutRange;
             if (closeInRange < config.minExpansionClosePosition) {
                 return RejectionDiagnostic.Reason.NO_BREAKOUT;
             }
@@ -59,17 +77,27 @@ public class BreakoutEvaluator {
             return isMeanReversionBreakout(candles, setup, config, volume20);
         }
 
+        double pivot = setup.getPivotPrice();
+        double candleRange = Math.max(0.0, latest.getHigh() - latest.getLow());
+        double closeInRange = candleRange <= 0.0 ? 0.0 : (latest.getClose() - latest.getLow()) / candleRange;
+
         // Price: latest CLOSE must be above pivot + buffer (0.3%)
-        boolean priceBreakout = latest.getClose() > setup.getPivotPrice() * (1.0 + config.breakoutBufferPct);
+        boolean priceBreakout = latest.getClose() > pivot * (1.0 + config.breakoutBufferPct);
 
         // Volume: breakout bar volume must be >= 1.25x 20-day average (was 1.5x)
         boolean volumeBreakout = latest.getVolume() >= volume20 * config.breakoutVolumeMultiplier;
 
         // Intraday confirmation: the HIGH of the breakout bar must have pierced the pivot
         // (avoids false breakouts where stock gapped up at open but closed near pivot)
-        boolean intradayBreak = latest.getHigh() > setup.getPivotPrice();
+        boolean intradayBreak = latest.getHigh() > pivot;
+        boolean strongClose = closeInRange >= config.minExpansionClosePosition;
+        boolean bullishCandle = latest.getClose() >= latest.getOpen();
+        boolean notExtended = pivot > 0.0 && ((latest.getClose() - pivot) / pivot) <= config.maxBreakoutEntryDistancePct;
+        double ema10 = Indicators.exponentialMovingAverage(candles, candles.size() - 1, 10);
+        double ema10Prev = Indicators.exponentialMovingAverage(candles, Math.max(0, candles.size() - 2), 10);
+        boolean emaTrendSupport = ema10 > 0.0 && latest.getClose() >= ema10 && ema10 >= ema10Prev;
 
-        if (!priceBreakout || !volumeBreakout || !intradayBreak) {
+        if (!priceBreakout || !volumeBreakout || !intradayBreak || !strongClose || !bullishCandle || !notExtended || !emaTrendSupport) {
             return false;
         }
 
@@ -77,11 +105,7 @@ public class BreakoutEvaluator {
             double breakoutRange = Math.max(0.0, latest.getHigh() - latest.getLow());
             double atr20 = Indicators.averageTrueRange(candles, candles.size() - 2, 20);
             boolean expandedRange = atr20 > 0.0 && breakoutRange >= atr20 * config.minRangeExpansionMultiplier;
-
-            double closeInRange = breakoutRange <= 0.0 ? 0.0 : (latest.getClose() - latest.getLow()) / breakoutRange;
-            boolean strongClose = closeInRange >= config.minExpansionClosePosition;
-
-            return expandedRange && strongClose;
+            return expandedRange;
         }
 
         return true;
@@ -119,14 +143,23 @@ public class BreakoutEvaluator {
         boolean volumeHealthy = latest.getVolume() >= avgVolume * config.nearBreakoutVolumeMultiplier;
         boolean holdingPivot = latest.getLow() >= pivot * (1.0 - config.breakoutBufferPct);
         boolean closeAboveEntry = latest.getClose() >= pivot * (1.0 + config.breakoutBufferPct);
-        if (!volumeHealthy || !holdingPivot || !closeAboveEntry) {
+        double ema10 = Indicators.exponentialMovingAverage(candles, candles.size() - 1, 10);
+        double ema10Prev = Indicators.exponentialMovingAverage(candles, Math.max(0, candles.size() - 2), 10);
+        boolean emaTrendSupport = ema10 > 0.0 && latest.getClose() >= ema10 && ema10 >= ema10Prev;
+        boolean bullishCandle = latest.getClose() >= latest.getOpen();
+        double candleRange = Math.max(0.0, latest.getHigh() - latest.getLow());
+        double closeInRange = candleRange <= 0.0 ? 0.0 : (latest.getClose() - latest.getLow()) / candleRange;
+        boolean strongClose = closeInRange >= 0.50;
+        if (!volumeHealthy || !holdingPivot || !closeAboveEntry || !emaTrendSupport || !bullishCandle || !strongClose) {
             return false;
         }
 
         if (setup.getSetupType() == VcpSetup.SetupType.RANGE_EXPANSION) {
             double breakoutRange = Math.max(0.0, latest.getHigh() - latest.getLow());
-            double closeInRange = breakoutRange <= 0.0 ? 0.0 : (latest.getClose() - latest.getLow()) / breakoutRange;
-            return closeInRange >= config.minExpansionClosePosition;
+            double rangeExpansionCloseInRange = breakoutRange <= 0.0
+                    ? 0.0
+                    : (latest.getClose() - latest.getLow()) / breakoutRange;
+            return rangeExpansionCloseInRange >= config.minExpansionClosePosition;
         }
 
         return true;

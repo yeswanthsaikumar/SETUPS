@@ -357,6 +357,13 @@ def build_master_report(
         t1_v     = _f(r.get("T1"))
         t2_v     = _f(r.get("T2"))
         t3_v     = _f(r.get("T3"))
+        entry_plan = html.escape(str(r.get("entryInstruction") or BEST_BUY_NOTES.get(setup, "—")))
+        entry_trigger = html.escape(str(r.get("entryTriggerCondition") or "—"))
+        trig_earnings = html.escape(str(r.get("triggerEarningsGrowth") or "—"))
+        trig_debt = html.escape(str(r.get("triggerDebtReduction") or "—"))
+        trig_macro = html.escape(str(r.get("triggerMacroTailwind") or "—"))
+        trig_market = html.escape(str(r.get("triggerMarketTailwind") or "—"))
+        trig_summary = html.escape(str(r.get("triggerSummary") or "—"))
         dist_v   = _f(r.get("dist%") or r.get("distFromPivot%") or 0)
         window   = r.get("window") or tf.upper()
         sector   = html.escape(r["_sector"] or "—")
@@ -399,10 +406,17 @@ def build_master_report(
             f"  <td style='color:#6366f1;font-weight:700'>{cur_sym}{pivot_v:,.2f}</td>\n"
             f"  <td style='color:#22c55e;font-weight:700'>{cur_sym}{entry_v:,.2f}</td>\n"
             f"  <td style='color:#ef4444;font-weight:700'>{cur_sym}{sl_v:,.2f}</td>\n"
+            f"  <td style='max-width:260px;white-space:normal;line-height:1.35'>{entry_plan}</td>\n"
+            f"  <td style='max-width:240px;white-space:normal;line-height:1.35;color:#9ecbff'>{entry_trigger}</td>\n"
             f"  <td>{cur_sym}{t1_v:,.2f}</td>\n"
             f"  <td>{cur_sym}{t2_v:,.2f}</td>\n"
             f"  <td>{cur_sym}{t3_v:,.2f}</td>\n"
             f"  <td style='font-weight:700'>{r['_rr']}</td>\n"
+            f"  <td style='max-width:220px;white-space:normal;line-height:1.35'>{trig_earnings}</td>\n"
+            f"  <td style='max-width:220px;white-space:normal;line-height:1.35'>{trig_debt}</td>\n"
+            f"  <td style='max-width:160px;white-space:normal;line-height:1.35'>{trig_macro}</td>\n"
+            f"  <td style='max-width:160px;white-space:normal;line-height:1.35'>{trig_market}</td>\n"
+            f"  <td style='max-width:260px;white-space:normal;line-height:1.35;color:#94a3b8'>{trig_summary}</td>\n"
             f"  <td>{_dist_badge(dist_v)}</td>\n"
             f"  <td style='color:{pct_g_color};font-weight:700'>{pct_g_str}</td>\n"
             f"  <td style='color:#94a3b8'>{days_h if days_h is not None else '—'}</td>\n"
@@ -437,10 +451,17 @@ def build_master_report(
         ("Pivot",           "Key breakout/support level price"),
         ("Entry",           "Recommended entry price"),
         ("Stop Loss",       "Stop-loss price. Risk = Entry - Stop"),
+        ("Entry Plan",      "When to act: breakout confirmation, watchlist alert, or open-trade management guidance"),
+        ("Entry Trigger",   "Specific event that confirms the entry is valid"),
         ("T1 (1R)",         "Target 1: 1R profit. First scale-out point"),
         ("T2 (2R)",         "Target 2: 2R profit"),
         ("T3 (3R)",         "Target 3: 3R profit. Trail stop here"),
         ("R:R",             "Risk-to-reward ratio at T1 (e.g. 2.5R means reward is 2.5x risk)"),
+        ("Earnings Trigger", "Segregated catalyst bucket for earnings or revenue acceleration"),
+        ("Debt Trigger",    "Segregated catalyst bucket for debt reduction / balance-sheet improvement"),
+        ("Macro Trigger",   "Macro tailwind/headwind context for the setup"),
+        ("Market Trigger",  "Market-structure and relative-strength tailwind bucket"),
+        ("Trigger Summary", "Combined catalyst summary across earnings, debt, macro, and market"),
         ("Dist Pivot",      "Current price distance above (+) or below (-) the pivot level"),
         ("% Gain",          "% gain/loss since entry date (positive=winning trade)"),
         ("Days Held",       "Calendar days since the breakout/entry date"),

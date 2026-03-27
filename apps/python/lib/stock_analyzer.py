@@ -410,21 +410,22 @@ def _build_regime_analysis(row: dict) -> dict:
 
 
 def _build_rs_analysis(row: dict) -> dict:
-    rs3m  = _to_float(row.get("rs3m"))
-    rs6m  = _to_float(row.get("rs6m"))
-    rs12m = _to_float(row.get("rs12m"))
-    rs_score = _to_float(row.get("rsScore"))
-    rs_rank  = _to_float(row.get("rsRankScore"))
+    rs3m  = _to_float(row.get("rs3m"), default=0.0)
+    rs6m  = _to_float(row.get("rs6m"), default=0.0)
+    rs12m = _to_float(row.get("rs12m"), default=0.0)
+    rs_score = _to_float(row.get("rsScore"), default=0.0)
+    rs_rank  = _to_float(row.get("rsRankScore"), default=0.0)
 
     bullets: list[str] = []
-    if rs_score >= 80:
-        bullets.append(f"🚀 RS Score {rs_score:.1f} — top-tier relative strength vs. universe.")
-    elif rs_score >= 60:
-        bullets.append(f"✅ RS Score {rs_score:.1f} — above-average relative strength.")
-    elif rs_score >= 40:
-        bullets.append(f"⚠️  RS Score {rs_score:.1f} — mediocre relative strength; prefer leaders.")
-    else:
-        bullets.append(f"❌ RS Score {rs_score:.1f} — weak relative strength; stock is lagging.")
+    if rs_score > 0:
+        if rs_score >= 80:
+            bullets.append(f"🚀 RS Score {rs_score:.1f} — top-tier relative strength vs. universe.")
+        elif rs_score >= 60:
+            bullets.append(f"✅ RS Score {rs_score:.1f} — above-average relative strength.")
+        elif rs_score >= 40:
+            bullets.append(f"⚠️  RS Score {rs_score:.1f} — mediocre relative strength; prefer leaders.")
+        else:
+            bullets.append(f"❌ RS Score {rs_score:.1f} — weak relative strength; stock is lagging.")
 
     if rs3m > 0:
         bullets.append(f"📅 RS 3-month: {rs3m:.1f}th percentile")
@@ -434,11 +435,11 @@ def _build_rs_analysis(row: dict) -> dict:
         bullets.append(f"📅 RS 12-month: {rs12m:.1f}th percentile")
 
     return {
-        "rs3m":    round(rs3m, 2),
-        "rs6m":    round(rs6m, 2),
-        "rs12m":   round(rs12m, 2),
-        "rsScore": round(rs_score, 2),
-        "rsRank":  round(rs_rank, 2),
+        "rs3m":    round(rs3m, 2) if rs3m > 0 else None,
+        "rs6m":    round(rs6m, 2) if rs6m > 0 else None,
+        "rs12m":   round(rs12m, 2) if rs12m > 0 else None,
+        "rsScore": round(rs_score, 2) if rs_score > 0 else None,
+        "rsRank":  round(rs_rank, 2) if rs_rank > 0 else None,
         "bullets": bullets,
     }
 
@@ -448,7 +449,8 @@ def _build_volume_analysis(row: dict) -> dict:
     avg_dv   = _to_float(row.get("avgDollarVol20"))
     vol_dry  = _to_float(row.get("volumeDryUpRatio"))
     vol_score = _to_float(row.get("volumeDryUpScore"))
-    vol_pct  = _to_float(row.get("vol%"))
+    vol_pct  = _to_float(row.get("vol%"), default=0.0)
+    rexp     = _to_float(row.get("rexp"), default=0.0)  # Range expansion factor
 
     bullets: list[str] = []
     if avg_vol > 0:
@@ -464,17 +466,29 @@ def _build_volume_analysis(row: dict) -> dict:
         else:
             bullets.append(f"⚠️  Volume dry-up not confirmed (ratio {vol_dry:.2f}x) — higher-than-desired volume during base.")
 
-    if vol_pct != 0:
+    if vol_pct and vol_pct != 0:
         if vol_pct > 0:
             bullets.append(f"📈 Breakout bar volume: {vol_pct:.1f}% above average — strong institutional participation.")
         else:
             bullets.append(f"📉 Breakout bar volume: {abs(vol_pct):.1f}% below average — weak volume on breakout.")
+
+    if rexp and rexp > 0:
+        if rexp >= 4.0:
+            bullets.append(f"🎯 Range expansion: {rexp:.2f}x — very strong breakout candle.")
+        elif rexp >= 2.5:
+            bullets.append(f"✅ Range expansion: {rexp:.2f}x — strong breakout candle.")
+        elif rexp >= 1.5:
+            bullets.append(f"🟡 Range expansion: {rexp:.2f}x — moderate breakout signal.")
+        else:
+            bullets.append(f"📊 Range expansion: {rexp:.2f}x — wide candle present.")
 
     return {
         "avgVol20":       int(avg_vol) if avg_vol else None,
         "avgDollarVol20": round(avg_dv, 0) if avg_dv else None,
         "dryUpRatio":     round(vol_dry, 3) if vol_dry else None,
         "dryUpScore":     round(vol_score, 2) if vol_score else None,
+        "volPct":         round(vol_pct, 2) if vol_pct else None,
+        "rexp":           round(rexp, 2) if rexp else None,
         "bullets":        bullets,
     }
 

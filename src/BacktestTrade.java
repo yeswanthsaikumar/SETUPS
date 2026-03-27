@@ -35,6 +35,16 @@ public class BacktestTrade {
     private final String entryMarketRegime;
     private final double relativeStrengthScore;
     private final String macroTrigger;
+    private final double accountBalanceBefore;
+    private final double accountBalanceAfter;
+    private final double riskPctUsed;
+    private final String signalType;
+    private final String entryTimeLabel;
+    private final String entryInstruction;
+    private final String entryTriggerCondition;
+    private final String trailingStopPolicy;
+    private final double stopReferencePrice;
+    private final double riskPerShare;
 
     public BacktestTrade(
             String symbol, LocalDate entryDate, LocalDate exitDate,
@@ -47,7 +57,11 @@ public class BacktestTrade {
             double rewardToRiskT1, double positionRiskAmount, double positionNotional,
             double pivotPrice, double pivotDistancePct,
             String structureStopModel, String entryMarketRegime,
-            double relativeStrengthScore, String macroTrigger
+            double relativeStrengthScore, String macroTrigger,
+            double accountBalanceBefore, double accountBalanceAfter, double riskPctUsed,
+            String signalType, String entryTimeLabel,
+            String entryInstruction, String entryTriggerCondition,
+            String trailingStopPolicy, double stopReferencePrice, double riskPerShare
     ) {
         this.symbol = symbol;
         this.entryDate = entryDate;
@@ -81,6 +95,16 @@ public class BacktestTrade {
         this.entryMarketRegime = entryMarketRegime;
         this.relativeStrengthScore = relativeStrengthScore;
         this.macroTrigger = macroTrigger;
+        this.accountBalanceBefore = accountBalanceBefore;
+        this.accountBalanceAfter = accountBalanceAfter;
+        this.riskPctUsed = riskPctUsed;
+        this.signalType = signalType;
+        this.entryTimeLabel = entryTimeLabel;
+        this.entryInstruction = entryInstruction;
+        this.entryTriggerCondition = entryTriggerCondition;
+        this.trailingStopPolicy = trailingStopPolicy;
+        this.stopReferencePrice = stopReferencePrice;
+        this.riskPerShare = riskPerShare;
     }
 
     public String getSymbol()      { return symbol; }
@@ -115,6 +139,16 @@ public class BacktestTrade {
     public String getEntryMarketRegime() { return entryMarketRegime; }
     public double getRelativeStrengthScore() { return relativeStrengthScore; }
     public String getMacroTrigger() { return macroTrigger; }
+    public double getAccountBalanceBefore() { return accountBalanceBefore; }
+    public double getAccountBalanceAfter() { return accountBalanceAfter; }
+    public double getRiskPctUsed() { return riskPctUsed; }
+    public String getSignalType() { return signalType; }
+    public String getEntryTimeLabel() { return entryTimeLabel; }
+    public String getEntryInstruction() { return entryInstruction; }
+    public String getEntryTriggerCondition() { return entryTriggerCondition; }
+    public String getTrailingStopPolicy() { return trailingStopPolicy; }
+    public double getStopReferencePrice() { return stopReferencePrice; }
+    public double getRiskPerShare() { return riskPerShare; }
 
     public double getTradeReturnPct() {
         if (entryPrice <= 0.0) {
@@ -125,9 +159,10 @@ public class BacktestTrade {
 
     public String toConsoleLine() {
         return String.format(
-                "%s | %s | %s | Entry %s %.2f | Exit %s %.2f | R %.2f | Alpha %.2f%% | PnL %.2f | Hold %d | %s",
-                symbol, setupType, setupRating,
+                "%s | %s | %s | %s | Entry %s %.2f (%s) | Exit %s %.2f | R %.2f | Alpha %.2f%% | PnL %.2f | Hold %d | %s",
+                symbol, setupType, setupRating, signalType,
                 entryDate, entryPrice,
+                entryTimeLabel,
                 exitDate, exitPrice,
                 rMultiple, alphaPct, pnl, holdBars, exitReason
         );
