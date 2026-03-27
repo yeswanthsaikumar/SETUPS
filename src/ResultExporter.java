@@ -160,18 +160,23 @@ public final class ResultExporter {
         List<String> lines = new ArrayList<>();
         lines.add("symbol,setupType,setupRating,windowLabel,qualityScore," +
                   "entryDate,exitDate,entryPrice,exitPrice,stopPrice,shares," +
-                  "rMultiple,pnl,holdBars,mae,mfe,benchmarkReturnPct,alphaPct,marketStrengthScore,hitT1,hitT2,hitT3,exitReason");
+                  "rMultiple,rewardToRiskT1,pnl,positionRiskAmount,positionNotional,holdBars,mae,mfe," +
+                  "pivotPrice,pivotDistancePct,benchmarkReturnPct,alphaPct,marketStrengthScore,entryMarketRegime,relativeStrengthScore,macroTrigger," +
+                  "hitT1,hitT2,hitT3,structureStopModel,exitReason");
         for (BacktestTrade t : report.getTrades()) {
             lines.add(String.format(
-                    "%s,%s,%s,%s,%.2f,%s,%s,%.5f,%.5f,%.5f,%d,%.4f,%.2f,%d,%.2f,%.2f,%.2f,%.2f,%.2f,%b,%b,%b,%s",
+                    "%s,%s,%s,%s,%.2f,%s,%s,%.5f,%.5f,%.5f,%d,%.4f,%.4f,%.2f,%.2f,%.2f,%d,%.2f,%.2f,%.5f,%.2f,%.2f,%.2f,%.2f,%s,%.2f,%s,%b,%b,%b,%s,%s",
                     t.getSymbol(), t.getSetupType(), t.getSetupRating(), t.getWindowLabel(),
                     t.getQualityScore(),
                     t.getEntryDate(), t.getExitDate(),
                     t.getEntryPrice(), t.getExitPrice(), t.getStopPrice(), t.getShares(),
-                    t.getRMultiple(), t.getPnl(), t.getHoldBars(),
+                    t.getRMultiple(), t.getRewardToRiskT1(), t.getPnl(), t.getPositionRiskAmount(), t.getPositionNotional(), t.getHoldBars(),
                     t.getMae(), t.getMfe(),
+                    t.getPivotPrice(), t.getPivotDistancePct(),
                     t.getBenchmarkReturnPct(), t.getAlphaPct(), t.getMarketStrengthScore(),
+                    t.getEntryMarketRegime(), t.getRelativeStrengthScore(), t.getMacroTrigger(),
                     t.isHitT1(), t.isHitT2(), t.isHitT3(),
+                    t.getStructureStopModel(),
                     t.getExitReason()
             ));
         }
@@ -217,16 +222,25 @@ public final class ResultExporter {
             sb.append("      \"stopPrice\": ").append(format(t.getStopPrice())).append(",\n");
             sb.append("      \"shares\": ").append(t.getShares()).append(",\n");
             sb.append("      \"rMultiple\": ").append(format(t.getRMultiple())).append(",\n");
+            sb.append("      \"rewardToRiskT1\": ").append(format(t.getRewardToRiskT1())).append(",\n");
             sb.append("      \"pnl\": ").append(format(t.getPnl())).append(",\n");
+            sb.append("      \"positionRiskAmount\": ").append(format(t.getPositionRiskAmount())).append(",\n");
+            sb.append("      \"positionNotional\": ").append(format(t.getPositionNotional())).append(",\n");
             sb.append("      \"holdBars\": ").append(t.getHoldBars()).append(",\n");
             sb.append("      \"mae\": ").append(format(t.getMae())).append(",\n");
             sb.append("      \"mfe\": ").append(format(t.getMfe())).append(",\n");
+            sb.append("      \"pivotPrice\": ").append(format(t.getPivotPrice())).append(",\n");
+            sb.append("      \"pivotDistancePct\": ").append(format(t.getPivotDistancePct())).append(",\n");
             sb.append("      \"benchmarkReturnPct\": ").append(format(t.getBenchmarkReturnPct())).append(",\n");
             sb.append("      \"alphaPct\": ").append(format(t.getAlphaPct())).append(",\n");
             sb.append("      \"marketStrengthScore\": ").append(format(t.getMarketStrengthScore())).append(",\n");
+            sb.append("      \"entryMarketRegime\": \"").append(escape(t.getEntryMarketRegime())).append("\",\n");
+            sb.append("      \"relativeStrengthScore\": ").append(format(t.getRelativeStrengthScore())).append(",\n");
+            sb.append("      \"macroTrigger\": \"").append(escape(t.getMacroTrigger())).append("\",\n");
             sb.append("      \"hitT1\": ").append(t.isHitT1()).append(",\n");
             sb.append("      \"hitT2\": ").append(t.isHitT2()).append(",\n");
             sb.append("      \"hitT3\": ").append(t.isHitT3()).append(",\n");
+            sb.append("      \"structureStopModel\": \"").append(escape(t.getStructureStopModel())).append("\",\n");
             sb.append("      \"exitReason\": \"").append(escape(t.getExitReason())).append("\"\n");
             sb.append("    }");
             if (i < trades.size() - 1) sb.append(",");

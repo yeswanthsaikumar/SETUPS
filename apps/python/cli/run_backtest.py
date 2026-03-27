@@ -448,6 +448,14 @@ def build_trade_reason(t: dict) -> str:
     exit_reason = t.get("exitReason", "?")
     mae   = t.get("mae", 0)
     mfe   = t.get("mfe", 0)
+    shares = t.get("shares", 0)
+    rr_t1 = t.get("rewardToRiskT1", 0)
+    pivot = t.get("pivotPrice", 0)
+    pivot_dist = t.get("pivotDistancePct", 0)
+    stop_model = t.get("structureStopModel", "?")
+    regime = t.get("entryMarketRegime", "NEUTRAL")
+    rs_score = t.get("relativeStrengthScore", 0)
+    macro_trigger = t.get("macroTrigger", "NO_CLEAR_TAILWIND")
     hit_t1 = t.get("hitT1", False)
     hit_t2 = t.get("hitT2", False)
     hit_t3 = t.get("hitT3", False)
@@ -467,7 +475,10 @@ def build_trade_reason(t: dict) -> str:
     lines = [
         f"Setup: {setup_desc}",
         f"Rating: {rating}  |  Window: {window}  |  Quality Score: {score:.1f}",
-        f"Entry: {entry_date} @ {entry:.2f}  |  Stop: {stop:.2f}",
+        f"Entry: {entry_date} @ {entry:.2f}  |  Stop: {stop:.2f} ({stop_model})",
+        f"Position: {shares} shares  |  Planned R:R at T1: {rr_t1:.2f}",
+        f"Pivot: {pivot:.2f}  |  Entry vs Pivot: {pivot_dist:+.2f}%",
+        f"Entry regime: {regime}  |  RS score: {rs_score:+.2f}  |  Macro trigger: {macro_trigger}",
         f"Exit:  {exit_date} @ {exit_p:.2f}  ({exit_reason})",
         f"Result: {r:+.2f}R  |  Risk/Reward achieved: {rr_label}",
         f"Targets hit: {targets_hit}",
@@ -510,12 +521,23 @@ def rcolor(r: float) -> str:
     return "#f85149"
 
 
+def rs_bucket_label(rs_score: float) -> str:
+    if rs_score >= 2.0:
+        return "LEADER"
+    if rs_score <= -2.0:
+        return "LAGGARD"
+    return "NEUTRAL"
+
+
 def build_trade_rows(trades: list[dict]) -> str:
     rows = ""
     for t in trades:
         r = t.get("rMultiple", 0)
         rc = rcolor(r)
         rb = rating_badge(t.get("setupRating", "?"))
+        regime = str(t.get("entryMarketRegime", "NEUTRAL"))
+        macro_trigger = str(t.get("macroTrigger", "NO_CLEAR_TAILWIND"))
+        rs_bucket = rs_bucket_label(float(t.get("relativeStrengthScore", 0) or 0))
         hit_t1 = t.get("hitT1", False)
         hit_t2 = t.get("hitT2", False)
         hit_t3 = t.get("hitT3", False)
@@ -537,7 +559,10 @@ def build_trade_rows(trades: list[dict]) -> str:
         rows += (
             f"<tr data-r='{r:.3f}' data-setup='{html.escape(t.get('setupType',''))}' "
             f"data-rating='{html.escape(t.get('setupRating',''))}' "
-            f"data-symbol='{html.escape(t.get('symbol',''))}'>"
+            f"data-symbol='{html.escape(t.get('symbol',''))}' "
+            f"data-regime='{html.escape(regime)}' "
+            f"data-macro='{html.escape(macro_trigger)}' "
+            f"data-rsbucket='{html.escape(rs_bucket)}'>"
             f"<td><b>{html.escape(t.get('symbol',''))}</b></td>"
             f"<td>{html.escape(t.get('entryDate',''))}</td>"
             f"<td>{html.escape(t.get('exitDate',''))}</td>"
@@ -547,8 +572,15 @@ def build_trade_rows(trades: list[dict]) -> str:
             f"<td>{t.get('qualityScore',0):.1f}</td>"
             f"<td>{t.get('entryPrice',0):.2f}</td>"
             f"<td>{t.get('exitPrice',0):.2f}</td>"
+            f"<td>{t.get('shares',0)}</td>"
             f"<td style='color:{rc};font-weight:700'>{r:+.2f}R</td>"
             f"<td>{rr_badge}</td>"
+            f"<td>{t.get('rewardToRiskT1',0):.2f}</td>"
+            f"<td>{t.get('pivotPrice',0):.2f}</td>"
+            f"<td>{t.get('pivotDistancePct',0):+.2f}%</td>"
+            f"<td>{html.escape(str(t.get('entryMarketRegime','NEUTRAL')))}</td>"
+            f"<td>{t.get('relativeStrengthScore',0):+.2f}</td>"
+            f"<td>{html.escape(str(t.get('macroTrigger','NO_CLEAR_TAILWIND')))}</td>"
             f"<td>{t.get('holdBars',0)}</td>"
             f"<td>{t.get('mae',0):.1f}%</td>"
             f"<td>{t.get('mfe',0):.1f}%</td>"
@@ -580,6 +612,30 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
     t3r = f"{m.get('t3HitRate',0):.1f}%"
     dd_color = "#f85149" if m.get("maxDrawdown",0) < 0 else "#7ee787"
     pf_color = "#3fb950" if m.get("profitFactor",0) >= 1.5 else ("#d29922" if m.get("profitFactor",0) >= 1 else "#f85149")
+
+    regime_counts: dict[str, int] = {}
+    macro_counts: dict[str, int] = {}
+    rs_counts: dict[str, int] = {"LEADER": 0, "NEUTRAL": 0, "LAGGARD": 0}
+    for t in trades:
+        regime = str(t.get("entryMarketRegime", "NEUTRAL"))
+        macro = str(t.get("macroTrigger", "NO_CLEAR_TAILWIND"))
+        rs_bucket = rs_bucket_label(float(t.get("relativeStrengthScore", 0) or 0))
+        regime_counts[regime] = regime_counts.get(regime, 0) + 1
+        macro_counts[macro] = macro_counts.get(macro, 0) + 1
+        rs_counts[rs_bucket] = rs_counts.get(rs_bucket, 0) + 1
+
+    def compact_count_html(counts: dict[str, int], accent: str) -> str:
+        if not counts:
+            return "<div style='color:#8b949e'>No data.</div>"
+        items = []
+        for key, value in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
+            items.append(
+                f"<div style='display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px solid #21262d'>"
+                f"<span style='color:#8b949e'>{html.escape(str(key))}</span>"
+                f"<span style='color:{accent};font-weight:700'>{value}</span>"
+                f"</div>"
+            )
+        return "".join(items)
 
     doc = f"""<!DOCTYPE html>
 <html lang="en">
@@ -833,13 +889,20 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
           <th onclick="sortT(6)">Quality Score</th>
           <th onclick="sortT(7)">Entry Price</th>
           <th onclick="sortT(8)">Exit Price</th>
-          <th onclick="sortT(9)">R Multiple</th>
-          <th onclick="sortT(10)">RR</th>
-          <th onclick="sortT(11)">Hold Bars</th>
-          <th onclick="sortT(12)">MAE (%)</th>
-          <th onclick="sortT(13)">MFE (%)</th>
+          <th onclick="sortT(9)">Shares</th>
+          <th onclick="sortT(10)">R Multiple</th>
+          <th onclick="sortT(11)">RR</th>
+          <th onclick="sortT(12)">Planned T1 R:R</th>
+          <th onclick="sortT(13)">Pivot Price</th>
+          <th onclick="sortT(14)">Entry vs Pivot %</th>
+          <th onclick="sortT(15)">Entry Regime</th>
+          <th onclick="sortT(16)">RS Score</th>
+          <th onclick="sortT(17)">Macro Trigger</th>
+          <th onclick="sortT(18)">Hold Bars</th>
+          <th onclick="sortT(19)">MAE (%)</th>
+          <th onclick="sortT(20)">MFE (%)</th>
           <th>T1</th><th>T2</th><th>T3</th>
-          <th onclick="sortT(17)">Exit Reason</th>
+          <th onclick="sortT(24)">Exit Reason</th>
           <th>Reasoning</th>
         </tr>
       </thead>
@@ -879,8 +942,8 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
         const sym   = row.dataset.symbol.toLowerCase();
         const r     = parseFloat(row.dataset.r);
         const st    = row.dataset.setup;
-        const t2hit = row.cells[15] && row.cells[15].textContent.trim() === '✅';
-        const t3hit = row.cells[16] && row.cells[16].textContent.trim() === '✅';
+        const t2hit = row.cells[22] && row.cells[22].textContent.trim() === '✅';
+        const t3hit = row.cells[23] && row.cells[23].textContent.trim() === '✅';
         let rrOk = true;
         if (rr === '1:2') rrOk = t2hit || t3hit;
         if (rr === '1:3') rrOk = t3hit;

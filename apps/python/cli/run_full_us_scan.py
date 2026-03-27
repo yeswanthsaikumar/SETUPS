@@ -60,6 +60,16 @@ from utils import (
     progress_bar,
 )
 
+try:
+    from fundamentals_provider import FundamentalsProvider, compact_summary as fundamentals_compact_summary
+    _FUNDAMENTALS_AVAILABLE = True
+except Exception:
+    FundamentalsProvider = None
+    _FUNDAMENTALS_AVAILABLE = False
+
+    def fundamentals_compact_summary(_f: dict, is_india: bool = True) -> str:
+        return "—"
+
 _MR_AVAILABLE = True
 _PY_BO_AVAILABLE = True
 
@@ -404,6 +414,110 @@ def compute_watchlist_enrichment(row: dict, bars: list[dict], regime: dict, args
     }
 
 
+def derive_signal_guidance(row: dict, regime: dict) -> dict:
+    list_type = str(row.get("listType", "BREAKOUT")).upper()
+    entry = _to_float(row.get("entry"), 0.0)
+    pivot = _to_float(row.get("pivot"), 0.0)
+    dist_pct = _to_float(row.get("dist%"), 0.0)
+    regime_support = str(row.get("regimeSupport", "NEUTRAL")).upper()
+    weekly_agreement = str(row.get("weeklyAgreement", "MIXED")).upper()
+    rs_score = _to_float(row.get("rsScore"), 0.0)
+
+    if list_type == "WATCHLIST":
+        entry_instruction = f"Set alert near pivot {pivot:.2f}; enter only on breakout trigger close above {entry:.2f}."
+        entry_trigger = "Breakout close above planned entry with volume confirmation"
+    elif list_type == "OPEN_TRADE":
+        entry_instruction = "Already triggered; no new entry. Manage with structure-break stop updates."
+        entry_trigger = "N/A (position already open)"
+    else:
+        entry_instruction = f"Enter on breakout confirmation around {entry:.2f} (pivot distance {dist_pct:+.2f}%)."
+        entry_trigger = "Breakout candle close above entry with healthy volume"
+
+    earnings_trigger = str(row.get("triggerEarningsGrowth") or "REQUIRES_FUNDAMENTAL_CONFIRMATION")
+    debt_trigger = str(row.get("triggerDebtReduction") or "REQUIRES_BALANCE_SHEET_CONFIRMATION")
+    macro_trigger = "TAILWIND" if regime_support in {"STRONG", "SUPPORTIVE"} else "NEUTRAL_OR_HEADWIND"
+    market_trigger = "TAILWIND" if weekly_agreement in {"STRONG", "SUPPORTIVE"} and rs_score > 0 else "MIXED"
+
+    trigger_summary = (
+        f"Earnings:{earnings_trigger} | Debt:{debt_trigger} | "
+        f"Macro:{macro_trigger} | Market:{market_trigger}"
+    )
+
+    return {
+        "entryInstruction": entry_instruction,
+        "entryTriggerCondition": entry_trigger,
+        "triggerEarningsGrowth": earnings_trigger,
+        "triggerDebtReduction": debt_trigger,
+        "triggerMacroTailwind": macro_trigger,
+        "triggerMarketTailwind": market_trigger,
+        "triggerSummary": trigger_summary,
+    }
+
+
+def _format_pct_trigger(prefix: str, value: float | None) -> str:
+    if value is None:
+        return f"{prefix}:UNKNOWN"
+    sign = "+" if value >= 0 else ""
+    return f"{prefix}:{sign}{value:.1f}%"
+
+
+def _earnings_trigger_from_fundamentals(fund: dict | None) -> str:
+    if not fund or fund.get("error"):
+        return "UNKNOWN"
+
+    eps_yoy = _to_float(fund.get("eps_yoy"), None)
+    eps_qoq = _to_float(fund.get("eps_qoq"), None)
+    rev_yoy = _to_float(fund.get("rev_yoy"), None)
+
+    strong = (eps_yoy is not None and eps_yoy >= 15.0) or (rev_yoy is not None and rev_yoy >= 12.0)
+    weak = (eps_yoy is not None and eps_yoy <= -10.0) or (rev_yoy is not None and rev_yoy <= -5.0)
+
+    parts: list[str] = []
+    if eps_yoy is not None:
+        parts.append(_format_pct_trigger("EPS_YOY", eps_yoy))
+    if eps_qoq is not None:
+        parts.append(_format_pct_trigger("EPS_QOQ", eps_qoq))
+    if rev_yoy is not None:
+        parts.append(_format_pct_trigger("REV_YOY", rev_yoy))
+
+    if not parts:
+        return "UNKNOWN"
+    if strong:
+        return "POSITIVE " + " / ".join(parts)
+    if weak:
+        return "WEAK " + " / ".join(parts)
+    return "MIXED " + " / ".join(parts)
+
+
+def _debt_trigger_from_fundamentals(fund: dict | None) -> str:
+    if not fund or fund.get("error"):
+        return "UNKNOWN"
+    debt_trend = _to_float(fund.get("debt_trend_pct"), None)
+    if debt_trend is None:
+        return "UNKNOWN"
+    if debt_trend <= -5.0:
+        return f"POSITIVE Debt↓ {abs(debt_trend):.1f}%"
+    if debt_trend >= 5.0:
+        return f"RISK Debt↑ {debt_trend:.1f}%"
+    return f"STABLE Debt {debt_trend:+.1f}%"
+
+
+def enrich_rows_with_fundamentals(rows: list[dict], fundamentals_by_symbol: dict[str, dict]):
+    for row in rows:
+        symbol = str(row.get("symbol", "")).strip().upper()
+        fund = fundamentals_by_symbol.get(symbol) or {}
+        is_india = symbol.endswith(".NS") or symbol.endswith(".BO")
+        row["fundSummary"] = fundamentals_compact_summary(fund, is_india=is_india)
+        row["triggerEarningsGrowth"] = _earnings_trigger_from_fundamentals(fund)
+        row["triggerDebtReduction"] = _debt_trigger_from_fundamentals(fund)
+        row["triggerSummary"] = (
+            f"Earnings:{row.get('triggerEarningsGrowth','UNKNOWN')} | "
+            f"Debt:{row.get('triggerDebtReduction','UNKNOWN')} | "
+            f"Macro:{row.get('triggerMacroTailwind','UNKNOWN')} | "
+            f"Market:{row.get('triggerMarketTailwind','UNKNOWN')}"
+        )
+
+
 def enrich_and_filter_rows(rows: list[dict], args, regime: dict, list_type: str) -> tuple[list[dict], list[dict], dict[str, str]]:
     kept: list[dict] = []
     rejected: list[dict] = []
@@ -443,6 +557,7 @@ def enrich_and_filter_rows(rows: list[dict], args, regime: dict, list_type: str)
         row["rs12m"] = round(rs12 * 100.0, 2)
         row["rsScore"] = round(rs_score, 2)
         row.update(compute_watchlist_enrichment(row, bars, regime, args))
+        row.update(derive_signal_guidance(row, regime))
 
         quality = _to_float(row.get("score"))
         rank_score = quality + (args.rs_weight * rs_score)
@@ -953,6 +1068,7 @@ def parse_hit(line: str) -> dict:
 
 CSV_FIELDS = [
     "symbol", "listType", "setup", "setupSubtype", "window", "height%", "depth%", "len", "ctr", "dist%", "rating", "close", "pivot", "entry", "score",
+    "entryInstruction", "entryTriggerCondition", "triggerSummary", "triggerEarningsGrowth", "triggerDebtReduction", "triggerMacroTailwind", "triggerMarketTailwind",
     "watchlistRank", "watchlistQualityScore", "pivotProximityScore", "daysNearPivot", "pivotFreshness", "pivotFreshnessScore",
     "range%", "vol%", "rexp", "shares", "sl", "T1", "T2", "T3", "avgVol20", "avgDollarVol20", "rs3m", "rs6m", "rs12m", "rsScore", "rsRankScore",
     "regimeState", "regimeScore", "regimeSupport", "regimeSupportScore", "weeklyAgreement", "weeklyAgreementScore", "volumeDryUpScore", "volumeDryUpRatio",
@@ -1368,6 +1484,12 @@ def save_html(rows: list[dict], path: Path, meta: dict):
         regime_support = r.get("regimeSupport") or "-"
         rs_score = r.get("rsScore") or "-"
         vol_dry_up = r.get("volumeDryUpScore") or "-"
+        entry_instruction = r.get("entryInstruction") or "-"
+        entry_trigger = r.get("entryTriggerCondition") or "-"
+        trigger_earnings = r.get("triggerEarningsGrowth") or "-"
+        trigger_debt = r.get("triggerDebtReduction") or "-"
+        trigger_macro = r.get("triggerMacroTailwind") or "-"
+        trigger_market = r.get("triggerMarketTailwind") or "-"
         mr_rsi = r.get("mrRsi") or "-"
         mr_vol_ratio = r.get("mrVolRatio") or "-"
         mr_pullback_vol_ratio = r.get("mrPullbackVolRatio") or "-"
@@ -1425,6 +1547,9 @@ def save_html(rows: list[dict], path: Path, meta: dict):
             ]
 
         lines.extend([
+            f"Entry Plan: {entry_instruction}",
+            f"Entry Trigger: {entry_trigger}",
+            f"Triggers (segregated) -> Earnings: {trigger_earnings} | Debt: {trigger_debt} | Macro: {trigger_macro} | Market: {trigger_market}",
             f"Watchlist Rank: {watch_rank}  |  Rank Score: {rank_score}",
             f"Pivot Proximity Score: {pivot_prox}  |  Days Near Pivot: {days_near_pivot}  |  Pivot Freshness: {pivot_freshness}",
             f"RS Score: {rs_score}  |  Regime Support: {regime_support}  |  Weekly Agreement: {weekly_agreement}",
@@ -1519,6 +1644,8 @@ def save_html(rows: list[dict], path: Path, meta: dict):
             f"<td>{_disp(close_val)}</td>"
             f"<td>{_disp(pivot_val)}</td>"
             f"<td>{_disp(entry_val)}</td>"
+            f"<td>{_disp(r.get('entryInstruction'))}</td>"
+            f"<td>{_disp(r.get('triggerSummary'))}</td>"
             f"<td>{_disp(pct_gain)}</td>"
             f"<td>{_disp(days_since_breakout)}</td>"
             f"<td>{_disp(max_after)}</td>"
@@ -1926,6 +2053,8 @@ def save_html(rows: list[dict], path: Path, meta: dict):
         <dt>Last Close</dt><dd>Most recent closing price</dd>
         <dt>Pivot Price</dt><dd>Key breakout pivot or support zone price level. The decision point for the setup</dd>
         <dt>Planned Entry</dt><dd>Recommended entry price. For breakouts: buy above pivot; pullbacks: at pullback support</dd>
+        <dt>Entry Plan</dt><dd>Clear action statement for this signal: when to enter for BREAKOUT/WATCHLIST or how to manage OPEN_TRADE</dd>
+        <dt>Trigger Summary</dt><dd>Segregated trigger buckets: Earnings growth, Debt reduction, Macro tailwinds, and Market tailwinds</dd>
         <dt>Pct since Breakout</dt><dd>% gain or loss since the entry/breakout date. Positive = winning, negative = gave back</dd>
         <dt>Days since Breakout</dt><dd>Calendar days since the breakout signal was triggered</dd>
         <dt>Max After</dt><dd>Maximum closing price reached after the breakout (best unrealized gain reached)</dd>
@@ -2069,7 +2198,7 @@ def save_html(rows: list[dict], path: Path, meta: dict):
   <table id="dataTable">
     <thead>
       <tr>
-        <th title="Stock ticker symbol">Symbol</th><th title="Trade status: OPEN_TRADE (active position), WATCHLIST (candidate), BREAKOUT (fresh signal)">List Type</th><th title="Setup pattern detected">Setup</th><th title="Price analysis timeframe window">Window</th><th title="Base consolidation height as % of price (tighter = better)">Base Height %</th><th title="Deepest VCP contraction depth from base high to low (higher = stronger squeeze)">Contraction Depth %</th><th title="Number of bars in the consolidation base">Base Length</th><th title="Number of range+volume contraction pairs observed">Contraction Pairs</th><th title="Current price distance above/below the pivot entry point (negative = below pivot)">Pivot Distance %</th><th title="Setup quality grade: A+ best, D worst">Rating</th><th title="Most recent closing price">Last Close</th><th title="Key pivot / breakout level or support zone">Pivot Price</th><th title="Recommended entry price (buy above this on confirmation)">Planned Entry</th><th title="% gain/loss since the breakout date (computed from entry vs close)">Pct since Breakout</th><th title="Calendar days elapsed since the breakout signal date">Days since Breakout</th><th title="Maximum price reached after the breakout (peak gain %)">Max After</th><th title="Minimum price reached after breakout (worst drawdown close)">Min After</th><th title="20-day average daily volume (liquidity indicator)">avgVol20</th><th title="Most recent session's trading volume">lastVol</th><th title="Composite breakout quality score: contraction strength + timing + volume signals">Quality Score</th>
+        <th title="Stock ticker symbol">Symbol</th><th title="Trade status: OPEN_TRADE (active position), WATCHLIST (candidate), BREAKOUT (fresh signal)">List Type</th><th title="Setup pattern detected">Setup</th><th title="Price analysis timeframe window">Window</th><th title="Base consolidation height as % of price (tighter = better)">Base Height %</th><th title="Deepest VCP contraction depth from base high to low (higher = stronger squeeze)">Contraction Depth %</th><th title="Number of bars in the consolidation base">Base Length</th><th title="Number of range+volume contraction pairs observed">Contraction Pairs</th><th title="Current price distance above/below the pivot entry point (negative = below pivot)">Pivot Distance %</th><th title="Setup quality grade: A+ best, D worst">Rating</th><th title="Most recent closing price">Last Close</th><th title="Key pivot / breakout level or support zone">Pivot Price</th><th title="Recommended entry price (buy above this on confirmation)">Planned Entry</th><th title="Actionable entry timing guidance">Entry Plan</th><th title="Segregated trigger summary: earnings, debt, macro, market">Trigger Summary</th><th title="% gain/loss since the breakout date (computed from entry vs close)">Pct since Breakout</th><th title="Calendar days elapsed since the breakout signal date">Days since Breakout</th><th title="Maximum price reached after the breakout (peak gain %)">Max After</th><th title="Minimum price reached after breakout (worst drawdown close)">Min After</th><th title="20-day average daily volume (liquidity indicator)">avgVol20</th><th title="Most recent session's trading volume">lastVol</th><th title="Composite breakout quality score: contraction strength + timing + volume signals">Quality Score</th>
         <th title="Weighted ranking score used for sorting: quality score + multi-timeframe bonus + proximity bonus">Rank Score</th><th title="How close price is to the pivot point (100 = at pivot, lower = extended)">Pivot Proximity</th><th title="Relative Strength score vs market benchmark">RS Score</th><th title="Macro market regime: STRONG / NEUTRAL / WEAK / FAVORABLE / UNFAVORABLE">Regime Support</th><th title="Whether weekly chart structure agrees with the daily/entry signal">Weekly Agreement</th><th title="Volume dry-up score: how much volume has contracted vs average (higher = better coiling)">Volume Dry-Up</th><th title="Number of days price has stayed near the pivot level">Days Near Pivot</th><th title="Freshness of the pivot: FRESH (just formed), ACTIVE (holding), RETESTED (confirmed support)">Pivot Freshness</th><th title="% contraction in candle range from first to last wave of the base">Range Contraction %</th><th title="% contraction in average volume from first to last wave of the base">Volume Contraction %</th><th title="Breakout candle range expansion factor vs average range (>1.5x = strong expansion)">Range Expansion x</th><th title="Suggested position size in shares for ₹10L portfolio at 1% risk">Position Size</th><th title="Stop-loss price level (place stop order below this)">Stop Loss</th>
         <th title="Target 1: 1R reward (risk = Entry − Stop)">Target 1 (1R)</th><th title="Target 2: 2R reward">Target 2 (2R)</th><th title="Target 3: 3R reward">Target 3 (3R)</th><th title="Links to Yahoo Finance chart and TradingView chart">Price Charts</th><th title="Links to Yahoo Finance fundamentals pages">Fundamental Charts</th><th title="Click 📊 to view/edit earnings notes, sector tailwinds, debt trend, triggers. Saved in browser. Score affects Enhanced Rank.">Fundamentals ✏️</th><th title="Hover 💡 to see full setup rationale, entry logic, stop placement, targets, and all quality metrics">Trade Reasoning</th>
       </tr>
@@ -2743,6 +2872,14 @@ def main():
 
     all_hits.sort(key=safe_rank, reverse=True)
     all_watchlist = rank_watchlist_rows(all_watchlist)
+
+    if _FUNDAMENTALS_AVAILABLE and (all_hits or all_watchlist):
+        fundamental_symbols = sorted({str(r.get("symbol", "")).strip().upper() for r in (all_hits + all_watchlist) if r.get("symbol")})
+        provider = FundamentalsProvider(cache_dir=args.cache_dir)
+        fundamentals_by_symbol = provider.fetch_batch(fundamental_symbols, workers=min(args.workers, 12), show_progress=False)
+        enrich_rows_with_fundamentals(all_hits, fundamentals_by_symbol)
+        enrich_rows_with_fundamentals(all_watchlist, fundamentals_by_symbol)
+
     open_trades = as_open_trade_rows(all_hits)
     shortlist = apply_portfolio_heat(all_hits, args)
     included_symbols = {r.get("symbol", "") for r in all_hits} | {r.get("symbol", "") for r in all_watchlist}

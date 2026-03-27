@@ -178,7 +178,10 @@ public class ScannerEngine {
         }
 
         Candle signalCandle = slice.get(slice.size() - 1);
-        TradePlan plan = tradePlanner.buildPlan(signalCandle.getClose(), setup, config);
+        if (breakout && isBreakoutEntryTooExtended(signalCandle, setup)) {
+            return null;
+        }
+        TradePlan plan = tradePlanner.buildPlan(signalCandle.getClose(), setup, signalCandle, breakout, config);
         if (plan == null) {
             return null;
         }
@@ -231,7 +234,7 @@ public class ScannerEngine {
         }
 
         double plannedEntry = pivot * (1.0 + config.breakoutBufferPct);
-        TradePlan plan = tradePlanner.buildPlan(plannedEntry, setup, config);
+        TradePlan plan = tradePlanner.buildPlan(plannedEntry, setup, signalCandle, false, config);
         if (plan == null) {
             return null;
         }
@@ -362,7 +365,18 @@ public class ScannerEngine {
         }
 
         Candle signalCandle = slice.get(slice.size() - 1);
-        TradePlan plan = tradePlanner.buildPlan(signalCandle.getClose(), setup, config);
+        if (breakout && isBreakoutEntryTooExtended(signalCandle, setup)) {
+            return new RejectionDiagnostic(
+                    symbol,
+                    "scan",
+                    timeframe,
+                    RejectionDiagnostic.Reason.TOO_FAR_FROM_PIVOT,
+                    String.format("breakoutDistancePct=%.4f max=%.4f",
+                            ((signalCandle.getClose() - setup.getPivotPrice()) / Math.max(1e-9, setup.getPivotPrice())),
+                            config.maxBreakoutEntryDistancePct)
+            );
+        }
+        TradePlan plan = tradePlanner.buildPlan(signalCandle.getClose(), setup, signalCandle, breakout, config);
         if (plan == null) {
             return new RejectionDiagnostic(symbol, "scan", timeframe, RejectionDiagnostic.Reason.LOW_QUALITY, "Trade plan could not be built");
         }
@@ -408,7 +422,7 @@ public class ScannerEngine {
         }
 
         double plannedEntry = pivot * (1.0 + config.breakoutBufferPct);
-        TradePlan plan = tradePlanner.buildPlan(plannedEntry, setup, config);
+        TradePlan plan = tradePlanner.buildPlan(plannedEntry, setup, signalCandle, false, config);
         if (plan == null) {
             return new RejectionDiagnostic(symbol, "watchlist", timeframe, RejectionDiagnostic.Reason.LOW_QUALITY, "Trade plan could not be built");
         }
@@ -449,5 +463,14 @@ public class ScannerEngine {
         }
 
         return null;
+    }
+
+    private boolean isBreakoutEntryTooExtended(Candle signalCandle, VcpSetup setup) {
+        double pivot = setup.getPivotPrice();
+        if (pivot <= 0.0) {
+            return true;
+        }
+        double distancePct = (signalCandle.getClose() - pivot) / pivot;
+        return distancePct > config.maxBreakoutEntryDistancePct;
     }
 }
