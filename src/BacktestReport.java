@@ -4,10 +4,13 @@ import java.util.List;
 public class BacktestReport {
     private final List<BacktestTrade> trades = new ArrayList<>();
     private int signals;
+    private int filteredSignals;
 
     public void addSignal() { signals++; }
+    public void addFilteredSignal() { filteredSignals++; }
     public void addTrade(BacktestTrade t) { trades.add(t); }
     public int getSignals()   { return signals; }
+    public int getFilteredSignals() { return filteredSignals; }
     public List<BacktestTrade> getTrades() { return trades; }
     public int getTradeCount(){ return trades.size(); }
 
@@ -85,8 +88,9 @@ public class BacktestReport {
 
     public String toSummaryLine() {
         return String.format(
-                "Signals %d | Trades %d | WinRate %.1f%% | AvgR %.2f | TotalR %.2f | MaxDD %.2fR | PF %.2f | PnL %.2f | AvgAlpha %.2f%% | AlphaWin %.1f%% | MktScore %.2f",
-                signals, getTradeCount(), getWinRate(), getAverageR(),
+                "Signals %d | Filtered %d | Trades %d | WinRate %.1f%% | AvgR %.2f | TotalR %.2f | MaxDD %.2fR | PF %.2f | PnL %.2f | AvgAlpha %.2f%% | AlphaWin %.1f%% | MktScore %.2f",
+                signals, filteredSignals,
+                getTradeCount(), getWinRate(), getAverageR(),
                 getTotalR(), getMaxDrawdown(), getProfitFactor(), getTotalPnl(),
                 getAvgAlphaPct(), getAlphaWinRate(), getAvgMarketStrengthScore()
         );

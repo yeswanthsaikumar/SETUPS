@@ -181,12 +181,21 @@ public class ScannerEngine {
         if (breakout && isBreakoutEntryTooExtended(signalCandle, setup)) {
             return null;
         }
-        TradePlan plan = tradePlanner.buildPlan(signalCandle.getClose(), setup, signalCandle, breakout, config);
+        String signalType = nearBreakout ? "NEAR_BREAKOUT" : "BREAKOUT";
+        TradePlan plan = tradePlanner.buildPlan(
+                signalCandle.getClose(),
+                setup,
+                slice,
+                slice.size() - 1,
+                signalCandle,
+                breakout,
+                signalType,
+                config
+        );
         if (plan == null) {
             return null;
         }
 
-        String signalType = nearBreakout ? "NEAR_BREAKOUT" : "BREAKOUT";
         ScanResult result = new ScanResult(symbol, setup, signalCandle, plan, signalType);
 
         // Apply multi-timeframe alignment analysis
@@ -234,7 +243,16 @@ public class ScannerEngine {
         }
 
         double plannedEntry = pivot * (1.0 + config.breakoutBufferPct);
-        TradePlan plan = tradePlanner.buildPlan(plannedEntry, setup, signalCandle, false, config);
+        TradePlan plan = tradePlanner.buildPlan(
+                plannedEntry,
+                setup,
+                slice,
+                slice.size() - 1,
+                signalCandle,
+                false,
+                "WATCHLIST",
+                config
+        );
         if (plan == null) {
             return null;
         }
@@ -376,7 +394,17 @@ public class ScannerEngine {
                             config.maxBreakoutEntryDistancePct)
             );
         }
-        TradePlan plan = tradePlanner.buildPlan(signalCandle.getClose(), setup, signalCandle, breakout, config);
+        String signalType = nearBreakout ? "NEAR_BREAKOUT" : "BREAKOUT";
+        TradePlan plan = tradePlanner.buildPlan(
+                signalCandle.getClose(),
+                setup,
+                slice,
+                slice.size() - 1,
+                signalCandle,
+                breakout,
+                signalType,
+                config
+        );
         if (plan == null) {
             return new RejectionDiagnostic(symbol, "scan", timeframe, RejectionDiagnostic.Reason.LOW_QUALITY, "Trade plan could not be built");
         }
@@ -422,7 +450,16 @@ public class ScannerEngine {
         }
 
         double plannedEntry = pivot * (1.0 + config.breakoutBufferPct);
-        TradePlan plan = tradePlanner.buildPlan(plannedEntry, setup, signalCandle, false, config);
+        TradePlan plan = tradePlanner.buildPlan(
+                plannedEntry,
+                setup,
+                slice,
+                slice.size() - 1,
+                signalCandle,
+                false,
+                "WATCHLIST",
+                config
+        );
         if (plan == null) {
             return new RejectionDiagnostic(symbol, "watchlist", timeframe, RejectionDiagnostic.Reason.LOW_QUALITY, "Trade plan could not be built");
         }

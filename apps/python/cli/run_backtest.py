@@ -453,6 +453,15 @@ def build_trade_reason(t: dict) -> str:
     pivot = t.get("pivotPrice", 0)
     pivot_dist = t.get("pivotDistancePct", 0)
     stop_model = t.get("structureStopModel", "?")
+    signal_type = t.get("signalType", "BREAKOUT")
+    entry_time = t.get("entryTimeLabel", "SIGNAL_BAR_CLOSE")
+    entry_instruction = t.get("entryInstruction", "-")
+    entry_trigger = t.get("entryTriggerCondition", "-")
+    trailing_policy = t.get("trailingStopPolicy", "VOL_ADAPTIVE_TRAIL")
+    stop_reference = t.get("stopReferencePrice", 0)
+    risk_per_share = t.get("riskPerShare", 0)
+    pos_risk = t.get("positionRiskAmount", 0)
+    pos_notional = t.get("positionNotional", 0)
     regime = t.get("entryMarketRegime", "NEUTRAL")
     rs_score = t.get("relativeStrengthScore", 0)
     macro_trigger = t.get("macroTrigger", "NO_CLEAR_TAILWIND")
@@ -474,9 +483,13 @@ def build_trade_reason(t: dict) -> str:
 
     lines = [
         f"Setup: {setup_desc}",
-        f"Rating: {rating}  |  Window: {window}  |  Quality Score: {score:.1f}",
-        f"Entry: {entry_date} @ {entry:.2f}  |  Stop: {stop:.2f} ({stop_model})",
-        f"Position: {shares} shares  |  Planned R:R at T1: {rr_t1:.2f}",
+        f"Signal Type: {signal_type}  |  Rating: {rating}  |  Window: {window}  |  Quality Score: {score:.1f}",
+        f"Entry: {entry_date} @ {entry:.2f}  |  Entry Time: {entry_time}",
+        f"Entry Plan: {entry_instruction}",
+        f"Entry Trigger: {entry_trigger}",
+        f"Stop: {stop:.2f} ({stop_model})  |  Structure Ref: {stop_reference:.2f}  |  Trail: {trailing_policy}",
+        f"Position: {shares} shares  |  Risk/Share: {risk_per_share:.2f}  |  Position Risk: {pos_risk:.2f}  |  Notional: {pos_notional:.2f}",
+        f"Planned R:R at T1: {rr_t1:.2f}",
         f"Pivot: {pivot:.2f}  |  Entry vs Pivot: {pivot_dist:+.2f}%",
         f"Entry regime: {regime}  |  RS score: {rs_score:+.2f}  |  Macro trigger: {macro_trigger}",
         f"Exit:  {exit_date} @ {exit_p:.2f}  ({exit_reason})",
@@ -545,6 +558,10 @@ def build_trade_rows(trades: list[dict]) -> str:
         t2 = "✅" if hit_t2 else "—"
         t3 = "✅" if hit_t3 else "—"
         er = html.escape(t.get("exitReason", "?"))
+        signal_type = html.escape(str(t.get("signalType", "BREAKOUT")))
+        entry_time = html.escape(str(t.get("entryTimeLabel", "SIGNAL_BAR_CLOSE")))
+        stop_model = html.escape(str(t.get("structureStopModel", "STRUCTURE_SUPPORT")))
+        trailing_policy = html.escape(str(t.get("trailingStopPolicy", "VOL_ADAPTIVE_TRAIL")))
 
         # RR badge: highlight 1:2 and 1:3
         if hit_t3:
@@ -567,20 +584,25 @@ def build_trade_rows(trades: list[dict]) -> str:
             f"<td>{html.escape(t.get('entryDate',''))}</td>"
             f"<td>{html.escape(t.get('exitDate',''))}</td>"
             f"<td>{html.escape(t.get('setupType',''))}</td>"
+            f"<td>{signal_type}</td>"
             f"<td>{rb}</td>"
             f"<td>{html.escape(t.get('windowLabel',''))}</td>"
             f"<td>{t.get('qualityScore',0):.1f}</td>"
             f"<td>{t.get('entryPrice',0):.2f}</td>"
             f"<td>{t.get('exitPrice',0):.2f}</td>"
             f"<td>{t.get('shares',0)}</td>"
+            f"<td>{t.get('riskPerShare',0):.2f}</td>"
             f"<td style='color:{rc};font-weight:700'>{r:+.2f}R</td>"
             f"<td>{rr_badge}</td>"
             f"<td>{t.get('rewardToRiskT1',0):.2f}</td>"
             f"<td>{t.get('pivotPrice',0):.2f}</td>"
             f"<td>{t.get('pivotDistancePct',0):+.2f}%</td>"
+            f"<td>{entry_time}</td>"
             f"<td>{html.escape(str(t.get('entryMarketRegime','NEUTRAL')))}</td>"
             f"<td>{t.get('relativeStrengthScore',0):+.2f}</td>"
             f"<td>{html.escape(str(t.get('macroTrigger','NO_CLEAR_TAILWIND')))}</td>"
+            f"<td>{stop_model}</td>"
+            f"<td>{trailing_policy}</td>"
             f"<td>{t.get('holdBars',0)}</td>"
             f"<td>{t.get('mae',0):.1f}%</td>"
             f"<td>{t.get('mfe',0):.1f}%</td>"
@@ -636,6 +658,10 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
                 f"</div>"
             )
         return "".join(items)
+
+    intelligence_regime = compact_count_html(regime_counts, "#58a6ff")
+    intelligence_rs = compact_count_html(rs_counts, "#7ee787")
+    intelligence_macro = compact_count_html(macro_counts, "#d29922")
 
     doc = f"""<!DOCTYPE html>
 <html lang="en">
@@ -836,6 +862,27 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
     </div>
   </div>
 
+  <h2>🧠 Backtest Trade Intelligence</h2>
+  <div class="grid3">
+    <div class="panel">
+      <div class="panel-title">Entry Regime Context</div>
+      {intelligence_regime}
+    </div>
+    <div class="panel">
+      <div class="panel-title">Relative Strength Leadership</div>
+      {intelligence_rs}
+    </div>
+    <div class="panel">
+      <div class="panel-title">Macro / Market Trigger Mix</div>
+      {intelligence_macro}
+    </div>
+  </div>
+  <div class="panel" style="margin-bottom:12px;color:#8b949e;font-size:.84em;line-height:1.55">
+    This section gives more weight to the <b style="color:#c9d1d9">underlying reason for movement</b>.
+    Use the filters below to isolate trades that worked in market tailwinds, with strong relative strength,
+    or with mixed / weak macro support.
+  </div>
+
   <!-- ── Trade-level Table ─────────────────────────────────────────── -->
   <h2>📋 Trade-Level Details</h2>
   <div class="panel" style="margin-bottom:12px">
@@ -874,6 +921,28 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
       <button class="filter-btn" data-setup="VCP">VCP</button>
       <button class="filter-btn" data-setup="RANGE_EXPANSION">Range Exp</button>
     </div>
+    <span class="ctrl-label">Regime:</span>
+    <select class="ctrl-input" id="regimeFilter">
+      <option value="all">All</option>
+      <option value="TAILWIND">TAILWIND</option>
+      <option value="NEUTRAL">NEUTRAL</option>
+      <option value="HEADWIND">HEADWIND</option>
+    </select>
+    <span class="ctrl-label">RS:</span>
+    <select class="ctrl-input" id="rsFilter">
+      <option value="all">All</option>
+      <option value="LEADER">LEADER</option>
+      <option value="NEUTRAL">NEUTRAL</option>
+      <option value="LAGGARD">LAGGARD</option>
+    </select>
+    <span class="ctrl-label">Macro Trigger:</span>
+    <select class="ctrl-input" id="macroFilter">
+      <option value="all">All</option>
+      <option value="MACRO+MARKET_TAILWIND">MACRO+MARKET_TAILWIND</option>
+      <option value="MACRO_TAILWIND">MACRO_TAILWIND</option>
+      <option value="MARKET_RELATIVE_STRENGTH">MARKET_RELATIVE_STRENGTH</option>
+      <option value="NO_CLEAR_TAILWIND">NO_CLEAR_TAILWIND</option>
+    </select>
     <button class="export-btn" id="exportBtn">📥 Export CSV</button>
   </div>
   <div class="table-wrap">
@@ -884,25 +953,30 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
           <th onclick="sortT(1)">Entry Date</th>
           <th onclick="sortT(2)">Exit Date</th>
           <th onclick="sortT(3)">Trade Setup</th>
-          <th onclick="sortT(4)">Setup Rating</th>
-          <th onclick="sortT(5)">Setup Window</th>
-          <th onclick="sortT(6)">Quality Score</th>
-          <th onclick="sortT(7)">Entry Price</th>
-          <th onclick="sortT(8)">Exit Price</th>
-          <th onclick="sortT(9)">Shares</th>
-          <th onclick="sortT(10)">R Multiple</th>
-          <th onclick="sortT(11)">RR</th>
-          <th onclick="sortT(12)">Planned T1 R:R</th>
-          <th onclick="sortT(13)">Pivot Price</th>
-          <th onclick="sortT(14)">Entry vs Pivot %</th>
-          <th onclick="sortT(15)">Entry Regime</th>
-          <th onclick="sortT(16)">RS Score</th>
-          <th onclick="sortT(17)">Macro Trigger</th>
-          <th onclick="sortT(18)">Hold Bars</th>
-          <th onclick="sortT(19)">MAE (%)</th>
-          <th onclick="sortT(20)">MFE (%)</th>
+          <th onclick="sortT(4)">Signal Type</th>
+          <th onclick="sortT(5)">Setup Rating</th>
+          <th onclick="sortT(6)">Setup Window</th>
+          <th onclick="sortT(7)">Quality Score</th>
+          <th onclick="sortT(8)">Entry Price</th>
+          <th onclick="sortT(9)">Exit Price</th>
+          <th onclick="sortT(10)">Shares</th>
+          <th onclick="sortT(11)">Risk / Share</th>
+          <th onclick="sortT(12)">R Multiple</th>
+          <th onclick="sortT(13)">RR</th>
+          <th onclick="sortT(14)">Planned T1 R:R</th>
+          <th onclick="sortT(15)">Pivot Price</th>
+          <th onclick="sortT(16)">Entry vs Pivot %</th>
+          <th onclick="sortT(17)">Entry Time</th>
+          <th onclick="sortT(18)">Entry Regime</th>
+          <th onclick="sortT(19)">RS Score</th>
+          <th onclick="sortT(20)">Macro Trigger</th>
+          <th onclick="sortT(21)">Stop Model</th>
+          <th onclick="sortT(22)">Trail Policy</th>
+          <th onclick="sortT(23)">Hold Bars</th>
+          <th onclick="sortT(24)">MAE (%)</th>
+          <th onclick="sortT(25)">MFE (%)</th>
           <th>T1</th><th>T2</th><th>T3</th>
-          <th onclick="sortT(24)">Exit Reason</th>
+          <th onclick="sortT(29)">Exit Reason</th>
           <th>Reasoning</th>
         </tr>
       </thead>
@@ -917,6 +991,9 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
 
     document.getElementById('searchBox').addEventListener('input', applyFilters);
     document.getElementById('minR').addEventListener('input', applyFilters);
+    document.getElementById('regimeFilter').addEventListener('change', applyFilters);
+    document.getElementById('rsFilter').addEventListener('change', applyFilters);
+    document.getElementById('macroFilter').addEventListener('change', applyFilters);
 
     document.querySelectorAll('#rrBtns .filter-btn').forEach(b => {{
       b.addEventListener('click', () => {{
@@ -937,11 +1014,17 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
       const minR   = parseFloat(document.getElementById('minR').value) || -99;
       const setup  = document.querySelector('#setupBtns .filter-btn.active').dataset.setup;
       const rr     = document.querySelector('#rrBtns .filter-btn.active').dataset.rr;
+      const regime = document.getElementById('regimeFilter').value;
+      const rs     = document.getElementById('rsFilter').value;
+      const macro  = document.getElementById('macroFilter').value;
       let vis = 0;
       allRows.forEach(row => {{
         const sym   = row.dataset.symbol.toLowerCase();
         const r     = parseFloat(row.dataset.r);
         const st    = row.dataset.setup;
+        const rowRegime = row.dataset.regime;
+        const rowRs = row.dataset.rsbucket;
+        const rowMacro = row.dataset.macro;
         const t2hit = row.cells[22] && row.cells[22].textContent.trim() === '✅';
         const t3hit = row.cells[23] && row.cells[23].textContent.trim() === '✅';
         let rrOk = true;
@@ -950,6 +1033,9 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
         const ok = (!search || sym.includes(search))
                  && r >= minR
                  && (setup === 'all' || st === setup)
+                 && (regime === 'all' || rowRegime === regime)
+                 && (rs === 'all' || rowRs === rs)
+                 && (macro === 'all' || rowMacro === macro)
                  && rrOk;
         row.classList.toggle('hidden', !ok);
         if (ok) vis++;
@@ -979,12 +1065,12 @@ def save_html(m: dict, trades: list[dict], args, path: Path):
       const vis = allRows.filter(r => !r.classList.contains('hidden'));
       if (!vis.length) {{ alert('No rows to export'); return; }}
       const headers = ['Symbol','EntryDate','ExitDate','Setup','Rating','Window',
-                       'QualityScore','EntryPrice','ExitPrice','RMultiple','RR',
-                       'HoldBars','MAEPercent','MFEPercent',
+                       'QualityScore','EntryPrice','ExitPrice','Shares','RMultiple','RR','PlannedT1RR',
+                       'PivotPrice','EntryVsPivotPct','EntryRegime','RSScore','MacroTrigger','HoldBars','MAEPercent','MFEPercent',
                        'HitT1','HitT2','HitT3','ExitReason'];
       let csv = headers.join(',') + '\\n';
       vis.forEach(row => {{
-        const cols = Array.from(row.cells).slice(0,18).map(c => {{
+        const cols = Array.from(row.cells).slice(0,25).map(c => {{
           let t = c.textContent.trim().replace(/"/g, '""');
           return `"${{t}}"`;
         }});
@@ -1107,11 +1193,31 @@ def run_single_backtest(args, market: str, timeframe: str, enable_advanced: bool
             "entryPrice",
             "exitPrice",
             "stopPrice",
+            "shares",
+            "riskPerShare",
             "rMultiple",
+            "rewardToRiskT1",
             "pnl",
+            "positionRiskAmount",
+            "positionNotional",
             "holdBars",
             "mae",
             "mfe",
+            "pivotPrice",
+            "pivotDistancePct",
+            "entryMarketRegime",
+            "relativeStrengthScore",
+            "macroTrigger",
+            "signalType",
+            "entryTimeLabel",
+            "entryInstruction",
+            "entryTriggerCondition",
+            "structureStopModel",
+            "trailingStopPolicy",
+            "stopReferencePrice",
+            "accountBalanceBefore",
+            "accountBalanceAfter",
+            "riskPctUsed",
             "hitT1",
             "hitT2",
             "hitT3",

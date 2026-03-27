@@ -165,8 +165,9 @@ public class Main {
                 .append("</div>\n");
 
         html.append("<h2>Trades</h2>\n<table><thead><tr>")
-                .append("<th>Symbol</th><th>Entry Date</th><th>Exit Date</th><th>Setup</th><th>R</th><th>PnL</th>")
-                .append("<th>Trade Return %</th><th>Benchmark %</th><th>Alpha %</th><th>Market Strength</th><th>Exit</th>")
+                .append("<th>Symbol</th><th>Entry Date</th><th>Exit Date</th><th>Setup</th><th>Signal</th><th>Entry Time</th>")
+                .append("<th>Entry</th><th>Stop</th><th>Risk/Share</th><th>Shares</th><th>R</th><th>PnL</th>")
+                .append("<th>Trade Return %</th><th>Benchmark %</th><th>Alpha %</th><th>Market Strength</th><th>Regime</th><th>RS</th><th>Macro Trigger</th><th>Stop Model</th><th>Trail Policy</th><th>Exit</th>")
                 .append("</tr></thead><tbody>");
 
         for (BacktestTrade trade : report.getTrades()) {
@@ -177,12 +178,23 @@ public class Main {
                     .append("<td>").append(trade.getEntryDate()).append("</td>")
                     .append("<td>").append(trade.getExitDate()).append("</td>")
                     .append("<td>").append(trade.getSetupType()).append("/ ").append(trade.getSetupRating()).append("</td>")
+                    .append("<td>").append(trade.getSignalType()).append("</td>")
+                    .append("<td>").append(trade.getEntryTimeLabel()).append("</td>")
+                    .append("<td>").append(String.format("%.2f", trade.getEntryPrice())).append("</td>")
+                    .append("<td>").append(String.format("%.2f", trade.getStopPrice())).append("</td>")
+                    .append("<td>").append(String.format("%.2f", trade.getRiskPerShare())).append("</td>")
+                    .append("<td>").append(trade.getShares()).append("</td>")
                     .append("<td>").append(String.format("%.2f", trade.getRMultiple())).append("</td>")
                     .append("<td class=\"").append(pnlClass).append("\">").append(String.format("%.2f", trade.getPnl())).append("</td>")
                     .append("<td>").append(String.format("%.2f", trade.getTradeReturnPct())).append("</td>")
                     .append("<td>").append(String.format("%.2f", trade.getBenchmarkReturnPct())).append("</td>")
                     .append("<td class=\"").append(alphaClass).append("\">").append(String.format("%.2f", trade.getAlphaPct())).append("</td>")
                     .append("<td>").append(String.format("%.2f", trade.getMarketStrengthScore())).append("</td>")
+                    .append("<td>").append(trade.getEntryMarketRegime()).append("</td>")
+                    .append("<td>").append(String.format("%.2f", trade.getRelativeStrengthScore())).append("</td>")
+                    .append("<td>").append(trade.getMacroTrigger()).append("</td>")
+                    .append("<td>").append(trade.getStructureStopModel()).append("</td>")
+                    .append("<td>").append(trade.getTrailingStopPolicy()).append("</td>")
                     .append("<td class=\"muted\">").append(trade.getExitReason()).append("</td>")
                     .append("</tr>");
         }

@@ -23,6 +23,7 @@ public class BacktestEngine {
 
     public BacktestReport run(List<String> symbols, int lookbackDays) {
         BacktestReport report = new BacktestReport();
+        double accountBalance = 1_000_000.0;
         String resolvedBenchmark = resolveBenchmarkSymbol(symbols);
         List<Candle> benchmarkCandles = "weekly".equalsIgnoreCase(timeframe)
                 ? marketDataProvider.getWeeklyCandles(resolvedBenchmark, lookbackDays)
@@ -46,30 +47,46 @@ public class BacktestEngine {
                 java.time.LocalDate entryDate = candles.get(i).getDate();
                 double entryMarketStrength = marketStrengthScore(benchmarkCandles, benchmarkByDate, entryDate);
                 double relativeStrengthScore = relativeStrengthScore(candles, i, benchmarkCandles, benchmarkByDate, entryDate);
-                SimulatedTrade sim = simulateTrade(candles, i, plan, entryMarketStrength);
+                String entryMarketRegime = classifyEntryMarketRegime(entryMarketStrength);
+                if (shouldFilterOutSignal(setup, entryMarketRegime, relativeStrengthScore)) {
+                    report.addFilteredSignal();
+                    i++;
+                    continue;
+                }
+
+                PositionSizing sizing = resolvePositionSizing(plan, accountBalance, entryMarketRegime);
+                if (sizing.shares < 1) {
+                    report.addFilteredSignal();
+                    i++;
+                    continue;
+                }
+
+                SimulatedTrade sim = simulateTrade(candles, i, plan, entryMarketStrength, entryMarketRegime);
                 java.time.LocalDate exitDate = candles.get(sim.exitIndex).getDate();
                 double benchmarkReturn = benchmarkReturnPct(benchmarkCandles, benchmarkByDate, entryDate, exitDate);
                 double tradeReturnPct = plan.getEntry() <= 0.0 ? 0.0 : ((sim.exitPrice / plan.getEntry()) - 1.0) * 100.0;
                 double alphaPct = tradeReturnPct - benchmarkReturn;
-                double riskPerShare = Math.max(0.0, plan.getEntry() - plan.getStopLoss());
+                double riskPerShare = Math.max(0.0, plan.getRiskPerShare());
                 double rewardToRiskT1 = riskPerShare > 0.0
                         ? Math.max(0.0, (plan.getTarget1() - plan.getEntry()) / riskPerShare)
                         : 0.0;
-                double positionRiskAmount = riskPerShare * plan.getShares();
-                double positionNotional = plan.getEntry() * plan.getShares();
+                double positionRiskAmount = riskPerShare * sizing.shares;
+                double positionNotional = plan.getEntry() * sizing.shares;
                 double pivot = setup.getPivotPrice();
                 double pivotDistancePct = pivot > 0.0
                         ? ((plan.getEntry() / pivot) - 1.0) * 100.0
                         : 0.0;
-                String entryMarketRegime = classifyEntryMarketRegime(entryMarketStrength);
                 String macroTrigger = classifyMacroTrigger(entryMarketRegime, relativeStrengthScore);
+                double accountBefore = accountBalance;
+                double pnl = sim.realizedPerShare * sizing.shares;
+                accountBalance = Math.max(0.0, accountBalance + pnl);
 
                 report.addTrade(new BacktestTrade(
                         symbol,
                         entryDate,
                         exitDate,
-                        plan.getEntry(), sim.exitPrice, plan.getStopLoss(), plan.getShares(),
-                        sim.rMultiple, sim.pnl, sim.exitReason,
+                        plan.getEntry(), sim.exitPrice, plan.getStopLoss(), sizing.shares,
+                        sim.rMultiple, pnl, sim.exitReason,
                         // setup metadata
                         setup.getSetupType().toString(),
                         setup.getSetupRating(),
@@ -86,10 +103,20 @@ public class BacktestEngine {
                         positionNotional,
                         pivot,
                         pivotDistancePct,
-                        sim.exitReason,
+                        plan.getStopModel(),
                         entryMarketRegime,
                         relativeStrengthScore,
-                        macroTrigger
+                        macroTrigger,
+                        accountBefore,
+                        accountBalance,
+                        sizing.riskPctUsed,
+                        signal.getSignalType(),
+                        plan.getEntryTimeLabel(),
+                        plan.getEntryInstruction(),
+                        plan.getEntryTriggerCondition(),
+                        plan.getTrailingStopPolicy(),
+                        plan.getStopReferencePrice(),
+                        riskPerShare
                 ));
 
                 // Walk every bar so backtest includes all system-signaled entries.
@@ -222,14 +249,55 @@ public class BacktestEngine {
         return "NO_CLEAR_TAILWIND";
     }
 
+    private boolean shouldFilterOutSignal(VcpSetup setup, String marketRegime, double rsScore) {
+        if (!"HEADWIND".equals(marketRegime)) {
+            return false;
+        }
+        String rating = setup.getSetupRating() == null ? "" : setup.getSetupRating().trim().toUpperCase();
+        boolean topRated = "A".equals(rating) || "A+".equals(rating);
+        return !topRated || rsScore < 1.5;
+    }
+
+    private PositionSizing resolvePositionSizing(TradePlan plan, double accountBalance, String marketRegime) {
+        double riskPerShare = Math.max(0.0, plan.getEntry() - plan.getStopLoss());
+        if (riskPerShare <= 0.0 || accountBalance <= 0.0) {
+            return new PositionSizing(0, 0.0);
+        }
+
+        double baseRiskPct = config.riskPerTradePct;
+        double riskPct;
+        double maxDeploymentPct;
+        if ("HEADWIND".equals(marketRegime)) {
+            riskPct = baseRiskPct * 0.45;
+            maxDeploymentPct = 0.10;
+        } else if ("TAILWIND".equals(marketRegime)) {
+            riskPct = Math.min(baseRiskPct * 1.50, 0.02);
+            maxDeploymentPct = 0.35;
+        } else {
+            riskPct = baseRiskPct;
+            maxDeploymentPct = 0.20;
+        }
+
+        double riskCapital = accountBalance * riskPct;
+        long byRisk = (long) Math.floor(riskCapital / riskPerShare);
+        long byNotional = (long) Math.floor((accountBalance * maxDeploymentPct) / Math.max(1e-6, plan.getEntry()));
+        long shares = Math.max(0, Math.min(byRisk, byNotional));
+        return new PositionSizing(shares, riskPct);
+    }
+
     private SimulatedTrade simulateTrade(
             List<Candle> candles,
             int signalIndex,
             TradePlan plan,
-            double entryMarketStrength
+            double entryMarketStrength,
+            String entryMarketRegime
     ) {
         double entry = plan.getEntry();
         double initialStop = resolveInitialStructureStop(candles, signalIndex, entry, plan.getStopLoss());
+        if ("HEADWIND".equals(entryMarketRegime)) {
+            // Keep headwind risk tight so weak tapes cut quickly.
+            initialStop = Math.max(initialStop, entry * 0.97);
+        }
         double risk = entry - initialStop;
         if (risk <= 0.0) {
             initialStop = Math.min(plan.getStopLoss(), entry * 0.995);
@@ -253,6 +321,12 @@ public class BacktestEngine {
 
         double highestHigh = candles.get(signalIndex).getHigh();
         double trailingPct = trailingPercentForSignal(candles, signalIndex);
+        if ("HEADWIND".equals(entryMarketRegime)) {
+            trailingPct = Math.max(0.02, trailingPct * 0.65);
+        } else if ("TAILWIND".equals(entryMarketRegime)) {
+            trailingPct = Math.min(0.12, trailingPct * 1.20);
+        }
+        double trailActivationR = "HEADWIND".equals(entryMarketRegime) ? 0.6 : 1.0;
         boolean supportiveTrend = entryMarketStrength >= config.strongTrendMarketScoreThreshold;
 
         for (int i = signalIndex + 1; i <= last; i++) {
@@ -278,7 +352,7 @@ public class BacktestEngine {
             String activeReason = "STRUCTURE_BREAK_INITIAL";
 
             // Winners move to a dynamic trail from the highest-high structure.
-            if (highestHigh >= entry + risk) {
+            if (highestHigh >= entry + (risk * trailActivationR)) {
                 double trailStop = highestHigh * (1.0 - trailingPct);
                 if (trailStop > activeStop) {
                     activeStop = trailStop;
@@ -311,9 +385,8 @@ public class BacktestEngine {
         int holdBars = exitIndex - signalIndex;
         double realizedPerShare = exitPrice - entry;
         double rMultiple = risk <= 0.0 ? 0.0 : (realizedPerShare / risk);
-        double pnl = realizedPerShare * plan.getShares();
 
-        return new SimulatedTrade(exitIndex, exitPrice, rMultiple, pnl, reason,
+        return new SimulatedTrade(exitIndex, exitPrice, rMultiple, realizedPerShare, reason,
                 hitT1, hitT2, hitT3, mae, mfe, holdBars);
     }
 
@@ -357,18 +430,18 @@ public class BacktestEngine {
 
     private static class SimulatedTrade {
         final int exitIndex;
-        final double exitPrice, rMultiple, pnl, mae, mfe;
+        final double exitPrice, rMultiple, realizedPerShare, mae, mfe;
         final String exitReason;
         final boolean hitT1, hitT2, hitT3;
         final int holdBars;
 
-        SimulatedTrade(int exitIndex, double exitPrice, double rMultiple, double pnl,
+        SimulatedTrade(int exitIndex, double exitPrice, double rMultiple, double realizedPerShare,
                        String exitReason, boolean hitT1, boolean hitT2, boolean hitT3,
                        double mae, double mfe, int holdBars) {
             this.exitIndex = exitIndex;
             this.exitPrice = exitPrice;
             this.rMultiple = rMultiple;
-            this.pnl = pnl;
+            this.realizedPerShare = realizedPerShare;
             this.exitReason = exitReason;
             this.hitT1 = hitT1;
             this.hitT2 = hitT2;
@@ -376,6 +449,16 @@ public class BacktestEngine {
             this.mae = mae;
             this.mfe = mfe;
             this.holdBars = holdBars;
+        }
+    }
+
+    private static class PositionSizing {
+        final long shares;
+        final double riskPctUsed;
+
+        PositionSizing(long shares, double riskPctUsed) {
+            this.shares = shares;
+            this.riskPctUsed = riskPctUsed;
         }
     }
 }

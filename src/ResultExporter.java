@@ -83,11 +83,12 @@ public final class ResultExporter {
 
     private static void writeScanCsv(List<ScanResult> results, Path path) {
         List<String> lines = new ArrayList<>();
-        lines.add("symbol,setupType,windowLabel,windowBars,baseRangeHeightPct,contractionDepthPct,rangeContractionCount,volumeContractionCount,contractionPairs,setupRating,date,close,pivot,support,qualityScore,rangeContractionPct,volumeContractionPct,rangeExpansion,entry,stop,shares,target1,target2,target3");
+        lines.add("symbol,signalType,setupType,windowLabel,windowBars,baseRangeHeightPct,contractionDepthPct,rangeContractionCount,volumeContractionCount,contractionPairs,setupRating,date,close,pivot,support,qualityScore,rangeContractionPct,volumeContractionPct,rangeExpansion,entry,stop,shares,target1,target2,target3,entryTimeLabel,entryInstruction,entryTriggerCondition,stopModel,trailingStopPolicy,stopReferencePrice,riskPerShare");
         for (ScanResult r : results) {
             lines.add(String.format(
-                    "%s,%s,%s,%d,%.2f,%.2f,%d,%d,%d,%s,%s,%.5f,%.5f,%.5f,%.2f,%.2f,%.2f,%.2f,%.5f,%.5f,%d,%.5f,%.5f,%.5f",
+                    "%s,%s,%s,%s,%d,%.2f,%.2f,%d,%d,%d,%s,%s,%.5f,%.5f,%.5f,%.2f,%.2f,%.2f,%.2f,%.5f,%.5f,%d,%.5f,%.5f,%.5f,%s,\"%s\",\"%s\",%s,%s,%.5f,%.5f",
                     r.getSymbol(),
+                    r.getSignalType(),
                     r.getSetup().getSetupType(),
                     r.getSetup().getBaseWindowLabel(),
                     r.getSetup().getBaseWindowBars(),
@@ -110,7 +111,14 @@ public final class ResultExporter {
                     r.getTradePlan().getShares(),
                     r.getTradePlan().getTarget1(),
                     r.getTradePlan().getTarget2(),
-                    r.getTradePlan().getTarget3()
+                    r.getTradePlan().getTarget3(),
+                    r.getTradePlan().getEntryTimeLabel(),
+                    escapeCsv(r.getTradePlan().getEntryInstruction()),
+                    escapeCsv(r.getTradePlan().getEntryTriggerCondition()),
+                    r.getTradePlan().getStopModel(),
+                    r.getTradePlan().getTrailingStopPolicy(),
+                    r.getTradePlan().getStopReferencePrice(),
+                    r.getTradePlan().getRiskPerShare()
             ));
         }
         writeLines(path, lines);
@@ -123,6 +131,7 @@ public final class ResultExporter {
             ScanResult r = results.get(i);
             sb.append("  {\n");
             sb.append("    \"symbol\": \"").append(escape(r.getSymbol())).append("\",\n");
+            sb.append("    \"signalType\": \"").append(escape(r.getSignalType())).append("\",\n");
             sb.append("    \"setupType\": \"").append(r.getSetup().getSetupType()).append("\",\n");
             sb.append("    \"windowLabel\": \"").append(r.getSetup().getBaseWindowLabel()).append("\",\n");
             sb.append("    \"windowBars\": ").append(r.getSetup().getBaseWindowBars()).append(",\n");
@@ -145,7 +154,14 @@ public final class ResultExporter {
             sb.append("    \"shares\": ").append(r.getTradePlan().getShares()).append(",\n");
             sb.append("    \"target1\": ").append(format(r.getTradePlan().getTarget1())).append(",\n");
             sb.append("    \"target2\": ").append(format(r.getTradePlan().getTarget2())).append(",\n");
-            sb.append("    \"target3\": ").append(format(r.getTradePlan().getTarget3())).append("\n");
+            sb.append("    \"target3\": ").append(format(r.getTradePlan().getTarget3())).append(",\n");
+            sb.append("    \"entryTimeLabel\": \"").append(escape(r.getTradePlan().getEntryTimeLabel())).append("\",\n");
+            sb.append("    \"entryInstruction\": \"").append(escape(r.getTradePlan().getEntryInstruction())).append("\",\n");
+            sb.append("    \"entryTriggerCondition\": \"").append(escape(r.getTradePlan().getEntryTriggerCondition())).append("\",\n");
+            sb.append("    \"stopModel\": \"").append(escape(r.getTradePlan().getStopModel())).append("\",\n");
+            sb.append("    \"trailingStopPolicy\": \"").append(escape(r.getTradePlan().getTrailingStopPolicy())).append("\",\n");
+            sb.append("    \"stopReferencePrice\": ").append(format(r.getTradePlan().getStopReferencePrice())).append(",\n");
+            sb.append("    \"riskPerShare\": ").append(format(r.getTradePlan().getRiskPerShare())).append("\n");
             sb.append("  }");
             if (i < results.size() - 1) {
                 sb.append(",");
@@ -162,10 +178,10 @@ public final class ResultExporter {
                   "entryDate,exitDate,entryPrice,exitPrice,stopPrice,shares," +
                   "rMultiple,rewardToRiskT1,pnl,positionRiskAmount,positionNotional,holdBars,mae,mfe," +
                   "pivotPrice,pivotDistancePct,benchmarkReturnPct,alphaPct,marketStrengthScore,entryMarketRegime,relativeStrengthScore,macroTrigger," +
-                  "hitT1,hitT2,hitT3,structureStopModel,exitReason");
+                  "accountBalanceBefore,accountBalanceAfter,riskPctUsed,signalType,entryTimeLabel,entryInstruction,entryTriggerCondition,structureStopModel,trailingStopPolicy,stopReferencePrice,riskPerShare,hitT1,hitT2,hitT3,exitReason");
         for (BacktestTrade t : report.getTrades()) {
             lines.add(String.format(
-                    "%s,%s,%s,%s,%.2f,%s,%s,%.5f,%.5f,%.5f,%d,%.4f,%.4f,%.2f,%.2f,%.2f,%d,%.2f,%.2f,%.5f,%.2f,%.2f,%.2f,%.2f,%s,%.2f,%s,%b,%b,%b,%s,%s",
+                    "%s,%s,%s,%s,%.2f,%s,%s,%.5f,%.5f,%.5f,%d,%.4f,%.4f,%.2f,%.2f,%.2f,%d,%.2f,%.2f,%.5f,%.2f,%.2f,%.2f,%.2f,%s,%.2f,%s,%.2f,%.2f,%.4f,%s,%s,\"%s\",\"%s\",%s,%s,%.5f,%.5f,%b,%b,%b,%s",
                     t.getSymbol(), t.getSetupType(), t.getSetupRating(), t.getWindowLabel(),
                     t.getQualityScore(),
                     t.getEntryDate(), t.getExitDate(),
@@ -175,8 +191,12 @@ public final class ResultExporter {
                     t.getPivotPrice(), t.getPivotDistancePct(),
                     t.getBenchmarkReturnPct(), t.getAlphaPct(), t.getMarketStrengthScore(),
                     t.getEntryMarketRegime(), t.getRelativeStrengthScore(), t.getMacroTrigger(),
-                    t.isHitT1(), t.isHitT2(), t.isHitT3(),
+                    t.getAccountBalanceBefore(), t.getAccountBalanceAfter(), t.getRiskPctUsed(),
+                    t.getSignalType(), t.getEntryTimeLabel(),
+                    escapeCsv(t.getEntryInstruction()), escapeCsv(t.getEntryTriggerCondition()),
                     t.getStructureStopModel(),
+                    t.getTrailingStopPolicy(), t.getStopReferencePrice(), t.getRiskPerShare(),
+                    t.isHitT1(), t.isHitT2(), t.isHitT3(),
                     t.getExitReason()
             ));
         }
@@ -187,6 +207,7 @@ public final class ResultExporter {
         StringBuilder sb = new StringBuilder();
         sb.append("{\n");
         sb.append("  \"signals\": ").append(report.getSignals()).append(",\n");
+        sb.append("  \"filteredSignals\": ").append(report.getFilteredSignals()).append(",\n");
         sb.append("  \"trades\": ").append(report.getTradeCount()).append(",\n");
         sb.append("  \"winRate\": ").append(format(report.getWinRate())).append(",\n");
         sb.append("  \"averageR\": ").append(format(report.getAverageR())).append(",\n");
@@ -237,10 +258,20 @@ public final class ResultExporter {
             sb.append("      \"entryMarketRegime\": \"").append(escape(t.getEntryMarketRegime())).append("\",\n");
             sb.append("      \"relativeStrengthScore\": ").append(format(t.getRelativeStrengthScore())).append(",\n");
             sb.append("      \"macroTrigger\": \"").append(escape(t.getMacroTrigger())).append("\",\n");
+            sb.append("      \"accountBalanceBefore\": ").append(format(t.getAccountBalanceBefore())).append(",\n");
+            sb.append("      \"accountBalanceAfter\": ").append(format(t.getAccountBalanceAfter())).append(",\n");
+            sb.append("      \"riskPctUsed\": ").append(format(t.getRiskPctUsed())).append(",\n");
+            sb.append("      \"signalType\": \"").append(escape(t.getSignalType())).append("\",\n");
+            sb.append("      \"entryTimeLabel\": \"").append(escape(t.getEntryTimeLabel())).append("\",\n");
+            sb.append("      \"entryInstruction\": \"").append(escape(t.getEntryInstruction())).append("\",\n");
+            sb.append("      \"entryTriggerCondition\": \"").append(escape(t.getEntryTriggerCondition())).append("\",\n");
             sb.append("      \"hitT1\": ").append(t.isHitT1()).append(",\n");
             sb.append("      \"hitT2\": ").append(t.isHitT2()).append(",\n");
             sb.append("      \"hitT3\": ").append(t.isHitT3()).append(",\n");
             sb.append("      \"structureStopModel\": \"").append(escape(t.getStructureStopModel())).append("\",\n");
+            sb.append("      \"trailingStopPolicy\": \"").append(escape(t.getTrailingStopPolicy())).append("\",\n");
+            sb.append("      \"stopReferencePrice\": ").append(format(t.getStopReferencePrice())).append(",\n");
+            sb.append("      \"riskPerShare\": ").append(format(t.getRiskPerShare())).append(",\n");
             sb.append("      \"exitReason\": \"").append(escape(t.getExitReason())).append("\"\n");
             sb.append("    }");
             if (i < trades.size() - 1) sb.append(",");
@@ -253,10 +284,10 @@ public final class ResultExporter {
 
     private static void writeWatchlistCsv(List<WatchlistResult> results, Path path) {
         List<String> lines = new ArrayList<>();
-        lines.add("symbol,setupType,windowLabel,windowBars,distanceToPivotPct,baseRangeHeightPct,contractionDepthPct,rangeContractionCount,volumeContractionCount,contractionPairs,setupRating,date,close,pivot,support,qualityScore,rangeContractionPct,volumeContractionPct,rangeExpansion,entry,stop,shares,target1,target2,target3");
+        lines.add("symbol,setupType,windowLabel,windowBars,distanceToPivotPct,baseRangeHeightPct,contractionDepthPct,rangeContractionCount,volumeContractionCount,contractionPairs,setupRating,date,close,pivot,support,qualityScore,rangeContractionPct,volumeContractionPct,rangeExpansion,entry,stop,shares,target1,target2,target3,entryTimeLabel,entryInstruction,entryTriggerCondition,stopModel,trailingStopPolicy,stopReferencePrice,riskPerShare");
         for (WatchlistResult r : results) {
             lines.add(String.format(
-                    "%s,%s,%s,%d,%.2f,%.2f,%.2f,%d,%d,%d,%s,%s,%.5f,%.5f,%.5f,%.2f,%.2f,%.2f,%.2f,%.5f,%.5f,%d,%.5f,%.5f,%.5f",
+                    "%s,%s,%s,%d,%.2f,%.2f,%.2f,%d,%d,%d,%s,%s,%.5f,%.5f,%.5f,%.2f,%.2f,%.2f,%.2f,%.5f,%.5f,%d,%.5f,%.5f,%.5f,%s,\"%s\",\"%s\",%s,%s,%.5f,%.5f",
                     r.getSymbol(),
                     r.getSetup().getSetupType(),
                     r.getSetup().getBaseWindowLabel(),
@@ -281,7 +312,14 @@ public final class ResultExporter {
                     r.getTradePlan().getShares(),
                     r.getTradePlan().getTarget1(),
                     r.getTradePlan().getTarget2(),
-                    r.getTradePlan().getTarget3()
+                    r.getTradePlan().getTarget3(),
+                    r.getTradePlan().getEntryTimeLabel(),
+                    escapeCsv(r.getTradePlan().getEntryInstruction()),
+                    escapeCsv(r.getTradePlan().getEntryTriggerCondition()),
+                    r.getTradePlan().getStopModel(),
+                    r.getTradePlan().getTrailingStopPolicy(),
+                    r.getTradePlan().getStopReferencePrice(),
+                    r.getTradePlan().getRiskPerShare()
             ));
         }
         writeLines(path, lines);
@@ -314,7 +352,14 @@ public final class ResultExporter {
             sb.append("    \"shares\": ").append(r.getTradePlan().getShares()).append(",\n");
             sb.append("    \"target1\": ").append(format(r.getTradePlan().getTarget1())).append(",\n");
             sb.append("    \"target2\": ").append(format(r.getTradePlan().getTarget2())).append(",\n");
-            sb.append("    \"target3\": ").append(format(r.getTradePlan().getTarget3())).append("\n");
+            sb.append("    \"target3\": ").append(format(r.getTradePlan().getTarget3())).append(",\n");
+            sb.append("    \"entryTimeLabel\": \"").append(escape(r.getTradePlan().getEntryTimeLabel())).append("\",\n");
+            sb.append("    \"entryInstruction\": \"").append(escape(r.getTradePlan().getEntryInstruction())).append("\",\n");
+            sb.append("    \"entryTriggerCondition\": \"").append(escape(r.getTradePlan().getEntryTriggerCondition())).append("\",\n");
+            sb.append("    \"stopModel\": \"").append(escape(r.getTradePlan().getStopModel())).append("\",\n");
+            sb.append("    \"trailingStopPolicy\": \"").append(escape(r.getTradePlan().getTrailingStopPolicy())).append("\",\n");
+            sb.append("    \"stopReferencePrice\": ").append(format(r.getTradePlan().getStopReferencePrice())).append(",\n");
+            sb.append("    \"riskPerShare\": ").append(format(r.getTradePlan().getRiskPerShare())).append("\n");
             sb.append("  }");
             if (i < results.size() - 1) {
                 sb.append(",");

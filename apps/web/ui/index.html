@@ -761,11 +761,6 @@
           _planItem('Pivot', tp.pivotPrice),
           _planItem('Entry', tp.entryPrice),
           _planItem('Stop Loss', tp.stopLoss),
-          _planItem('Target 1', tp.target1),
-          _planItem('Target 2', tp.target2),
-          _planItem('Target 3', tp.target3),
-          _planItem('R:R @ T1', tp.rrT1, 'x'),
-          _planItem('R:R @ T2', tp.rrT2, 'x'),
           _planItem('Risk/Share', tp.riskPerShare),
           _planItem('Suggested Shares', tp.suggestedShares),
           _planItem('Dist from Pivot', tp.distFromPivotPct != null ? tp.distFromPivotPct + '%' : null),
@@ -782,13 +777,30 @@
         _setSectionDisplay('arSetupSection', false);
       }
 
-      if (a.regimeAnalysis || a.mtfAnalysis) {
+      if (a.regimeAnalysis || a.mtfAnalysis || a.rsAnalysis || a.volumeAnalysis) {
         const rBullets = [];
         if (a.regimeAnalysis) {
           rBullets.push(a.regimeAnalysis.emoji + ' ' + a.regimeAnalysis.summary);
           if (a.regimeAnalysis.supportText) rBullets.push('   ↳ ' + a.regimeAnalysis.supportText);
           rBullets.push(`📊 Regime score: ${a.regimeAnalysis.score}`);
         }
+
+        // Add RS metrics if available
+        if (a.rsAnalysis) {
+          const rs3m = _formatCompareValue(a.rsAnalysis.rs3m, '%');
+          const rs6m = _formatCompareValue(a.rsAnalysis.rs6m, '%');
+          rBullets.push(`📈 RS 3M: ${rs3m} | RS 6M: ${rs6m}`);
+        }
+
+        // Add volume and range expansion if available
+        if (a.scanData) {
+          const volPct = _formatCompareValue(a.scanData['vol%']);
+          const rexp = _formatCompareValue(a.scanData['rexp']);
+          if (volPct !== '—' || rexp !== '—') {
+            rBullets.push(`📊 VOL%: ${volPct} | REXP: ${rexp}`);
+          }
+        }
+
         if (a.mtfAnalysis) rBullets.push(a.mtfAnalysis.summary);
         _renderList('arRegimeBullets', rBullets);
         _setSectionDisplay('arRegimeSection', true);
@@ -797,7 +809,21 @@
       }
 
       if (a.rsAnalysis) {
-        _renderList('arRsBullets', a.rsAnalysis.bullets);
+        const volBullets = [];
+        if (a.rsAnalysis.bullets && a.rsAnalysis.bullets.length) {
+          volBullets.push(...a.rsAnalysis.bullets);
+        }
+        if (a.volumeAnalysis && a.volumeAnalysis.bullets && a.volumeAnalysis.bullets.length) {
+          volBullets.push(...a.volumeAnalysis.bullets);
+        }
+        if (volBullets.length) {
+          _renderList('arRsBullets', volBullets);
+          _setSectionDisplay('arRsSection', true);
+        } else {
+          _setSectionDisplay('arRsSection', false);
+        }
+      } else if (a.volumeAnalysis && a.volumeAnalysis.bullets && a.volumeAnalysis.bullets.length) {
+        _renderList('arRsBullets', a.volumeAnalysis.bullets);
         _setSectionDisplay('arRsSection', true);
       } else {
         _setSectionDisplay('arRsSection', false);
