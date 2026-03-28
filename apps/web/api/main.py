@@ -22,10 +22,12 @@ CLI_DIR = ROOT / "apps" / "python" / "cli"
 PY_LIB_DIR = ROOT / "apps" / "python" / "lib"
 UI_INDEX = ROOT / "apps" / "web" / "ui" / "index.html"
 WEB_JOBS_DIR = OUTPUT_DIR / "web_jobs"
+PERF_TRACKER_JSON = OUTPUT_DIR / "performance_tracker.json"
 
 sys.path.insert(0, str(PY_LIB_DIR))
 from trade_plan_assistant import brief_as_json, build_scan_brief
 from stock_analyzer import analyze_stock
+import performance_tracker as _pt
 
 RUN_VCP_SYSTEM = CLI_DIR / "run_vcp_system.py"
 RUN_BACKTEST = CLI_DIR / "run_backtest.py"
@@ -353,4 +355,81 @@ def backtest_latest(market: Literal["india", "us"] = "india", timeframe: Literal
         "walkForwardUrl": f"/reports/{wf_path.name}" if wf_path.exists() else None,
         "monteCarloUrl": f"/reports/{mc_path.name}" if mc_path.exists() else None,
     }
+
+
+# ── Performance Tracker ──────────────────────────────────────────────────────
+
+def _load_perf_tracker() -> dict:
+    if not PERF_TRACKER_JSON.exists():
+        return {"version": 1, "lastUpdated": None, "trades": [], "archived": []}
+    try:
+        return json.loads(PERF_TRACKER_JSON.read_text(encoding="utf-8"))
+    except Exception:
+        return {"version": 1, "lastUpdated": None, "trades": [], "archived": []}
+
+
+@app.get("/api/performance/summary")
+def perf_summary() -> dict:
+    """Aggregate performance stats across all tracked trades."""
+    data = _load_perf_tracker()
+    trades = data.get("trades", [])
+    archived = data.get("archived", [])
+    stats = _pt.compute_summary_stats(trades)
+    return {
+        "lastUpdated": data.get("lastUpdated"),
+        "stats": stats,
+        "archivedCount": len(archived),
+        "trackerExists": PERF_TRACKER_JSON.exists(),
+    }
+
+
+@app.get("/api/performance/trades")
+def perf_trades(
+    market: Literal["india", "us"] = "india",
+    timeframe: Literal["daily", "weekly"] = "daily",
+    include_expired: bool = False,
+    include_archived: bool = False,
+) -> dict:
+    """Return filtered list of tracked trade records."""
+    data = _load_perf_tracker()
+    all_trades = data.get("trades", [])
+    if include_archived:
+        all_trades = all_trades + data.get("archived", [])
+
+    filtered = [
+        t for t in all_trades
+        if t.get("market") == market and t.get("timeframe") == timeframe
+        and (include_expired or t.get("status") != "EXPIRED")
+    ]
+    filtered.sort(key=lambda t: (
+        {"OPEN": 0, "T3_HIT": 1, "T2_HIT": 2, "T1_HIT": 3, "SL_HIT": 4, "EXPIRED": 5}.get(
+            t.get("status", "OPEN"), 9),
+        -float(t.get("gainPct", 0) or 0),
+    ))
+    stats = _pt.compute_summary_stats(filtered)
+    return {
+        "market": market,
+        "timeframe": timeframe,
+        "count": len(filtered),
+        "stats": stats,
+        "trades": filtered,
+        "lastUpdated": data.get("lastUpdated"),
+    }
+
+
+@app.get("/api/performance/report")
+def perf_report(
+    market: Literal["india", "us"] = "india",
+    timeframe: Literal["daily", "weekly"] = "daily",
+) -> FileResponse:
+    """Serve the prebuilt performance tracker HTML report."""
+    report_path = OUTPUT_DIR / f"performance_tracker_{market}_{timeframe}_LATEST.html"
+    if not report_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"No performance tracker report found for {market}/{timeframe}. "
+                   "Run a scan first to generate it.",
+        )
+    return FileResponse(report_path, media_type="text/html")
+
 
