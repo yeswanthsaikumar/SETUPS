@@ -12,14 +12,17 @@ Generates a rich standalone HTML Trade Plans page with:
 Run: python3 apps/python/cli/generate_trade_plans_page.py
 """
 from __future__ import annotations
-import csv, json, math, sys
+import csv, json, math, re, sys
 from datetime import datetime
+from html import escape
 from pathlib import Path
 
 ROOT      = Path(__file__).resolve().parents[3]
 OUTPUT    = ROOT / "output"
 CACHE_DIR = ROOT / "cache"
 sys.path.insert(0, str(ROOT / "apps" / "python" / "lib"))
+
+from utils import aggregate_weekly_bars, safe_return
 
 ACCOUNT_SIZE = 1_000_000
 RISK_PCT     = 0.01
@@ -64,8 +67,12 @@ SETUP_META = {
 }
 
 def _f(v, d=0.0):
-    try: return float(v) if v not in (None, "", "N/A") else d
-    except Exception: return d
+    try:
+        if v in (None, "", "N/A"):
+            return d
+        return float(str(v).strip().replace("%", "").replace(",", "").replace("x", ""))
+    except Exception:
+        return d
 
 def get_sector(symbol: str) -> str:
     base = symbol.replace(".NS","").replace(".BO","")
@@ -87,6 +94,124 @@ def load_sparkline(symbol: str, n: int = 60) -> list[float]:
             if closes:
                 return closes[-n:]
     return []
+
+
+def load_price_rows(symbol: str, weekly: bool = False) -> list[dict]:
+    for suffix in ["_900", "_504", "_252"]:
+        p = CACHE_DIR / f"{symbol}{suffix}.csv"
+        if not p.exists():
+            continue
+        rows: list[dict] = []
+        try:
+            with open(p) as f:
+                for row in csv.DictReader(f):
+                    rows.append({
+                        "date": row.get("date", ""),
+                        "open": _f(row.get("open")),
+                        "high": _f(row.get("high")),
+                        "low": _f(row.get("low")),
+                        "close": _f(row.get("close")),
+                        "volume": _f(row.get("volume")),
+                    })
+        except Exception:
+            rows = []
+        if rows:
+            return aggregate_weekly_bars(rows) if weekly else rows
+    return []
+
+
+def current_expansion_metrics(rows: list[dict], lookback: int = 20) -> tuple[float | None, float | None]:
+    if len(rows) < 2:
+        return None, None
+    current = rows[-1]
+    current_close = _f(current.get("close"))
+    current_high = _f(current.get("high"), current_close)
+    current_low = _f(current.get("low"), current_close)
+    if current_close <= 0:
+        return None, None
+
+    current_range = max(0.0, current_high - current_low)
+    prior = rows[-(lookback + 1):-1]
+    prior_ranges = [max(0.0, _f(r.get("high")) - _f(r.get("low"))) for r in prior]
+    prior_ranges = [r for r in prior_ranges if r > 0]
+    avg_range = (sum(prior_ranges) / len(prior_ranges)) if prior_ranges else 0.0
+    rexp = (current_range / avg_range) if avg_range > 0 and current_range > 0 else None
+
+    current_vol = _f(current.get("volume"))
+    prior_vols = [_f(r.get("volume")) for r in prior]
+    prior_vols = [v for v in prior_vols if v > 0]
+    avg_vol = (sum(prior_vols) / len(prior_vols)) if prior_vols else 0.0
+    vol_pct = (((current_vol / avg_vol) - 1.0) * 100.0) if avg_vol > 0 and current_vol > 0 else None
+    return vol_pct, rexp
+
+
+def compute_rs_metrics(rows: list[dict], weekly: bool) -> tuple[float | None, float | None]:
+    closes = [_f(r.get("close")) for r in rows if _f(r.get("close")) > 0]
+    if not closes:
+        return None, None
+    rs3_bars, rs6_bars = (13, 26) if weekly else (63, 126)
+    rs3 = safe_return(closes, rs3_bars) * 100.0 if len(closes) > rs3_bars else None
+    rs6 = safe_return(closes, rs6_bars) * 100.0 if len(closes) > rs6_bars else None
+    return rs3, rs6
+
+
+def pick_metric(primary: float, fallback: float | None, zero_is_missing: bool = True) -> float | None:
+    if primary == 0.0 and zero_is_missing:
+        return fallback
+    return primary if primary == primary else fallback
+
+
+def fmt_pct(value: float | None, signed: bool = False) -> str:
+    if value is None:
+        return "&mdash;"
+    if abs(value) < 0.05:
+        return "&mdash;"
+    return f"{value:+.1f}%" if signed else f"{value:.1f}%"
+
+
+def fmt_x(value: float | None) -> str:
+    if value is None:
+        return "&mdash;"
+    if abs(value) < 0.05:
+        return "&mdash;"
+    return f"{value:.2f}x"
+
+
+def extract_pct(text: str, keys: list[str]) -> float | None:
+    source = str(text or "")
+    for key in keys:
+        m = re.search(rf"{re.escape(key)}\s*[:=]\s*([+-]?\d+(?:\.\d+)?)%", source, flags=re.IGNORECASE)
+        if m:
+            return _f(m.group(1), 0.0)
+    return None
+
+
+def extract_debt_change(text: str) -> float | None:
+    source = str(text or "")
+    m = re.search(r"Debt[^\d+-]*([+-]?\d+(?:\.\d+)?)%", source, flags=re.IGNORECASE)
+    if not m:
+        return None
+    val = _f(m.group(1), 0.0)
+    if "↑" in source or "UP" in source.upper():
+        return abs(val)
+    if "↓" in source or "DOWN" in source.upper():
+        return -abs(val)
+    return val
+
+
+def fmt_metric(value: float | None, signed: bool = True) -> str:
+    if value is None:
+        return "—"
+    return f"{value:+.1f}%" if signed else f"{value:.1f}%"
+
+
+def classify_trigger(text: str) -> str:
+    t = str(text or "").upper()
+    if any(k in t for k in ["POSITIVE", "TAILWIND", "STRONG", "IMPROVING", "SUPPORTIVE"]):
+        return "pill-pos"
+    if any(k in t for k in ["WEAK", "RISK", "HEADWIND", "UNFAVORABLE", "NEGATIVE"]):
+        return "pill-neg"
+    return "pill-neu"
 
 def load_signals() -> list[dict]:
     signals = []
@@ -194,6 +319,8 @@ def build_html(signals: list[dict]) -> str:
         plan   = build_position_plan(sig)
         sparkline_data = load_sparkline(sym)
         svg = sparkline_svg(sparkline_data)
+        is_weekly = tf_lbl.lower().startswith("weekly")
+        price_rows = load_price_rows(sym, weekly=is_weekly)
 
         regime     = sig.get("regimeState","")
         regime_str = ("Favorable" if "FAV" in regime and "UNFAV" not in regime
@@ -201,10 +328,13 @@ def build_html(signals: list[dict]) -> str:
         regime_cls = ("reg-fav" if regime_str == "Favorable"
                       else "reg-unfav" if regime_str == "Unfavorable" else "reg-neu")
 
-        rs3m  = _f(sig.get("rs3m"))
-        rs6m  = _f(sig.get("rs6m"))
-        rs12m = _f(sig.get("rs12m"))
-        rs_cls = "rpl" if rs3m > 0 else "rmi"
+        rs3m_raw = _f(sig.get("rs3m"))
+        rs6m_raw = _f(sig.get("rs6m"))
+        fallback_rs3m, fallback_rs6m = compute_rs_metrics(price_rows, is_weekly)
+        rs3m = pick_metric(rs3m_raw, fallback_rs3m)
+        rs6m = pick_metric(rs6m_raw, fallback_rs6m)
+        rs3m_cls = "rna" if rs3m is None else ("rpl" if rs3m > 0 else "rmi")
+        rs6m_cls = "rna" if rs6m is None else ("rpl" if rs6m > 0 else "rmi")
 
         setup_cls, setup_label, setup_tip = SETUP_META.get(
             setup, ("tag-bo", setup.replace("_"," "), ""))
@@ -216,10 +346,45 @@ def build_html(signals: list[dict]) -> str:
         width_pct  = min(score, 130) / 130 * 100
         score_color = "#3fb950" if score >= 100 else "#e3b341" if score >= 70 else "#f85149"
 
-        vol_pct = sig.get("vol%","")
-        rexp    = sig.get("rexp","")
+        vol_raw = _f(sig.get("vol%"))
+        rexp_raw = _f(sig.get("rexp"))
+        fallback_vol, fallback_rexp = current_expansion_metrics(price_rows)
+        vol_pct = pick_metric(vol_raw, fallback_vol)
+        rexp = pick_metric(rexp_raw, fallback_rexp)
+        vol_pct_text = fmt_pct(vol_pct)
+        rexp_text = fmt_x(rexp)
+        rs3m_text = fmt_pct(rs3m, signed=True)
+        rs6m_text = fmt_pct(rs6m, signed=True)
         window  = sig.get("window","")
         dist_pivot = _f(sig.get("distFromPivot%") or sig.get("pivotProximityScore"))
+
+        eps_trigger = str(sig.get("triggerEarningsGrowth") or "N/A")
+        debt_trigger = str(sig.get("triggerDebtReduction") or "N/A")
+        macro_trigger = str(sig.get("triggerMacroTailwind") or "N/A")
+        market_trigger = str(sig.get("triggerMarketTailwind") or "N/A")
+        fund_summary = str(sig.get("fundSummary") or "No online fundamentals snapshot available")
+
+        eps_yoy = extract_pct(eps_trigger, ["EPS_YOY", "EPS YOY"])
+        eps_qoq = extract_pct(eps_trigger, ["EPS_QOQ", "EPS QOQ"])
+        debt_yoy = extract_pct(debt_trigger, ["DEBT_YOY", "DEBT YOY"])
+        debt_qoq = extract_pct(debt_trigger, ["DEBT_QOQ", "DEBT QOQ"])
+        if debt_yoy is None and debt_qoq is None:
+            debt_proxy = extract_debt_change(debt_trigger)
+            debt_yoy = debt_proxy
+
+        eps_yoy_text = fmt_metric(eps_yoy)
+        eps_qoq_text = fmt_metric(eps_qoq)
+        debt_yoy_text = fmt_metric(debt_yoy)
+        debt_qoq_text = fmt_metric(debt_qoq)
+
+        eps_cls = "metric-na" if eps_yoy is None and eps_qoq is None else ("metric-pos" if ((eps_yoy or 0) >= 0 or (eps_qoq or 0) >= 0) else "metric-neg")
+        debt_cls = "metric-na" if debt_yoy is None and debt_qoq is None else ("metric-neg" if ((debt_yoy or 0) > 0 or (debt_qoq or 0) > 0) else "metric-pos")
+
+        eps_trigger_html = escape(eps_trigger)
+        debt_trigger_html = escape(debt_trigger)
+        macro_trigger_html = escape(macro_trigger)
+        market_trigger_html = escape(market_trigger)
+        fund_summary_html = escape(fund_summary)
 
         rows_html.append(f"""
 <div class="sig-card" data-symbol="{sym}" data-setup="{setup}" data-rating="{rating}" data-sector="{sector}">
@@ -254,21 +419,6 @@ def build_html(signals: list[dict]) -> str:
       <div class="plan-value sl-val">&#8377;{plan['sl']:.2f}</div>
       <div class="plan-sub">Risk/share: &#8377;{plan['risk']:.2f} ({plan['risk']/plan['entry']*100:.1f}%)</div>
     </div>
-    <div class="plan-section">
-      <div class="plan-title">Target 1 &nbsp;<small>+{plan['rr_t1']:.1f}R</small></div>
-      <div class="plan-value t1-val">&#8377;{plan['t1']:.2f}</div>
-      <div class="plan-sub">Profit: +&#8377;{plan['t1_profit']:,.0f}</div>
-    </div>
-    <div class="plan-section">
-      <div class="plan-title">Target 2 &nbsp;<small>+{plan['rr_t2']:.1f}R</small></div>
-      <div class="plan-value t2-val">&#8377;{plan['t2']:.2f}</div>
-      <div class="plan-sub">Profit: +&#8377;{plan['t2_profit']:,.0f}</div>
-    </div>
-    <div class="plan-section">
-      <div class="plan-title">Target 3 &nbsp;<small>+{plan['rr_t3']:.1f}R</small></div>
-      <div class="plan-value t3-val">&#8377;{plan['t3']:.2f}</div>
-      <div class="plan-sub">Profit: +&#8377;{plan['t3_profit']:,.0f}</div>
-    </div>
     <div class="plan-section highlight">
       <div class="plan-title">Position Size</div>
       <div class="plan-value pos-val">{plan['shares']:,} shares</div>
@@ -283,19 +433,46 @@ def build_html(signals: list[dict]) -> str:
     </div>
     <div class="sig-stat">
       <span class="sstat-label">RS 3M</span>
-      <span class="{rs_cls}">{rs3m:+.1f}%</span>
+      <span class="{rs3m_cls}">{rs3m_text}</span>
     </div>
     <div class="sig-stat">
       <span class="sstat-label">RS 6M</span>
-      <span class="{'rpl' if rs6m>0 else 'rmi'}">{rs6m:+.1f}%</span>
+      <span class="{rs6m_cls}">{rs6m_text}</span>
     </div>
     <div class="sig-stat">
       <span class="sstat-label">Vol %</span>
-      <span style="color:#79c0ff">{vol_pct}</span>
+      <span style="color:#79c0ff">{vol_pct_text}</span>
     </div>
     <div class="sig-stat">
       <span class="sstat-label">RExp</span>
-      <span style="color:#e3b341">{rexp}</span>
+      <span style="color:#e3b341">{rexp_text}</span>
+    </div>
+  </div>
+
+  <div class="insight-chip" title="Hover card for fundamentals and macro trigger details">Fundamentals + Macro</div>
+  <div class="sig-insight">
+    <div class="insight-grid">
+      <div class="insight-item">
+        <div class="insight-label">EPS Growth</div>
+        <div class="insight-value {eps_cls}">YoY {eps_yoy_text} &nbsp;|&nbsp; QoQ {eps_qoq_text}</div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-label">Debt Change</div>
+        <div class="insight-value {debt_cls}">YoY {debt_yoy_text} &nbsp;|&nbsp; QoQ {debt_qoq_text}</div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-label">Macro Trigger</div>
+        <div class="insight-pill {classify_trigger(macro_trigger)}">{macro_trigger_html}</div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-label">Market Trigger</div>
+        <div class="insight-pill {classify_trigger(market_trigger)}">{market_trigger_html}</div>
+      </div>
+    </div>
+    <div class="insight-summary" title="Online fundamentals summary">{fund_summary_html}</div>
+    <div class="insight-raw">
+      <div><b>EPS:</b> {eps_trigger_html}</div>
+      <div><b>Debt:</b> {debt_trigger_html}</div>
     </div>
   </div>
 </div>""")
@@ -397,6 +574,25 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
 .reg-neu{{color:#e3b341;font-weight:600;font-size:.82em}}
 .rpl{{color:#3fb950;font-weight:600;font-size:.82em}}
 .rmi{{color:#f85149;font-weight:600;font-size:.82em}}
+.rna{{color:#8b949e;font-weight:600;font-size:.82em}}
+
+/* HOVER INSIGHTS */
+.insight-chip{{margin:8px 16px 0;display:inline-flex;padding:2px 8px;border:1px solid #2f3b4b;border-radius:12px;color:#7dd3fc;font-size:.7em;background:#0f1a26}}
+.sig-insight{{max-height:0;opacity:0;overflow:hidden;padding:0 16px;transition:max-height .25s ease,opacity .2s ease,padding .2s ease;border-top:0 solid #21262d}}
+.sig-card:hover .sig-insight,.sig-card:focus-within .sig-insight{{max-height:180px;opacity:1;padding:10px 16px 12px;border-top:1px solid #21262d}}
+.insight-grid{{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}}
+.insight-item{{background:#0d1117;border:1px solid #263344;border-radius:6px;padding:6px 8px}}
+.insight-label{{font-size:.64em;color:#8b949e;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}}
+.insight-value{{font-size:.74em;font-weight:600}}
+.metric-pos{{color:#3fb950}}
+.metric-neg{{color:#f85149}}
+.metric-na{{color:#8b949e}}
+.insight-pill{{display:inline-block;padding:2px 6px;border-radius:10px;font-size:.7em;border:1px solid transparent;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+.pill-pos{{color:#86efac;background:#102217;border-color:#1f6f3a}}
+.pill-neg{{color:#fda4af;background:#261116;border-color:#7a2232}}
+.pill-neu{{color:#cbd5e1;background:#18202c;border-color:#334155}}
+.insight-summary{{font-size:.72em;color:#94a3b8;line-height:1.35;margin-bottom:4px}}
+.insight-raw{{font-size:.68em;color:#7f8a98;line-height:1.35}}
 
 /* NO RESULTS */
 .no-results{{text-align:center;padding:60px;color:#8b949e;font-size:1.1em}}
@@ -416,6 +612,11 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
 /* RISK BOX */
 .risk-box{{background:#161b22;border:1px solid #21262d;border-radius:10px;padding:14px 20px;margin:16px 28px 0;font-size:.82em;color:#8b949e;line-height:1.8}}
 .risk-box strong{{color:#79c0ff}}
+
+@media (max-width: 640px){{
+  .insight-grid{{grid-template-columns:1fr}}
+  .sig-card:hover .sig-insight,.sig-card:focus-within .sig-insight{{max-height:240px}}
+}}
 </style>
 </head>
 <body>
@@ -547,11 +748,35 @@ function toggleSort(mode) {{
 }}
 
 function exportCSV() {{
-  const rows = [['Symbol','Sector','Setup','Rating','Entry','Pivot','Stop','T1','T2','T3','Shares','Capital','MaxLoss','R:R_T1','R:R_T2','Regime']];
+  const rows = [['Symbol','Sector','Setup','Rating','Entry','Stop','Shares','Regime','RS3M','RS6M','VolPct','RExp','EPSGrowth','DebtChange','MacroTrigger','MarketTrigger','FundSummary']];
   document.querySelectorAll('.sig-card').forEach(card => {{
     if(card.style.display === 'none') return;
-    const vals = [...card.querySelectorAll('.plan-value')].map(v => v.textContent.replace(/[₹,]/g,'').trim());
-    rows.push([card.dataset.symbol, card.dataset.sector, card.dataset.setup, card.dataset.rating, ...vals]);
+    const planVals = [...card.querySelectorAll('.plan-value')].map(v => v.textContent.replace(/[₹,]/g,'').trim());
+    const stats = [...card.querySelectorAll('.sig-stat span:last-child')].map(v => v.textContent.trim());
+    const epsGrowth = card.querySelector('.insight-item:nth-child(1) .insight-value')?.textContent?.trim() || '';
+    const debtChange = card.querySelector('.insight-item:nth-child(2) .insight-value')?.textContent?.trim() || '';
+    const macroTrigger = card.querySelector('.insight-item:nth-child(3) .insight-pill')?.textContent?.trim() || '';
+    const marketTrigger = card.querySelector('.insight-item:nth-child(4) .insight-pill')?.textContent?.trim() || '';
+    const fundSummary = card.querySelector('.insight-summary')?.textContent?.trim() || '';
+    rows.push([
+      card.dataset.symbol,
+      card.dataset.sector,
+      card.dataset.setup,
+      card.dataset.rating,
+      planVals[0] || '',
+      planVals[1] || '',
+      planVals[2] || '',
+      stats[0] || '',
+      stats[1] || '',
+      stats[2] || '',
+      stats[3] || '',
+      stats[4] || '',
+      epsGrowth,
+      debtChange,
+      macroTrigger,
+      marketTrigger,
+      fundSummary,
+    ]);
   }});
   const csv = rows.map(r => r.map(v => '"'+String(v)+'"').join(',')).join('\\n');
   const a = document.createElement('a');

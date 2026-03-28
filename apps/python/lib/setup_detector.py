@@ -183,6 +183,34 @@ def _atr(bars: list[dict], period: int = 14) -> float:
     return atr_val
 
 
+def _current_bar_expansion_metrics(bars: list[dict], lookback: int = 20) -> tuple[float, float, float]:
+    if not bars:
+        return 0.0, 0.0, 0.0
+    current = bars[-1]
+    current_close = float(current.get("close", 0.0) or 0.0)
+    current_high = float(current.get("high", current_close) or current_close)
+    current_low = float(current.get("low", current_close) or current_close)
+    current_range = max(0.0, current_high - current_low)
+    range_pct = (current_range / current_close * 100.0) if current_close > 0 else 0.0
+
+    prev_bars = bars[-(lookback + 1):-1] if len(bars) > 1 else []
+    prev_ranges = [
+        max(0.0, float(b.get("high", 0.0) or 0.0) - float(b.get("low", 0.0) or 0.0))
+        for b in prev_bars
+    ]
+    prev_ranges = [r for r in prev_ranges if r > 0]
+    avg_range = statistics.mean(prev_ranges) if prev_ranges else 0.0
+    rexp = (current_range / avg_range) if avg_range > 0 and current_range > 0 else 0.0
+
+    current_vol = float(current.get("volume", 0.0) or 0.0)
+    prev_vols = [float(b.get("volume", 0.0) or 0.0) for b in prev_bars]
+    prev_vols = [v for v in prev_vols if v > 0]
+    avg_vol = statistics.mean(prev_vols) if prev_vols else 0.0
+    vol_pct = (((current_vol / avg_vol) - 1.0) * 100.0) if avg_vol > 0 and current_vol > 0 else 0.0
+
+    return round(range_pct, 2), round(vol_pct, 2), round(rexp, 2)
+
+
 def _swing_low(bars: list[dict], lookback: int = 10) -> float:
     lows = [b.get("low", b.get("close", 0.0)) for b in bars[-lookback:] if b.get("low", b.get("close", 0.0)) > 0]
     return min(lows) if lows else 0.0
@@ -323,7 +351,8 @@ def detect_mean_reversion(
     pullback_depth_pct = round(((recent_high - current_close) / recent_high * 100.0) if recent_high > 0 else 0.0, 2)
     bb_width_pct = round((bb_upper - bb_lower) / bb_mid * 100.0 if bb_mid > 0 else 0.0, 2)
     dist_pct = round(((sma20 - current_close) / current_close * 100.0) if current_close > 0 and sma20 > current_close else 0.0, 2)
-    vol_pct = round((vol_ratio - 1.0) * 100.0, 2)
+    current_range_pct, current_vol_pct, current_rexp = _current_bar_expansion_metrics(bars)
+    vol_pct = round((vol_ratio - 1.0) * 100.0, 2) if avg_vol_20 > 0 else current_vol_pct
     bars_since_below = next((i for i, b in enumerate(reversed(bars[:-1])) if b.get("close", 0.0) < sma20), len(bars)-1)
     # Days above pivot (consecutive from latest)
     days_above = 0
@@ -342,7 +371,8 @@ def detect_mean_reversion(
         rsi=round(rsi_val, 2), sma20=round(sma20, 4), sma50=round(sma50, 4), sma200=round(sma200, 4),
         atr=round(atr_val, 4), lower_bb=round(bb_lower, 4), upper_bb=round(bb_upper, 4), bb_pct=round(bb_pct, 2),
         vol_ratio=round(vol_ratio, 3), pullback_vol_ratio=round(pullback_vol_ratio, 3), dist_pct=dist_pct,
-        height_pct=pullback_depth_pct, depth_pct=bb_width_pct, length=bars_since_below, vol_pct=vol_pct,
+        height_pct=pullback_depth_pct, depth_pct=bb_width_pct, length=bars_since_below,
+        range_pct=current_range_pct, vol_pct=vol_pct, rexp=current_rexp,
         avg_vol_20=round(avg_vol_20, 2), last_volume=round(volumes[-1], 2), avg_dollar_vol_20=round(avg_dollar_vol_20, 2), last_dollar_vol=round(dollar_vols[-1], 2),
         days_above_pivot=days_above, distance_from_pivot=round(distance_from_pivot, 2)
     )
@@ -478,6 +508,8 @@ def detect_breakout(
     avg_dollar_vol_20 = _sma(dollar_vols[-21:-1], 20) if len(dollar_vols) >= 21 else _sma(dollar_vols, len(dollar_vols))
 
 
+    current_range_pct, current_vol_pct, current_rexp = _current_bar_expansion_metrics(bars)
+
     # Compose TradeSignal with breakout-specific fields populated
     subtype = "BREAKOUT_RETEST" if min_after < breakout_bar_high else "BREAKOUT"
     sig = TradeSignal(
@@ -494,6 +526,10 @@ def detect_breakout(
         atr=round(atr_val, 4),
         sma50=round(sma50, 4),
         sma200=round(sma200, 4),
+        pivot=round(breakout_level, 4),
+        range_pct=current_range_pct,
+        vol_pct=current_vol_pct,
+        rexp=current_rexp,
         # breakout-specific
         max_after_breakout=round(max_after, 4),
         min_after_breakout=round(min_after, 4),
@@ -686,6 +722,8 @@ def detect_breakout_pullback(
     days_above_pivot  = sum(1 for x in closes[-20:] if breakout_level and x >= breakout_level)
     run_from_bo_pct   = (peak_high - breakout_level) / breakout_level * 100.0 if breakout_level > 0 else 0.0
 
+    current_range_pct, current_vol_pct, current_rexp = _current_bar_expansion_metrics(bars)
+
     sig = TradeSignal(
         symbol=symbol,
         subtype="FIRST_PULLBACK",
@@ -714,6 +752,9 @@ def detect_breakout_pullback(
         distance_from_pivot=round(dist_from_bo * 100.0, 2),
         height_pct=round(pullback_depth_pct * 100.0, 2),  # depth of pullback from post-breakout peak
         depth_pct=round(run_from_bo_pct, 2),               # run from BO level to peak (extension)
+        range_pct=current_range_pct,
+        vol_pct=current_vol_pct,
+        rexp=current_rexp,
         vol_ratio=round(volumes[-1] / avg_vol_20 if avg_vol_20 > 0 else 1.0, 3),
         pullback_vol_ratio=round(pullback_vol_ratio, 3),
         length=bars_since_peak,

@@ -159,6 +159,13 @@ def normalize_setups_mode(value: str) -> str:
     return mode
 
 
+def rs_lookback_bars(timeframe: str) -> tuple[int, int, int]:
+    tf = (timeframe or "daily").strip().lower()
+    if tf == "weekly":
+        return 13, 26, 52
+    return 63, 126, 252
+
+
 def parse_args():
     p = argparse.ArgumentParser(description="Full market breakout scan")
     p.add_argument("--symbols",   default=None)
@@ -217,6 +224,7 @@ def build_market_regime(symbols: list[str], args) -> dict:
         return {"mode": "off", "favorable": True, "breadth50": 1.0, "breadth200": 1.0, "score": 1.0, "sampled": 0}
 
     sample = symbols[: max(10, min(len(symbols), args.regime_sample))]
+    rs3_bars, rs6_bars, rs12_bars = rs_lookback_bars(args.timeframe)
 
     def _load_symbol(sym: str):
         bars = load_cached_bars(sym, args.lookback, args.timeframe, args.cache_dir)
@@ -231,9 +239,9 @@ def build_market_regime(symbols: list[str], args) -> dict:
         return {
             "above50": close > ma50,
             "above200": close > ma200,
-            "rs3m": _safe_return(closes, 63),
-            "rs6m": _safe_return(closes, 126),
-            "rs12m": _safe_return(closes, 252),
+            "rs3m": _safe_return(closes, rs3_bars),
+            "rs6m": _safe_return(closes, rs6_bars),
+            "rs12m": _safe_return(closes, rs12_bars),
         }
 
     above50 = 0
@@ -522,6 +530,7 @@ def enrich_and_filter_rows(rows: list[dict], args, regime: dict, list_type: str)
     kept: list[dict] = []
     rejected: list[dict] = []
     rejected_map: dict[str, str] = {}
+    rs3_bars, rs6_bars, rs12_bars = rs_lookback_bars(args.timeframe)
 
     for row in rows:
         symbol = str(row.get("symbol", "")).strip().upper()
@@ -545,9 +554,9 @@ def enrich_and_filter_rows(rows: list[dict], args, regime: dict, list_type: str)
         row["regimeScore"] = round(regime.get("score", 1.0) * 100.0, 2)
         row["regimeState"] = "FAVORABLE" if regime.get("favorable", True) else "UNFAVORABLE"
 
-        rs3 = _safe_return(closes, 63)
-        rs6 = _safe_return(closes, 126)
-        rs12 = _safe_return(closes, 252)
+        rs3 = _safe_return(closes, rs3_bars)
+        rs6 = _safe_return(closes, rs6_bars)
+        rs12 = _safe_return(closes, rs12_bars)
         rel3 = rs3 - regime.get("bench3m", 0.0)
         rel6 = rs6 - regime.get("bench6m", 0.0)
         rel12 = rs12 - regime.get("bench12m", 0.0)
