@@ -39,7 +39,68 @@
     .pulse { animation: pulse 1.2s ease-in-out infinite; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 
-    /* Stock Analyzer styles */
+    /* ── Performance Tracker styles ─────────────────────────────────────── */
+    .pt-summary-bar { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:12px; }
+    .pt-stat { background:#0b1220; border:1px solid #334155; border-radius:8px; padding:8px 14px; text-align:center; min-width:80px; }
+    .pt-stat .pt-v { font-size:1.3em; font-weight:700; color:#58a6ff; }
+    .pt-stat .pt-l { font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:.4px; }
+    .pt-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:14px; margin-top:12px; }
+    .pt-card { background:#0b1220; border:1px solid #334155; border-radius:10px; overflow:hidden; transition:border-color .2s; }
+    .pt-card:hover { border-color:#475569; }
+    .pt-card.sl-hit { border-color:#7f1d1d; background:#1a0808; }
+    .pt-card.t-hit  { border-color:#14532d; background:#081a0f; }
+    .pt-card.expired{ border-color:#1e293b; opacity:.75; }
+    .pt-header { display:flex; justify-content:space-between; align-items:flex-start; padding:10px 12px 6px; }
+    .pt-sym { font-size:1.05em; font-weight:800; color:#e2e8f0; }
+    .pt-meta { display:flex; gap:5px; flex-wrap:wrap; margin-top:4px; }
+    .pt-badge { padding:1px 7px; border-radius:4px; font-size:11px; font-weight:600; }
+    .pt-b-setup { background:#1e293b; color:#7dd3fc; }
+    .pt-b-tf    { background:#1e1b4b; color:#a5b4fc; }
+    .pt-b-rat-aplus { background:#2a2a0a; color:#ffd700; border:1px solid #ffd70044; }
+    .pt-b-rat-a { background:#1e1b4b; color:#a5b4fc; border:1px solid #a5b4fc44; }
+    .pt-perf-band { background:#07101a; border-top:1px solid #1e293b; border-bottom:1px solid #1e293b; padding:8px 12px; }
+    .pt-price-row { display:flex; align-items:center; gap:8px; font-weight:700; margin-bottom:4px; }
+    .pt-entry { color:#64748b; font-size:.85em; }
+    .pt-arrow { color:#475569; }
+    .pt-curr { font-size:1.05em; }
+    .pt-gain { font-size:.95em; font-weight:800; }
+    .pt-gain-up   { color:#4ade80; }
+    .pt-gain-dn   { color:#f87171; }
+    .pt-gain-flat { color:#fbbf24; }
+    .pt-status-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:12px; }
+    .pt-status { padding:1px 8px; border-radius:99px; font-size:11px; font-weight:700; }
+    .pt-s-open   { background:#052e16; color:#4ade80; border:1px solid #16a34a55; }
+    .pt-s-sl     { background:#450a0a; color:#f87171; border:1px solid #dc262655; }
+    .pt-s-t1     { background:#052e16; color:#4ade80; border:1px solid #16a34a55; }
+    .pt-s-t2     { background:#052e16; color:#86efac; border:1px solid #16a34a77; }
+    .pt-s-t3     { background:#1a1a00; color:#ffd700; border:1px solid #ffd70055; }
+    .pt-s-expired{ background:#0f172a; color:#64748b; border:1px solid #33415566; }
+    .pt-still-yes{ padding:1px 8px; border-radius:99px; font-size:11px; color:#60a5fa; background:#0f1f3a; border:1px solid #1d4ed855; }
+    .pt-still-no { padding:1px 8px; border-radius:99px; font-size:11px; color:#64748b; background:#0f172a; border:1px solid #33415555; }
+    .pt-plan-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px; background:#1e293b; }
+    .pt-plan-cell { background:#0b1220; padding:7px 10px; }
+    .pt-plan-label { font-size:10px; color:#64748b; text-transform:uppercase; letter-spacing:.3px; margin-bottom:2px; }
+    .pt-plan-val  { font-size:.9em; font-weight:700; }
+    .pt-ev { color:#7dd3fc; }
+    .pt-sv { color:#f87171; }
+    .pt-tv { font-size:.78em; color:#4ade80; }
+    .pt-footer { display:flex; gap:10px; flex-wrap:wrap; padding:7px 12px; border-top:1px solid #1e293b; }
+    .pt-fstat { display:flex; flex-direction:column; align-items:center; }
+    .pt-fstat-l { font-size:10px; color:#64748b; text-transform:uppercase; }
+    .pt-fstat-v { font-size:.8em; font-weight:600; }
+    .pt-target-row { display:flex; gap:8px; padding:4px 12px; font-size:11px; color:#94a3b8; border-top:1px solid #1e293b; }
+    .pt-controls { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+    .pt-controls select, .pt-controls input { background:#0b1220; border:1px solid #334155; color:#e2e8f0; border-radius:6px; padding:5px 8px; font-size:12px; }
+    .pt-btn { background:#1d4ed8; border:none; color:#fff; padding:5px 14px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; }
+    .pt-btn:hover { background:#2563eb; }
+    .pt-btn-outline { background:transparent; border:1px solid #334155; color:#93c5fd; padding:5px 14px; border-radius:6px; cursor:pointer; font-size:12px; }
+    .pt-btn-outline:hover { background:#1e293b; }
+    .pt-empty { color:#64748b; font-size:13px; padding:20px 0; text-align:center; }
+    .pt-progress { height:4px; background:#1e293b; border-radius:2px; margin-top:4px; position:relative; overflow:visible; }
+    .pt-progress-fill { height:100%; border-radius:2px; }
+    .pt-progress-entry { position:absolute; top:-3px; width:2px; height:10px; background:#60a5fa; border-radius:1px; }
+    .pt-max-min { font-size:11px; color:#64748b; display:flex; gap:10px; }
+
     .analyzer-full { grid-column: 1 / -1; }
     .verdict-BUY_NOW    { color: #4ade80; font-weight: bold; font-size: 16px; }
     .verdict-WATCH_CLOSELY { color: #facc15; font-weight: bold; font-size: 16px; }
@@ -337,6 +398,52 @@
           <pre id="arRawData" style="display:none;max-height:320px;font-size:11px;"></pre>
         </div>
       </div>
+    </section>
+
+    <!-- ── Performance Tracker ──────────────────────────────────────────────── -->
+    <section class="card analyzer-full">
+      <h2>📊 Performance Tracker — Last 14 Days Breakouts</h2>
+      <p class="muted">Monitors A &amp; A+ rated breakout setups triggered over the last 14 days. Auto-updates on every scan run. Tracks entry → current price, SL hit, targets hit, still-in-scan status.</p>
+
+      <div class="pt-controls">
+        <select id="ptMarket">
+          <option value="india" selected>India</option>
+          <option value="us">US</option>
+        </select>
+        <select id="ptTimeframe">
+          <option value="daily" selected>Daily</option>
+          <option value="weekly">Weekly</option>
+        </select>
+        <select id="ptStatusFilter" onchange="ptApplyFilters()">
+          <option value="">All Statuses</option>
+          <option value="OPEN">Open</option>
+          <option value="SL_HIT">SL Hit</option>
+          <option value="T1_HIT">T1 Hit</option>
+          <option value="T2_HIT">T2 Hit</option>
+          <option value="T3_HIT">T3 Hit</option>
+          <option value="EXPIRED">Expired</option>
+        </select>
+        <select id="ptSetupFilter" onchange="ptApplyFilters()">
+          <option value="">All Setups</option>
+          <option value="RANGE_EXPANSION">Range Expansion</option>
+          <option value="VCP">VCP</option>
+          <option value="MEAN_REVERSION">Mean Reversion</option>
+          <option value="BREAKOUT_PULLBACK">Breakout Pullback</option>
+        </select>
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;color:#93c5fd;">
+          <input type="checkbox" id="ptIncludeExpired" onchange="loadPerformanceData()"> Incl. Expired
+        </label>
+        <button class="pt-btn" onclick="loadPerformanceData()">↺ Load / Refresh</button>
+        <button class="pt-btn-outline" onclick="openPerfReport()">🔗 Full HTML Report</button>
+      </div>
+
+      <!-- Summary stats bar -->
+      <div id="ptSummaryBar" class="pt-summary-bar" style="display:none"></div>
+
+      <!-- Trade card grid -->
+      <div id="ptGrid" class="pt-grid"></div>
+      <div id="ptEmpty" class="pt-empty" style="display:none">No trades found. Run a scan to start tracking.</div>
+      <p id="ptMeta" class="muted" style="margin-top:8px;font-size:11px;"></p>
     </section>
   </div>
 
@@ -1047,6 +1154,237 @@
       if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') analyzeStock(); });
       loadAnalyzerQuickPicks();
     });
+
+    // ── Performance Tracker ─────────────────────────────────────────────────
+
+    function _ptGainCls(pct) {
+      if (pct > 2)  return 'pt-gain-up';
+      if (pct < -2) return 'pt-gain-dn';
+      return 'pt-gain-flat';
+    }
+
+    function _ptStatusCls(status) {
+      const map = {
+        OPEN: 'pt-s-open', SL_HIT: 'pt-s-sl',
+        T1_HIT: 'pt-s-t1', T2_HIT: 'pt-s-t2', T3_HIT: 'pt-s-t3', EXPIRED: 'pt-s-expired',
+      };
+      return map[status] || 'pt-s-open';
+    }
+
+    function _ptStatusLabel(status) {
+      const map = {
+        OPEN: '🟢 Open', SL_HIT: '🔴 SL Hit',
+        T1_HIT: '🎯 T1 Hit', T2_HIT: '🎯🎯 T2 Hit', T3_HIT: '🎯🎯🎯 T3 Hit', EXPIRED: '⏰ Expired',
+      };
+      return map[status] || status;
+    }
+
+    function _ptFmt(v, d = '—') {
+      if (v == null || v === '') return d;
+      const n = Number(v);
+      return isNaN(n) ? d : n.toFixed(2);
+    }
+
+    function _ptFmtPct(v) {
+      if (v == null) return '—';
+      const n = Number(v);
+      if (isNaN(n) || Math.abs(n) < 0.01) return '—';
+      return (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+    }
+
+    function _ptProgressBar(entry, sl, t1, current) {
+      if (!(sl > 0 && entry > 0 && t1 > 0 && entry > sl && t1 > entry)) return '';
+      const range = t1 - sl;
+      const pct = Math.min(100, Math.max(0, (current - sl) / range * 100));
+      const entryPct = (entry - sl) / range * 100;
+      const color = current >= entry ? '#4ade80' : '#f87171';
+      return `<div class="pt-progress">
+        <div class="pt-progress-fill" style="width:${pct.toFixed(1)}%;background:${color}"></div>
+        <div class="pt-progress-entry" style="left:${entryPct.toFixed(1)}%"></div>
+      </div>`;
+    }
+
+    function _ptRenderCard(t) {
+      const sym      = (t.symbol || '').replace('.NS','').replace('.BO','');
+      const rating   = t.rating || '';
+      const setup    = (t.setup || '').replace(/_/g,' ');
+      const tf       = (t.timeframe || '').toUpperCase();
+      const status   = t.status || 'OPEN';
+      const entry    = Number(t.entry  || 0);
+      const sl       = Number(t.stopLoss || 0);
+      const t1       = Number(t.target1 || 0);
+      const t2       = Number(t.target2 || 0);
+      const t3       = Number(t.target3 || 0);
+      const curr     = Number(t.currentPrice || entry);
+      const gain     = Number(t.gainPct || 0);
+      const maxG     = Number(t.maxGain || 0);
+      const minG     = Number(t.minGain || 0);
+      const days     = Number(t.daysHeld || 0);
+      const still    = t.stillInScan;
+      const regime   = t.regimeAtScan || '—';
+      const rs3m     = Number(t.rs3mAtScan || 0);
+      const rs6m     = Number(t.rs6mAtScan || 0);
+      const tradeDate = t.tradeDate || '';
+      const t1h = t.target1Hit ? '✅' : '⬜';
+      const t2h = t.target2Hit ? '✅' : '⬜';
+      const t3h = t.target3Hit ? '✅' : '⬜';
+      const cur = t.market === 'us' ? '$' : '₹';
+      const gainCls  = _ptGainCls(gain);
+      const stsCls   = _ptStatusCls(status);
+      const cardCls  = status === 'SL_HIT' ? 'sl-hit' : (status.endsWith('HIT') ? 't-hit' : (status === 'EXPIRED' ? 'expired' : ''));
+      const ratCls   = rating === 'A+' ? 'pt-b-rat-aplus' : 'pt-b-rat-a';
+      const risk     = entry > sl && sl > 0 ? entry - sl : entry * 0.03;
+      const rrT1     = (risk > 0 && t1 > entry) ? ((t1 - entry) / risk).toFixed(1) : '—';
+      const rrT2     = (risk > 0 && t2 > entry) ? ((t2 - entry) / risk).toFixed(1) : '—';
+      const progBar  = _ptProgressBar(entry, sl, t1, curr);
+      const fundSum  = (t.fundSummary || '').slice(0, 120);
+      const stillHtml = still
+        ? '<span class="pt-still-yes">📌 In Scan</span>'
+        : '<span class="pt-still-no">📤 Left Scan</span>';
+      const regimeCls = regime.includes('UNFAV') ? 'rmi' : (regime.includes('FAV') ? 'rpl' : 'rna');
+
+      return `<div class="pt-card ${cardCls}" data-status="${status}" data-setup="${t.setup||''}" data-sym="${sym}">
+  <div class="pt-header">
+    <div>
+      <div class="pt-sym">${sym}</div>
+      <div class="pt-meta">
+        <span class="pt-badge pt-b-setup">${setup}</span>
+        <span class="pt-badge pt-b-tf">${tf}</span>
+        <span class="pt-badge ${ratCls}">${rating}</span>
+      </div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#64748b">${tradeDate}<br>${days}d held</div>
+  </div>
+
+  <div class="pt-perf-band">
+    <div class="pt-price-row">
+      <span class="pt-entry">${cur}${entry.toFixed(2)}</span>
+      <span class="pt-arrow">→</span>
+      <span class="pt-curr ${gainCls}">${cur}${curr.toFixed(2)}</span>
+      <span class="pt-gain ${gainCls}">${_ptFmtPct(gain)}</span>
+    </div>
+    <div class="pt-status-row">
+      <span class="${stsCls} pt-status">${_ptStatusLabel(status)}</span>
+      ${stillHtml}
+      <span class="pt-max-min">
+        <span>Max <span style="color:#4ade80">${_ptFmtPct(maxG)}</span></span>
+        <span>Min <span style="color:#f87171">${_ptFmtPct(minG)}</span></span>
+      </span>
+    </div>
+    ${progBar}
+  </div>
+
+  <div class="pt-plan-row">
+    <div class="pt-plan-cell">
+      <div class="pt-plan-label">Entry</div>
+      <div class="pt-plan-val pt-ev">${cur}${entry.toFixed(2)}</div>
+    </div>
+    <div class="pt-plan-cell">
+      <div class="pt-plan-label">Stop Loss ${t.slHit ? '⚡' : ''}</div>
+      <div class="pt-plan-val pt-sv">${cur}${sl.toFixed(2)}</div>
+    </div>
+    <div class="pt-plan-cell">
+      <div class="pt-plan-label">Targets R:R</div>
+      <div class="pt-plan-val pt-tv">${cur}${t1.toFixed(2)} / ${cur}${t2.toFixed(2)} / ${cur}${t3.toFixed(2)}</div>
+      <div style="font-size:10px;color:#64748b">${rrT1}R / ${rrT2}R</div>
+    </div>
+  </div>
+
+  <div class="pt-target-row">
+    <span>T1 ${t1h}</span>
+    <span>T2 ${t2h}</span>
+    <span>T3 ${t3h}</span>
+    <span style="margin-left:auto;color:#94a3b8">Score: ${_ptFmt(t.score)}</span>
+  </div>
+
+  <div class="pt-footer">
+    <div class="pt-fstat">
+      <span class="pt-fstat-l">Regime@Scan</span>
+      <span class="pt-fstat-v ${regimeCls}">${regime.replace('_',' ') || '—'}</span>
+    </div>
+    <div class="pt-fstat">
+      <span class="pt-fstat-l">RS 3M</span>
+      <span class="pt-fstat-v ${rs3m > 0 ? 'rpl' : 'rmi'}">${_ptFmtPct(rs3m)}</span>
+    </div>
+    <div class="pt-fstat">
+      <span class="pt-fstat-l">RS 6M</span>
+      <span class="pt-fstat-v ${rs6m > 0 ? 'rpl' : 'rmi'}">${_ptFmtPct(rs6m)}</span>
+    </div>
+    ${fundSum ? `<div class="pt-fstat" style="flex:1;align-items:flex-start"><span class="pt-fstat-l">Fundamentals</span><span class="pt-fstat-v muted" style="font-size:10px;text-align:left">${fundSum}</span></div>` : ''}
+  </div>
+</div>`;
+    }
+
+    function _ptRenderSummary(stats, lastUpdated) {
+      const wr = Number(stats.winRate || 0);
+      const wrColor = wr >= 60 ? '#4ade80' : (wr >= 40 ? '#fbbf24' : '#f87171');
+      const ag = Number(stats.avgGainPct || 0);
+      const agColor = ag >= 0 ? '#4ade80' : '#f87171';
+      document.getElementById('ptSummaryBar').style.display = 'flex';
+      document.getElementById('ptSummaryBar').innerHTML = `
+        <div class="pt-stat"><div class="pt-v">${stats.total}</div><div class="pt-l">Tracked</div></div>
+        <div class="pt-stat"><div class="pt-v" style="color:#4ade80">${stats.open}</div><div class="pt-l">Open</div></div>
+        <div class="pt-stat"><div class="pt-v" style="color:#f87171">${stats.slHits}</div><div class="pt-l">SL Hit</div></div>
+        <div class="pt-stat"><div class="pt-v" style="color:#ffd700">${stats.targetHits}</div><div class="pt-l">Target Hit</div></div>
+        <div class="pt-stat"><div class="pt-v" style="color:${wrColor}">${wr.toFixed(0)}%</div><div class="pt-l">Win Rate</div></div>
+        <div class="pt-stat"><div class="pt-v" style="color:${agColor}">${ag >= 0 ? '+' : ''}${ag.toFixed(2)}%</div><div class="pt-l">Avg Gain</div></div>
+        <div class="pt-stat"><div class="pt-v" style="color:#60a5fa">${stats.stillInScan}</div><div class="pt-l">In Scan</div></div>
+        <div class="pt-stat"><div class="pt-v" style="color:#4ade80">${stats.bestGain >= 0 ? '+' : ''}${Number(stats.bestGain||0).toFixed(2)}%</div><div class="pt-l">Best Max</div></div>
+        <div class="pt-stat"><div class="pt-v" style="color:#f87171">${Number(stats.worstLoss||0).toFixed(2)}%</div><div class="pt-l">Worst Min</div></div>
+      `;
+      if (lastUpdated) {
+        document.getElementById('ptMeta').textContent = `Last updated: ${lastUpdated}  |  Only A and A+ rated setups are tracked.`;
+      }
+    }
+
+    function ptApplyFilters() {
+      const statusF = document.getElementById('ptStatusFilter').value;
+      const setupF  = document.getElementById('ptSetupFilter').value;
+      let vis = 0;
+      document.querySelectorAll('.pt-card').forEach(card => {
+        let show = true;
+        if (statusF && card.dataset.status !== statusF) show = false;
+        if (setupF  && card.dataset.setup  !== setupF)  show = false;
+        card.style.display = show ? '' : 'none';
+        if (show) vis++;
+      });
+      const empty = document.getElementById('ptEmpty');
+      if (empty) empty.style.display = vis === 0 ? '' : 'none';
+    }
+
+    async function loadPerformanceData() {
+      const market    = document.getElementById('ptMarket').value;
+      const timeframe = document.getElementById('ptTimeframe').value;
+      const inclExp   = document.getElementById('ptIncludeExpired').checked;
+      const grid      = document.getElementById('ptGrid');
+      const empty     = document.getElementById('ptEmpty');
+
+      grid.innerHTML = '<p class="muted" style="padding:12px">Loading…</p>';
+      empty.style.display = 'none';
+
+      try {
+        const url = `/api/performance/trades?market=${market}&timeframe=${timeframe}&include_expired=${inclExp}`;
+        const data = await api(url);
+        const trades = data.trades || [];
+        _ptRenderSummary(data.stats || {}, data.lastUpdated || '');
+
+        if (!trades.length) {
+          grid.innerHTML = '';
+          empty.style.display = '';
+          return;
+        }
+        grid.innerHTML = trades.map(_ptRenderCard).join('');
+        ptApplyFilters();
+      } catch (err) {
+        grid.innerHTML = `<p class="muted" style="padding:12px">⚠️ ${err.message}</p>`;
+      }
+    }
+
+    function openPerfReport() {
+      const market    = document.getElementById('ptMarket').value;
+      const timeframe = document.getElementById('ptTimeframe').value;
+      window.open(`/reports/performance_tracker_${market}_${timeframe}_LATEST.html`, '_blank');
+    }
   </script>
 </body>
 </html>

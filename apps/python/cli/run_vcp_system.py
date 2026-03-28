@@ -28,6 +28,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 CLI_DIR = ROOT / "apps" / "python" / "cli"
 DEFAULT_OUTPUT_DIR = ROOT / "output"
+PERF_TRACKER_SCRIPT = CLI_DIR / "generate_performance_tracker.py"
 DEFAULT_US_SYMBOLS = ROOT / "data" / "universes" / "us_stock_tickers.csv"
 DEFAULT_US_FALLBACK = ROOT / "data" / "universes" / "all_us_stocks.txt"
 DEFAULT_INDIA_SYMBOLS = ROOT / "data" / "universes" / "indian_stock_tickers.csv"
@@ -388,6 +389,26 @@ def main():
 
     summary_md, summary_json = write_summary(args.output_dir, results)
 
+    # ── Performance tracker update (non-fatal) ────────────────────────────────
+    if PERF_TRACKER_SCRIPT.exists():
+        try:
+            perf_markets    = ",".join(args.markets)
+            perf_timeframes = ",".join(args.timeframes)
+            run_command(
+                [
+                    sys.executable,
+                    str(PERF_TRACKER_SCRIPT),
+                    "--output-dir", str(args.output_dir),
+                    "--markets",    perf_markets,
+                    "--timeframes", perf_timeframes,
+                ],
+                "Updating 2-week breakout performance tracker",
+            )
+        except Exception as exc:
+            print(f"   ! Performance tracker update skipped (non-fatal): {exc}")
+    else:
+        print("   ! generate_performance_tracker.py not found — skipping performance tracker")
+
     print("\n════════════════════════════════════════════════════════════════════════")
     print("VCP SYSTEM RUN COMPLETE")
     print("════════════════════════════════════════════════════════════════════════")
@@ -409,6 +430,12 @@ def main():
         print(f"  WATCH→ {item['files']['watchlistHtml']}")
     print(f"- Summary MD   → {summary_md}")
     print(f"- Summary JSON → {summary_json}")
+    print("\n── Performance Tracker ──────────────────────────────────────────────────")
+    for market in args.markets:
+        for timeframe in args.timeframes:
+            perf_html = args.output_dir / f"performance_tracker_{market}_{timeframe}_LATEST.html"
+            if perf_html.exists():
+                print(f"  PERF → {perf_html}")
 
 
 if __name__ == "__main__":
