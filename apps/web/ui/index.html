@@ -100,6 +100,23 @@
     .pt-progress-fill { height:100%; border-radius:2px; }
     .pt-progress-entry { position:absolute; top:-3px; width:2px; height:10px; background:#60a5fa; border-radius:1px; }
     .pt-max-min { font-size:11px; color:#64748b; display:flex; gap:10px; }
+    .pt-b-rat-b { background:#172033; color:#93c5fd; border:1px solid #60a5fa44; }
+    .pt-insight-chip { margin:6px 12px 0; display:inline-flex; padding:2px 8px; border:1px solid #2f3b4b; border-radius:12px; color:#7dd3fc; font-size:.68em; background:#0f1a26; cursor:pointer; }
+    .pt-insight { max-height:0; opacity:0; overflow:hidden; padding:0 12px; transition:max-height .25s ease,opacity .2s ease,padding .2s ease; border-top:0 solid #1e293b; }
+    .pt-card:hover .pt-insight { max-height:220px; opacity:1; padding:8px 12px 10px; border-top:1px solid #1e293b; }
+    .pt-insight-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 12px; margin-bottom:8px; }
+    .pt-insight-item { min-width:0; }
+    .pt-insight-label { font-size:.62em; color:#6e7681; text-transform:uppercase; letter-spacing:.35px; margin-bottom:2px; }
+    .pt-insight-value { font-size:.74em; font-weight:600; }
+    .pt-metric-pos { color:#4ade80; }
+    .pt-metric-neg { color:#f87171; }
+    .pt-metric-na { color:#94a3b8; }
+    .pt-insight-pill { display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; border:1px solid #30363d; font-size:.68em; font-weight:600; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .pt-pill-pos { background:#0f2418; color:#4ade80; border-color:#1f6b36; }
+    .pt-pill-neg { background:#2a1215; color:#ff7b72; border-color:#8b2d2d; }
+    .pt-pill-neu { background:#161b22; color:#c9d1d9; border-color:#30363d; }
+    .pt-insight-summary { font-size:.72em; color:#94a3b8; line-height:1.4; margin-bottom:4px; }
+    .pt-insight-raw { font-size:.68em; color:#7f8a98; line-height:1.4; }
 
     .analyzer-full { grid-column: 1 / -1; }
     .verdict-BUY_NOW    { color: #4ade80; font-weight: bold; font-size: 16px; }
@@ -1192,6 +1209,60 @@
       return (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
     }
 
+    function _ptEscapeHtml(v) {
+      return String(v ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function _ptExtractTriggerBlock(summary, label) {
+      const source = String(summary || '');
+      if (!source) return '';
+      const rx = new RegExp(`(?:^|\\|\\s*)${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*:\\s*(.*?)(?=\\s*\\|\\s*[A-Za-z]+\\s*:|$)`, 'i');
+      const match = source.match(rx);
+      return match ? (match[1] || '').trim() : '';
+    }
+
+    function _ptTradeTriggerValue(trade, field, label) {
+      return String(trade[field] || '').trim() || _ptExtractTriggerBlock(trade.triggerSummary, label);
+    }
+
+    function _ptExtractPct(text, keys) {
+      const source = String(text || '');
+      for (const key of keys) {
+        const match = source.match(new RegExp(`${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*[:=]\\s*([+-]?\\d+(?:\\.\\d+)?)%`, 'i'));
+        if (match) return Number(match[1]);
+      }
+      return null;
+    }
+
+    function _ptExtractDebtChange(text) {
+      const source = String(text || '');
+      const match = source.match(/Debt[^\d+-]*([+-]?\d+(?:\.\d+)?)%/i);
+      if (!match) return null;
+      const val = Number(match[1]);
+      if (Number.isNaN(val)) return null;
+      if (source.includes('↑') || source.toUpperCase().includes('UP')) return Math.abs(val);
+      if (source.includes('↓') || source.toUpperCase().includes('DOWN')) return -Math.abs(val);
+      return val;
+    }
+
+    function _ptFmtMetric(v, signed = true) {
+      if (v == null || Number.isNaN(Number(v))) return '—';
+      const n = Number(v);
+      return signed ? `${n >= 0 ? '+' : ''}${n.toFixed(1)}%` : `${n.toFixed(1)}%`;
+    }
+
+    function _ptClassifyTrigger(text) {
+      const t = String(text || '').toUpperCase();
+      if (['POSITIVE', 'TAILWIND', 'STRONG', 'IMPROVING', 'SUPPORTIVE'].some(k => t.includes(k))) return 'pt-pill-pos';
+      if (['WEAK', 'RISK', 'HEADWIND', 'UNFAVORABLE', 'NEGATIVE'].some(k => t.includes(k))) return 'pt-pill-neg';
+      return 'pt-pill-neu';
+    }
+
     function _ptProgressBar(entry, sl, t1, current) {
       if (!(sl > 0 && entry > 0 && t1 > 0 && entry > sl && t1 > entry)) return '';
       const range = t1 - sl;
@@ -1232,16 +1303,33 @@
       const gainCls  = _ptGainCls(gain);
       const stsCls   = _ptStatusCls(status);
       const cardCls  = status === 'SL_HIT' ? 'sl-hit' : (status.endsWith('HIT') ? 't-hit' : (status === 'EXPIRED' ? 'expired' : ''));
-      const ratCls   = rating === 'A+' ? 'pt-b-rat-aplus' : 'pt-b-rat-a';
+      const ratCls   = rating === 'A+' ? 'pt-b-rat-aplus' : (rating === 'A' ? 'pt-b-rat-a' : 'pt-b-rat-b');
       const risk     = entry > sl && sl > 0 ? entry - sl : entry * 0.03;
       const rrT1     = (risk > 0 && t1 > entry) ? ((t1 - entry) / risk).toFixed(1) : '—';
       const rrT2     = (risk > 0 && t2 > entry) ? ((t2 - entry) / risk).toFixed(1) : '—';
       const progBar  = _ptProgressBar(entry, sl, t1, curr);
-      const fundSum  = (t.fundSummary || '').slice(0, 120);
       const stillHtml = still
         ? '<span class="pt-still-yes">📌 In Scan</span>'
         : '<span class="pt-still-no">📤 Left Scan</span>';
       const regimeCls = regime.includes('UNFAV') ? 'rmi' : (regime.includes('FAV') ? 'rpl' : 'rna');
+      const fundSummary = String(t.fundSummary || '').trim() || 'No online fundamentals snapshot available';
+      const epsTrigger = _ptTradeTriggerValue(t, 'triggerEarningsGrowth', 'Earnings') || 'N/A';
+      const debtTrigger = _ptTradeTriggerValue(t, 'triggerDebtReduction', 'Debt') || 'N/A';
+      const macroTrigger = _ptTradeTriggerValue(t, 'triggerMacroTailwind', 'Macro') || 'N/A';
+      const marketTrigger = _ptTradeTriggerValue(t, 'triggerMarketTailwind', 'Market') || 'N/A';
+      const epsYoy = _ptExtractPct(epsTrigger, ['EPS_YOY', 'EPS YOY']);
+      const epsQoq = _ptExtractPct(epsTrigger, ['EPS_QOQ', 'EPS QOQ']);
+      let debtYoy = _ptExtractPct(debtTrigger, ['DEBT_YOY', 'DEBT YOY']);
+      const debtQoq = _ptExtractPct(debtTrigger, ['DEBT_QOQ', 'DEBT QOQ']);
+      if (debtYoy == null && debtQoq == null) debtYoy = _ptExtractDebtChange(debtTrigger);
+      const epsCls = (epsYoy == null && epsQoq == null) ? 'pt-metric-na' : (((epsYoy || 0) >= 0 || (epsQoq || 0) >= 0) ? 'pt-metric-pos' : 'pt-metric-neg');
+      const debtCls = (debtYoy == null && debtQoq == null) ? 'pt-metric-na' : (((debtYoy || 0) > 0 || (debtQoq || 0) > 0) ? 'pt-metric-neg' : 'pt-metric-pos');
+      const fundSummaryEsc = _ptEscapeHtml(fundSummary);
+      const entryInstructionEsc = _ptEscapeHtml(t.entryInstruction || '—');
+      const epsTriggerEsc = _ptEscapeHtml(epsTrigger);
+      const debtTriggerEsc = _ptEscapeHtml(debtTrigger);
+      const macroTriggerEsc = _ptEscapeHtml(macroTrigger);
+      const marketTriggerEsc = _ptEscapeHtml(marketTrigger);
 
       return `<div class="pt-card ${cardCls}" data-status="${status}" data-setup="${t.setup||''}" data-sym="${sym}">
   <div class="pt-header">
@@ -1310,7 +1398,33 @@
       <span class="pt-fstat-l">RS 6M</span>
       <span class="pt-fstat-v ${rs6m > 0 ? 'rpl' : 'rmi'}">${_ptFmtPct(rs6m)}</span>
     </div>
-    ${fundSum ? `<div class="pt-fstat" style="flex:1;align-items:flex-start"><span class="pt-fstat-l">Fundamentals</span><span class="pt-fstat-v muted" style="font-size:10px;text-align:left">${fundSum}</span></div>` : ''}
+  </div>
+  <div class="pt-insight-chip">Fundamentals + Macro</div>
+  <div class="pt-insight">
+    <div class="pt-insight-grid">
+      <div class="pt-insight-item">
+        <div class="pt-insight-label">EPS Growth</div>
+        <div class="pt-insight-value ${epsCls}">YoY ${_ptFmtMetric(epsYoy)} &nbsp;|&nbsp; QoQ ${_ptFmtMetric(epsQoq)}</div>
+      </div>
+      <div class="pt-insight-item">
+        <div class="pt-insight-label">Debt Change</div>
+        <div class="pt-insight-value ${debtCls}">YoY ${_ptFmtMetric(debtYoy)} &nbsp;|&nbsp; QoQ ${_ptFmtMetric(debtQoq)}</div>
+      </div>
+      <div class="pt-insight-item">
+        <div class="pt-insight-label">Macro Trigger</div>
+        <div class="pt-insight-pill ${_ptClassifyTrigger(macroTrigger)}">${macroTriggerEsc}</div>
+      </div>
+      <div class="pt-insight-item">
+        <div class="pt-insight-label">Market Trigger</div>
+        <div class="pt-insight-pill ${_ptClassifyTrigger(marketTrigger)}">${marketTriggerEsc}</div>
+      </div>
+    </div>
+    <div class="pt-insight-summary">${fundSummaryEsc}</div>
+    <div class="pt-insight-raw">
+      <div><b>Entry:</b> ${entryInstructionEsc}</div>
+      <div><b>EPS:</b> ${epsTriggerEsc}</div>
+      <div><b>Debt:</b> ${debtTriggerEsc}</div>
+    </div>
   </div>
 </div>`;
     }

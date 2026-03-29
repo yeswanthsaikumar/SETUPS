@@ -1,8 +1,8 @@
 """
 performance_tracker.py
 ──────────────────────
-Tracks live performance of A and A+ rated breakout setups detected by the
-scanner over the last 14 calendar days (2 weeks).
+Tracks live performance of qualifying breakout setups detected by the
+scanner over the recent scanner windows (about 1 month daily / ~7 weeks weekly).
 
 On every scan run:
   1. New A / A+ setups from daily + weekly scans are logged (one record per
@@ -22,6 +22,9 @@ from __future__ import annotations
 
 import csv
 import json
+import re
+import subprocess
+import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -29,8 +32,12 @@ from typing import Any
 # ──────────────────────────────────────────────────────────────────────────────
 
 TRACKER_FILENAME = "performance_tracker.json"
-MAX_TRACK_DAYS   = 14
-QUALIFYING_RATINGS: set[str] = {"A", "A+"}
+MAX_TRACK_DAYS   = 31
+DAILY_TRACK_SESSIONS = 20
+WEEKLY_TRACK_SESSIONS = 7
+QUALIFYING_RATINGS: set[str] = {"A", "A+", "B"}
+ROOT = Path(__file__).resolve().parents[3]
+BACKTEST_SCRIPT = ROOT / "apps" / "python" / "cli" / "run_backtest.py"
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Numeric helper
@@ -53,6 +60,13 @@ def _now_iso() -> str:
     return datetime.now().isoformat(timespec="seconds")
 
 
+def _round_or_none(v: Any, digits: int = 2) -> float | None:
+    n = _f(v, d=float("nan"))
+    if n != n:
+        return None
+    return round(n, digits)
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # JSON helpers
 # ──────────────────────────────────────────────────────────────────────────────
@@ -66,6 +80,69 @@ def _load_json(path: Path) -> list | dict | None:
         return None
 
 
+def _parse_iso_date(value: str | None) -> date | None:
+    try:
+        return date.fromisoformat(str(value or "").strip())
+    except Exception:
+        return None
+
+
+def _extract_trigger_block(summary: str, label: str) -> str:
+    source = str(summary or "")
+    if not source:
+        return ""
+    m = re.search(
+        rf"(?:^|\|\s*){re.escape(label)}\s*:\s*(.*?)(?=\s*\|\s*[A-Za-z]+\s*:|$)",
+        source,
+        flags=re.IGNORECASE,
+    )
+    return m.group(1).strip() if m else ""
+
+
+def _normalize_trade_record(trade: dict) -> dict:
+    if not isinstance(trade, dict):
+        return trade
+
+    normalized = dict(trade)
+    trigger_summary = str(normalized.get("triggerSummary", "") or "")
+    normalized["fundSummary"] = str(normalized.get("fundSummary", "") or "")
+    normalized["triggerSummary"] = trigger_summary
+    normalized["entryInstruction"] = str(normalized.get("entryInstruction", "") or "")
+
+    for field, label in {
+        "triggerEarningsGrowth": "Earnings",
+        "triggerDebtReduction": "Debt",
+        "triggerMacroTailwind": "Macro",
+        "triggerMarketTailwind": "Market",
+    }.items():
+        existing = str(normalized.get(field, "") or "").strip()
+        normalized[field] = existing or _extract_trigger_block(trigger_summary, label)
+
+    return normalized
+
+
+def _session_window_for_timeframe(
+    timeframe: str,
+    daily_sessions: int = DAILY_TRACK_SESSIONS,
+    weekly_sessions: int = WEEKLY_TRACK_SESSIONS,
+) -> int:
+    tf = str(timeframe or "daily").strip().lower()
+    if tf == "weekly":
+        return max(1, weekly_sessions)
+    return max(1, daily_sessions)
+
+
+def _recent_session_dates(rows: list[dict], session_count: int) -> set[str]:
+    valid_dates = sorted({
+        str(row.get("entryDate", "")).strip()
+        for row in rows
+        if _parse_iso_date(row.get("entryDate")) is not None
+    })
+    if not valid_dates:
+        return set()
+    return set(valid_dates[-max(1, session_count):])
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Store load / save
 # ──────────────────────────────────────────────────────────────────────────────
@@ -77,6 +154,16 @@ def load_tracker(output_dir: Path) -> dict:
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
             if isinstance(data, dict) and "trades" in data:
+                data["trades"] = [
+                    _normalize_trade_record(t)
+                    for t in data.get("trades", [])
+                    if isinstance(t, dict)
+                ]
+                data["archived"] = [
+                    _normalize_trade_record(t)
+                    for t in data.get("archived", [])
+                    if isinstance(t, dict)
+                ]
                 return data
         except Exception:
             pass
@@ -95,6 +182,86 @@ def save_tracker(output_dir: Path, data: dict) -> None:
 
 def _make_trade_id(symbol: str, market: str, timeframe: str, trade_date: str) -> str:
     return f"{symbol}|{market}|{timeframe}|{trade_date}"
+
+
+def _build_trade_record(
+    *,
+    symbol: str,
+    market: str,
+    timeframe: str,
+    setup: str,
+    rating: str,
+    window: str,
+    trade_date: str,
+    scan_timestamp: str,
+    scan_file: str,
+    entry: Any,
+    stop_loss: Any,
+    target1: Any,
+    target2: Any,
+    target3: Any,
+    pivot: Any = 0.0,
+    score: Any = 0.0,
+    close_at_scan: Any = None,
+    regime_at_scan: str = "",
+    regime_score_at_scan: Any = 0.0,
+    rs3m_at_scan: Any = 0.0,
+    rs6m_at_scan: Any = 0.0,
+    fund_summary: str = "",
+    trigger_summary: str = "",
+    trigger_earnings_growth: str = "",
+    trigger_debt_reduction: str = "",
+    trigger_macro_tailwind: str = "",
+    trigger_market_tailwind: str = "",
+    entry_instruction: str = "",
+    still_in_scan: bool = True,
+) -> dict:
+    trade_id = _make_trade_id(symbol, market, timeframe, trade_date)
+    entry_value = _round_or_none(entry)
+    return {
+        "id":             trade_id,
+        "symbol":         symbol,
+        "market":         market,
+        "timeframe":      timeframe,
+        "setup":          str(setup or "").upper(),
+        "rating":         str(rating or "").upper().strip(),
+        "window":         str(window or ""),
+        "tradeDate":      trade_date,
+        "scanTimestamp":  scan_timestamp,
+        "scanFile":       scan_file,
+        "entry":          entry_value,
+        "stopLoss":       _round_or_none(stop_loss),
+        "target1":        _round_or_none(target1),
+        "target2":        _round_or_none(target2),
+        "target3":        _round_or_none(target3),
+        "pivot":          round(_f(pivot), 2),
+        "score":          round(_f(score), 2),
+        "closeAtScan":    _round_or_none(close_at_scan if close_at_scan is not None else entry),
+        "regimeAtScan":      str(regime_at_scan or ""),
+        "regimeScoreAtScan": round(_f(regime_score_at_scan), 2),
+        "rs3mAtScan":     round(_f(rs3m_at_scan), 2),
+        "rs6mAtScan":     round(_f(rs6m_at_scan), 2),
+        "fundSummary":         str(fund_summary or ""),
+        "triggerSummary":      str(trigger_summary or ""),
+        "triggerEarningsGrowth": str(trigger_earnings_growth or _extract_trigger_block(trigger_summary, "Earnings")),
+        "triggerDebtReduction":  str(trigger_debt_reduction or _extract_trigger_block(trigger_summary, "Debt")),
+        "triggerMacroTailwind":  str(trigger_macro_tailwind or _extract_trigger_block(trigger_summary, "Macro")),
+        "triggerMarketTailwind": str(trigger_market_tailwind or _extract_trigger_block(trigger_summary, "Market")),
+        "entryInstruction":    str(entry_instruction or ""),
+        "currentPrice":  entry_value,
+        "gainPct":       0.0,
+        "maxGain":       0.0,
+        "minGain":       0.0,
+        "daysHeld":      0,
+        "slHit":         False,
+        "target1Hit":    False,
+        "target2Hit":    False,
+        "target3Hit":    False,
+        "stillInScan":   still_in_scan,
+        "status":        "OPEN",
+        "sparkline":     [],
+        "lastUpdated":   _now_iso(),
+    }
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -129,6 +296,14 @@ def _load_price_rows(symbol: str, cache_dir: Path) -> list[dict]:
     return []
 
 
+def _latest_price_date(symbol: str, cache_dir: Path) -> str | None:
+    rows = _load_price_rows(symbol, cache_dir)
+    if not rows:
+        return None
+    last_date = str(rows[-1].get("date", "")).strip()
+    return last_date or None
+
+
 def _rows_since(rows: list[dict], since_date: str) -> list[dict]:
     return [r for r in rows if r["date"] >= since_date]
 
@@ -153,6 +328,13 @@ def update_trade_performance(trade: dict, cache_dir: Path) -> dict:
 
     all_rows   = _load_price_rows(symbol, cache_dir)
     since_rows = _rows_since(all_rows, trade_date)
+
+    if not since_rows and all_rows:
+        last_market_date = str(all_rows[-1].get("date", "")).strip()
+        if last_market_date and str(trade_date) > last_market_date:
+            trade_date = last_market_date
+            trade["tradeDate"] = last_market_date
+            since_rows = _rows_since(all_rows, trade_date)
 
     if not since_rows:
         trade["lastUpdated"] = _now_iso()
@@ -217,7 +399,7 @@ def update_trade_performance(trade: dict, cache_dir: Path) -> dict:
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _build_scan_symbol_sets(output_dir: Path) -> dict[str, set[str]]:
-    """Build {market_timeframe -> set of A/A+ symbols} from latest LATEST files."""
+    """Build {market_timeframe -> set of qualifying-rating symbols} from latest LATEST files."""
     result: dict[str, set[str]] = {}
     for market in ["india", "us"]:
         for timeframe in ["daily", "weekly"]:
@@ -247,17 +429,183 @@ def check_still_in_scan(trades: list[dict], output_dir: Path) -> None:
         trade["stillInScan"] = trade["symbol"].upper() in symbols
 
 
+def _run_backtest_for_group(
+    output_dir: Path,
+    cache_dir: Path,
+    market: str,
+    timeframe: str,
+    workers: int,
+    batch: int,
+    setups: str,
+) -> Path | None:
+    if not BACKTEST_SCRIPT.exists():
+        return None
+    command = [
+        sys.executable,
+        str(BACKTEST_SCRIPT),
+        "--market", market,
+        "--timeframe", timeframe,
+        "--setups", setups,
+        "--cache-dir", str(cache_dir),
+        "--output-dir", str(output_dir),
+        "--workers", str(max(1, workers)),
+        "--batch", str(max(1, batch)),
+        "--walk-forward-folds", "0",
+        "--monte-carlo-iterations", "0",
+    ]
+    result = subprocess.run(command, cwd=ROOT, text=True)
+    if result.returncode != 0:
+        return None
+    latest_csv = output_dir / f"backtest_{market}_{timeframe}_LATEST.csv"
+    return latest_csv if latest_csv.exists() else None
+
+
+def _ingest_backtest_csv(
+    csv_path: Path,
+    market: str,
+    timeframe: str,
+    existing_ids: set[str],
+    daily_sessions: int,
+    weekly_sessions: int,
+) -> list[dict]:
+    new_trades: list[dict] = []
+    if not csv_path.exists():
+        return new_trades
+
+    try:
+        with open(csv_path, newline="", encoding="utf-8") as fh:
+            rows = list(csv.DictReader(fh))
+    except Exception:
+        return new_trades
+
+    session_count = _session_window_for_timeframe(
+        timeframe,
+        daily_sessions=daily_sessions,
+        weekly_sessions=weekly_sessions,
+    )
+    rows_for_rating = [
+        row for row in rows
+        if str(row.get("setupRating", "")).upper().strip() in QUALIFYING_RATINGS
+    ]
+    keep_dates = _recent_session_dates(rows_for_rating, session_count)
+    if not keep_dates:
+        return new_trades
+
+    for row in rows:
+        rating = str(row.get("setupRating", "")).upper().strip()
+        if rating not in QUALIFYING_RATINGS:
+            continue
+
+        trade_date = str(row.get("entryDate", "")).strip()
+        trade_day = _parse_iso_date(trade_date)
+        if trade_day is None or trade_date not in keep_dates or trade_day > date.today():
+            continue
+
+        symbol = str(row.get("symbol", "")).strip()
+        if not symbol:
+            continue
+
+        trade_id = _make_trade_id(symbol, market, timeframe, trade_date)
+        if trade_id in existing_ids:
+            continue
+
+        entry = _f(row.get("entryPrice"))
+        stop = _f(row.get("stopPrice"))
+        risk = max(0.0, entry - stop)
+        rr1 = _f(row.get("rewardToRiskT1"), 1.0)
+        target1 = entry + (risk * rr1) if entry > 0 and risk > 0 else None
+        target2 = entry + (risk * 2.0) if entry > 0 and risk > 0 else None
+        target3 = entry + (risk * 3.0) if entry > 0 and risk > 0 else None
+
+        new_trades.append(_build_trade_record(
+            symbol=symbol,
+            market=market,
+            timeframe=timeframe,
+            setup=str(row.get("setupType", "")),
+            rating=rating,
+            window=str(row.get("windowLabel", "")),
+            trade_date=trade_date,
+            scan_timestamp=_now_iso(),
+            scan_file=csv_path.name,
+            entry=entry,
+            stop_loss=stop,
+            target1=target1,
+            target2=target2,
+            target3=target3,
+            pivot=row.get("pivotPrice"),
+            score=row.get("qualityScore"),
+            close_at_scan=entry,
+            regime_at_scan=str(row.get("entryMarketRegime", "")),
+            regime_score_at_scan=row.get("marketStrengthScore"),
+            rs3m_at_scan=row.get("relativeStrengthScore"),
+            rs6m_at_scan=0.0,
+            fund_summary="",
+            trigger_summary=str(row.get("macroTrigger", "")),
+            entry_instruction=str(row.get("entryInstruction", "")),
+            still_in_scan=False,
+        ))
+        existing_ids.add(trade_id)
+
+    return new_trades
+
+
+def backfill_recent_breakouts_from_backtest(
+    data: dict,
+    output_dir: Path,
+    cache_dir: Path,
+    markets: list[str] | None = None,
+    timeframes: list[str] | None = None,
+    daily_sessions: int = DAILY_TRACK_SESSIONS,
+    weekly_sessions: int = WEEKLY_TRACK_SESSIONS,
+    workers: int = 4,
+    batch: int = 20,
+    setups: str = "both",
+) -> dict:
+    if daily_sessions <= 0 and weekly_sessions <= 0:
+        return data
+
+    markets = markets or ["india"]
+    timeframes = timeframes or ["daily", "weekly"]
+    existing_ids = {t["id"] for t in data.get("trades", []) if "id" in t}
+    appended: list[dict] = []
+
+    for market in markets:
+        for timeframe in timeframes:
+            if timeframe == "daily" and daily_sessions <= 0:
+                continue
+            if timeframe == "weekly" and weekly_sessions <= 0:
+                continue
+            csv_path = _run_backtest_for_group(output_dir, cache_dir, market, timeframe, workers, batch, setups)
+            if not csv_path:
+                continue
+            appended.extend(
+                _ingest_backtest_csv(
+                    csv_path,
+                    market,
+                    timeframe,
+                    existing_ids,
+                    daily_sessions,
+                    weekly_sessions,
+                )
+            )
+
+    if appended:
+        data.setdefault("trades", []).extend(appended)
+    return data
+
+
 # ──────────────────────────────────────────────────────────────────────────────
-# Ingest new A / A+ breakouts from latest scan output
+# Ingest new qualifying breakouts from latest scan output
 # ──────────────────────────────────────────────────────────────────────────────
 
 def ingest_new_breakouts(
     output_dir: Path,
+    cache_dir: Path,
     markets: list[str] | None = None,
     timeframes: list[str] | None = None,
     existing_ids: set[str] | None = None,
 ) -> list[dict]:
-    """Return new TradeRecord dicts for A/A+ signals not yet in the tracker."""
+    """Return new TradeRecord dicts for qualifying signals not yet in the tracker."""
     markets       = markets    or ["india"]
     timeframes    = timeframes or ["daily", "weekly"]
     existing_ids  = existing_ids or set()
@@ -296,7 +644,8 @@ def ingest_new_breakouts(
 
                 symbol   = str(row.get("symbol", ""))
                 setup    = str(row.get("setup", "")).upper()
-                trade_id = _make_trade_id(symbol, market, timeframe, today)
+                trade_date = _latest_price_date(symbol, cache_dir) or today
+                trade_id = _make_trade_id(symbol, market, timeframe, trade_date)
 
                 if trade_id in existing_ids:
                     continue
@@ -306,52 +655,37 @@ def ingest_new_breakouts(
                 t1    = _f(row.get("T1"))
                 t2    = _f(row.get("T2"))
                 t3    = _f(row.get("T3"))
-
-                trade: dict = {
-                    "id":             trade_id,
-                    "symbol":         symbol,
-                    "market":         market,
-                    "timeframe":      timeframe,
-                    "setup":          setup,
-                    "rating":         rating,
-                    "window":         str(row.get("window", "")),
-                    "tradeDate":      today,
-                    "scanTimestamp":  _now_iso(),
-                    "scanFile":       scan_file,
-                    # Original scan snapshot
-                    "entry":          round(entry, 2) if entry else None,
-                    "stopLoss":       round(sl, 2)    if sl    else None,
-                    "target1":        round(t1, 2)    if t1    else None,
-                    "target2":        round(t2, 2)    if t2    else None,
-                    "target3":        round(t3, 2)    if t3    else None,
-                    "pivot":          round(_f(row.get("pivot")), 2),
-                    "score":          round(_f(row.get("score")), 2),
-                    "closeAtScan":    round(_f(row.get("close")), 2),
-                    # Regime at scan time
-                    "regimeAtScan":      str(row.get("regimeState",  regime_at_scan)  or regime_at_scan),
-                    "regimeScoreAtScan": round(_f(row.get("regimeScore", regime_score_at)), 2),
-                    # RS at scan
-                    "rs3mAtScan":     round(_f(row.get("rs3m")), 2),
-                    "rs6mAtScan":     round(_f(row.get("rs6m")), 2),
-                    # Fundamentals / triggers
-                    "fundSummary":         str(row.get("fundSummary",      "") or ""),
-                    "triggerSummary":      str(row.get("triggerSummary",   "") or ""),
-                    "entryInstruction":    str(row.get("entryInstruction", "") or ""),
-                    # Live performance (updated on first cache pass)
-                    "currentPrice":  round(entry, 2) if entry else None,
-                    "gainPct":       0.0,
-                    "maxGain":       0.0,
-                    "minGain":       0.0,
-                    "daysHeld":      0,
-                    "slHit":         False,
-                    "target1Hit":    False,
-                    "target2Hit":    False,
-                    "target3Hit":    False,
-                    "stillInScan":   True,
-                    "status":        "OPEN",
-                    "sparkline":     [],
-                    "lastUpdated":   _now_iso(),
-                }
+                trade: dict = _build_trade_record(
+                    symbol=symbol,
+                    market=market,
+                    timeframe=timeframe,
+                    setup=setup,
+                    rating=rating,
+                    window=str(row.get("window", "")),
+                    trade_date=trade_date,
+                    scan_timestamp=_now_iso(),
+                    scan_file=scan_file,
+                    entry=entry,
+                    stop_loss=sl,
+                    target1=t1,
+                    target2=t2,
+                    target3=t3,
+                    pivot=row.get("pivot"),
+                    score=row.get("score"),
+                    close_at_scan=row.get("close"),
+                    regime_at_scan=str(row.get("regimeState", regime_at_scan) or regime_at_scan),
+                    regime_score_at_scan=row.get("regimeScore", regime_score_at),
+                    rs3m_at_scan=row.get("rs3m"),
+                    rs6m_at_scan=row.get("rs6m"),
+                    fund_summary=str(row.get("fundSummary", "") or ""),
+                    trigger_summary=str(row.get("triggerSummary", "") or ""),
+                    trigger_earnings_growth=str(row.get("triggerEarningsGrowth", "") or ""),
+                    trigger_debt_reduction=str(row.get("triggerDebtReduction", "") or ""),
+                    trigger_macro_tailwind=str(row.get("triggerMacroTailwind", "") or ""),
+                    trigger_market_tailwind=str(row.get("triggerMarketTailwind", "") or ""),
+                    entry_instruction=str(row.get("entryInstruction", "") or ""),
+                    still_in_scan=True,
+                )
                 new_trades.append(trade)
                 existing_ids.add(trade_id)
 
@@ -362,15 +696,47 @@ def ingest_new_breakouts(
 # Rotate expired trades to archive
 # ──────────────────────────────────────────────────────────────────────────────
 
-def rotate_expired_trades(data: dict, max_days: int = MAX_TRACK_DAYS) -> dict:
-    """Move trades older than max_days to the archive list."""
-    cutoff  = (date.today() - timedelta(days=max_days)).isoformat()
+def rotate_expired_trades(
+    data: dict,
+    max_days: int = MAX_TRACK_DAYS,
+    daily_sessions: int = DAILY_TRACK_SESSIONS,
+    weekly_sessions: int = WEEKLY_TRACK_SESSIONS,
+) -> dict:
+    """Move trades outside configured recent session windows to archive."""
+    # Fallback calendar cutoff kept for malformed dates with missing timeframe context.
+    cutoff = (date.today() - timedelta(days=max_days)).isoformat()
+    group_dates: dict[tuple[str, str], list[str]] = {}
+    for trade in data.get("trades", []):
+        td = str(trade.get("tradeDate", "")).strip()
+        if _parse_iso_date(td) is None:
+            continue
+        key = (str(trade.get("market", "india")), str(trade.get("timeframe", "daily")))
+        group_dates.setdefault(key, []).append(td)
+
+    keep_dates_by_group: dict[tuple[str, str], set[str]] = {}
+    for key, values in group_dates.items():
+        unique_dates = sorted(set(values))
+        keep_n = _session_window_for_timeframe(
+            key[1],
+            daily_sessions=daily_sessions,
+            weekly_sessions=weekly_sessions,
+        )
+        keep_dates_by_group[key] = set(unique_dates[-keep_n:])
+
     active: list[dict] = []
     rotated: list[dict] = []
 
     for trade in data.get("trades", []):
-        trade_date = trade.get("tradeDate", "")
-        if trade_date and trade_date < cutoff:
+        trade_date = str(trade.get("tradeDate", "")).strip()
+        key = (str(trade.get("market", "india")), str(trade.get("timeframe", "daily")))
+        keep_dates = keep_dates_by_group.get(key, set())
+        should_rotate = False
+        if keep_dates and trade_date:
+            should_rotate = trade_date not in keep_dates
+        elif trade_date and trade_date < cutoff:
+            should_rotate = True
+
+        if should_rotate:
             if trade.get("status") == "OPEN":
                 trade["status"] = "EXPIRED"
             rotated.append(trade)
@@ -393,6 +759,11 @@ def run_performance_update(
     cache_dir: Path,
     markets: list[str] | None = None,
     timeframes: list[str] | None = None,
+    daily_backfill_sessions: int = DAILY_TRACK_SESSIONS,
+    weekly_backfill_sessions: int = WEEKLY_TRACK_SESSIONS,
+    backtest_workers: int = 4,
+    backtest_batch: int = 20,
+    backtest_setups: str = "both",
 ) -> dict:
     """
     Full performance tracking cycle.  Returns the updated tracker data dict.
@@ -408,9 +779,26 @@ def run_performance_update(
     data          = load_tracker(output_dir)
     existing_ids  = {t["id"] for t in data.get("trades", [])}
 
+    # 0. Backfill recent historical breakouts when requested
+    if daily_backfill_sessions > 0 or weekly_backfill_sessions > 0:
+        data = backfill_recent_breakouts_from_backtest(
+            data=data,
+            output_dir=output_dir,
+            cache_dir=cache_dir,
+            markets=markets,
+            timeframes=timeframes,
+            daily_sessions=daily_backfill_sessions,
+            weekly_sessions=weekly_backfill_sessions,
+            workers=backtest_workers,
+            batch=backtest_batch,
+            setups=backtest_setups,
+        )
+        existing_ids = {t["id"] for t in data.get("trades", [])}
+
     # 1. Ingest new breakouts
     new_trades = ingest_new_breakouts(
         output_dir   = output_dir,
+        cache_dir    = cache_dir,
         markets      = markets,
         timeframes   = timeframes,
         existing_ids = existing_ids,
@@ -435,7 +823,11 @@ def run_performance_update(
         pass
 
     # 4. Rotate expired
-    data = rotate_expired_trades(data)
+    data = rotate_expired_trades(
+        data,
+        daily_sessions=daily_backfill_sessions,
+        weekly_sessions=weekly_backfill_sessions,
+    )
 
     # 5. Save
     save_tracker(output_dir, data)

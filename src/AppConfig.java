@@ -134,38 +134,41 @@ public class AppConfig {
         this.waveCount                 = 3;
         this.waveContractionMissTolerance = 1;
 
-        this.minRangeContraction       = weekly ? 0.12 : 0.15;
-        this.minVolumeContraction      = weekly ? 0.08 : 0.10;
-        this.minQualityScore           = weekly ? 30.0 : 35.0;
-        this.minRangeExpansionMultiplier = weekly ? 1.15 : 1.25;
-        this.minExpansionVolumeMultiplier = weekly ? 1.05 : 1.10;
-        this.minExpansionClosePosition = 0.60;
-        this.meanReversionMinPullbackPct = weekly ? 0.03 : 0.04;
-        this.meanReversionMaxPullbackPct = weekly ? 0.18 : 0.14;
-        this.meanReversionMinRecoveryPct = weekly ? 0.015 : 0.01;
-        this.meanReversionVolumeMultiplier = weekly ? 0.95 : 1.00;
-        this.meanReversionNearVolumeMultiplier = weekly ? 0.90 : 0.95;
-        this.meanReversionMaxDistanceToTriggerPct = weekly ? 0.035 : 0.025;
-        this.wickBiasLookbackBars      = weekly ? 2 : 3;
-        this.bodyDirectionalWeight     = 1.0;
-        this.lowerWickPositiveWeight   = 1.25;
-        this.upperWickNegativeWeight   = 1.45;
-        this.maxWickBodyScoreAdjustment = weekly ? 8.0 : 12.0;
-        this.minBaseHeightPct          = weekly ? 6.0 : 4.0;
-        this.maxBaseHeightPct          = weekly ? 75.0 : 60.0;
-        this.shortWindowHeightCapPct   = weekly ? 40.0 : 30.0;
-        this.longWindowHeightCapPct    = weekly ? 72.0 : 58.0;
-        this.shortWindowContractionPairRatio = weekly ? 0.95 : 1.0;
-        this.longWindowContractionPairRatio  = 0.50;
+        // ── Quality gates (tightened for higher win-rate) ─────────────────────
+        this.minRangeContraction       = weekly ? 0.15 : 0.18;   // was 0.12/0.15
+        this.minVolumeContraction      = weekly ? 0.10 : 0.12;   // was 0.08/0.10
+        this.minQualityScore           = weekly ? 40.0 : 45.0;   // was 30/35 — cuts C/D-grade noise
+        this.minRangeExpansionMultiplier = weekly ? 1.20 : 1.35; // was 1.15/1.25 — stronger expansion required
+        this.minExpansionVolumeMultiplier = weekly ? 1.15 : 1.25;// was 1.05/1.10 — more vol conviction
+        this.minExpansionClosePosition = 0.65;                    // was 0.60 — close must be in upper 35%
+        this.meanReversionMinPullbackPct = weekly ? 0.04 : 0.05; // was 0.03/0.04
+        this.meanReversionMaxPullbackPct = weekly ? 0.15 : 0.12; // was 0.18/0.14 — tighter pullback band
+        this.meanReversionMinRecoveryPct = weekly ? 0.02 : 0.015;// was 0.015/0.01 — more recovery needed
+        this.meanReversionVolumeMultiplier = weekly ? 1.00 : 1.05;// was 0.95/1.00 — require volume
+        this.meanReversionNearVolumeMultiplier = weekly ? 0.95 : 1.00;// was 0.90/0.95
+        this.meanReversionMaxDistanceToTriggerPct = weekly ? 0.025 : 0.018;// was 0.035/0.025
+        this.wickBiasLookbackBars      = weekly ? 3 : 4;          // was 2/3
+        this.bodyDirectionalWeight     = 1.2;                     // was 1.0 — reward clean bodies
+        this.lowerWickPositiveWeight   = 1.35;                    // was 1.25
+        this.upperWickNegativeWeight   = 1.60;                    // was 1.45 — penalise rejection more
+        this.maxWickBodyScoreAdjustment = weekly ? 10.0 : 14.0;  // was 8/12
+        this.minBaseHeightPct          = weekly ? 7.0 : 5.0;     // was 6/4
+        this.maxBaseHeightPct          = weekly ? 60.0 : 45.0;   // was 75/60 — cut erratic wide bases
+        this.shortWindowHeightCapPct   = weekly ? 35.0 : 25.0;   // was 40/30
+        this.longWindowHeightCapPct    = weekly ? 58.0 : 44.0;   // was 72/58
+        this.shortWindowContractionPairRatio = weekly ? 1.0 : 1.0;// was 0.95/1.0
+        this.longWindowContractionPairRatio  = 0.60;              // was 0.50
 
-        this.maxDistanceFrom52WkHighPct = 0.35;
+        // Trend filter: tighter proximity to highs, above stronger MA
+        this.maxDistanceFrom52WkHighPct = 0.25;  // was 0.35 — no more than 25% below 52-wk high
         this.requireAboveMA            = true;
-        this.maPeriod                  = weekly ? 10 : 50;
+        this.maPeriod                  = weekly ? 30 : 50;        // was 10/50 — weekly uses 30-bar MA
         this.annualHighLookbackBars    = weekly ? 52 : 252;
         this.minPrice                  = 5.0;
 
-        this.breakoutBufferPct         = weekly ? 0.005 : 0.003;
-        this.breakoutVolumeMultiplier  = weekly ? 1.10 : 1.25;
+        // Breakout confirmation: more volume + closer-to-pivot entries only
+        this.breakoutBufferPct         = weekly ? 0.006 : 0.004; // was 0.005/0.003
+        this.breakoutVolumeMultiplier  = weekly ? 1.25 : 1.50;   // was 1.10/1.25 — meaningful vol surge
         // Continuation zone after breakout: allow entries that are still close enough to pivot.
         this.nearBreakoutMinAbovePivotPct = 0.03;
         this.nearBreakoutMaxAbovePivotPct = 0.08;

@@ -2,8 +2,8 @@
 """
 generate_performance_tracker.py
 ────────────────────────────────
-Generates a rich HTML "Performance Tracker" page showing how A / A+ rated
-breakout setups from the last 14 days (2 weeks) are performing.
+Generates a rich HTML "Performance Tracker" page showing how qualifying
+breakout setups are performing on current prices.
 
 Each trade card shows:
   • Original scan data  (entry, stop, targets, setup, rating, regime at scan)
@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import csv
 import math
+import re
 import sys
 from datetime import datetime
 from html import escape
@@ -48,6 +49,409 @@ def _f(v, d: float = 0.0) -> float:
         return float(str(v).strip().replace("%", "").replace(",", "").replace("x", ""))
     except Exception:
         return d
+
+
+def extract_pct(text: str, keys: list[str]) -> float | None:
+    source = str(text or "")
+    for key in keys:
+        m = re.search(rf"{re.escape(key)}\s*[:=]\s*([+-]?\d+(?:\.\d+)?)%", source, flags=re.IGNORECASE)
+        if m:
+            return _f(m.group(1), 0.0)
+    return None
+
+
+def extract_debt_change(text: str) -> float | None:
+    source = str(text or "")
+    m = re.search(r"Debt[^\d+-]*([+-]?\d+(?:\.\d+)?)%", source, flags=re.IGNORECASE)
+    if not m:
+        return None
+    val = _f(m.group(1), 0.0)
+    if "↑" in source or "UP" in source.upper():
+        return abs(val)
+    if "↓" in source or "DOWN" in source.upper():
+        return -abs(val)
+    return val
+
+
+def fmt_metric(value: float | None, signed: bool = True) -> str:
+    if value is None:
+        return "—"
+    return f"{value:+.1f}%" if signed else f"{value:.1f}%"
+
+
+def classify_trigger(text: str) -> str:
+    t = str(text or "").upper()
+    if any(k in t for k in ["POSITIVE", "TAILWIND", "STRONG", "IMPROVING", "SUPPORTIVE"]):
+        return "pill-pos"
+    if any(k in t for k in ["WEAK", "RISK", "HEADWIND", "UNFAVORABLE", "NEGATIVE"]):
+        return "pill-neg"
+    return "pill-neu"
+
+
+def _extract_trigger_block(summary: str, label: str) -> str:
+    source = str(summary or "")
+    if not source:
+        return ""
+    m = re.search(
+        rf"(?:^|\|\s*){re.escape(label)}\s*:\s*(.*?)(?=\s*\|\s*[A-Za-z]+\s*:|$)",
+        source,
+        flags=re.IGNORECASE,
+    )
+    return m.group(1).strip() if m else ""
+
+
+def _trade_trigger_value(trade: dict, field: str, label: str) -> str:
+    direct = str(trade.get(field, "") or "").strip()
+    if direct:
+        return direct
+    return _extract_trigger_block(str(trade.get("triggerSummary", "") or ""), label)
+
+
+def _has_any(text: str, tokens: list[str]) -> bool:
+    up = str(text or "").upper()
+    return any(tok in up for tok in tokens)
+
+
+def evaluate_trade_quality(trade: dict) -> dict:
+    """Compute confidence score and enforce noise/fundamental quality gates."""
+    score = _f(trade.get("score"))
+    rating = str(trade.get("rating", "")).upper().strip()
+    regime = str(trade.get("regimeAtScan", "") or "")
+    rs3m = _f(trade.get("rs3mAtScan"))
+    rs6m = _f(trade.get("rs6mAtScan"))
+
+    eps_trigger  = _trade_trigger_value(trade, "triggerEarningsGrowth", "Earnings")
+    debt_trigger = _trade_trigger_value(trade, "triggerDebtReduction",  "Debt")
+    macro_trigger  = _trade_trigger_value(trade, "triggerMacroTailwind",  "Macro")
+    market_trigger = _trade_trigger_value(trade, "triggerMarketTailwind", "Market")
+
+    eps_yoy  = extract_pct(eps_trigger,  ["EPS_YOY",  "EPS YOY"])
+    eps_qoq  = extract_pct(eps_trigger,  ["EPS_QOQ",  "EPS QOQ"])
+    debt_yoy = extract_pct(debt_trigger, ["DEBT_YOY", "DEBT YOY"])
+    debt_qoq = extract_pct(debt_trigger, ["DEBT_QOQ", "DEBT QOQ"])
+    if debt_yoy is None and debt_qoq is None:
+        debt_yoy = extract_debt_change(debt_trigger)
+
+    # ── Hard-reject gates (noise killers) ──────────────────────────────────
+    # Gate 1: both EPS YoY AND QoQ negative → fundamentally broken
+    both_eps_neg = (eps_yoy is not None and eps_yoy < -5.0) and \
+                   (eps_qoq is not None and eps_qoq < -5.0)
+    # Gate 2: EPS weak label AND debt rising → double negative
+    eps_weak_label  = _has_any(eps_trigger, ["WEAK", "NEGATIVE"])
+    debt_rising     = _has_any(debt_trigger, ["RISK", "DEBT↑"]) or \
+                      (debt_yoy is not None and debt_yoy > 10.0)
+    fund_double_neg = eps_weak_label and debt_rising
+    # Gate 3: unfavorable regime AND both RS negative → no tailwind at all
+    regime_unfav    = "UNFAV" in regime.upper()
+    both_rs_neg     = rs3m <= 0 and rs6m <= 0
+    no_tailwind     = regime_unfav and both_rs_neg
+    # Gate 4: B rating + both EPS and RS negative → low-conviction noise
+    b_rating_weak   = rating == "B" and both_eps_neg and both_rs_neg
+
+    weak_fundamentals = both_eps_neg or fund_double_neg or no_tailwind or b_rating_weak
+    exclude_reason = ""
+    if both_eps_neg:
+        exclude_reason = "Both EPS YoY & QoQ negative"
+    elif fund_double_neg:
+        exclude_reason = "Weak earnings + rising debt"
+    elif no_tailwind:
+        exclude_reason = "Unfavorable regime + negative RS"
+    elif b_rating_weak:
+        exclude_reason = "B rating with weak EPS & RS"
+
+    # ── Positive scoring ───────────────────────────────────────────────────
+    confidence = 50
+    reasons: list[str] = []
+
+    if rating == "A+":
+        confidence += 20
+        reasons.append("A+ setup rating — elite structure")
+    elif rating == "A":
+        confidence += 13
+        reasons.append("A setup rating — high quality")
+    elif rating == "B":
+        confidence += 4
+        reasons.append("B setup rating")
+
+    if score >= 110:
+        confidence += 14
+        reasons.append(f"Excellent quality score ({score:.1f})")
+    elif score >= 90:
+        confidence += 10
+        reasons.append(f"Strong quality score ({score:.1f})")
+    elif score >= 75:
+        confidence += 5
+    elif score < 65:
+        confidence -= 10
+
+    if rs3m > 5 and rs6m > 5:
+        confidence += 10
+        reasons.append("Strong 3M & 6M relative strength")
+    elif rs3m > 0 and rs6m > 0:
+        confidence += 6
+        reasons.append("Positive 3M & 6M relative strength")
+    elif rs3m > 0 or rs6m > 0:
+        confidence += 2
+    else:
+        confidence -= 8
+
+    if "UNFAV" in regime.upper():
+        confidence -= 12
+    elif "FAV" in regime.upper():
+        confidence += 6
+        reasons.append("Favorable market regime at scan")
+
+    if _has_any(macro_trigger, ["TAILWIND", "POSITIVE", "SUPPORTIVE"]):
+        confidence += 5
+        reasons.append("Macro tailwind present")
+    if _has_any(market_trigger, ["TAILWIND", "POSITIVE", "SUPPORTIVE"]):
+        confidence += 5
+        reasons.append("Market trigger supportive")
+
+    # Reward genuinely strong fundamentals
+    if eps_yoy is not None and eps_yoy >= 20 and eps_qoq is not None and eps_qoq >= 10:
+        confidence += 10
+        reasons.append(f"Strong EPS growth (YoY +{eps_yoy:.1f}%, QoQ +{eps_qoq:.1f}%)")
+    elif eps_yoy is not None and eps_yoy >= 10:
+        confidence += 5
+        reasons.append(f"Positive EPS YoY (+{eps_yoy:.1f}%)")
+
+    if debt_yoy is not None and debt_yoy <= -10:
+        confidence += 5
+        reasons.append("Debt being reduced")
+
+    if weak_fundamentals:
+        confidence -= 30
+
+    confidence = max(0, min(100, confidence))
+    # Require confidence >= 65 (raised from 60)
+    include = (not weak_fundamentals) and confidence >= 65
+
+    if not include and not exclude_reason:
+        exclude_reason = f"Low confidence ({confidence}/100 < 65 threshold)"
+
+    return {
+        "confidence":       confidence,
+        "pickReasons":      reasons[:5],
+        "weakFundamentals": weak_fundamentals,
+        "include":          include,
+        "excludeReason":    exclude_reason,
+    }
+
+
+def build_monthly_sector_rows(trades: list[dict]) -> str:
+    bucket: dict[tuple[str, str], dict] = {}
+    for t in trades:
+        td = str(t.get("tradeDate", ""))
+        if len(td) < 7:
+            continue
+        month = td[:7]
+        sector = get_sector(str(t.get("symbol", "")))
+        key = (month, sector)
+        stat = bucket.setdefault(key, {"count": 0, "wins": 0, "sum": 0.0, "best": -999.0, "worst": 999.0})
+        gain = _f(t.get("gainPct"))
+        stat["count"] += 1
+        stat["sum"] += gain
+        if gain > 0:
+            stat["wins"] += 1
+        stat["best"] = max(stat["best"], gain)
+        stat["worst"] = min(stat["worst"], gain)
+
+    rows: list[tuple[str, str, int, float, float, float, float]] = []
+    for (month, sector), s in bucket.items():
+        cnt = max(1, s["count"])
+        win_rate = s["wins"] / cnt * 100.0
+        avg_gain = s["sum"] / cnt
+        rows.append((month, sector, s["count"], win_rate, avg_gain, s["best"], s["worst"]))
+
+    rows.sort(key=lambda r: (r[0], -r[3], -r[4], -r[2]), reverse=True)
+    if not rows:
+        return "<tr><td colspan='7' style='color:#8b949e'>No monthly sector data available.</td></tr>"
+
+    html_rows = []
+    for month, sector, cnt, wr, avg, best, worst in rows[:36]:
+        wr_col = "#3fb950" if wr >= 55 else ("#e3b341" if wr >= 40 else "#f85149")
+        ag_col = "#3fb950" if avg >= 0 else "#f85149"
+        html_rows.append(
+            f"<tr><td>{escape(month)}</td><td>{escape(sector)}</td><td>{cnt}</td>"
+            f"<td style='color:{wr_col};font-weight:700'>{wr:.1f}%</td>"
+            f"<td style='color:{ag_col};font-weight:700'>{avg:+.2f}%</td>"
+            f"<td style='color:#3fb950'>{best:+.2f}%</td><td style='color:#f85149'>{worst:+.2f}%</td></tr>"
+        )
+    return "\n".join(html_rows)
+
+
+def build_symbol_frequency_rows(trades: list[dict]) -> str:
+    """Build per-symbol appearance summary table sorted by appearances descending."""
+    from collections import defaultdict
+    sym_data: dict[str, dict] = defaultdict(lambda: {
+        "count": 0, "dates": set(), "gains": [],
+        "statuses": [], "sector": "Other", "timeframes": set(),
+        "ratings": set(), "maxConf": 0,
+    })
+    for t in trades:
+        sym = str(t.get("symbol", "")).strip()
+        if not sym:
+            continue
+        d = sym_data[sym]
+        d["count"] += 1
+        td = str(t.get("tradeDate", "")).strip()
+        if td:
+            d["dates"].add(td)
+        d["gains"].append(_f(t.get("gainPct")))
+        d["statuses"].append(str(t.get("status", "OPEN")))
+        d["sector"] = get_sector(sym)
+        d["timeframes"].add(str(t.get("timeframe", "")).lower())
+        d["ratings"].add(str(t.get("rating", "")).upper().strip())
+        d["maxConf"] = max(d["maxConf"], int(_f(t.get("confidence", 0))))
+
+    if not sym_data:
+        return "<tr><td colspan='8' style='color:#8b949e'>No symbol data.</td></tr>"
+
+    rows: list[str] = []
+    sorted_syms = sorted(sym_data.items(), key=lambda x: (-x[1]["count"], x[0]))
+    for sym, d in sorted_syms:
+        cnt = d["count"]
+        gains = d["gains"]
+        avg = sum(gains) / len(gains) if gains else 0.0
+        wr = sum(1 for g in gains if g > 0) * 100.0 / len(gains) if gains else 0.0
+        tgt = sum(1 for s in d["statuses"] if s in ("T1_HIT", "T2_HIT", "T3_HIT"))
+        sl = sum(1 for s in d["statuses"] if s == "SL_HIT")
+        dates_sorted = sorted(d["dates"])
+        dates_str = " → ".join(dates_sorted[:3])
+        if len(dates_sorted) > 3:
+            dates_str += f" … +{len(dates_sorted) - 3} more"
+        tfs = "/".join(sorted(d["timeframes"])).upper()
+        ratings_str = "/".join(sorted(d["ratings"]))
+        conf_col = "#3fb950" if d["maxConf"] >= 80 else ("#e3b341" if d["maxConf"] >= 60 else "#f85149")
+        wr_col = "#3fb950" if wr >= 55 else ("#e3b341" if wr >= 40 else "#f85149")
+        ag_col = "#3fb950" if avg >= 0 else "#f85149"
+        sym_clean = escape(sym.replace(".NS", "").replace(".BO", ""))
+        rows.append(
+            f"<tr data-sym='{escape(sym)}' style='cursor:pointer' onclick=\"filterBySym('{escape(sym)}')\""
+            f" title='Click to filter cards to {sym_clean}'>"
+            f"<td><span style='color:#79c0ff;font-weight:700'>{sym_clean}</span>"
+            f" <span style='color:#444;font-size:.75em'>{escape(d['sector'])}</span></td>"
+            f"<td style='text-align:center'><span style='background:#1a2a3a;color:#58a6ff;"
+            f"padding:2px 8px;border-radius:999px;font-weight:700;font-size:.85em'>{cnt}×</span></td>"
+            f"<td style='font-size:.72em;color:#8b949e'>{escape(dates_str)}</td>"
+            f"<td>{escape(tfs)}</td>"
+            f"<td>{escape(ratings_str)}</td>"
+            f"<td style='color:{conf_col};font-weight:700'>{d['maxConf']}</td>"
+            f"<td style='color:{wr_col};font-weight:700'>{wr:.1f}%</td>"
+            f"<td style='color:{ag_col};font-weight:700'>{avg:+.2f}%</td>"
+            f"<td style='color:#ffd700'>{tgt} T / <span style='color:#f85149'>{sl} SL</span></td>"
+            f"</tr>"
+        )
+    return "\n".join(rows)
+
+
+def build_symbol_frequency_rows(trades: list[dict]) -> str:  # type: ignore[no-redef]
+    pass  # placeholder duplicate removed — handled above
+
+
+# Remove the duplicate placeholder immediately
+del build_symbol_frequency_rows
+
+
+def _build_symbol_frequency_rows(trades: list[dict]) -> str:
+    """Actual implementation referenced in build_html."""
+    from collections import defaultdict
+    sym_data: dict[str, dict] = defaultdict(lambda: {
+        "count": 0, "dates": set(), "gains": [],
+        "statuses": [], "sector": "Other", "timeframes": set(),
+        "ratings": set(), "maxConf": 0,
+    })
+    for t in trades:
+        sym = str(t.get("symbol", "")).strip()
+        if not sym:
+            continue
+        d = sym_data[sym]
+        d["count"] += 1
+        td = str(t.get("tradeDate", "")).strip()
+        if td:
+            d["dates"].add(td)
+        d["gains"].append(_f(t.get("gainPct")))
+        d["statuses"].append(str(t.get("status", "OPEN")))
+        d["sector"] = get_sector(sym)
+        d["timeframes"].add(str(t.get("timeframe", "")).lower())
+        d["ratings"].add(str(t.get("rating", "")).upper().strip())
+        d["maxConf"] = max(d["maxConf"], int(_f(t.get("confidence", 0))))
+
+    if not sym_data:
+        return "<tr><td colspan='9' style='color:#8b949e'>No symbol data.</td></tr>"
+
+    rows: list[str] = []
+    sorted_syms = sorted(sym_data.items(), key=lambda x: (-x[1]["count"], x[0]))
+    for sym, d in sorted_syms:
+        cnt = d["count"]
+        gains = d["gains"]
+        avg = sum(gains) / len(gains) if gains else 0.0
+        wr = sum(1 for g in gains if g > 0) * 100.0 / len(gains) if gains else 0.0
+        tgt = sum(1 for s in d["statuses"] if s in ("T1_HIT", "T2_HIT", "T3_HIT"))
+        sl = sum(1 for s in d["statuses"] if s == "SL_HIT")
+        dates_sorted = sorted(d["dates"])
+        dates_str = " → ".join(dates_sorted[:3])
+        if len(dates_sorted) > 3:
+            dates_str += f" +{len(dates_sorted) - 3} more"
+        tfs = "/".join(sorted(d["timeframes"])).upper()
+        ratings_str = "/".join(sorted(d["ratings"]))
+        conf_col = "#3fb950" if d["maxConf"] >= 80 else ("#e3b341" if d["maxConf"] >= 60 else "#f85149")
+        wr_col = "#3fb950" if wr >= 55 else ("#e3b341" if wr >= 40 else "#f85149")
+        ag_col = "#3fb950" if avg >= 0 else "#f85149"
+        sym_clean = escape(sym.replace(".NS", "").replace(".BO", ""))
+        rows.append(
+            f"<tr data-sym='{escape(sym)}' style='cursor:pointer' onclick=\"filterBySym('{escape(sym)}')\""
+            f" title='Click to filter cards to {sym_clean}'>"
+            f"<td><span style='color:#79c0ff;font-weight:700'>{sym_clean}</span>"
+            f"  <span style='color:#555;font-size:.75em'>{escape(d['sector'])}</span></td>"
+            f"<td style='text-align:center'><span style='background:#1a2a3a;color:#58a6ff;"
+            f"padding:2px 8px;border-radius:999px;font-weight:700;font-size:.85em'>{cnt}×</span></td>"
+            f"<td style='font-size:.72em;color:#8b949e'>{escape(dates_str)}</td>"
+            f"<td style='font-size:.78em'>{escape(tfs)}</td>"
+            f"<td style='font-size:.78em'>{escape(ratings_str)}</td>"
+            f"<td style='color:{conf_col};font-weight:700'>{d['maxConf']}</td>"
+            f"<td style='color:{wr_col};font-weight:700'>{wr:.1f}%</td>"
+            f"<td style='color:{ag_col};font-weight:700'>{avg:+.2f}%</td>"
+            f"<td><span style='color:#ffd700'>{tgt}T</span> / <span style='color:#f85149'>{sl}SL</span></td>"
+            f"</tr>"
+        )
+    return "\n".join(rows)
+
+
+def build_confidence_cut_rows(trades: list[dict]) -> str:
+    cuts = [60, 70, 80, 90]
+    rows: list[str] = []
+    for cut in cuts:
+        subset = [t for t in trades if _f(t.get("confidence")) >= cut]
+        stats = pt.compute_summary_stats(subset)
+        total = max(1, len(subset))
+        sl_rate = sum(1 for t in subset if t.get("status") == "SL_HIT") / total * 100 if subset else 0.0
+        target_rate = sum(1 for t in subset if t.get("status") in ("T1_HIT", "T2_HIT", "T3_HIT")) / total * 100 if subset else 0.0
+        wr_col = "#3fb950" if stats["winRate"] >= 55 else ("#e3b341" if stats["winRate"] >= 40 else "#f85149")
+        ag_col = "#3fb950" if stats["avgGainPct"] >= 0 else "#f85149"
+        rows.append(
+            f"<tr><td>{cut}+</td><td>{stats['total']}</td>"
+            f"<td style='color:{wr_col};font-weight:700'>{stats['winRate']:.1f}%</td>"
+            f"<td style='color:{ag_col};font-weight:700'>{stats['avgGainPct']:+.2f}%</td>"
+            f"<td>{target_rate:.1f}%</td><td>{sl_rate:.1f}%</td></tr>"
+        )
+    return "\n".join(rows)
+
+
+def build_confidence_headline(trades: list[dict]) -> str:
+    elite = [t for t in trades if _f(t.get("confidence")) >= 80]
+    strict = [t for t in trades if _f(t.get("confidence")) >= 90]
+    elite_stats = pt.compute_summary_stats(elite)
+    strict_stats = pt.compute_summary_stats(strict)
+    return (
+        f"<div class='conf-card'><div class='conf-title'>80+ Confidence Picks</div>"
+        f"<div class='conf-value'>{elite_stats['total']}</div>"
+        f"<div class='conf-sub'>Win rate {elite_stats['winRate']:.1f}% &bull; Avg gain {elite_stats['avgGainPct']:+.2f}%</div></div>"
+        f"<div class='conf-card'><div class='conf-title'>90+ Confidence Picks</div>"
+        f"<div class='conf-value'>{strict_stats['total']}</div>"
+        f"<div class='conf-sub'>Win rate {strict_stats['winRate']:.1f}% &bull; Avg gain {strict_stats['avgGainPct']:+.2f}%</div></div>"
+    )
 
 
 def _currency_sym(market: str) -> str:
@@ -214,11 +618,49 @@ def build_trade_card(trade: dict) -> str:
     regime      = trade.get("regimeAtScan", "")
     rs3m        = _f(trade.get("rs3mAtScan"))
     rs6m        = _f(trade.get("rs6mAtScan"))
-    fund_sum    = escape(trade.get("fundSummary", "") or "—")
+    fund_sum_raw = str(trade.get("fundSummary", "") or "")
+    fund_sum    = escape(fund_sum_raw or "No online fundamentals snapshot available")
     entry_instr = escape(trade.get("entryInstruction", "") or "—")
     sparkline   = trade.get("sparkline", [])
     sector      = get_sector(sym)
     cur_sym     = _currency_sym(market)
+    eps_trigger_raw = _trade_trigger_value(trade, "triggerEarningsGrowth", "Earnings")
+    debt_trigger_raw = _trade_trigger_value(trade, "triggerDebtReduction", "Debt")
+    macro_trigger_raw = _trade_trigger_value(trade, "triggerMacroTailwind", "Macro")
+    market_trigger_raw = _trade_trigger_value(trade, "triggerMarketTailwind", "Market")
+
+    eps_yoy = extract_pct(eps_trigger_raw, ["EPS_YOY", "EPS YOY"])
+    eps_qoq = extract_pct(eps_trigger_raw, ["EPS_QOQ", "EPS QOQ"])
+    debt_yoy = extract_pct(debt_trigger_raw, ["DEBT_YOY", "DEBT YOY"])
+    debt_qoq = extract_pct(debt_trigger_raw, ["DEBT_QOQ", "DEBT QOQ"])
+    if debt_yoy is None and debt_qoq is None:
+        debt_yoy = extract_debt_change(debt_trigger_raw)
+
+    eps_yoy_text = fmt_metric(eps_yoy)
+    eps_qoq_text = fmt_metric(eps_qoq)
+    debt_yoy_text = fmt_metric(debt_yoy)
+    debt_qoq_text = fmt_metric(debt_qoq)
+
+    eps_cls = (
+        "metric-na" if eps_yoy is None and eps_qoq is None
+        else "metric-pos" if ((eps_yoy or 0) >= 0 or (eps_qoq or 0) >= 0)
+        else "metric-neg"
+    )
+    debt_cls = (
+        "metric-na" if debt_yoy is None and debt_qoq is None
+        else "metric-neg" if ((debt_yoy or 0) > 0 or (debt_qoq or 0) > 0)
+        else "metric-pos"
+    )
+
+    eps_trigger = escape(eps_trigger_raw or "N/A")
+    debt_trigger = escape(debt_trigger_raw or "N/A")
+    macro_trigger = escape(macro_trigger_raw or "N/A")
+    market_trigger = escape(market_trigger_raw or "N/A")
+
+    conf = int(_f(trade.get("confidence"), 0))
+    conf_cls = "conf-high" if conf >= 80 else ("conf-mid" if conf >= 60 else "conf-low")
+    pick_reasons = trade.get("pickReasons", []) or []
+    pick_reason_html = "".join(f"<li>{escape(str(r))}</li>" for r in pick_reasons)
 
     setup_cls, setup_label, setup_tip = SETUP_META.get(
         setup, ("tag-bo", setup.replace("_", " "), "")
@@ -259,7 +701,7 @@ def build_trade_card(trade: dict) -> str:
                    else '<span class="still-no">📤 Left Scan</span>')
 
     return f"""
-<div class="sig-card" data-symbol="{escape(sym)}" data-setup="{escape(setup)}"
+<div class="sig-card" data-symbol="{escape(sym)}" data-setup="{escape(setup)}" data-timeframe="{escape(timeframe)}"
      data-rating="{escape(rating)}" data-sector="{escape(sector)}"
      data-status="{escape(status)}" data-gain="{gain_pct:.2f}">
   <div class="sig-header">
@@ -361,17 +803,44 @@ def build_trade_card(trade: dict) -> str:
       <span class="sstat-label">Max ↓</span>
       <span class="{_gain_cls(min_gain)}">{_fmt_pct(min_gain)}</span>
     </div>
+    <div class="sig-stat">
+      <span class="sstat-label">Confidence</span>
+      <span class="{conf_cls}">{conf}/100</span>
+    </div>
   </div>
 
   <div class="insight-chip">Fundamentals &amp; Entry</div>
   <div class="sig-insight">
+    <div class="insight-grid">
+      <div class="insight-item">
+        <div class="insight-label">EPS Growth</div>
+        <div class="insight-value {eps_cls}">YoY {eps_yoy_text} &nbsp;|&nbsp; QoQ {eps_qoq_text}</div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-label">Debt Change</div>
+        <div class="insight-value {debt_cls}">YoY {debt_yoy_text} &nbsp;|&nbsp; QoQ {debt_qoq_text}</div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-label">Macro Trigger</div>
+        <div class="insight-pill {classify_trigger(macro_trigger_raw)}">{macro_trigger}</div>
+      </div>
+      <div class="insight-item">
+        <div class="insight-label">Market Trigger</div>
+        <div class="insight-pill {classify_trigger(market_trigger_raw)}">{market_trigger}</div>
+      </div>
+    </div>
     <div class="insight-summary">{fund_sum}</div>
-    <div class="insight-raw" style="margin-top:4px">{entry_instr}</div>
+    {f'<div class="pick-reasons"><div class="pick-reasons-title">Why Picked</div><ul>{pick_reason_html}</ul></div>' if pick_reason_html else ''}
+    <div class="insight-raw">
+      <div><b>Entry:</b> {entry_instr}</div>
+      <div><b>EPS:</b> {eps_trigger}</div>
+      <div><b>Debt:</b> {debt_trigger}</div>
+    </div>
   </div>
 </div>"""
 
 
-def build_html(trades: list[dict], market: str, timeframe: str, last_updated: str) -> str:
+def build_html(trades: list[dict], market: str, timeframe_label: str, last_updated: str, excluded: dict[str, int]) -> str:
     now      = datetime.now().strftime("%Y-%m-%d %H:%M")
     stats    = pt.compute_summary_stats(trades)
     cur_sym  = _currency_sym(market)
@@ -383,6 +852,10 @@ def build_html(trades: list[dict], market: str, timeframe: str, last_updated: st
 
     rows_html = "".join(build_trade_card(t) for t in sorted_trades)
     total     = stats["total"]
+    monthly_sector_rows = build_monthly_sector_rows(sorted_trades)
+    confidence_cut_rows = build_confidence_cut_rows(sorted_trades)
+    confidence_headline = build_confidence_headline(sorted_trades)
+    symbol_freq_rows    = _build_symbol_frequency_rows(sorted_trades)
 
     win_rate_color  = "#3fb950" if stats["winRate"] >= 60 else ("#e3b341" if stats["winRate"] >= 40 else "#f85149")
     avg_gain_color  = "#3fb950" if stats["avgGainPct"] > 0 else "#f85149"
@@ -392,7 +865,7 @@ def build_html(trades: list[dict], market: str, timeframe: str, last_updated: st
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>📊 Performance Tracker — {market.upper()} {timeframe.upper()} | {now}</title>
+<title>📊 Performance Tracker — {market.upper()} {timeframe_label.upper()} | {now}</title>
 <style>
 *{{box-sizing:border-box;margin:0;padding:0}}
 body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;padding:0}}
@@ -424,6 +897,22 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
 /* MAIN GRID */
 .main{{padding:20px 28px}}
 .signals-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:20px}}
+.summary-wrap{{padding:16px 28px;background:#0f141a;border-bottom:1px solid #21262d}}
+.summary-head{{font-size:.95em;color:#8b949e;margin-bottom:8px}}
+.summary-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:14px}}
+.conf-card{{background:#0d1117;border:1px solid #21262d;border-radius:10px;padding:12px 14px}}
+.conf-title{{font-size:.8em;color:#79c0ff;text-transform:uppercase;letter-spacing:.4px}}
+.conf-value{{font-size:1.6em;font-weight:800;color:#c9d1d9;margin-top:4px}}
+.conf-sub{{font-size:.78em;color:#8b949e;margin-top:3px;line-height:1.4}}
+.monthly-table{{width:100%;border-collapse:collapse;background:#0d1117;border:1px solid #21262d;border-radius:8px;overflow:hidden}}
+.monthly-table th,.monthly-table td{{border-bottom:1px solid #21262d;padding:7px 8px;font-size:.78em;text-align:left}}
+.monthly-table th{{color:#79c0ff;background:#111827;font-weight:700}}
+.sym-freq-wrap{{padding:16px 28px;background:#0a0f14;border-bottom:1px solid #21262d}}
+.sym-freq-search{{padding:6px 10px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:.83em;min-width:200px;margin-bottom:8px}}
+.sym-freq-table{{width:100%;border-collapse:collapse;background:#0d1117;border:1px solid #21262d;border-radius:8px;overflow:hidden}}
+.sym-freq-table th,.sym-freq-table td{{border-bottom:1px solid #21262d;padding:7px 9px;font-size:.78em;text-align:left}}
+.sym-freq-table th{{color:#79c0ff;background:#0f1824;font-weight:700;position:sticky;top:0}}
+.sym-freq-table tr:hover{{background:#0f1824}}
 
 /* SIGNAL CARD */
 .sig-card{{background:linear-gradient(180deg,#161b22 0%,#0f141a 100%);border:1px solid #21262d;
@@ -525,15 +1014,34 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
 .rpl{{color:#3fb950;font-weight:600;font-size:.82em}}
 .rmi{{color:#f85149;font-weight:600;font-size:.82em}}
 .rna{{color:#8b949e;font-weight:600;font-size:.82em}}
+.conf-high{{color:#3fb950;font-weight:700;font-size:.82em}}
+.conf-mid{{color:#e3b341;font-weight:700;font-size:.82em}}
+.conf-low{{color:#f85149;font-weight:700;font-size:.82em}}
 
 /* HOVER INSIGHTS */
 .insight-chip{{margin:6px 16px 0;display:inline-flex;padding:2px 8px;border:1px solid #2f3b4b;
   border-radius:12px;color:#7dd3fc;font-size:.68em;background:#0f1a26;cursor:pointer}}
 .sig-insight{{max-height:0;opacity:0;overflow:hidden;padding:0 16px;
   transition:max-height .25s ease,opacity .2s ease,padding .2s ease;border-top:0 solid #21262d}}
-.sig-card:hover .sig-insight{{max-height:120px;opacity:1;padding:8px 16px 10px;border-top:1px solid #21262d}}
+.sig-card:hover .sig-insight{{max-height:220px;opacity:1;padding:8px 16px 10px;border-top:1px solid #21262d}}
+.insight-grid{{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-bottom:8px}}
+.insight-item{{min-width:0}}
+.insight-label{{font-size:.62em;color:#6e7681;text-transform:uppercase;letter-spacing:.35px;margin-bottom:2px}}
+.insight-value{{font-size:.74em;font-weight:600}}
+.metric-pos{{color:#3fb950}}
+.metric-neg{{color:#f85149}}
+.metric-na{{color:#8b949e}}
+.insight-pill{{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;border:1px solid #30363d;
+  font-size:.68em;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+.pill-pos{{background:#0f2418;color:#3fb950;border-color:#1f6b36}}
+.pill-neg{{background:#2a1215;color:#ff7b72;border-color:#8b2d2d}}
+.pill-neu{{background:#161b22;color:#c9d1d9;border-color:#30363d}}
 .insight-summary{{font-size:.72em;color:#94a3b8;line-height:1.4;margin-bottom:4px}}
 .insight-raw{{font-size:.68em;color:#7f8a98;line-height:1.4}}
+.pick-reasons{{margin:4px 0 6px;padding:6px 8px;background:#0f1824;border:1px solid #233247;border-radius:6px}}
+.pick-reasons-title{{font-size:.66em;color:#7dd3fc;text-transform:uppercase;letter-spacing:.35px;margin-bottom:3px}}
+.pick-reasons ul{{margin:0;padding-left:16px}}
+.pick-reasons li{{font-size:.7em;line-height:1.35;color:#c9d1d9}}
 
 /* NO RESULTS */
 .no-results{{text-align:center;padding:60px;color:#8b949e;font-size:1.1em}}
@@ -543,9 +1051,11 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
 
 <div class="topbar">
   <div>
-    <div class="topbar-title">📊 Breakout Performance Tracker — {market.upper()} {timeframe.upper()}</div>
-    <div class="topbar-sub">A &amp; A+ rated setups from last 14 days &bull; Updated: {now}
+    <div class="topbar-title">📊 Breakout Performance Tracker — {market.upper()} {timeframe_label.upper()}</div>
+    <div class="topbar-sub">Daily tracker keeps ~1 month of scan sessions &bull; Weekly tracker keeps ~7 weeks &bull; Updated: {now}
       &bull; Last scan ingested: {escape(last_updated or "—")}</div>
+    <div class="topbar-sub">Quality gate applied: weak fundamentals removed, confidence score must be 60+.
+      Excluded: {excluded.get('weak_fundamentals', 0)} weak-fundamentals, {excluded.get('low_confidence', 0)} low-confidence.</div>
   </div>
   <div class="topbar-stats">
     <div class="tstat">
@@ -579,6 +1089,55 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
   </div>
 </div>
 
+<div class="summary-wrap">
+  <div class="summary-head">How the most confident picks are performing</div>
+  <div class="summary-grid">{confidence_headline}</div>
+  <table class="monthly-table" style="margin-bottom:16px">
+    <thead>
+      <tr><th>Confidence Cut</th><th>Picks</th><th>Win Rate</th><th>Avg Gain</th><th>Target-Hit Rate</th><th>SL-Hit Rate</th></tr>
+    </thead>
+    <tbody>
+      {confidence_cut_rows}
+    </tbody>
+  </table>
+  <div class="summary-head">Monthly sector-wise breakout performance (filtered picks)</div>
+  <table class="monthly-table">
+    <thead>
+      <tr><th>Month</th><th>Sector</th><th>Trades</th><th>Win Rate</th><th>Avg Gain</th><th>Best</th><th>Worst</th></tr>
+    </thead>
+    <tbody>
+      {monthly_sector_rows}
+    </tbody>
+  </table>
+</div>
+
+<div class="sym-freq-wrap">
+  <div class="summary-head">Symbol appearances — how many times each stock showed up in filtered scans
+    <span style="color:#555;font-size:.8em;margin-left:8px">(click a row to filter cards below)</span>
+  </div>
+  <input class="sym-freq-search" id="symFreqSearch" placeholder="🔍 Filter symbols…" oninput="filterSymTable()">
+  <div style="max-height:360px;overflow-y:auto;border-radius:8px;border:1px solid #21262d">
+    <table class="sym-freq-table" id="symFreqTable">
+      <thead>
+        <tr>
+          <th onclick="sortSymTable(0)" style="cursor:pointer">Symbol ↕</th>
+          <th onclick="sortSymTable(1)" style="cursor:pointer;text-align:center">Appearances ↕</th>
+          <th>Scan Dates</th>
+          <th>Timeframe</th>
+          <th>Rating</th>
+          <th onclick="sortSymTable(5)" style="cursor:pointer">Max Conf ↕</th>
+          <th onclick="sortSymTable(6)" style="cursor:pointer">Win Rate ↕</th>
+          <th onclick="sortSymTable(7)" style="cursor:pointer">Avg Gain ↕</th>
+          <th>Targets / SL</th>
+        </tr>
+      </thead>
+      <tbody id="symFreqBody">
+        {symbol_freq_rows}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 <div class="controls-bar">
   <input class="search-box" id="searchBox" placeholder="🔍 Search symbol, sector…"
          oninput="applyFilters()">
@@ -597,6 +1156,11 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
     <option value="VCP">VCP</option>
     <option value="MEAN_REVERSION">Mean Reversion</option>
     <option value="BREAKOUT_PULLBACK">Breakout Pullback</option>
+  </select>
+  <select class="sel" id="timeframeFilter" onchange="applyFilters()">
+    <option value="">All Timeframes</option>
+    <option value="daily">Daily</option>
+    <option value="weekly">Weekly</option>
   </select>
   <select class="sel" id="ratingFilter" onchange="applyFilters()">
     <option value="">A &amp; A+</option>
@@ -620,6 +1184,7 @@ function applyFilters() {{
   const q      = document.getElementById('searchBox').value.toLowerCase();
   const status = document.getElementById('statusFilter').value;
   const setup  = document.getElementById('setupFilter').value;
+  const tf     = document.getElementById('timeframeFilter').value;
   const rating = document.getElementById('ratingFilter').value;
   let visible = 0;
   document.querySelectorAll('.sig-card').forEach(card => {{
@@ -628,6 +1193,7 @@ function applyFilters() {{
     let show = !q || sym.includes(q) || sec.includes(q);
     if (status && card.dataset.status !== status) show = false;
     if (setup  && card.dataset.setup  !== setup)  show = false;
+    if (tf     && card.dataset.timeframe !== tf)  show = false;
     if (rating === 'A+' && card.dataset.rating !== 'A+') show = false;
     card.style.display = show ? '' : 'none';
     if (show) visible++;
@@ -668,13 +1234,45 @@ function exportCSV() {{
   const csvStr = rows.map(r => r.map(v => '"' + String(v) + '"').join(',')).join('\\n');
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvStr);
-  a.download = 'perf_tracker_{market}_{timeframe}_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.download = 'perf_tracker_{market}_{timeframe_label}_' + new Date().toISOString().slice(0,10) + '.csv';
   a.click();
 }}
 
 document.addEventListener('DOMContentLoaded', () => {{
   document.getElementById('filterCount').textContent = '{total} shown';
 }});
+
+function filterBySym(sym) {{
+  const box = document.getElementById('searchBox');
+  const clean = sym.replace(/\.(NS|BO)$/i,'');
+  box.value = clean;
+  applyFilters();
+  document.getElementById('signalsGrid').scrollIntoView({{behavior:'smooth',block:'start'}});
+}}
+
+function filterSymTable() {{
+  const q = document.getElementById('symFreqSearch').value.toLowerCase();
+  document.querySelectorAll('#symFreqBody tr').forEach(row => {{
+    row.style.display = !q || row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  }});
+}}
+
+let _symSortState = {{col: 1, asc: false}};
+function sortSymTable(col) {{
+  const tbody = document.getElementById('symFreqBody');
+  const rows = [...tbody.querySelectorAll('tr')];
+  const asc = _symSortState.col === col ? !_symSortState.asc : false;
+  _symSortState = {{col, asc}};
+  rows.sort((a, b) => {{
+    const av = a.cells[col] ? a.cells[col].textContent.trim() : '';
+    const bv = b.cells[col] ? b.cells[col].textContent.trim() : '';
+    const an = parseFloat(av.replace(/[^0-9.+-]/g,''));
+    const bn = parseFloat(bv.replace(/[^0-9.+-]/g,''));
+    const cmp = (!isNaN(an) && !isNaN(bn)) ? (an - bn) : av.localeCompare(bv);
+    return asc ? cmp : -cmp;
+  }});
+  rows.forEach(r => tbody.appendChild(r));
+}}
 </script>
 </body>
 </html>"""
@@ -690,6 +1288,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cache-dir",  default=str(CACHE_DIR))
     parser.add_argument("--markets",    default="india")
     parser.add_argument("--timeframes", default="daily,weekly")
+    parser.add_argument("--daily-backfill-sessions", type=int, default=20,
+                        help="Daily timeframe: import the latest N trading sessions from backtest (default: 20)")
+    parser.add_argument("--weekly-backfill-sessions", type=int, default=7,
+                        help="Weekly timeframe: import the latest N weekly sessions from backtest (default: 7)")
+    parser.add_argument("--backtest-workers", type=int, default=4,
+                        help="Worker count to use when simulating historical backfill runs")
+    parser.add_argument("--backtest-batch", type=int, default=20,
+                        help="Batch size to use when simulating historical backfill runs")
+    parser.add_argument("--backtest-setups", choices=["both", "vcp", "range_expansion"], default="both",
+                        help="Setup family to use for historical breakout backfill simulation")
     return parser.parse_args()
 
 
@@ -706,6 +1314,11 @@ def main() -> None:
         cache_dir  = cache_dir,
         markets    = markets,
         timeframes = timeframes,
+        daily_backfill_sessions = max(0, args.daily_backfill_sessions),
+        weekly_backfill_sessions = max(0, args.weekly_backfill_sessions),
+        backtest_workers = max(1, args.backtest_workers),
+        backtest_batch = max(1, args.backtest_batch),
+        backtest_setups = args.backtest_setups,
     )
 
     all_trades   = data.get("trades", [])
@@ -715,20 +1328,39 @@ def main() -> None:
           f"SL Hit: {stats['slHits']} | Win rate: {stats['winRate']}% | "
           f"Avg gain: {stats['avgGainPct']:+.2f}%")
 
+    timeframe_label = "_".join(timeframes) if timeframes else "all"
     for market in markets:
-        for timeframe in timeframes:
-            subset = [
-                t for t in all_trades
-                if t.get("market") == market and t.get("timeframe") == timeframe
-            ]
-            if not subset:
-                print(f"  No trades for {market} {timeframe} — skipping HTML")
-                continue
+        raw_subset = [
+            dict(t) for t in all_trades
+            if t.get("market") == market and t.get("timeframe") in timeframes
+        ]
+        if not raw_subset:
+            print(f"  No trades for {market} in [{', '.join(timeframes)}] — skipping HTML")
+            continue
 
-            html = build_html(subset, market, timeframe, last_updated)
-            out_latest = output_dir / f"performance_tracker_{market}_{timeframe}_LATEST.html"
-            out_latest.write_text(html, encoding="utf-8")
-            print(f"  Written → {out_latest}  ({len(subset)} trades)")
+        excluded = {"weak_fundamentals": 0, "low_confidence": 0}
+        subset: list[dict] = []
+        for trade in raw_subset:
+            q = evaluate_trade_quality(trade)
+            trade.update(q)
+            if q["include"]:
+                subset.append(trade)
+            elif q["weakFundamentals"]:
+                excluded["weak_fundamentals"] += 1
+            else:
+                excluded["low_confidence"] += 1
+
+        if not subset:
+            print(f"  All {len(raw_subset)} trades filtered by quality gate for {market} — skipping HTML")
+            continue
+
+        html = build_html(subset, market, timeframe_label, last_updated, excluded)
+        out_latest = output_dir / f"performance_tracker_{market}_LATEST.html"
+        out_latest.write_text(html, encoding="utf-8")
+        print(
+            f"  Written → {out_latest}  ({len(subset)} picks kept / {len(raw_subset)} total, "
+            f"excluded weak={excluded['weak_fundamentals']}, low_conf={excluded['low_confidence']})"
+        )
 
     print("Performance tracker generation complete.")
 

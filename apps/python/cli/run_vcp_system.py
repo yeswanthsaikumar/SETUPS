@@ -399,10 +399,15 @@ def main():
                     sys.executable,
                     str(PERF_TRACKER_SCRIPT),
                     "--output-dir", str(args.output_dir),
+                    "--cache-dir", args.cache_dir,
                     "--markets",    perf_markets,
                     "--timeframes", perf_timeframes,
+                    "--daily-backfill-sessions", "20",
+                    "--weekly-backfill-sessions", "7",
+                    "--backtest-workers", str(args.workers),
+                    "--backtest-batch", str(args.batch),
                 ],
-                "Updating 2-week breakout performance tracker",
+                "Updating breakout performance tracker (daily 20 sessions, weekly 7 sessions)",
             )
         except Exception as exc:
             print(f"   ! Performance tracker update skipped (non-fatal): {exc}")
@@ -432,10 +437,9 @@ def main():
     print(f"- Summary JSON → {summary_json}")
     print("\n── Performance Tracker ──────────────────────────────────────────────────")
     for market in args.markets:
-        for timeframe in args.timeframes:
-            perf_html = args.output_dir / f"performance_tracker_{market}_{timeframe}_LATEST.html"
-            if perf_html.exists():
-                print(f"  PERF → {perf_html}")
+        perf_html = args.output_dir / f"performance_tracker_{market}_LATEST.html"
+        if perf_html.exists():
+            print(f"  PERF → {perf_html}")
 
 
 if __name__ == "__main__":

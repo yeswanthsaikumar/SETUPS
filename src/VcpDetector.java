@@ -437,10 +437,11 @@ public class VcpDetector {
         double compactness = baseRangeHeightPct <= 0.0 ? 0.0 : Math.max(0.0, 35.0 - baseRangeHeightPct);
         double ratingScore = qualityScore + (contractionDepthPct * 0.15) + (compactness * 0.10) + lengthBonus;
 
-        if (ratingScore >= 85.0) return "A+";
-        if (ratingScore >= 75.0) return "A";
-        if (ratingScore >= 65.0) return "B";
-        if (ratingScore >= 55.0) return "C";
+        // Thresholds raised vs original (85/75/65/55) for higher-conviction signals only
+        if (ratingScore >= 95.0) return "A+";
+        if (ratingScore >= 83.0) return "A";
+        if (ratingScore >= 72.0) return "B";
+        if (ratingScore >= 62.0) return "C";
         return "D";
     }
 

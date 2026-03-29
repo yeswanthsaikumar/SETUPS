@@ -179,7 +179,7 @@ def parse_args():
     p.add_argument("--cache-dir", default=DEFAULT_CACHE_DIR)
     p.add_argument("--cache-ttl", "--cache-ttl-min", dest="cache_ttl", type=int, default=DEFAULT_CACHE_TTL_MIN)
     p.add_argument("--batch",     type=int, default=DEFAULT_BATCH_SIZE)
-    p.add_argument("--mr-min-score", type=float, default=35.0, help="Minimum quality score for mean reversion setups (default: 35)")
+    p.add_argument("--mr-min-score", type=float, default=42.0, help="Minimum quality score for mean reversion setups (default: 42)")
     p.add_argument("--workers",   type=int, default=DEFAULT_WORKERS)
     p.add_argument("--output-dir", default=str(ROOT / "output"))
     p.add_argument("--no-watchlist", action="store_true", help="Skip watchlist generation and only produce breakout/open-trade hits")
@@ -191,7 +191,7 @@ def parse_args():
     p.add_argument("--regime-sample", type=int, default=300, help="How many symbols to sample for breadth regime estimation")
     p.add_argument("--regime-min-breadth50", type=float, default=0.50)
     p.add_argument("--regime-min-breadth200", type=float, default=0.45)
-    p.add_argument("--rs-weight", type=float, default=0.35, help="Weight for RS score when building rankingScore")
+    p.add_argument("--rs-weight", type=float, default=0.50, help="Weight for RS score when building rankingScore")
     p.add_argument("--max-portfolio-heat-r", type=float, default=6.0, help="Maximum aggregate portfolio heat in R units for shortlist")
     p.add_argument("--account-size", type=float, default=DEFAULT_ACCOUNT_SIZE)
     p.add_argument("--base-risk-pct", type=float, default=DEFAULT_BASE_RISK_PCT, help="Baseline risk-per-trade used to convert risk amount to R")
@@ -855,7 +855,7 @@ def _run_abfp_scan(symbols: list[str], args) -> list[dict]:
         account_size=args.account_size,
         base_risk_pct=args.base_risk_pct,
         min_price_floor=args.min_price_floor,
-        min_score=40.0,
+        min_score=48.0,
     )
     elapsed = time.time() - t0
     print(f"  Breakout-pullback scan done in {elapsed:.1f}s → {len(abfp_hits)} hits", flush=True)
