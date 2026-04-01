@@ -208,11 +208,11 @@ python3 apps/python/cli/run_vcp_system.py \
 ### Default Parameters
 
 ```java
-// For follow-through detection:
-this.minQualityScore = weekly ? 30.0 : 35.0;          // Base quality
-this.breakoutBufferPct = weekly ? 0.005 : 0.003;      // Entry confirmation threshold
-this.watchlistMaxDistanceToPivotPct = 0.08 : 0.06;   // Max distance from pivot
-this.maxDistanceFrom52WkHighPct = 0.35;               // Must be close to highs
+// For follow-through + pre-breakout watchlist detection:
+this.minQualityScore = weekly ? 40.0 : 45.0;          // Base quality
+this.breakoutBufferPct = weekly ? 0.006 : 0.004;      // Entry confirmation threshold
+this.watchlistMaxDistanceToPivotPct = 0.05;           // Must be within 5% below pivot
+this.maxDistanceFrom52WkHighPct = 0.25;               // Must be close to highs
 ```
 
 ### Customization
@@ -221,9 +221,15 @@ To adjust follow-through sensitivity:
 
 | Parameter | Effect | Default |
 |-----------|--------|---------|
-| `minQualityScore` | Higher = stricter patterns | 35.0 (daily) |
-| `breakoutBufferPct` | Higher = larger entry zone | 0.3% (daily) |
-| `watchlistMaxDistanceToPivotPct` | Lower = tighter recovery required | 6% (daily) |
+| `minQualityScore` | Higher = stricter patterns | 45.0 (daily), 40.0 (weekly) |
+| `breakoutBufferPct` | Higher = larger entry zone | 0.4% (daily), 0.6% (weekly) |
+| `watchlistMaxDistanceToPivotPct` | Lower = tighter recovery required | 5% (daily + weekly) |
+
+### Pre-Breakout Watchlist Behavior
+
+- Watchlist now explicitly tracks symbols *before* breakout, limited to `0%` to `5%` below pivot.
+- This applies to both `VCP` and `RANGE_EXPANSION` setup filters.
+- `RANGE_EXPANSION` watchlist entries can appear pre-breakout when base quality is valid, even before expansion-candle confirmation.
 
 ---
 

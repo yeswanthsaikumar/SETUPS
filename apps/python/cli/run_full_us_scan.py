@@ -130,6 +130,7 @@ WATCHLIST_RANK_WEIGHTS = {
 }
 WATCHLIST_NEAR_PIVOT_BAND_PCT = 0.025
 WATCHLIST_PIVOT_TOUCH_BAND_PCT = 0.01
+WATCHLIST_MAX_DISTANCE_TO_PIVOT_PCT = 5.0
 # ─────────────────────────────────────────────────────────────────────────────
 
 lock = threading.Lock()
@@ -317,7 +318,7 @@ def compute_watchlist_enrichment(row: dict, bars: list[dict], regime: dict, args
     else:
         regime_support = "HEADWIND"
 
-    max_dist_pct = 8.0 if args.timeframe == "weekly" else 6.0
+    max_dist_pct = WATCHLIST_MAX_DISTANCE_TO_PIVOT_PCT
     pivot_proximity_score = _clamp((1.0 - (dist_pct / max_dist_pct)) * 100.0) if max_dist_pct > 0 else 0.0
 
     days_near_pivot = 0
@@ -2938,6 +2939,7 @@ def main():
             "regimeMode": args.regime_mode,
             "rsWeight": args.rs_weight,
             "watchlistRankingWeights": WATCHLIST_RANK_WEIGHTS,
+            "watchlistMaxDistanceToPivotPct": WATCHLIST_MAX_DISTANCE_TO_PIVOT_PCT,
             "maxPortfolioHeatR": args.max_portfolio_heat_r,
             "accountSize": args.account_size,
             "baseRiskPct": args.base_risk_pct,

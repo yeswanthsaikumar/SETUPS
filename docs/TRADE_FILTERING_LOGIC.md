@@ -639,6 +639,9 @@ this.maxDistanceFrom52WkHighPct = 0.20;         // Within 20% of 52-week high
 // Quality gates
 this.minQualityScore = 35;                      // 35-point minimum for watchlist
 
+// Watchlist gate (pre-breakout candidates only)
+this.watchlistMaxDistanceToPivotPct = 0.05;     // Must be within 5% below pivot
+
 // Range expansion gates
 this.minRangeExpansionMultiplier = 1.30;        // 1.30x ATR for range expansion
 this.minExpansionClosePosition = 0.50;          // Close in upper 50% of bar
@@ -659,6 +662,19 @@ if (config.isWeekly()) {
 ---
 
 ## 🎯 Real-World Trade Example
+
+## 👀 Pre-Breakout Watchlist Rule
+
+The watchlist is intentionally **pre-breakout only**:
+
+```text
+distanceToPivotPct = (pivot - close) / pivot
+Valid watchlist band: 0.00 to 0.05  (0% to 5% below pivot)
+```
+
+- `distanceToPivotPct < 0`: already above pivot (belongs to breakout/open-trades flow)
+- `distanceToPivotPct > 0.05`: base may be valid, but it is too early/far from trigger
+- Applies to both `VCP` and `RANGE_EXPANSION` watchlist candidates
 
 Let's trace a complete trade through all 4 stages:
 

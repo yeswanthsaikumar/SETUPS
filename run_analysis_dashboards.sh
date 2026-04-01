@@ -35,15 +35,6 @@ echo "  $(date '+%Y-%m-%d %H:%M:%S')"
 echo "========================================================"
 echo ""
 
-# ── 1. 3-Year Backtest Dashboard ─────────────────────────────────────────────
-echo "[1/3] Generating 3-Year Backtest Dashboard..."
-BT_ARGS=""
-[ -n "$MAX_STOCKS" ] && BT_ARGS="$BT_ARGS --max-stocks $MAX_STOCKS"
-[ -n "$ACCOUNT_SIZE" ] && BT_ARGS="$BT_ARGS --account-size $ACCOUNT_SIZE"
-python3 apps/python/cli/generate_backtest_dashboard.py $BT_ARGS
-echo "      → output/backtest_3yr_dashboard.html"
-echo ""
-
 # ── 2. Live Trade Plans ───────────────────────────────────────────────────────
 echo "[2/3] Generating Live Trade Plans Page..."
 python3 apps/python/cli/generate_trade_plans_page.py
