@@ -173,7 +173,8 @@ public class AppConfig {
         this.nearBreakoutMinAbovePivotPct = 0.03;
         this.nearBreakoutMaxAbovePivotPct = 0.08;
         this.nearBreakoutVolumeMultiplier = weekly ? 1.00 : 1.05;
-        this.watchlistMaxDistanceToPivotPct = weekly ? 0.08 : 0.06;
+        // Pre-breakout watchlist band: only keep names within 5% below pivot.
+        this.watchlistMaxDistanceToPivotPct = 0.05;
         this.maxBreakoutEntryDistancePct = weekly ? 0.06 : 0.05;
 
         this.accountSize               = 100_000.0;

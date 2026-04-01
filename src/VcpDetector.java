@@ -23,10 +23,18 @@ public class VcpDetector {
     }
 
     public VcpSetup detect(List<Candle> candles, AppConfig config) {
-        return detect(candles, config, "both");
+        return detect(candles, config, "both", DetectionIntent.SCAN);
     }
 
     public VcpSetup detect(List<Candle> candles, AppConfig config, String setupFilter) {
+        return detect(candles, config, setupFilter, DetectionIntent.SCAN);
+    }
+
+    public VcpSetup detectForWatchlist(List<Candle> candles, AppConfig config, String setupFilter) {
+        return detect(candles, config, setupFilter, DetectionIntent.WATCHLIST);
+    }
+
+    private VcpSetup detect(List<Candle> candles, AppConfig config, String setupFilter, DetectionIntent intent) {
         if (candles == null || candles.size() < minBarsForAnyWindow(config)) {
             return null;
         }
@@ -61,7 +69,7 @@ public class VcpDetector {
         // ── Try every configured consolidation window; keep highest-scoring setup ──
         VcpSetup best = null;
         for (int windowDays : config.consolidationWindows) {
-            VcpSetup candidate = detectForWindow(candles, config, windowDays, setupFilter);
+            VcpSetup candidate = detectForWindow(candles, config, windowDays, setupFilter, intent);
             if (candidate != null) {
                 if (best == null || candidate.getQualityScore() > best.getQualityScore()) {
                     best = candidate;
@@ -74,7 +82,7 @@ public class VcpDetector {
     // ──────────────────────────────────────────────────────────────────────────
     // Core detection for a specific window length
     // ──────────────────────────────────────────────────────────────────────────
-    private VcpSetup detectForWindow(List<Candle> candles, AppConfig config, int windowDays, String setupFilter) {
+    private VcpSetup detectForWindow(List<Candle> candles, AppConfig config, int windowDays, String setupFilter, DetectionIntent intent) {
         if (candles.size() < windowDays + 2) {
             return null;
         }
@@ -154,7 +162,8 @@ public class VcpDetector {
                 contractionStats,
                 computeRangeExpansion(candles, consolidationEnd),
                 computeBreakoutVolumeExpansion(candles, consolidationEnd),
-                computeWickBodyAdjustment(candles, breakoutIndex, config)
+                computeWickBodyAdjustment(candles, breakoutIndex, config),
+                intent == DetectionIntent.WATCHLIST
         );
 
         VcpSetup bestSetup = null;
@@ -189,8 +198,28 @@ public class VcpDetector {
     }
 
     private VcpSetup detectRangeExpansionSetup(SetupDetectionContext ctx) {
-        if (!isBaseHeightAccepted(ctx.config, VcpSetup.SetupType.RANGE_EXPANSION, ctx.windowDays, ctx.baseRangeHeightPct)
-                || ctx.rangeContraction < (ctx.requiredRangeContraction * 0.75)
+        if (!isBaseHeightAccepted(ctx.config, VcpSetup.SetupType.RANGE_EXPANSION, ctx.windowDays, ctx.baseRangeHeightPct)) {
+            return null;
+        }
+
+        if (ctx.watchlistMode) {
+            // Watchlist mode is pre-breakout by design: require a valid compressed base,
+            // but do not require expansion metrics from the current bar.
+            if (!isWaveContractionAccepted(ctx.contractionStats, ctx.config)
+                    || ctx.contractionStats.rangeContractions < ctx.requiredContractionPairs
+                    || ctx.rangeContraction < (ctx.requiredRangeContraction * 0.85)
+                    || ctx.volumeContraction < (ctx.requiredVolumeContraction * 0.70)) {
+                return null;
+            }
+
+            double score = ((ctx.rangeContraction * 0.65) + (ctx.volumeContraction * 0.35)) * 100.0 + ctx.wickBodyAdjustment;
+            if (score < ctx.config.minQualityScore) {
+                return null;
+            }
+            return buildSetup(ctx, VcpSetup.SetupType.RANGE_EXPANSION, score, ctx.rangeExpansion);
+        }
+
+        if (ctx.rangeContraction < (ctx.requiredRangeContraction * 0.75)
                 || ctx.rangeExpansion < ctx.requiredRangeExpansion
                 || ctx.expansionVolume < ctx.requiredExpansionVolume) {
             return null;
@@ -548,6 +577,11 @@ public class VcpDetector {
         VcpSetup detect(SetupDetectionContext ctx);
     }
 
+    private enum DetectionIntent {
+        SCAN,
+        WATCHLIST
+    }
+
     private static final class SetupDetectionContext {
         private final List<Candle> candles;
         private final AppConfig config;
@@ -571,6 +605,7 @@ public class VcpDetector {
         private final double rangeExpansion;
         private final double expansionVolume;
         private final double wickBodyAdjustment;
+        private final boolean watchlistMode;
 
         private SetupDetectionContext(
                 List<Candle> candles,
@@ -594,7 +629,8 @@ public class VcpDetector {
                 ContractionStats contractionStats,
                 double rangeExpansion,
                 double expansionVolume,
-                double wickBodyAdjustment
+                double wickBodyAdjustment,
+                boolean watchlistMode
         ) {
             this.candles = candles;
             this.config = config;
@@ -618,6 +654,7 @@ public class VcpDetector {
             this.rangeExpansion = rangeExpansion;
             this.expansionVolume = expansionVolume;
             this.wickBodyAdjustment = wickBodyAdjustment;
+            this.watchlistMode = watchlistMode;
         }
     }
 }

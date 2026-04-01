@@ -323,8 +323,8 @@ def _explain_rejection(reason: str, detail: str) -> tuple[str, list[str]]:
         bullets = [
             "❌ The stock has a valid base, but the current price is too far below the pivot level "
             "to qualify for the watchlist.",
-            "📋 Rule: The watchlist only includes stocks within the configured maximum distance "
-            "from the pivot to avoid chasing extended moves.",
+            "📋 Rule: The pre-breakout watchlist only includes stocks from at-pivot to 5% below pivot "
+            "to focus on near-trigger candidates.",
             f"📊 Detail: {detail}" if detail else "",
             "💡 Tip: Monitor for the stock to work its way closer to the pivot on lower volume.",
         ]

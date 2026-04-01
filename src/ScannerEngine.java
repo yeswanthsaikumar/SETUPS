@@ -166,7 +166,7 @@ public class ScannerEngine {
         }
 
         List<Candle> slice = new ArrayList<>(candles.subList(0, endIndexInclusive + 1));
-        VcpSetup setup = vcpDetector.detect(slice, config, setupFilter);
+        VcpSetup setup = vcpDetector.detectForWatchlist(slice, config, setupFilter);
         if (setup == null || setup.getQualityScore() < config.minQualityScore) {
             return null;
         }
@@ -222,7 +222,7 @@ public class ScannerEngine {
         }
 
         List<Candle> slice = new ArrayList<>(candles.subList(0, endIndexInclusive + 1));
-        VcpSetup setup = vcpDetector.detect(slice, config, setupFilter);
+        VcpSetup setup = vcpDetector.detectForWatchlist(slice, config, setupFilter);
         if (setup == null || setup.getQualityScore() < config.minQualityScore) {
             return null;
         }
