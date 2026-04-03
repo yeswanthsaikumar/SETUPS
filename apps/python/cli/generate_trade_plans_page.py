@@ -14,6 +14,7 @@ Run: python3 apps/python/cli/generate_trade_plans_page.py
 from __future__ import annotations
 import csv, json, math, re, sys
 from datetime import datetime
+from functools import lru_cache
 from html import escape
 from pathlib import Path
 
@@ -23,6 +24,21 @@ CACHE_DIR = ROOT / "cache"
 sys.path.insert(0, str(ROOT / "apps" / "python" / "lib"))
 
 from utils import aggregate_weekly_bars, safe_return
+
+try:
+    from fundamentals_provider import (
+        FundamentalsProvider,
+        compact_summary as fundamentals_compact_summary,
+        HAS_YFINANCE as _HAS_YFINANCE,
+    )
+    _FUNDAMENTALS_AVAILABLE = True
+except Exception:
+    FundamentalsProvider = None
+    _FUNDAMENTALS_AVAILABLE = False
+    _HAS_YFINANCE = False
+
+    def fundamentals_compact_summary(_f: dict, is_india: bool = True) -> str:
+        return "\u2014"
 
 ACCOUNT_SIZE = 1_000_000
 RISK_PCT     = 0.01
@@ -78,25 +94,7 @@ def get_sector(symbol: str) -> str:
     base = symbol.replace(".NS","").replace(".BO","")
     return SECTOR_MAP.get(base, "Other")
 
-def load_sparkline(symbol: str, n: int = 60) -> list[float]:
-    """Load last n closes for sparkline from cache."""
-    for suffix in ["_252", "_504", "_900"]:
-        p = CACHE_DIR / f"{symbol}{suffix}.csv"
-        if p.exists():
-            closes = []
-            try:
-                with open(p) as f:
-                    for row in csv.DictReader(f):
-                        try: closes.append(float(row["close"]))
-                        except: pass
-            except Exception:
-                pass
-            if closes:
-                return closes[-n:]
-    return []
-
-
-def load_price_rows(symbol: str, weekly: bool = False) -> list[dict]:
+def _load_price_rows_uncached(symbol: str) -> list[dict]:
     for suffix in ["_900", "_504", "_252"]:
         p = CACHE_DIR / f"{symbol}{suffix}.csv"
         if not p.exists():
@@ -116,8 +114,23 @@ def load_price_rows(symbol: str, weekly: bool = False) -> list[dict]:
         except Exception:
             rows = []
         if rows:
-            return aggregate_weekly_bars(rows) if weekly else rows
+            return rows
     return []
+
+
+@lru_cache(maxsize=8192)
+def load_price_rows(symbol: str, weekly: bool = False) -> list[dict]:
+    rows = _load_price_rows_uncached(symbol)
+    if not rows:
+        return []
+    return aggregate_weekly_bars(rows) if weekly else rows
+
+
+def load_sparkline(symbol: str, n: int = 60) -> list[float]:
+    """Load last n closes for sparkline from cached daily rows."""
+    rows = load_price_rows(symbol, weekly=False)
+    closes = [_f(r.get("close")) for r in rows if _f(r.get("close")) > 0]
+    return closes[-n:] if closes else []
 
 
 def current_expansion_metrics(rows: list[dict], lookback: int = 20) -> tuple[float | None, float | None]:
@@ -213,6 +226,170 @@ def classify_trigger(text: str) -> str:
         return "pill-neg"
     return "pill-neu"
 
+
+def _has_value(v) -> bool:
+    t = str(v or "").strip()
+    return t not in {"", "\u2014", "UNKNOWN", "N/A", "NONE", "NULL"}
+
+
+def _fundamentals_completeness(row: dict) -> tuple[int, float]:
+    score = 0
+    if _has_value(row.get("fundSummary")):
+        score += 2
+    if _has_value(row.get("triggerEarningsGrowth")):
+        score += 2
+    if _has_value(row.get("triggerDebtReduction")):
+        score += 2
+    if _has_value(row.get("triggerMacroTailwind") or row.get("macroTrigger") or row.get("triggerMacro")):
+        score += 1
+    if _has_value(row.get("triggerMarketTailwind") or row.get("marketTrigger") or row.get("triggerMarket")):
+        score += 1
+    return score, _f(row.get("score", 0))
+
+
+def _pick_better_row(current: dict, candidate: dict) -> dict:
+    c_key = _fundamentals_completeness(current)
+    n_key = _fundamentals_completeness(candidate)
+    return candidate if n_key > c_key else current
+
+
+def _derive_macro_market(sig: dict) -> tuple[str, str]:
+    regime_support = str(sig.get("regimeSupport") or "").upper()
+    weekly_agreement = str(sig.get("weeklyAgreement") or "").upper()
+    rs_score = _f(sig.get("rsScore"), 0.0)
+
+    macro_trigger = "TAILWIND" if regime_support in {"STRONG", "SUPPORTIVE"} else "NEUTRAL_OR_HEADWIND"
+    market_trigger = "TAILWIND" if weekly_agreement in {"STRONG", "SUPPORTIVE"} and rs_score > 0 else "MIXED"
+    return macro_trigger, market_trigger
+
+
+def _format_pct_trigger(prefix: str, value: float | None) -> str:
+    if value is None:
+        return f"{prefix}:UNKNOWN"
+    sign = "+" if value >= 0 else ""
+    return f"{prefix}:{sign}{value:.1f}%"
+
+
+def _earnings_trigger_from_fundamentals(fund: dict | None) -> str:
+    if not fund or fund.get("error"):
+        return "UNKNOWN"
+
+    eps_yoy = _f(fund.get("eps_yoy"), float("nan"))
+    eps_qoq = _f(fund.get("eps_qoq"), float("nan"))
+    rev_yoy = _f(fund.get("rev_yoy"), float("nan"))
+
+    eps_yoy = None if eps_yoy != eps_yoy else eps_yoy
+    eps_qoq = None if eps_qoq != eps_qoq else eps_qoq
+    rev_yoy = None if rev_yoy != rev_yoy else rev_yoy
+
+    strong = (eps_yoy is not None and eps_yoy >= 15.0) or (rev_yoy is not None and rev_yoy >= 12.0)
+    weak = (eps_yoy is not None and eps_yoy <= -10.0) or (rev_yoy is not None and rev_yoy <= -5.0)
+
+    parts: list[str] = []
+    if eps_yoy is not None:
+        parts.append(_format_pct_trigger("EPS_YOY", eps_yoy))
+    if eps_qoq is not None:
+        parts.append(_format_pct_trigger("EPS_QOQ", eps_qoq))
+    if rev_yoy is not None:
+        parts.append(_format_pct_trigger("REV_YOY", rev_yoy))
+
+    if not parts:
+        return "UNKNOWN"
+    if strong:
+        return "POSITIVE " + " / ".join(parts)
+    if weak:
+        return "WEAK " + " / ".join(parts)
+    return "MIXED " + " / ".join(parts)
+
+
+def _debt_trigger_from_fundamentals(fund: dict | None) -> str:
+    if not fund or fund.get("error"):
+        return "UNKNOWN"
+    debt_trend = _f(fund.get("debt_trend_pct"), float("nan"))
+    if debt_trend != debt_trend:
+        return "UNKNOWN"
+    if debt_trend <= -5.0:
+        return f"POSITIVE Debt\u2193 {abs(debt_trend):.1f}%"
+    if debt_trend >= 5.0:
+        return f"RISK Debt\u2191 {debt_trend:.1f}%"
+    return f"STABLE Debt {debt_trend:+.1f}%"
+
+
+def hydrate_missing_fundamentals(signals: list[dict]) -> dict:
+    stats = {
+        "signals": len(signals or []),
+        "needs_fundamentals": 0,
+        "fund_summary_filled": 0,
+        "earnings_filled": 0,
+        "debt_filled": 0,
+        "still_missing_summary": 0,
+        "still_missing_earnings": 0,
+        "still_missing_debt": 0,
+        "fundamentals_available": _FUNDAMENTALS_AVAILABLE,
+        "yfinance_available": _HAS_YFINANCE,
+    }
+    if not signals:
+        return stats
+
+    for sig in signals:
+        if not _has_value(sig.get("triggerMacroTailwind")):
+            macro, _ = _derive_macro_market(sig)
+            sig["triggerMacroTailwind"] = macro
+        if not _has_value(sig.get("triggerMarketTailwind")):
+            _, market = _derive_macro_market(sig)
+            sig["triggerMarketTailwind"] = market
+
+    if not _FUNDAMENTALS_AVAILABLE:
+        return stats
+
+    to_fetch: list[str] = []
+    for sig in signals:
+        needs_summary = not _has_value(sig.get("fundSummary"))
+        needs_eps = not _has_value(sig.get("triggerEarningsGrowth"))
+        needs_debt = not _has_value(sig.get("triggerDebtReduction"))
+        if needs_summary or needs_eps or needs_debt:
+            stats["needs_fundamentals"] += 1
+            sym = str(sig.get("symbol", "")).strip().upper()
+            if sym:
+                to_fetch.append(sym)
+
+    if not to_fetch:
+        return stats
+
+    provider = FundamentalsProvider(cache_dir=str(CACHE_DIR), cache_ttl_hours=24)
+    fetched = provider.fetch_batch(sorted(set(to_fetch)), workers=min(12, max(1, len(to_fetch))), show_progress=False)
+
+    for sig in signals:
+        sym = str(sig.get("symbol", "")).strip().upper()
+        fund = fetched.get(sym) or {}
+        is_india = sym.endswith(".NS") or sym.endswith(".BO")
+
+        if not _has_value(sig.get("fundSummary")):
+            before = sig.get("fundSummary")
+            sig["fundSummary"] = fundamentals_compact_summary(fund, is_india=is_india)
+            if _has_value(sig.get("fundSummary")) and not _has_value(before):
+                stats["fund_summary_filled"] += 1
+        if not _has_value(sig.get("triggerEarningsGrowth")):
+            before = sig.get("triggerEarningsGrowth")
+            sig["triggerEarningsGrowth"] = _earnings_trigger_from_fundamentals(fund)
+            if _has_value(sig.get("triggerEarningsGrowth")) and not _has_value(before):
+                stats["earnings_filled"] += 1
+        if not _has_value(sig.get("triggerDebtReduction")):
+            before = sig.get("triggerDebtReduction")
+            sig["triggerDebtReduction"] = _debt_trigger_from_fundamentals(fund)
+            if _has_value(sig.get("triggerDebtReduction")) and not _has_value(before):
+                stats["debt_filled"] += 1
+
+    for sig in signals:
+        if not _has_value(sig.get("fundSummary")):
+            stats["still_missing_summary"] += 1
+        if not _has_value(sig.get("triggerEarningsGrowth")):
+            stats["still_missing_earnings"] += 1
+        if not _has_value(sig.get("triggerDebtReduction")):
+            stats["still_missing_debt"] += 1
+
+    return stats
+
 def load_signals() -> list[dict]:
     signals = []
     files = [
@@ -231,9 +408,12 @@ def load_signals() -> list[dict]:
             if not isinstance(data, list): continue
             for row in data:
                 sym = row.get("symbol","")
-                score = _f(row.get("score",0))
-                if sym not in seen or score > _f(seen[sym].get("score",0)):
-                    row["_tf_label"] = label
+                if not sym:
+                    continue
+                row["_tf_label"] = label
+                if sym in seen:
+                    seen[sym] = _pick_better_row(seen[sym], row)
+                else:
                     seen[sym] = row
         except Exception:
             pass
@@ -358,11 +538,36 @@ def build_html(signals: list[dict]) -> str:
         window  = sig.get("window","")
         dist_pivot = _f(sig.get("distFromPivot%") or sig.get("pivotProximityScore"))
 
-        eps_trigger = str(sig.get("triggerEarningsGrowth") or "N/A")
-        debt_trigger = str(sig.get("triggerDebtReduction") or "N/A")
-        macro_trigger = str(sig.get("triggerMacroTailwind") or "N/A")
-        market_trigger = str(sig.get("triggerMarketTailwind") or "N/A")
-        fund_summary = str(sig.get("fundSummary") or "No online fundamentals snapshot available")
+        eps_trigger = str(
+            sig.get("triggerEarningsGrowth")
+            or sig.get("earningsTrigger")
+            or sig.get("earnings")
+            or "UNKNOWN"
+        )
+        debt_trigger = str(
+            sig.get("triggerDebtReduction")
+            or sig.get("debtTrigger")
+            or sig.get("debt")
+            or "UNKNOWN"
+        )
+        macro_trigger = str(
+            sig.get("triggerMacroTailwind")
+            or sig.get("macroTrigger")
+            or sig.get("triggerMacro")
+            or "NEUTRAL_OR_HEADWIND"
+        )
+        market_trigger = str(
+            sig.get("triggerMarketTailwind")
+            or sig.get("marketTrigger")
+            or sig.get("triggerMarket")
+            or "MIXED"
+        )
+        fund_summary = str(
+            sig.get("fundSummary")
+            or sig.get("fundamentalSummary")
+            or sig.get("fundamentals")
+            or "FUNDAMENTALS_UNAVAILABLE"
+        )
 
         eps_yoy = extract_pct(eps_trigger, ["EPS_YOY", "EPS YOY"])
         eps_qoq = extract_pct(eps_trigger, ["EPS_QOQ", "EPS QOQ"])
@@ -796,7 +1001,25 @@ document.addEventListener('DOMContentLoaded', () => {{
 def main():
     print("Generating Trade Plans page...")
     signals = load_signals()
+    hstats = hydrate_missing_fundamentals(signals)
     print(f"  Loaded {len(signals)} unique signals")
+    if hstats.get("needs_fundamentals", 0) > 0:
+        print(
+            "  Fundamentals hydration: "
+            f"needed={hstats.get('needs_fundamentals', 0)} "
+            f"summary+={hstats.get('fund_summary_filled', 0)} "
+            f"eps+={hstats.get('earnings_filled', 0)} "
+            f"debt+={hstats.get('debt_filled', 0)}"
+        )
+        if not hstats.get("yfinance_available", False):
+            print("  Warning: fundamentals provider unavailable (install yfinance)")
+        if hstats.get("still_missing_summary", 0) > 0 or hstats.get("still_missing_earnings", 0) > 0:
+            print(
+                "  Remaining missing fundamentals: "
+                f"summary={hstats.get('still_missing_summary', 0)} "
+                f"eps={hstats.get('still_missing_earnings', 0)} "
+                f"debt={hstats.get('still_missing_debt', 0)}"
+            )
     html = build_html(signals)
     out = OUTPUT / "trade_plans_live.html"
     out.write_text(html, encoding="utf-8")

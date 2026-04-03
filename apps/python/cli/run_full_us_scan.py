@@ -108,10 +108,11 @@ DEFAULT_LOOKBACK      = 252
 DEFAULT_RETRIES       = 3
 DEFAULT_CACHE_DIR     = str(ROOT / "cache")
 DEFAULT_CACHE_TTL_MIN = 360                   # 6 hours
-DEFAULT_BATCH_SIZE    = 40                    # symbols per Java process (larger = fewer JVM launches)
-DEFAULT_WORKERS       = 6                     # concurrent Java processes
+DEFAULT_BATCH_SIZE    = 60                    # symbols per Java process (larger = fewer JVM launches)
+DEFAULT_WORKERS       = 8                     # concurrent Java processes
 SAVE_EVERY_N_HITS     = 30                    # flush CSV every N new hits
 SAVE_EVERY_N_BATCHES  = 15                    # refresh output files even if hit count is unchanged
+HTML_SAVE_STRIDE      = 5                     # write heavy HTML snapshots every N interim save cycles
 JAVA_TIMEOUT_SEC      = 240                   # kill stalled Java process after 4 min (larger batches)
 # JVM flags: -client + TieredStopAtLevel=1 disables full JIT for short-lived batch processes
 # This cuts JVM startup from ~2s to ~0.5s at the cost of peak throughput (irrelevant for batch mode)
@@ -863,6 +864,26 @@ def _run_abfp_scan(symbols: list[str], args) -> list[dict]:
     return abfp_hits
 
 
+# Standard daily-bar cache file sizes produced by the downloader
+_CACHE_STD_SIZES = (60, 252, 504, 728, 900, 3528)
+
+
+def _java_lookback(args) -> int:
+    """
+    Return the lookback value to pass to the Java scanner.
+    For weekly timeframe, convert weekly bars → required daily bars → nearest
+    standard cache file size so Java immediately finds an existing cache file
+    instead of burning ~45s in Yahoo retries per symbol.
+    """
+    if args.timeframe == "weekly":
+        daily_needed = args.lookback * 5          # 104 weeks × 5 ≈ 520 daily bars
+        for size in _CACHE_STD_SIZES:
+            if size >= daily_needed:
+                return size                        # e.g. 728 for lookback=104
+        return daily_needed
+    return args.lookback
+
+
 def scan_batch(batch: list[str], args) -> list[str]:
     """Invoke Java scanner for one batch; return raw hit lines."""
     java_setup = _java_setups(args.setups)
@@ -875,7 +896,7 @@ def scan_batch(batch: list[str], args) -> list[str]:
         f"--timeframe={args.timeframe}",
         f"--setups={java_setup}",
         f"--symbols={','.join(batch)}",
-        f"--lookback={args.lookback}",
+        f"--lookback={_java_lookback(args)}",
         f"--retries={args.retries}",
         f"--cache-dir={args.cache_dir}",
         f"--cache-ttl-min={args.cache_ttl}",
@@ -916,7 +937,7 @@ def scan_watchlist_batch(batch: list[str], args) -> list[str]:
         f"--timeframe={args.timeframe}",
         f"--setups={java_setup}",
         f"--symbols={','.join(batch)}",
-        f"--lookback={args.lookback}",
+        f"--lookback={_java_lookback(args)}",
         f"--retries={args.retries}",
         f"--cache-dir={args.cache_dir}",
         f"--cache-ttl-min={args.cache_ttl}",
@@ -959,7 +980,7 @@ def scan_combined_batch(batch: list[str], args) -> tuple[list[str], list[str]]:
         f"--timeframe={args.timeframe}",
         f"--setups={java_setup}",
         f"--symbols={','.join(batch)}",
-        f"--lookback={args.lookback}",
+        f"--lookback={_java_lookback(args)}",
         f"--retries={args.retries}",
         f"--cache-dir={args.cache_dir}",
         f"--cache-ttl-min={args.cache_ttl}",
@@ -2738,15 +2759,13 @@ def main():
         save_json(shortlist_snapshot, latest_shortlist_json)
         save_variation_summary(snapshot, latest_variation_summary, meta_snapshot)
         save_csv(snapshot, generic_latest_csv)
-        # Now that meta_snapshot is defined and all other saves are done, save breakout performance HTML
-        save_html(open_trade_snapshot, breakout_perf_html_path, meta_snapshot)
-        save_html(open_trade_snapshot, latest_breakout_perf_html_path, meta_snapshot)
-
         # ⚡ HTML is expensive to generate — only write on final forced save or every 5th interim
         # This avoids blocking the scan loop with large HTML builds every 30 hits
         interim_save_count = (batch_done // SAVE_EVERY_N_BATCHES)
-        write_html = force or (interim_save_count % 5 == 0)
+        write_html = force or (interim_save_count % HTML_SAVE_STRIDE == 0)
         if write_html:
+            save_html(open_trade_snapshot, breakout_perf_html_path, meta_snapshot)
+            save_html(open_trade_snapshot, latest_breakout_perf_html_path, meta_snapshot)
             save_html(snapshot, html_path, meta_snapshot)
             save_html(open_trade_snapshot, open_trades_html_path, meta_snapshot)
             save_html(watch_snapshot, watchlist_html_path, meta_snapshot)
@@ -2892,6 +2911,9 @@ def main():
 
     all_hits.sort(key=safe_rank, reverse=True)
     all_watchlist = rank_watchlist_rows(all_watchlist)
+
+    if (all_hits or all_watchlist) and not _FUNDAMENTALS_AVAILABLE:
+        print("[INFO] Fundamentals provider unavailable (yfinance missing). Using macro/market triggers only.", flush=True)
 
     if _FUNDAMENTALS_AVAILABLE and (all_hits or all_watchlist):
         fundamental_symbols = sorted({str(r.get("symbol", "")).strip().upper() for r in (all_hits + all_watchlist) if r.get("symbol")})
