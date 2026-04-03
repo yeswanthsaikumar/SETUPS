@@ -63,8 +63,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run daily and weekly VCP + range breakout scans for US and Indian stocks")
     parser.add_argument("--markets", default="us,india", help="Comma-separated: us, india, or all")
     parser.add_argument("--timeframes", default="daily,weekly", help="Comma-separated: daily, weekly, or all")
-    parser.add_argument("--workers", type=int, default=6)
-    parser.add_argument("--batch", type=int, default=40)
+    parser.add_argument("--workers", type=int, default=8)
+    parser.add_argument("--batch", type=int, default=60)
     parser.add_argument("--daily-lookback", type=int, default=252, help="Daily bars lookback (default: 252 = ~1 year)")
     parser.add_argument("--weekly-lookback", type=int, default=104, help="Weekly bars lookback (default: 104 = ~2 years)")
     parser.add_argument(
@@ -76,6 +76,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cache-dir", default="cache")
     parser.add_argument("--cache-ttl", type=int, default=360)
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
+    parser.add_argument("--skip-performance-tracker", action="store_true", help="Skip performance tracker update for faster scans")
+    parser.add_argument("--daily-backfill-sessions", type=int, default=10, help="Performance tracker daily backfill sessions (default: 10)")
+    parser.add_argument("--weekly-backfill-sessions", type=int, default=4, help="Performance tracker weekly backfill sessions (default: 4)")
     parser.add_argument("--us-symbols", default=None, help="Override US symbols file")
     parser.add_argument("--india-symbols", default=None, help="Override Indian symbols file")
     parser.add_argument("--skip-us-refresh", action="store_true", help="Skip US universe refresh (use cached file)")
@@ -88,6 +91,8 @@ def parse_args() -> argparse.Namespace:
         parser.error("--batch must be greater than 0")
     if args.daily_lookback <= 0 or args.weekly_lookback <= 0:
         parser.error("Lookbacks must be greater than 0")
+    if args.daily_backfill_sessions < 0 or args.weekly_backfill_sessions < 0:
+        parser.error("Backfill sessions must be zero or greater")
 
     args.markets = parse_csv_list(args.markets, {"us", "india"})
     args.timeframes = parse_csv_list(args.timeframes, {"daily", "weekly"})
@@ -390,7 +395,9 @@ def main():
     summary_md, summary_json = write_summary(args.output_dir, results)
 
     # ── Performance tracker update (non-fatal) ────────────────────────────────
-    if PERF_TRACKER_SCRIPT.exists():
+    if args.skip_performance_tracker:
+        print("   (Performance tracker update skipped by --skip-performance-tracker)")
+    elif PERF_TRACKER_SCRIPT.exists():
         try:
             perf_markets    = ",".join(args.markets)
             perf_timeframes = ",".join(args.timeframes)
@@ -402,12 +409,12 @@ def main():
                     "--cache-dir", args.cache_dir,
                     "--markets",    perf_markets,
                     "--timeframes", perf_timeframes,
-                    "--daily-backfill-sessions", "20",
-                    "--weekly-backfill-sessions", "7",
+                    "--daily-backfill-sessions", str(args.daily_backfill_sessions),
+                    "--weekly-backfill-sessions", str(args.weekly_backfill_sessions),
                     "--backtest-workers", str(args.workers),
                     "--backtest-batch", str(args.batch),
                 ],
-                "Updating breakout performance tracker (daily 20 sessions, weekly 7 sessions)",
+                f"Updating breakout performance tracker (daily {args.daily_backfill_sessions} sessions, weekly {args.weekly_backfill_sessions} sessions)",
             )
         except Exception as exc:
             print(f"   ! Performance tracker update skipped (non-fatal): {exc}")

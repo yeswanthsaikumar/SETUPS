@@ -10,7 +10,7 @@ Generates a standalone Sector Rotation + Macro Impact HTML page with:
 Run: python3 apps/python/cli/generate_sector_macro_page.py
 """
 from __future__ import annotations
-import csv, json, math, sys
+import csv, json, math, statistics, sys
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -38,7 +38,7 @@ SECTOR_MAP = {
     "GAIL":"Energy","COALINDIA":"Energy","ADANIGREEN":"Energy","NTPC":"Energy","POWERGRID":"Energy",
     "TATASTEEL":"Metals","HINDALCO":"Metals","JSWSTEEL":"Metals","SAIL":"Metals",
     "VEDL":"Metals","NMDC":"Metals","HINDZINC":"Metals","APLAPOLLO":"Metals",
-    "ADANIENT":"Infra","ADANIPORTS":"Infra","L&T":"Infra","ADANIPOWER":"Infra",
+    "ADANIENT":"Infra","ADANIPORTS":"Infra","L&T":"Infra","LT":"Infra","ADANIPOWER":"Infra",
     "BAJFINANCE":"NBFC","BAJAJFINSV":"NBFC","CHOLAFIN":"NBFC","M&MFIN":"NBFC",
     "MUTHOOTFIN":"NBFC","MANAPPURAM":"NBFC","PFC":"NBFC","RECLTD":"NBFC",
     "TITAN":"Consumer","ASIANPAINT":"Consumer","PIDILITIND":"Consumer","HAVELLS":"Consumer",
@@ -49,6 +49,10 @@ SECTOR_MAP = {
     "CUMMINSIND":"Cap Goods","THERMAX":"Cap Goods",
     "HDFCLIFE":"Insurance","SBILIFE":"Insurance","ICICIPRU":"Insurance",
 }
+
+INDEX_SYMBOL = "^NSEI"
+LIVE_REFRESH_DAYS = 75
+CACHE_BAR_CAP = 900
 
 MACRO_EVENTS = [
     {"date":"2023-04-06","type":"RBI","label":"RBI Hold 6.5%","impact":"NEUTRAL","desc":"RBI pauses rate hikes. Markets absorb with resilience. Breakout setups active in Banking and Auto."},
@@ -97,31 +101,171 @@ def _f(v, d=0.0):
     except: return d
 
 def get_sector(symbol: str) -> str:
-    base = symbol.replace(".NS","").replace(".BO","")
+    base = symbol.replace(".NS","").replace(".BO","").replace("&", "")
     return SECTOR_MAP.get(base, None)
 
-def load_sector_prices() -> dict:
+
+def _cache_paths_for(symbol: str) -> list[Path]:
+    return [CACHE_DIR / f"{symbol}_{suffix}.csv" for suffix in (900, 728, 504, 252, 60, 30)]
+
+
+def _load_rows_from_cache(symbol: str) -> list[dict]:
+    for path in _cache_paths_for(symbol):
+        if not path.exists():
+            continue
+        rows: list[dict] = []
+        try:
+            with open(path) as fh:
+                for row in csv.DictReader(fh):
+                    d = str(row.get("date", "")).strip()
+                    if not d:
+                        continue
+                    rows.append({
+                        "date": d[:10],
+                        "open": _f(row.get("open")),
+                        "high": _f(row.get("high")),
+                        "low": _f(row.get("low")),
+                        "close": _f(row.get("close")),
+                        "volume": _f(row.get("volume")),
+                    })
+        except Exception:
+            rows = []
+        if rows:
+            rows.sort(key=lambda r: r.get("date", ""))
+            return rows
+    return []
+
+
+def _write_rows_to_cache(symbol: str, rows: list[dict]):
+    path = CACHE_DIR / f"{symbol}_{CACHE_BAR_CAP}.csv"
+    try:
+        with open(path, "w", newline="") as fh:
+            w = csv.writer(fh)
+            w.writerow(["date", "open", "high", "low", "close", "volume"])
+            for r in rows[-CACHE_BAR_CAP:]:
+                w.writerow([
+                    r.get("date", ""),
+                    f"{_f(r.get('open')):.6f}",
+                    f"{_f(r.get('high')):.6f}",
+                    f"{_f(r.get('low')):.6f}",
+                    f"{_f(r.get('close')):.6f}",
+                    f"{_f(r.get('volume')):.2f}",
+                ])
+    except Exception:
+        pass
+
+
+def _fetch_ticker_rows(ticker: str, days: int) -> tuple[str, list[dict] | None]:
+    """Fetch OHLCV rows for a single ticker using yfinance Ticker.history() — compatible with yfinance ≥1.2.0."""
+    try:
+        import yfinance as yf
+        hist = yf.Ticker(ticker).history(period=f"{days}d", interval="1d", auto_adjust=False)
+        if hist is None or getattr(hist, "empty", True):
+            return ticker, None
+        rows: list[dict] = []
+        for idx, row in hist.iterrows():
+            try:
+                d = idx.strftime("%Y-%m-%d")
+            except Exception:
+                continue
+            c = float(row.get("Close", 0) or 0)
+            if c <= 0:
+                continue
+            rows.append({
+                "date": d,
+                "open": float(row.get("Open", c) or c),
+                "high": float(row.get("High", c) or c),
+                "low":  float(row.get("Low",  c) or c),
+                "close": c,
+                "volume": float(row.get("Volume", 0) or 0),
+            })
+        return ticker, rows if rows else None
+    except Exception:
+        return ticker, None
+
+
+def refresh_live_india_cache(days: int = LIVE_REFRESH_DAYS, max_wall_seconds: int = 90) -> dict:
+    """
+    Refresh recent NSE bars for mapped symbols and NIFTY index.
+    Uses concurrent individual Ticker.history() calls (yfinance 1.2.0 compatible).
+    Hard caps at max_wall_seconds so it never blocks the pipeline.
+    """
+    try:
+        import yfinance as _yf  # noqa: F401 — confirm import before spinning threads
+    except Exception as exc:
+        print(f"  Live refresh skipped (yfinance unavailable): {exc}")
+        return {"enabled": False, "refreshed": 0, "total": 0, "failed": 0}
+
+    import time
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    base_symbols = sorted({s.replace("&", "") for s in SECTOR_MAP.keys()})
+    tickers = [f"{s}.NS" for s in base_symbols if s]
+    tickers.append(INDEX_SYMBOL)
+
+    refreshed = 0
+    failed = 0
+    deadline = time.monotonic() + max_wall_seconds
+
+    with ThreadPoolExecutor(max_workers=16) as pool:
+        futures = {pool.submit(_fetch_ticker_rows, t, days): t for t in tickers}
+        for fut in as_completed(futures):
+            if time.monotonic() > deadline:
+                # cancel remaining — they will still run but we won't wait
+                for pending in futures:
+                    pending.cancel()
+                failed += sum(1 for f in futures if not f.done())
+                print(f"  Live refresh time-cap ({max_wall_seconds}s) reached — stopping early")
+                break
+            try:
+                ticker, rows = fut.result(timeout=10)
+            except Exception:
+                failed += 1
+                continue
+            if not rows:
+                failed += 1
+                continue
+            try:
+                existing = {r["date"]: r for r in _load_rows_from_cache(ticker)}
+                for r in rows:
+                    existing[r["date"]] = r
+                merged = [existing[k] for k in sorted(existing.keys())]
+                _write_rows_to_cache(ticker, merged)
+                refreshed += 1
+            except Exception:
+                failed += 1
+
+    print(f"  Live refresh: {refreshed}/{len(tickers)} symbols updated ({failed} failed)")
+    return {"enabled": True, "refreshed": refreshed, "total": len(tickers), "failed": failed}
+
+
+def load_symbol_price_rows() -> tuple[dict[str, list[dict]], list[dict]]:
+    symbol_rows: dict[str, list[dict]] = {}
+    for base in sorted({s.replace("&", "") for s in SECTOR_MAP.keys()}):
+        ticker = f"{base}.NS"
+        rows = _load_rows_from_cache(ticker)
+        if rows:
+            symbol_rows[ticker] = rows
+    index_rows = _load_rows_from_cache(INDEX_SYMBOL)
+    return symbol_rows, index_rows
+
+def load_sector_prices(symbol_rows: dict[str, list[dict]] | None = None) -> dict:
     """Load price data for mapped sectors only."""
     sector_data: dict[str, dict[str, list]] = defaultdict(lambda: defaultdict(list))
-    files = sorted(CACHE_DIR.glob("*.NS_900.csv"))
+    if symbol_rows is None:
+        symbol_rows, _ = load_symbol_price_rows()
     count = 0
-    for f in files:
-        sym = f.stem.replace("_900", "")
+    for sym, rows in symbol_rows.items():
         sector = get_sector(sym)
         if sector is None:
             continue
-        try:
-            with open(f) as fh:
-                for row in csv.DictReader(fh):
-                    d = row.get("date","")
-                    if not d: continue
-                    try:
-                        close = float(row["close"])
-                        sector_data[sector][d].append((sym, close))
-                        count += 1
-                    except: pass
-        except Exception:
-            pass
+        for row in rows:
+            d = str(row.get("date", "")).strip()
+            close = _f(row.get("close"))
+            if not d or close <= 0:
+                continue
+            sector_data[sector][d].append((sym, close))
+            count += 1
     print(f"  Loaded {count:,} price points for {len(sector_data)} sectors")
     return sector_data
 
@@ -195,6 +339,141 @@ def compute_returns(sector_data: dict) -> tuple[dict, dict, dict]:
 
     return sector_monthly, sector_quarterly, sector_rs
 
+
+def _ret_from_closes(closes: list[float], bars: int) -> float | None:
+    if len(closes) <= bars or closes[-bars - 1] <= 0:
+        return None
+    return (closes[-1] / closes[-bars - 1] - 1.0) * 100.0
+
+
+def _sma(closes: list[float], n: int) -> float | None:
+    if len(closes) < n:
+        return None
+    return sum(closes[-n:]) / n
+
+
+def compute_swing_insights(symbol_rows: dict[str, list[dict]], index_rows: list[dict]) -> tuple[list[dict], dict]:
+    index_closes = [_f(r.get("close")) for r in index_rows if _f(r.get("close")) > 0]
+    idx_ret20 = _ret_from_closes(index_closes, 20) or 0.0
+    idx_ret60 = _ret_from_closes(index_closes, 60) or 0.0
+    idx_sma50 = _sma(index_closes, 50)
+    idx_sma200 = _sma(index_closes, 200)
+    idx_last = index_closes[-1] if index_closes else 0.0
+
+    if idx_last > 0 and idx_sma50 and idx_sma200 and idx_last > idx_sma50 > idx_sma200:
+        regime = "BULLISH"
+    elif idx_last > 0 and idx_sma200 and idx_last >= idx_sma200:
+        regime = "NEUTRAL"
+    else:
+        regime = "DEFENSIVE"
+
+    by_sector: dict[str, list[dict]] = defaultdict(list)
+    for symbol, rows in symbol_rows.items():
+        sector = get_sector(symbol)
+        if not sector:
+            continue
+        closes = [_f(r.get("close")) for r in rows if _f(r.get("close")) > 0]
+        if len(closes) < 210:
+            continue
+        last = closes[-1]
+        sma20 = _sma(closes, 20)
+        sma50 = _sma(closes, 50)
+        sma200 = _sma(closes, 200)
+        r20 = _ret_from_closes(closes, 20)
+        r60 = _ret_from_closes(closes, 60)
+        high20 = max(closes[-20:]) if len(closes) >= 20 else last
+        near_high20 = (high20 > 0) and ((high20 - last) / high20 <= 0.02)
+        by_sector[sector].append({
+            "above20": bool(sma20 and last > sma20),
+            "above50": bool(sma50 and last > sma50),
+            "above200": bool(sma200 and last > sma200),
+            "nearHigh20": near_high20,
+            "ret20": r20,
+            "ret60": r60,
+        })
+
+    rows_out: list[dict] = []
+    for sector, items in by_sector.items():
+        if not items:
+            continue
+        n = len(items)
+        ret20_vals = [it["ret20"] for it in items if it["ret20"] is not None]
+        ret60_vals = [it["ret60"] for it in items if it["ret60"] is not None]
+        r20 = statistics.median(ret20_vals) if ret20_vals else 0.0
+        r60 = statistics.median(ret60_vals) if ret60_vals else 0.0
+        above20 = sum(1 for it in items if it["above20"]) * 100.0 / n
+        above50 = sum(1 for it in items if it["above50"]) * 100.0 / n
+        above200 = sum(1 for it in items if it["above200"]) * 100.0 / n
+        near_high20 = sum(1 for it in items if it["nearHigh20"]) * 100.0 / n
+        alpha20 = r20 - idx_ret20
+        alpha60 = r60 - idx_ret60
+        score = (0.45 * alpha20) + (0.25 * alpha60) + (0.15 * (above50 - 50.0) / 2.0) + (0.15 * (near_high20 - 35.0) / 2.0)
+        rows_out.append({
+            "sector": sector,
+            "members": n,
+            "ret20": round(r20, 2),
+            "ret60": round(r60, 2),
+            "alpha20": round(alpha20, 2),
+            "alpha60": round(alpha60, 2),
+            "above20": round(above20, 1),
+            "above50": round(above50, 1),
+            "above200": round(above200, 1),
+            "nearHigh20": round(near_high20, 1),
+            "score": round(score, 2),
+        })
+
+    rows_out.sort(key=lambda r: (r["score"], r["alpha20"], r["above50"]), reverse=True)
+    pulse = {
+        "regime": regime,
+        "indexLast": round(idx_last, 2),
+        "indexRet20": round(idx_ret20, 2),
+        "indexRet60": round(idx_ret60, 2),
+        "indexAbove50": bool(idx_sma50 and idx_last > idx_sma50),
+        "indexAbove200": bool(idx_sma200 and idx_last > idx_sma200),
+    }
+    return rows_out, pulse
+
+
+def build_dynamic_rotation_history(sector_quarterly: dict[str, dict[str, float]]) -> list[tuple[str, str, str, str]]:
+    quarters = sorted({q for values in sector_quarterly.values() for q in values.keys() if q != "unknown"})
+    rows: list[tuple[str, str, str, str]] = []
+    for q in quarters:
+        vals = [(sec, series.get(q)) for sec, series in sector_quarterly.items() if series.get(q) is not None]
+        if len(vals) < 2:
+            continue
+        vals.sort(key=lambda x: x[1], reverse=True)
+        leader, top = vals[0]
+        laggard, bottom = vals[-1]
+        spread = top - bottom
+        note = f"Spread {spread:+.1f}% | {leader} leadership over {laggard}"
+        rows.append((q, leader, laggard, note))
+    return rows
+
+
+def compute_event_reactions(index_rows: list[dict]) -> list[dict]:
+    dates = [str(r.get("date", ""))[:10] for r in index_rows]
+    closes = [_f(r.get("close")) for r in index_rows]
+    out: list[dict] = []
+    for ev in MACRO_EVENTS[-14:]:
+        event_date = ev.get("date", "")
+        idx = next((i for i, d in enumerate(dates) if d >= event_date), None)
+        if idx is None or idx < 5 or idx + 5 >= len(closes):
+            continue
+        if closes[idx - 5] <= 0 or closes[idx] <= 0:
+            continue
+        pre5 = (closes[idx] / closes[idx - 5] - 1.0) * 100.0
+        post5 = (closes[idx + 5] / closes[idx] - 1.0) * 100.0
+        observed = "POSITIVE" if post5 >= 1.0 else "NEGATIVE" if post5 <= -1.0 else "NEUTRAL"
+        desc = f"{ev.get('desc', '')} | NIFTY: pre-5D {pre5:+.2f}%, post-5D {post5:+.2f}%"
+        out.append({
+            "date": event_date,
+            "type": ev.get("type", "GLOBAL"),
+            "label": ev.get("label", "Macro Event"),
+            "impact": observed,
+            "desc": desc,
+        })
+    return out
+
 def heatmap_color(val, vmin=-15, vmax=15):
     if val is None: return "#161b22"
     if val > 0:
@@ -212,7 +491,7 @@ def text_color_for_val(val):
     if abs(val) >= 3: return "#c9d1d9"
     return "#8b949e"
 
-def build_html(sector_monthly, sector_quarterly, sector_rs) -> str:
+def build_html(sector_monthly, sector_quarterly, sector_rs, swing_rows, market_pulse, rotation_history, macro_events_live, freshness) -> str:
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     sectors = sorted(sector_monthly.keys())
 
@@ -280,21 +559,36 @@ def build_html(sector_monthly, sector_quarterly, sector_rs) -> str:
           <td><span class="{mom_cls}">{momentum}</span></td>
         </tr>""")
 
-    # ── Sector rotation insights
+    # ── Sector rotation insights (data-driven)
     rotation_rows = []
-    for q, info in sorted(SECTOR_ROTATION_INSIGHT.items()):
+    for q, leader, laggard, note in rotation_history:
         rotation_rows.append(f"""<tr>
           <td style="color:#8b949e;font-weight:600">{q}</td>
-          <td style="color:#3fb950;font-weight:600">{info['leader']}</td>
-          <td style="color:#f85149;font-weight:600">{info['laggard']}</td>
-          <td style="color:#8b949e;font-size:.82em">{info['note']}</td>
+          <td style="color:#3fb950;font-weight:600">{leader}</td>
+          <td style="color:#f85149;font-weight:600">{laggard}</td>
+          <td style="color:#8b949e;font-size:.82em">{note}</td>
         </tr>""")
+
+    swing_rows_html = []
+    for rank, row in enumerate(swing_rows[:12], 1):
+        swing_rows_html.append(
+            f"<tr><td>#{rank}</td><td>{row['sector']}</td><td>{row['members']}</td>"
+            f"<td class='{'rpl' if row['ret20'] >= 0 else 'rmi'}'>{row['ret20']:+.2f}%</td>"
+            f"<td class='{'rpl' if row['alpha20'] >= 0 else 'rmi'}'>{row['alpha20']:+.2f}%</td>"
+            f"<td>{row['above50']:.1f}%</td><td>{row['nearHigh20']:.1f}%</td><td>{row['score']:+.2f}</td></tr>"
+        )
+
+    pulse_color = "#3fb950" if market_pulse.get("regime") == "BULLISH" else "#e3b341" if market_pulse.get("regime") == "NEUTRAL" else "#f85149"
+    freshness_html = (
+        f"Live refresh: {freshness.get('refreshed', 0)}/{freshness.get('total', 0)} symbols | "
+        f"failures: {freshness.get('failed', 0)}"
+    )
 
     # ── Macro events
     macro_cards = []
     type_css = {"RBI":"ev-rbi","FED":"ev-fed","BUDGET":"ev-budget","ELECTION":"ev-election",
                 "GLOBAL":"ev-global","MARKET":"ev-market","EARNINGS":"ev-earnings"}
-    for ev in MACRO_EVENTS:
+    for ev in macro_events_live:
         imp = ev["impact"]
         imp_cls = "imp-pos" if imp == "POSITIVE" else "imp-neg" if imp == "NEGATIVE" else "imp-neu"
         type_cls = type_css.get(ev["type"], "ev-global")
@@ -309,7 +603,7 @@ def build_html(sector_monthly, sector_quarterly, sector_rs) -> str:
 </div>""")
 
     # ── Fundamentals & Macro Framework
-    fund_framework = """
+    fund_framework = f"""
 <div class="framework-grid">
   <div class="fw-card fw-positive">
     <div class="fw-title">&#128200; Bull Trigger Checklist</div>
@@ -351,16 +645,15 @@ def build_html(sector_monthly, sector_quarterly, sector_rs) -> str:
     </ul>
   </div>
   <div class="fw-card fw-info">
-    <div class="fw-title">&#127757; Current Macro Assessment (Mar 2026)</div>
+    <div class="fw-title">&#127757; Live Market Pulse</div>
     <ul class="fw-list">
-      <li>&#128994; RBI Rate: 5.25% (Cutting cycle active)</li>
-      <li>&#128308; Market Regime: UNFAVORABLE (Nifty weak)</li>
-      <li>&#128994; US Fed: 3.75% (Easing)</li>
-      <li>&#128993; Crude Oil: ~$72/bbl (Manageable)</li>
-      <li>&#128308; FII: Net sellers YTD 2026</li>
-      <li>&#128994; India GDP: 6.8% (Resilient)</li>
-      <li>&#128993; USD/INR: ~86 (Mild pressure)</li>
-      <li>&#128308; Global: Tariff uncertainty persists</li>
+      <li><b>NIFTY Regime:</b> <span style="color:{pulse_color}">{market_pulse.get('regime', 'N/A')}</span></li>
+      <li><b>NIFTY Last:</b> {market_pulse.get('indexLast', 0):,.2f}</li>
+      <li><b>NIFTY 20D Return:</b> {market_pulse.get('indexRet20', 0):+.2f}%</li>
+      <li><b>NIFTY 60D Return:</b> {market_pulse.get('indexRet60', 0):+.2f}%</li>
+      <li><b>Above 50DMA:</b> {'YES' if market_pulse.get('indexAbove50') else 'NO'}</li>
+      <li><b>Above 200DMA:</b> {'YES' if market_pulse.get('indexAbove200') else 'NO'}</li>
+      <li><b>Data Freshness:</b> {freshness_html}</li>
     </ul>
   </div>
 </div>"""
@@ -474,7 +767,7 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9}
 <div class="topbar">
   <div>
     <div class="topbar-title">&#127968; Sector Rotation &amp; Macro Impact Analysis</div>
-    <div class="topbar-sub">NSE India | Apr 2023 &ndash; Mar 2026 | {now}</div>
+    <div class="topbar-sub">NSE India | Live cache-backed analytics | {now}</div>
   </div>
 </div>
 
@@ -526,6 +819,19 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9}
 
 <!-- TAB 3: ROTATION -->
 <div id="tab-rotation" class="tab-content">
+  <div class="info-box">
+    <strong>Live Swing Rotation Scoreboard</strong> &mdash;
+    Ranked by alpha vs NIFTY (20D/60D), breadth (% above 50DMA), and participation (% near 20D highs).
+  </div>
+  <div class="data-table-wrap" style="margin-bottom:20px">
+    <table class="data-table">
+      <thead><tr>
+        <th>Rank</th><th>Sector</th><th>Members</th><th>20D Ret</th><th>20D Alpha vs NIFTY</th><th>%&gt;50DMA</th><th>% Near 20D High</th><th>Swing Score</th>
+      </tr></thead>
+      <tbody>{''.join(swing_rows_html) or "<tr><td colspan='8' style='color:#8b949e'>Insufficient data for swing scoring.</td></tr>"}</tbody>
+    </table>
+  </div>
+
   <div class="section-title">&#127942; Sector Relative Strength Ranking (Current)</div>
   <div class="info-box">
     Sectors ranked by 3-Month relative strength. RISING = accelerating momentum.
@@ -564,8 +870,8 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9}
 <!-- TAB 4: MACRO -->
 <div id="tab-macro" class="tab-content">
   <div class="info-box">
-    <strong>Macro Events Impact Analysis</strong> &mdash;
-    Each card shows a key macro event and its impact on breakout trading.
+    <strong>Macro Events Impact Analysis (Realized with NIFTY)</strong> &mdash;
+    Each card includes realized NIFTY reaction around the event date (pre-5D and post-5D).
     <span style="color:#3fb950">Green border</span> = POSITIVE for markets.
     <span style="color:#f85149">Red border</span> = NEGATIVE.
     <span style="color:#e3b341">Yellow border</span> = NEUTRAL.
@@ -733,14 +1039,34 @@ document.addEventListener('DOMContentLoaded', () => buildQChart());
 </html>"""
 
 def main():
+    import logging
+    logging.getLogger("yfinance").setLevel(logging.CRITICAL)
+    logging.getLogger("peewee").setLevel(logging.CRITICAL)
+    OUTPUT.mkdir(parents=True, exist_ok=True)
     print("Generating Sector + Macro Analysis page...")
-    print("[1/3] Loading sector prices...")
-    sector_data = load_sector_prices()
-    print("[2/3] Computing returns...")
+    print("[0/4] Refreshing live India cache...")
+    freshness = refresh_live_india_cache()
+    print("[1/4] Loading sector prices...")
+    symbol_rows, index_rows = load_symbol_price_rows()
+    sector_data = load_sector_prices(symbol_rows)
+    print("[2/4] Computing returns...")
     sec_monthly, sec_quarterly, sec_rs = compute_returns(sector_data)
     print(f"  Sectors: {len(sec_monthly)}, Quarters: {len(next(iter(sec_quarterly.values()),{}))}")
-    print("[3/3] Building HTML...")
-    html = build_html(sec_monthly, sec_quarterly, sec_rs)
+    print("[3/4] Computing live swing insights...")
+    swing_rows, market_pulse = compute_swing_insights(symbol_rows, index_rows)
+    rotation_history = build_dynamic_rotation_history(sec_quarterly)
+    macro_events_live = compute_event_reactions(index_rows)
+    print("[4/4] Building HTML...")
+    html = build_html(
+        sec_monthly,
+        sec_quarterly,
+        sec_rs,
+        swing_rows,
+        market_pulse,
+        rotation_history,
+        macro_events_live,
+        freshness,
+    )
     out = OUTPUT / "sector_macro_analysis.html"
     out.write_text(html, encoding="utf-8")
     print(f"  Output: {out}")

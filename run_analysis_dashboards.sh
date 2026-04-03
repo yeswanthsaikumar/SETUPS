@@ -35,15 +35,24 @@ echo "  $(date '+%Y-%m-%d %H:%M:%S')"
 echo "========================================================"
 echo ""
 
-# ── 2. Live Trade Plans ───────────────────────────────────────────────────────
-echo "[2/3] Generating Live Trade Plans Page..."
-python3 apps/python/cli/generate_trade_plans_page.py
-echo "      → output/trade_plans_live.html"
-echo ""
+# ── 2-3. Dashboards (parallel) ───────────────────────────────────────────────
+echo "[2/3] Generating Live Trade Plans + Sector & Macro pages (parallel)..."
+python3 apps/python/cli/generate_trade_plans_page.py &
+PID_TRADE_PLANS=$!
+python3 apps/python/cli/generate_sector_macro_page.py &
+PID_SECTOR_MACRO=$!
 
-# ── 3. Sector & Macro Analysis ───────────────────────────────────────────────
-echo "[3/3] Generating Sector & Macro Analysis Page..."
-python3 apps/python/cli/generate_sector_macro_page.py
+STATUS_TRADE_PLANS=0
+STATUS_SECTOR_MACRO=0
+wait "$PID_TRADE_PLANS" || STATUS_TRADE_PLANS=$?
+wait "$PID_SECTOR_MACRO" || STATUS_SECTOR_MACRO=$?
+
+if [ "$STATUS_TRADE_PLANS" -ne 0 ] || [ "$STATUS_SECTOR_MACRO" -ne 0 ]; then
+  echo "Dashboard generation failed."
+  exit 1
+fi
+
+echo "      → output/trade_plans_live.html"
 echo "      → output/sector_macro_analysis.html"
 echo ""
 

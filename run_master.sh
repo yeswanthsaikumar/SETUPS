@@ -13,6 +13,7 @@
 #   ./run_master.sh --account-size 2000000          # ₹20L portfolio
 #   ./run_master.sh --risk-pct 0.02                 # 2% risk/trade
 #   ./run_master.sh --skip-fundamentals             # faster, no yfinance calls
+#   ./run_master.sh --skip-performance-tracker       # faster, skip backtest refresh during scan
 #   ./run_master.sh --workers 8 --batch 50          # more parallel workers
 #   ./run_master.sh --markets india                 # India only
 #   ./run_master.sh --markets us                    # US only
@@ -30,13 +31,16 @@ cd "$(dirname "$0")"
 MARKETS="india,us"
 TIMEFRAMES="daily,weekly"
 SETUPS="full"
-WORKERS=6
-BATCH=40
+WORKERS=8
+BATCH=60
 DAILY_LB=252
 WEEKLY_LB=104
 ACCOUNT_SIZE=1000000
 RISK_PCT=0.01
 SKIP_FUNDAMENTALS=false
+SKIP_PERF_TRACKER=false
+DAILY_BACKFILL_SESSIONS=10
+WEEKLY_BACKFILL_SESSIONS=4
 SKIP_US_REFRESH="--skip-us-refresh"
 OUTPUT_DIR="output"
 CACHE_DIR="cache"
@@ -53,6 +57,9 @@ while [[ $# -gt 0 ]]; do
         --account-size)    ACCOUNT_SIZE="$2";  shift 2 ;;
         --risk-pct)        RISK_PCT="$2";       shift 2 ;;
         --skip-fundamentals) SKIP_FUNDAMENTALS=true; shift ;;
+        --skip-performance-tracker) SKIP_PERF_TRACKER=true; shift ;;
+        --daily-backfill-sessions) DAILY_BACKFILL_SESSIONS="$2"; shift 2 ;;
+        --weekly-backfill-sessions) WEEKLY_BACKFILL_SESSIONS="$2"; shift 2 ;;
         --force-us-refresh)  SKIP_US_REFRESH=""; shift ;;
         --output-dir)      OUTPUT_DIR="$2";    shift 2 ;;
         --cache-dir)       CACHE_DIR="$2";     shift 2 ;;
@@ -77,6 +84,7 @@ echo -e "  Setups     : ${YELLOW}${SETUPS}${RESET}"
 echo -e "  Workers    : ${YELLOW}${WORKERS}${RESET}  Batch: ${YELLOW}${BATCH}${RESET}"
 echo -e "  Portfolio  : ${YELLOW}₹${ACCOUNT_SIZE}${RESET}  Risk/trade: ${YELLOW}$(echo "$RISK_PCT * 100" | bc)%${RESET}"
 echo -e "  Fundamentals: ${YELLOW}$([ "$SKIP_FUNDAMENTALS" = true ] && echo 'SKIP' || echo 'ENABLED (yfinance)')${RESET}"
+echo -e "  Perf tracker: ${YELLOW}$([ "$SKIP_PERF_TRACKER" = true ] && echo 'SKIP' || echo "ON (daily ${DAILY_BACKFILL_SESSIONS}, weekly ${WEEKLY_BACKFILL_SESSIONS})")${RESET}"
 echo -e "  Output dir : ${YELLOW}${OUTPUT_DIR}${RESET}"
 echo ""
 
@@ -86,17 +94,29 @@ echo ""
 echo -e "${BOLD}▶ Step 1/2 — Running full breakout scan…${RESET}"
 START_SCAN=$SECONDS
 
-python3 apps/python/cli/run_vcp_system.py \
-    --markets        "$MARKETS" \
-    --timeframes     "$TIMEFRAMES" \
-    --setups         "$SETUPS" \
-    --workers        "$WORKERS" \
-    --batch          "$BATCH" \
-    --daily-lookback  "$DAILY_LB" \
-    --weekly-lookback "$WEEKLY_LB" \
-    --output-dir     "$OUTPUT_DIR" \
-    --cache-dir      "$CACHE_DIR" \
-    $SKIP_US_REFRESH
+SCAN_CMD=(
+  python3 apps/python/cli/run_vcp_system.py
+  --markets "$MARKETS"
+  --timeframes "$TIMEFRAMES"
+  --setups "$SETUPS"
+  --workers "$WORKERS"
+  --batch "$BATCH"
+  --daily-lookback "$DAILY_LB"
+  --weekly-lookback "$WEEKLY_LB"
+  --output-dir "$OUTPUT_DIR"
+  --cache-dir "$CACHE_DIR"
+  --daily-backfill-sessions "$DAILY_BACKFILL_SESSIONS"
+  --weekly-backfill-sessions "$WEEKLY_BACKFILL_SESSIONS"
+)
+
+if [ -n "$SKIP_US_REFRESH" ]; then
+  SCAN_CMD+=("$SKIP_US_REFRESH")
+fi
+if [ "$SKIP_PERF_TRACKER" = true ]; then
+  SCAN_CMD+=("--skip-performance-tracker")
+fi
+
+"${SCAN_CMD[@]}"
 
 SCAN_TIME=$((SECONDS - START_SCAN))
 echo -e "${GREEN}   ✅ Scan complete in ${SCAN_TIME}s${RESET}"

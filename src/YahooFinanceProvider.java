@@ -43,12 +43,21 @@ public class YahooFinanceProvider implements MarketDataProvider {
             // Best-effort cache directory creation; fetch can still proceed.
         }
 
+        // 1. Exact-size fresh cache hit (fastest path)
         Path cacheFile = cacheDir.resolve(symbol.toUpperCase() + "_" + lookbackDays + ".csv");
         List<Candle> cachedFresh = readCache(cacheFile, true);
         if (!cachedFresh.isEmpty()) {
             return cachedFresh;
         }
 
+        // 2. Any existing cache file with enough bars (avoids unnecessary network round-trips)
+        //    Prefer the smallest adequate file to keep I/O minimal.
+        List<Candle> existing = readBestExistingCache(symbol, lookbackDays);
+        if (!existing.isEmpty()) {
+            return existing;
+        }
+
+        // 3. Network fetch (only when no usable cache exists at all)
         Exception lastError = null;
         for (int attempt = 1; attempt <= retries; attempt++) {
             try {
@@ -63,12 +72,57 @@ public class YahooFinanceProvider implements MarketDataProvider {
             }
         }
 
+        // 4. Stale exact-size cache as last resort
         List<Candle> stale = readCache(cacheFile, false);
         if (!stale.isEmpty()) {
             return stale;
         }
 
         throw new RuntimeException("Failed to fetch Yahoo data for symbol: " + symbol, lastError);
+    }
+
+    /**
+     * Scan the cache directory for any file matching {@code SYMBOL_N.csv}.
+     * Return the last {@code lookbackDays} candles from the smallest file that has enough bars,
+     * falling back to the largest available file if none meet the minimum.
+     */
+    private List<Candle> readBestExistingCache(String symbol, int lookbackDays) {
+        String prefix = symbol.toUpperCase() + "_";
+        List<Path> candidates = new ArrayList<>();
+        try (var stream = Files.list(cacheDir)) {
+            stream.filter(p -> {
+                String name = p.getFileName().toString();
+                return name.startsWith(prefix) && name.endsWith(".csv");
+            }).forEach(candidates::add);
+        } catch (IOException ignored) {
+            return List.of();
+        }
+        if (candidates.isEmpty()) {
+            return List.of();
+        }
+
+        // Sort by the numeric suffix ascending (smallest file first = least I/O)
+        candidates.sort(Comparator.comparingInt(p -> {
+            String name = p.getFileName().toString();
+            String num = name.substring(prefix.length(), name.length() - 4);
+            try { return Integer.parseInt(num); } catch (NumberFormatException e) { return Integer.MAX_VALUE; }
+        }));
+
+        // Try smallest-adequate first, then fall back to largest
+        Path bestLarge = candidates.get(candidates.size() - 1);
+        for (Path candidate : candidates) {
+            List<Candle> candles = readCache(candidate, false);
+            if (candles.size() >= lookbackDays) {
+                // Trim to the most recent lookbackDays bars so downstream has a predictable window
+                if (candles.size() > lookbackDays) {
+                    candles = new ArrayList<>(candles.subList(candles.size() - lookbackDays, candles.size()));
+                }
+                return candles;
+            }
+        }
+
+        // No file has enough bars — return all bars from the largest file
+        return readCache(bestLarge, false);
     }
 
     private List<Candle> fetchFromYahoo(String symbol, int lookbackDays) throws IOException, InterruptedException {
