@@ -40,6 +40,16 @@ except Exception:
     def fundamentals_compact_summary(_f: dict, is_india: bool = True) -> str:
         return "\u2014"
 
+try:
+    from mutual_funds_provider import MutualFundsProvider, swing_context as mf_swing_context
+    _MF_AVAILABLE = True
+except Exception:
+    MutualFundsProvider = None
+    _MF_AVAILABLE = False
+
+    def mf_swing_context(_d: dict) -> dict:
+        return {}
+
 ACCOUNT_SIZE = 1_000_000
 RISK_PCT     = 0.01
 
@@ -471,6 +481,75 @@ def sparkline_svg(closes: list[float], width=120, height=40) -> str:
             f'<polyline points="{" ".join(pts)}" fill="none" stroke="{color}" stroke-width="1.5"/>'
             f'</svg>')
 
+def _build_mf_html(mf_ctx: dict, sym: str) -> str:
+    """Build the MF/Institutional holdings panel HTML for one signal card."""
+    if not mf_ctx or not mf_ctx.get("signal"):
+        return ""
+
+    signal = mf_ctx.get("signal", "UNKNOWN")
+    sig_labels = {
+        "STRONG_BUYING":    ("mf-sig-strong",   "🔥 Strong Buying"),
+        "DII_ACCUMULATING": ("mf-sig-dii",      "↑ DIIs Buying"),
+        "FII_ACCUMULATING": ("mf-sig-fii",      "↑ FIIs Buying"),
+        "DISTRIBUTING":     ("mf-sig-dist",     "⚠ Distributing"),
+        "FII_SELLING":      ("mf-sig-dist",     "⚠ FIIs Selling"),
+        "NEUTRAL":          ("mf-sig-neutral",  "→ Stable"),
+        "INST_HIGH":        ("mf-sig-fii",      "ℹ Inst. Held"),
+        "UNKNOWN":          ("mf-sig-neutral",  "⟳ No Data"),
+    }
+    sig_cls, sig_label = sig_labels.get(signal, ("mf-sig-neutral", signal))
+
+    dii = mf_ctx.get("dii") or {}
+    fii = mf_ctx.get("fii") or {}
+    pro = mf_ctx.get("promoters") or {}
+    period = escape(mf_ctx.get("latest_period") or "")
+    conviction = mf_ctx.get("conviction", "NEUTRAL")
+    conv_cls = {"HIGH": "mf-conv-high", "MEDIUM": "mf-conv-medium", "LOW": "mf-conv-low"}.get(conviction, "mf-conv-neu")
+
+    def fmt(v, suffix="%"):
+        return f"{v:.1f}{suffix}" if v is not None else "—"
+
+    def trend_arrow(t):
+        return {"up": "↑", "down": "↓"}.get(t or "", "→")
+
+    def trend_cls(t):
+        return {"up": "mf-up", "down": "mf-dn"}.get(t or "", "mf-st")
+
+    dii_pct  = fmt(dii.get("pct"))
+    fii_pct  = fmt(fii.get("pct"))
+    pro_pct  = fmt(pro.get("pct"))
+    dii_chg  = mf_ctx.get("dii_change_3q")
+    chg_text = (f" ({'+' if dii_chg >= 0 else ''}{dii_chg:.1f}% 3Q)" if dii_chg is not None else "")
+    swing_text = escape(mf_ctx.get("text") or mf_ctx.get("summary") or "")
+
+    top_mf = (mf_ctx.get("top_mf") or [])[:5]
+    top_mf_html = ""
+    if top_mf:
+        items = "".join(
+            f'<div class="mf-scheme"><span class="mf-scheme-name">{escape(m["name"])}</span>'
+            f'<span class="mf-scheme-pct">{fmt(m.get("pct"))}</span></div>'
+            for m in top_mf
+        )
+        top_mf_html = f'<div class="mf-top"><div class="mf-top-lbl">Top MF Schemes</div>{items}</div>'
+
+    return f"""<div class="mf-panel">
+  <div class="mf-hdr" onclick="this.nextElementSibling.classList.toggle('open')">
+    <span class="mf-hdr-lbl">🏦 Institutional{' · ' + period if period else ''}</span>
+    <span class="mf-sig {sig_cls}">{sig_label}</span>
+  </div>
+  <div class="mf-body">
+    <div class="mf-swing">{swing_text}</div>
+    <div class="mf-own-grid">
+      <div><span class="mf-own-lbl">DIIs{chg_text}</span><span class="{trend_cls(dii.get('trend'))} mf-own-val">{trend_arrow(dii.get('trend'))} {dii_pct}</span></div>
+      <div><span class="mf-own-lbl">FIIs</span><span class="{trend_cls(fii.get('trend'))} mf-own-val">{trend_arrow(fii.get('trend'))} {fii_pct}</span></div>
+      <div><span class="mf-own-lbl">Promoters</span><span class="{trend_cls(pro.get('trend'))} mf-own-val">{trend_arrow(pro.get('trend'))} {pro_pct}</span></div>
+      <div><span class="mf-own-lbl">Conviction</span><span class="{conv_cls} mf-own-val">{conviction}</span></div>
+    </div>
+    {top_mf_html}
+  </div>
+</div>"""
+
+
 def build_html(signals: list[dict]) -> str:
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     total = len(signals)
@@ -591,6 +670,10 @@ def build_html(signals: list[dict]) -> str:
         market_trigger_html = escape(market_trigger)
         fund_summary_html = escape(fund_summary)
 
+        # MF / Institutional holdings for this signal (pre-fetched batch)
+        mf_ctx = sig.get("_mf_context", {})
+        mf_html = _build_mf_html(mf_ctx, sym)
+
         rows_html.append(f"""
 <div class="sig-card" data-symbol="{sym}" data-setup="{setup}" data-rating="{rating}" data-sector="{sector}">
   <div class="sig-header">
@@ -680,6 +763,7 @@ def build_html(signals: list[dict]) -> str:
       <div><b>Debt:</b> {debt_trigger_html}</div>
     </div>
   </div>
+  {mf_html}
 </div>""")
 
     sector_pills = "".join(
@@ -822,6 +906,32 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
   .insight-grid{{grid-template-columns:1fr}}
   .sig-card:hover .sig-insight,.sig-card:focus-within .sig-insight{{max-height:240px}}
 }}
+
+/* MF / INSTITUTIONAL HOLDINGS PANEL */
+.mf-panel{{border-top:1px solid #21262d;margin-top:0}}
+.mf-hdr{{display:flex;align-items:center;justify-content:space-between;padding:7px 16px 5px;cursor:pointer;user-select:none;background:#0a0f16}}
+.mf-hdr:hover{{background:#0d1420}}
+.mf-hdr-lbl{{font-size:.71em;color:#7dd3fc;font-weight:700;letter-spacing:.3px}}
+.mf-sig{{font-size:.67em;font-weight:700;padding:1px 7px;border-radius:99px}}
+.mf-sig-strong{{background:#0a2a14;color:#4ade80;border:1px solid #16a34a44}}
+.mf-sig-dii{{background:#0a2220;color:#2dd4bf;border:1px solid #0d948844}}
+.mf-sig-fii{{background:#0f1f3a;color:#60a5fa;border:1px solid #1d4ed844}}
+.mf-sig-dist{{background:#2a1215;color:#f87171;border:1px solid #dc262644}}
+.mf-sig-neutral{{background:#161b22;color:#8b949e;border:1px solid #30363d}}
+.mf-body{{display:none;padding:8px 16px 10px;font-size:.7em;background:#080d13}}
+.mf-body.open{{display:block}}
+.mf-swing{{color:#94a3b8;line-height:1.4;margin-bottom:7px}}
+.mf-own-grid{{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-bottom:7px}}
+.mf-own-lbl{{color:#8b949e;font-size:.88em;display:block;margin-bottom:1px}}
+.mf-own-val{{font-weight:700;font-size:.95em}}
+.mf-up{{color:#4ade80}}.mf-dn{{color:#f87171}}.mf-st{{color:#94a3b8}}
+.mf-conv-high{{color:#ffd700;font-weight:700}}.mf-conv-medium{{color:#60a5fa}}.mf-conv-low{{color:#f87171}}.mf-conv-neu{{color:#94a3b8}}
+.mf-top{{margin-top:6px;border-top:1px solid #0f172a;padding-top:5px}}
+.mf-top-lbl{{font-size:.68em;color:#6e7681;text-transform:uppercase;letter-spacing:.35px;margin-bottom:3px}}
+.mf-scheme{{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid #0f172a}}
+.mf-scheme:last-child{{border-bottom:none}}
+.mf-scheme-name{{color:#c9d1d9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}}
+.mf-scheme-pct{{color:#7dd3fc;font-weight:700;flex-shrink:0;margin-left:6px}}
 </style>
 </head>
 <body>
@@ -998,11 +1108,36 @@ document.addEventListener('DOMContentLoaded', () => {{
 </body>
 </html>"""
 
+def _fetch_mf_holdings_for_signals(signals: list[dict]) -> None:
+    """Batch-fetch MF/institutional holdings and inject _mf_context into each signal."""
+    if not _MF_AVAILABLE or not signals:
+        return
+    india_signals = [s for s in signals if
+                     str(s.get("symbol","")).endswith(".NS") or str(s.get("symbol","")).endswith(".BO")
+                     or not str(s.get("symbol","")).isascii()]
+    symbols = list({s["symbol"] for s in india_signals if s.get("symbol")})
+    if not symbols:
+        return
+
+    print(f"  Fetching MF/institutional holdings for {len(symbols)} symbols…", flush=True)
+    try:
+        provider = MutualFundsProvider(cache_dir=str(CACHE_DIR), cache_ttl_hours=6)
+        raw = provider.fetch_batch(symbols, market="india", workers=8)
+        sym_map = {s: raw.get(s, {}) for s in symbols}
+        for sig in signals:
+            sym = sig.get("symbol", "")
+            if sym in sym_map:
+                sig["_mf_context"] = mf_swing_context(sym_map[sym])
+    except Exception as e:
+        print(f"  Warning: MF holdings fetch failed: {e}", flush=True)
+
+
 def main():
     print("Generating Trade Plans page...")
     signals = load_signals()
-    hstats = hydrate_missing_fundamentals(signals)
     print(f"  Loaded {len(signals)} unique signals")
+
+    hstats = hydrate_missing_fundamentals(signals)
     if hstats.get("needs_fundamentals", 0) > 0:
         print(
             "  Fundamentals hydration: "
@@ -1020,12 +1155,17 @@ def main():
                 f"eps={hstats.get('still_missing_earnings', 0)} "
                 f"debt={hstats.get('still_missing_debt', 0)}"
             )
+
+    # Fetch MF/institutional holdings (Screener.in + yfinance, 6h cache)
+    _fetch_mf_holdings_for_signals(signals)
+
     html = build_html(signals)
     out = OUTPUT / "trade_plans_live.html"
     out.write_text(html, encoding="utf-8")
     size = out.stat().st_size / 1024
     print(f"  Output: {out}")
     print(f"  Size: {size:.1f} KB")
+
 
 if __name__ == "__main__":
     main()

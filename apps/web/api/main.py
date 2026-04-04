@@ -28,6 +28,9 @@ sys.path.insert(0, str(PY_LIB_DIR))
 from trade_plan_assistant import brief_as_json, build_scan_brief
 from stock_analyzer import analyze_stock
 import performance_tracker as _pt
+from mutual_funds_provider import MutualFundsProvider, swing_context as _mf_swing_context
+
+_mf_provider = MutualFundsProvider(cache_dir=str(ROOT / "cache"), cache_ttl_hours=6)
 
 RUN_VCP_SYSTEM = CLI_DIR / "run_vcp_system.py"
 RUN_BACKTEST = CLI_DIR / "run_backtest.py"
@@ -431,5 +434,114 @@ def perf_report(
                    "Run a scan first to generate it.",
         )
     return FileResponse(report_path, media_type="text/html")
+
+
+# ── Mutual Funds / Institutional Holdings ────────────────────────────────────
+
+@app.get("/api/stock/mf-holdings")
+def stock_mf_holdings(
+    symbol: str,
+    market: Literal["india", "us"] = "india",
+    force_refresh: bool = False,
+) -> dict:
+    """
+    Fetch mutual fund & institutional holding data for a stock.
+    Returns shareholding pattern (Promoters/FIIs/DIIs/Public),
+    trend analysis, smart-money signal, and top MF scheme names.
+    """
+    if not symbol or not symbol.strip():
+        raise HTTPException(status_code=400, detail="symbol is required")
+
+    sym = symbol.strip()
+    # Add .NS suffix for Indian stocks if not present
+    if market == "india" and not sym.endswith(".NS") and not sym.endswith(".BO"):
+        sym_yf = sym + ".NS"
+    else:
+        sym_yf = sym
+
+    # Force refresh by clearing cache
+    if force_refresh:
+        cache_file = (ROOT / "cache" / f"mf_holdings_{sym_yf.replace('.', '_')}.json")
+        if cache_file.exists():
+            cache_file.unlink(missing_ok=True)
+
+    data = _mf_provider.fetch(sym_yf, market=market)
+    context = _mf_swing_context(data)
+
+    return {
+        "symbol": sym,
+        "symbolYf": sym_yf,
+        "market": market,
+        "holdings": data,
+        "swingContext": context,
+        "cachedAt": data.get("_cached_at"),
+        "source": data.get("_source", "unknown"),
+    }
+
+
+@app.get("/api/performance/trades/with-mf")
+def perf_trades_with_mf(
+    market: Literal["india", "us"] = "india",
+    timeframe: Literal["daily", "weekly"] = "daily",
+    include_expired: bool = False,
+    include_archived: bool = False,
+) -> dict:
+    """
+    Return performance trades enriched with MF/institutional holding data.
+    Fetches MF data in parallel for all active trades.
+    """
+    data = _load_perf_tracker()
+    all_trades = data.get("trades", [])
+    if include_archived:
+        all_trades = all_trades + data.get("archived", [])
+
+    filtered = [
+        t for t in all_trades
+        if t.get("market") == market and t.get("timeframe") == timeframe
+        and (include_expired or t.get("status") != "EXPIRED")
+    ]
+    filtered.sort(key=lambda t: (
+        {"OPEN": 0, "T3_HIT": 1, "T2_HIT": 2, "T1_HIT": 3, "SL_HIT": 4, "EXPIRED": 5}.get(
+            t.get("status", "OPEN"), 9),
+        -float(t.get("gainPct", 0) or 0),
+    ))
+
+    # Batch-fetch MF data for all symbols
+    symbols = list({t["symbol"] for t in filtered})
+    if market == "india":
+        symbols_yf = [
+            (s + ".NS" if not s.endswith(".NS") and not s.endswith(".BO") else s)
+            for s in symbols
+        ]
+    else:
+        symbols_yf = symbols
+
+    mf_data: dict = {}
+    try:
+        raw = _mf_provider.fetch_batch(symbols_yf, market=market, workers=8)
+        # Map back to original symbols
+        sym_map = {s: sy for s, sy in zip(symbols, symbols_yf)}
+        for orig_sym in symbols:
+            yf_sym = sym_map.get(orig_sym, orig_sym)
+            mf_data[orig_sym] = _mf_swing_context(raw.get(yf_sym, {}))
+    except Exception:
+        pass
+
+    # Enrich trades
+    enriched = []
+    for trade in filtered:
+        t = dict(trade)
+        t["mfHoldings"] = mf_data.get(trade["symbol"], {})
+        enriched.append(t)
+
+    stats = _pt.compute_summary_stats(filtered)
+    return {
+        "market": market,
+        "timeframe": timeframe,
+        "count": len(enriched),
+        "stats": stats,
+        "trades": enriched,
+        "lastUpdated": data.get("lastUpdated"),
+    }
 
 
