@@ -145,17 +145,38 @@ echo -e "${GREEN}   ✅ Report generated in ${RPT_TIME}s${RESET}"
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Open report
+# STEP 3 — Trade Plans page with MF/Institutional holdings
+# ─────────────────────────────────────────────────────────────────────────────
+echo -e "${BOLD}▶ Step 3/3 — Generating Trade Plans page (with MF holdings)…${RESET}"
+START_TP=$SECONDS
+
+python3 apps/python/cli/generate_trade_plans_page.py || true   # non-fatal
+
+TP_TIME=$((SECONDS - START_TP))
+echo -e "${GREEN}   ✅ Trade Plans page done in ${TP_TIME}s${RESET}"
+echo ""
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Open reports
 # ─────────────────────────────────────────────────────────────────────────────
 REPORT="${OUTPUT_DIR}/master_report_LATEST.html"
+TRADE_PLANS="${OUTPUT_DIR}/trade_plans_live.html"
+
 if [ -f "$REPORT" ]; then
     ABS_REPORT="$(cd "$(dirname "$REPORT")" && pwd)/$(basename "$REPORT")"
-    echo -e "${BOLD}${GREEN}📊 Master Report → file://${ABS_REPORT}${RESET}"
-    open "$ABS_REPORT" 2>/dev/null || xdg-open "$ABS_REPORT" 2>/dev/null || echo "(Open manually)"
+    echo -e "${BOLD}${GREEN}📊 Master Report     → file://${ABS_REPORT}${RESET}"
+    open "$ABS_REPORT" 2>/dev/null || xdg-open "$ABS_REPORT" 2>/dev/null || true
+fi
+if [ -f "$TRADE_PLANS" ]; then
+    ABS_TP="$(cd "$(dirname "$TRADE_PLANS")" && pwd)/$(basename "$TRADE_PLANS")"
+    echo -e "${BOLD}${GREEN}🏦 Trade Plans + MF  → file://${ABS_TP}${RESET}"
+    sleep 0.5
+    open "$ABS_TP" 2>/dev/null || xdg-open "$ABS_TP" 2>/dev/null || true
 fi
 
-TOTAL=$((SECONDS - 0))
+TOTAL=$((SCAN_TIME + RPT_TIME + TP_TIME))
 echo ""
-echo -e "${BOLD}${GREEN}Pipeline complete. Total time: $((SCAN_TIME + RPT_TIME))s${RESET}"
+echo -e "${BOLD}${GREEN}Pipeline complete. Total time: ${TOTAL}s${RESET}"
+echo -e "${YELLOW}  Tip: Run ./run_web.sh to open the live web console (scan, analyze, MF holdings)${RESET}"
 echo ""
 

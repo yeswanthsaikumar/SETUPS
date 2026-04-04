@@ -118,6 +118,50 @@
     .pt-insight-summary { font-size:.72em; color:#94a3b8; line-height:1.4; margin-bottom:4px; }
     .pt-insight-raw { font-size:.68em; color:#7f8a98; line-height:1.4; }
 
+    /* ── MF / Institutional Holdings panel ─────────────────────────────── */
+    .mf-panel { border-top: 1px solid #1e293b; margin: 0; }
+    .mf-header { display:flex; align-items:center; justify-content:space-between; padding:6px 12px 4px; cursor:pointer; user-select:none; }
+    .mf-header-label { font-size:.72em; color:#7dd3fc; font-weight:700; letter-spacing:.3px; }
+    .mf-signal { font-size:.68em; font-weight:600; padding:1px 7px; border-radius:99px; }
+    .mf-sig-strong  { background:#0a2a14; color:#4ade80; border:1px solid #16a34a44; }
+    .mf-sig-dii     { background:#0a2220; color:#2dd4bf; border:1px solid #0d948844; }
+    .mf-sig-fii     { background:#0f1f3a; color:#60a5fa; border:1px solid #1d4ed844; }
+    .mf-sig-dist    { background:#2a1215; color:#f87171; border:1px solid #dc262644; }
+    .mf-sig-neutral { background:#161b22; color:#94a3b8; border:1px solid #33415544; }
+    .mf-body { padding:0 12px 10px; font-size:.72em; display:none; }
+    .mf-body.open { display:block; }
+    .mf-swing-text { margin-bottom:7px; color:#cbd5e1; line-height:1.4; }
+    .mf-ownership-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px 12px; margin-bottom:8px; }
+    .mf-own-item { display:flex; flex-direction:column; }
+    .mf-own-label { font-size:.62em; color:#64748b; text-transform:uppercase; letter-spacing:.35px; margin-bottom:1px; }
+    .mf-own-row   { display:flex; align-items:center; gap:5px; }
+    .mf-own-val   { font-weight:700; font-size:.88em; }
+    .mf-trend-up   { color:#4ade80; }
+    .mf-trend-down { color:#f87171; }
+    .mf-trend-stable { color:#94a3b8; }
+    .mf-bar-wrap { flex:1; height:4px; background:#1e293b; border-radius:2px; overflow:hidden; max-width:60px; }
+    .mf-bar-fill { height:100%; border-radius:2px; }
+    .mf-quarterly-toggle { font-size:.65em; color:#60a5fa; cursor:pointer; text-decoration:underline; margin-bottom:5px; display:inline-block; }
+    .mf-quarterly-table { display:none; overflow-x:auto; margin-bottom:6px; }
+    .mf-quarterly-table.open { display:block; }
+    .mf-quarterly-table table { border-collapse:collapse; font-size:.65em; width:100%; min-width:340px; }
+    .mf-quarterly-table th { color:#64748b; text-transform:uppercase; font-size:.7em; padding:3px 6px; border-bottom:1px solid #1e293b; white-space:nowrap; }
+    .mf-quarterly-table td { padding:3px 6px; border-bottom:1px solid #0f172a; white-space:nowrap; }
+    .mf-quarterly-table tr:last-child td { border-bottom:none; }
+    .mf-top-mf { margin-top:5px; }
+    .mf-top-mf-label { font-size:.65em; color:#64748b; text-transform:uppercase; letter-spacing:.35px; margin-bottom:3px; }
+    .mf-scheme { display:flex; justify-content:space-between; align-items:center; padding:2px 0; border-bottom:1px solid #0f172a; }
+    .mf-scheme:last-child { border-bottom:none; }
+    .mf-scheme-name { color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px; }
+    .mf-scheme-pct  { color:#7dd3fc; font-weight:700; flex-shrink:0; margin-left:8px; }
+    .mf-loading { color:#64748b; font-style:italic; padding:6px 0; }
+    .mf-dii-trend-bar { display:flex; gap:2px; align-items:flex-end; height:20px; margin-bottom:5px; }
+    .mf-dii-bar-seg { width:10px; border-radius:2px 2px 0 0; background:#2dd4bf; opacity:.7; min-height:2px; }
+    .mf-conviction-high   { color:#ffd700; font-weight:700; }
+    .mf-conviction-medium { color:#60a5fa; font-weight:600; }
+    .mf-conviction-low    { color:#f87171; }
+    .mf-conviction-neutral{ color:#94a3b8; }
+
     .analyzer-full { grid-column: 1 / -1; }
     .verdict-BUY_NOW    { color: #4ade80; font-weight: bold; font-size: 16px; }
     .verdict-WATCH_CLOSELY { color: #facc15; font-weight: bold; font-size: 16px; }
@@ -162,6 +206,13 @@
   <h1>SETUPS Web Console</h1>
   <p class="muted">Trigger scans/backtests and open generated reports from one place.</p>
 
+  <!-- Server connection status banner -->
+  <div id="serverBanner" style="display:none;margin-bottom:14px;padding:10px 16px;border-radius:8px;font-size:13px;display:flex;align-items:center;gap:10px;">
+    <span id="serverBannerIcon">⚡</span>
+    <span id="serverBannerText"></span>
+    <button id="serverRetryBtn" onclick="checkServerHealth()" style="width:auto;padding:4px 12px;font-size:12px;margin-top:0;background:#1d4ed8;">↺ Retry</button>
+  </div>
+
   <div class="grid">
     <section class="card">
       <h2>Run Scan</h2>
@@ -197,7 +248,8 @@
       </div>
       <label>Batch size</label>
       <input id="scanBatch" type="number" value="25" />
-      <button onclick="startScan()">Start Scan Job</button>
+      <button onclick="startScan()" id="scanBtn">▶ Start Scan Job</button>
+      <div id="scanStatus" style="display:none;margin-top:8px;padding:8px;border-radius:6px;font-size:12px;"></div>
     </section>
 
     <section class="card">
@@ -244,7 +296,8 @@
       </div>
       <label>Batch size</label>
       <input id="btBatch" type="number" value="20" />
-      <button onclick="startBacktest()">Start Backtest Job</button>
+      <button onclick="startBacktest()" id="btBtn">▶ Start Backtest Job</button>
+      <div id="btStatus" style="display:none;margin-top:8px;padding:8px;border-radius:6px;font-size:12px;"></div>
     </section>
 
     <section class="card">
@@ -409,6 +462,12 @@
           <ul class="reasoning-list" id="arRejectionBullets"></ul>
         </div>
 
+        <!-- MF / Institutional Holdings -->
+        <div class="analyzer-section" id="arMFSection" style="display:none;">
+          <h3>🏦 Institutional &amp; MF Holdings</h3>
+          <div id="arMFContent" style="font-size:13px;"></div>
+        </div>
+
         <!-- Raw data toggle -->
         <div class="analyzer-section">
           <button onclick="toggleRawData()" style="background:#1e293b;font-size:12px;margin-top:4px;">Show / Hide Raw Scan Data</button>
@@ -451,6 +510,7 @@
           <input type="checkbox" id="ptIncludeExpired" onchange="loadPerformanceData()"> Incl. Expired
         </label>
         <button class="pt-btn" onclick="loadPerformanceData()">↺ Load / Refresh</button>
+        <button class="pt-btn-outline" onclick="loadPerformanceDataWithMF()" id="ptMFBtn" title="Load trades enriched with live mutual fund & institutional holding data">🏦 Load with MF Holdings</button>
         <button class="pt-btn-outline" onclick="openPerfReport()">🔗 Full HTML Report</button>
       </div>
 
@@ -532,10 +592,69 @@
       }
     }
 
+    // ── Server health check ─────────────────────────────────────────────────
+    let _serverOk = null;
+
+    function _showStatus(elId, msg, isError) {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      el.style.display = '';
+      el.style.background = isError ? '#450a0a' : '#052e16';
+      el.style.border = `1px solid ${isError ? '#dc2626' : '#16a34a'}`;
+      el.style.color = isError ? '#fca5a5' : '#86efac';
+      el.textContent = msg;
+    }
+
+    async function checkServerHealth() {
+      const banner  = document.getElementById('serverBanner');
+      const icon    = document.getElementById('serverBannerIcon');
+      const text    = document.getElementById('serverBannerText');
+      const retryBtn = document.getElementById('serverRetryBtn');
+      try {
+        banner.style.display = 'flex';
+        banner.style.background = '#0f172a';
+        banner.style.border = '1px solid #334155';
+        icon.textContent = '⏳';
+        text.textContent = 'Connecting to API server…';
+        text.style.color = '#94a3b8';
+        retryBtn.style.display = 'none';
+
+        const data = await api('/api/health');
+        _serverOk = true;
+        banner.style.background = '#052e16';
+        banner.style.border = '1px solid #16a34a44';
+        icon.textContent = '✅';
+        text.style.color = '#86efac';
+        text.textContent = `API server online · Python ${data.python} · ${data.timestamp}`;
+        retryBtn.style.display = 'none';
+        // Auto-hide after 4s
+        setTimeout(() => { if (_serverOk) banner.style.display = 'none'; }, 4000);
+      } catch (err) {
+        _serverOk = false;
+        banner.style.display = 'flex';
+        banner.style.background = '#450a0a';
+        banner.style.border = '1px solid #dc262655';
+        icon.textContent = '🔴';
+        text.style.color = '#fca5a5';
+        text.textContent = `API server not reachable. Start it with: ./run_web.sh  (or: cd SETUPS && .venv/bin/uvicorn apps.web.api.main:app --reload --port 8000)`;
+        retryBtn.style.display = '';
+      }
+    }
+
     async function startScan() {
+      const btn = document.getElementById('scanBtn');
+      const markets = csvList(document.getElementById('scanMarkets').value);
+      const timeframes = csvList(document.getElementById('scanTimeframes').value);
+      if (!markets.length) { _showStatus('scanStatus', '❌ Markets field is empty', true); return; }
+      if (!timeframes.length) { _showStatus('scanStatus', '❌ Timeframes field is empty', true); return; }
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Submitting…';
+      _showStatus('scanStatus', '⏳ Submitting scan job…', false);
+
       const payload = {
-        markets: csvList(document.getElementById('scanMarkets').value),
-        timeframes: csvList(document.getElementById('scanTimeframes').value),
+        markets,
+        timeframes,
         setups: document.getElementById('scanSetups').value,
         daily_lookback: Number(document.getElementById('scanDaily').value || 252),
         weekly_lookback: Number(document.getElementById('scanWeekly').value || 104),
@@ -543,11 +662,31 @@
         batch: Number(document.getElementById('scanBatch').value || 25),
         skip_us_refresh: true,
       };
-      await api('/api/jobs/scan', { method: 'POST', body: JSON.stringify(payload) });
-      await refreshJobs();
+      try {
+        const result = await api('/api/jobs/scan', { method: 'POST', body: JSON.stringify(payload) });
+        const jobId = result?.job?.id || '?';
+        _showStatus('scanStatus', `✅ Scan job queued (ID: ${jobId.slice(0,8)}) — watch the Jobs panel below`, false);
+        await refreshJobs();
+      } catch (err) {
+        const msg = err.message || String(err);
+        if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ERR_CONNECTION')) {
+          _showStatus('scanStatus', '🔴 Cannot reach API server. Run: ./run_web.sh  to start it first', true);
+          checkServerHealth();
+        } else {
+          _showStatus('scanStatus', `❌ Scan failed: ${msg}`, true);
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '▶ Start Scan Job';
+      }
     }
 
     async function startBacktest() {
+      const btn = document.getElementById('btBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Submitting…';
+      _showStatus('btStatus', '⏳ Submitting backtest job…', false);
+
       const lookbackRaw = document.getElementById('btLookback').value;
       const holdRaw = document.getElementById('btHold').value;
       const payload = {
@@ -559,8 +698,23 @@
         workers: Number(document.getElementById('btWorkers').value || 4),
         batch: Number(document.getElementById('btBatch').value || 20),
       };
-      await api('/api/jobs/backtest', { method: 'POST', body: JSON.stringify(payload) });
-      await refreshJobs();
+      try {
+        const result = await api('/api/jobs/backtest', { method: 'POST', body: JSON.stringify(payload) });
+        const jobId = result?.job?.id || '?';
+        _showStatus('btStatus', `✅ Backtest job queued (ID: ${jobId.slice(0,8)}) — watch the Jobs panel`, false);
+        await refreshJobs();
+      } catch (err) {
+        const msg = err.message || String(err);
+        if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ERR_CONNECTION')) {
+          _showStatus('btStatus', '🔴 Cannot reach API server. Run: ./run_web.sh  to start it first', true);
+          checkServerHealth();
+        } else {
+          _showStatus('btStatus', `❌ Backtest failed: ${msg}`, true);
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '▶ Start Backtest Job';
+      }
     }
 
     // ── Jobs ────────────────────────────────────────────────────────────────
@@ -576,7 +730,16 @@
     async function refreshJobs() {
       let data;
       try { data = await api('/api/jobs'); }
-      catch (err) { console.error('refreshJobs error:', err); return; }
+      catch (err) {
+        const msg = err.message || '';
+        if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('ERR_CONNECTION')) {
+          _serverOk = false;
+          document.getElementById('jobsBody').innerHTML =
+            '<tr><td colspan="5" style="color:#f87171;font-size:12px;">⚠️ API server offline — run <code>./run_web.sh</code> to start it</td></tr>';
+        }
+        console.error('refreshJobs error:', err);
+        return;
+      }
 
       const body = document.getElementById('jobsBody');
       body.innerHTML = '';
@@ -1135,6 +1298,12 @@
       _setAnalyzeBusy(true, source === 'live' ? 'Running live logic…' : source === 'compare' ? 'Comparing output vs live…' : 'Analyzing…');
       _setAnalyzeNote(source);
 
+      // Reset MF section
+      const mfSec = document.getElementById('arMFSection');
+      if (mfSec) mfSec.style.display = 'none';
+      const mfCont = document.getElementById('arMFContent');
+      if (mfCont) mfCont.innerHTML = '';
+
       try {
         document.getElementById('analyzerResult').style.display = 'block';
         if (source === 'compare') {
@@ -1152,6 +1321,9 @@
 
         const data = await api(`/api/stock/analyze?symbol=${encodeURIComponent(symbol)}&market=${market}&timeframe=${timeframe}&setups=${setups}&source=${source}`);
         _renderSingleAnalysis(data.analysis, market, timeframe);
+
+        // Async fetch MF holdings (non-blocking)
+        _fetchAndRenderMFHoldings(symbol, market);
       } catch (err) {
         alert('Analysis failed: ' + err.message);
       } finally {
@@ -1160,8 +1332,107 @@
     }
 
 
-    function toggleRawData() {
-      const el = document.getElementById('arRawData');
+    async function _fetchAndRenderMFHoldings(symbol, market) {
+      const section = document.getElementById('arMFSection');
+      const content = document.getElementById('arMFContent');
+      if (!section || !content) return;
+
+      section.style.display = '';
+      content.innerHTML = '<span class="muted">⏳ Fetching MF/institutional data…</span>';
+
+      try {
+        const data = await api(`/api/stock/mf-holdings?symbol=${encodeURIComponent(symbol)}&market=${market}`);
+        const ctx = data.swingContext || {};
+        const holdings = data.holdings || {};
+        const dii = ctx.dii || {};
+        const fii = ctx.fii || {};
+        const pro = ctx.promoters || {};
+        const pub = ctx.public || {};
+        const period = ctx.latest_period || '';
+        const signal = ctx.signal || 'UNKNOWN';
+        const sigCls = _mfSignalCls(signal);
+        const conviction = ctx.conviction || 'NEUTRAL';
+        const convCls = `mf-conviction-${conviction.toLowerCase()}`;
+        const diiChange = ctx.dii_change_3q != null
+          ? (ctx.dii_change_3q >= 0 ? '+' : '') + ctx.dii_change_3q.toFixed(1) + '% over 3 qtrs'
+          : '';
+
+        const topMF = (ctx.top_mf || []).slice(0, 8);
+
+        // Quarterly table
+        const qdata = (holdings.quarterly_data || []).slice(-8);
+        let qTableHtml = '';
+        if (qdata.length) {
+          qTableHtml = `
+          <div style="margin-top:10px">
+            <span class="mf-quarterly-toggle" onclick="this.nextElementSibling.classList.toggle('open')">📊 Show quarterly table (${qdata.length} quarters)</span>
+            <div class="mf-quarterly-table">
+              <table>
+                <thead><tr><th>Period</th><th>Promoters</th><th>FIIs</th><th>DIIs</th><th>Public</th></tr></thead>
+                <tbody>
+                  ${qdata.map(q => `<tr>
+                    <td>${q.period||'—'}</td>
+                    <td style="color:#f59e0b">${q.promoters!=null ? q.promoters.toFixed(1)+'%' : '—'}</td>
+                    <td style="color:#60a5fa">${q.fii!=null ? q.fii.toFixed(1)+'%' : '—'}</td>
+                    <td style="color:#2dd4bf">${q.dii!=null ? q.dii.toFixed(1)+'%' : '—'}</td>
+                    <td style="color:#94a3b8">${q.public!=null ? q.public.toFixed(1)+'%' : '—'}</td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>`;
+        }
+
+        content.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+            <span class="mf-signal ${sigCls}" style="font-size:13px;padding:3px 12px">${ctx.text || signal}</span>
+            <span class="muted" style="font-size:12px">${period}</span>
+            <span class="${convCls}" style="font-size:12px">Conviction: ${conviction}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:10px;">
+            <div class="plan-item">
+              <div class="plan-label" style="color:#2dd4bf">DIIs ${_mfTrendArrow(dii.trend||'stable')}</div>
+              <div class="plan-value ${_mfTrendCls(dii.trend)}">${dii.pct!=null ? dii.pct.toFixed(1)+'%' : '—'}</div>
+              ${diiChange ? `<div style="font-size:10px;color:#64748b">${diiChange}</div>` : ''}
+            </div>
+            <div class="plan-item">
+              <div class="plan-label" style="color:#60a5fa">FIIs ${_mfTrendArrow(fii.trend||'stable')}</div>
+              <div class="plan-value ${_mfTrendCls(fii.trend)}">${fii.pct!=null ? fii.pct.toFixed(1)+'%' : '—'}</div>
+            </div>
+            <div class="plan-item">
+              <div class="plan-label" style="color:#f59e0b">Promoters ${_mfTrendArrow(pro.trend||'stable')}</div>
+              <div class="plan-value ${_mfTrendCls(pro.trend)}">${pro.pct!=null ? pro.pct.toFixed(1)+'%' : '—'}</div>
+            </div>
+            <div class="plan-item">
+              <div class="plan-label">Public${instPct ? ' / Inst' : ''}</div>
+              <div class="plan-value">${pub.pct!=null ? pub.pct.toFixed(1)+'%' : '—'}</div>
+            </div>
+            ${ctx.inst_held_pct != null ? `<div class="plan-item">
+              <div class="plan-label">Inst Held</div>
+              <div class="plan-value" style="color:#a78bfa">${ctx.inst_held_pct.toFixed(1)}%</div>
+            </div>` : ''}
+            ${ctx.quarters_dii_increasing != null ? `<div class="plan-item">
+              <div class="plan-label">DII Qtrs ↑</div>
+              <div class="plan-value" style="color:#2dd4bf">${ctx.quarters_dii_increasing}</div>
+            </div>` : ''}
+          </div>
+          ${topMF.length ? `
+          <div style="margin-bottom:8px">
+            <div class="mf-top-mf-label" style="font-size:11px;color:#64748b;text-transform:uppercase;margin-bottom:4px">Top MF Schemes</div>
+            ${topMF.map(m => `<div class="mf-scheme" style="font-size:12px">
+              <span class="mf-scheme-name" style="color:#cbd5e1">${_ptEscapeHtml(m.name)}</span>
+              <span class="mf-scheme-pct" style="color:#7dd3fc">${m.pct!=null ? m.pct.toFixed(2)+'%' : '—'}</span>
+            </div>`).join('')}
+          </div>` : ''}
+          ${qTableHtml}
+          <div style="font-size:11px;color:#475569;margin-top:6px">Source: Screener.in + yfinance · Cached ${data.cachedAt ? new Date(data.cachedAt).toLocaleString() : 'just now'}</div>
+        `;
+      } catch (err) {
+        content.innerHTML = `<span class="muted" style="font-size:12px">⚠️ MF data unavailable: ${err.message}</span>`;
+      }
+    }
+
+    function toggleRawData() {      const el = document.getElementById('arRawData');
       el.style.display = el.style.display === 'none' ? 'block' : 'none';
     }
 
@@ -1170,6 +1441,7 @@
       const inp = document.getElementById('analyzeSymbol');
       if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') analyzeStock(); });
       loadAnalyzerQuickPicks();
+      checkServerHealth();
     });
 
     // ── Performance Tracker ─────────────────────────────────────────────────
@@ -1275,8 +1547,152 @@
       </div>`;
     }
 
-    function _ptRenderCard(t) {
-      const sym      = (t.symbol || '').replace('.NS','').replace('.BO','');
+    function _mfSignalCls(signal) {
+      if (!signal) return 'mf-sig-neutral';
+      if (signal === 'STRONG_BUYING') return 'mf-sig-strong';
+      if (signal === 'DII_ACCUMULATING') return 'mf-sig-dii';
+      if (signal === 'FII_ACCUMULATING') return 'mf-sig-fii';
+      if (signal === 'DISTRIBUTING' || signal === 'FII_SELLING') return 'mf-sig-dist';
+      return 'mf-sig-neutral';
+    }
+
+    function _mfTrendCls(trend) {
+      if (trend === 'up')   return 'mf-trend-up';
+      if (trend === 'down') return 'mf-trend-down';
+      return 'mf-trend-stable';
+    }
+
+    function _mfTrendArrow(trend) {
+      if (trend === 'up')   return '↑';
+      if (trend === 'down') return '↓';
+      return '→';
+    }
+
+    function _mfBarColor(category) {
+      if (category === 'dii')      return '#2dd4bf';
+      if (category === 'fii')      return '#60a5fa';
+      if (category === 'promoters') return '#f59e0b';
+      return '#94a3b8';
+    }
+
+    function _renderMFPanel(mfCtx, sym) {
+      if (!mfCtx || !mfCtx.signal) {
+        return `<div class="mf-panel">
+          <div class="mf-header" onclick="toggleMFPanel(this)">
+            <span class="mf-header-label">🏦 Institutional Holdings</span>
+            <span class="mf-signal mf-sig-neutral">Loading…</span>
+          </div>
+          <div class="mf-body">
+            <div class="mf-loading">Click "Load with MF Holdings" to fetch institutional data</div>
+          </div>
+        </div>`;
+      }
+
+      const signal = mfCtx.signal || 'UNKNOWN';
+      const sigCls = _mfSignalCls(signal);
+      const sigLabel = {
+        STRONG_BUYING:    '🔥 Strong Buying',
+        DII_ACCUMULATING: '↑ DIIs Buying',
+        FII_ACCUMULATING: '↑ FIIs Buying',
+        DISTRIBUTING:     '⚠ Distributing',
+        FII_SELLING:      '⚠ FIIs Selling',
+        NEUTRAL:          '→ Stable',
+        INST_HIGH:        'ℹ Inst. Held',
+        UNKNOWN:          '⟳ No Data — retry',
+      }[signal] || signal;
+
+      const dii = mfCtx.dii || {};
+      const fii = mfCtx.fii || {};
+      const pro = mfCtx.promoters || {};
+      const pub = mfCtx.public || {};
+
+      const diiPct  = dii.pct  != null ? dii.pct.toFixed(1)  + '%' : '—';
+      const fiiPct  = fii.pct  != null ? fii.pct.toFixed(1)  + '%' : '—';
+      const proPct  = pro.pct  != null ? pro.pct.toFixed(1)  + '%' : '—';
+      const pubPct  = pub.pct  != null ? pub.pct.toFixed(1)  + '%' : '—';
+      const instPct = mfCtx.inst_held_pct != null ? mfCtx.inst_held_pct.toFixed(1) + '%' : null;
+      const period  = mfCtx.latest_period || '';
+      const conviction = mfCtx.conviction || 'NEUTRAL';
+      const diiChange  = mfCtx.dii_change_3q != null
+        ? (mfCtx.dii_change_3q >= 0 ? '+' : '') + mfCtx.dii_change_3q.toFixed(1) + '% (3Q)'
+        : '';
+      const convCls = `mf-conviction-${conviction.toLowerCase()}`;
+
+      // Mini bar chart for DII trend from quarterly data
+      // (We embed it from mfCtx if available via the full holdings object)
+      let diiTrendBars = '';
+
+      // Quarterly table (compact last 6 quarters)
+      // We'll generate from the text summary here; full table needs holdings data
+      const topMF = (mfCtx.top_mf || []).slice(0, 5);
+      const topMFHtml = topMF.length
+        ? `<div class="mf-top-mf">
+            <div class="mf-top-mf-label">Top MF Schemes</div>
+            ${topMF.map(m => `<div class="mf-scheme">
+              <span class="mf-scheme-name">${_ptEscapeHtml(m.name)}</span>
+              <span class="mf-scheme-pct">${m.pct != null ? m.pct.toFixed(2) + '%' : '—'}</span>
+            </div>`).join('')}
+          </div>`
+        : '';
+
+      const uniqueId = 'mfb_' + sym.replace(/[^a-zA-Z0-9]/g, '_');
+
+      return `<div class="mf-panel">
+        <div class="mf-header" onclick="toggleMFPanel(this)">
+          <span class="mf-header-label">🏦 Institutional Holdings${period ? ' · ' + period : ''}</span>
+          <span class="mf-signal ${sigCls}">${sigLabel}</span>
+        </div>
+        <div class="mf-body" id="${uniqueId}">
+          <div class="mf-swing-text">${_ptEscapeHtml(mfCtx.text || mfCtx.summary || '—')}</div>
+          <div class="mf-ownership-grid">
+            <div class="mf-own-item">
+              <span class="mf-own-label">DIIs${diiChange ? ' (' + diiChange + ')' : ''}</span>
+              <div class="mf-own-row">
+                <span class="mf-own-val ${_mfTrendCls(dii.trend)}">${_mfTrendArrow(dii.trend)} ${diiPct}</span>
+                <div class="mf-bar-wrap"><div class="mf-bar-fill" style="width:${Math.min(100,dii.pct||0)*3}%;background:#2dd4bf"></div></div>
+              </div>
+            </div>
+            <div class="mf-own-item">
+              <span class="mf-own-label">FIIs</span>
+              <div class="mf-own-row">
+                <span class="mf-own-val ${_mfTrendCls(fii.trend)}">${_mfTrendArrow(fii.trend)} ${fiiPct}</span>
+                <div class="mf-bar-wrap"><div class="mf-bar-fill" style="width:${Math.min(100,fii.pct||0)*3}%;background:#60a5fa"></div></div>
+              </div>
+            </div>
+            <div class="mf-own-item">
+              <span class="mf-own-label">Promoters</span>
+              <div class="mf-own-row">
+                <span class="mf-own-val ${_mfTrendCls(pro.trend)}">${_mfTrendArrow(pro.trend)} ${proPct}</span>
+                <div class="mf-bar-wrap"><div class="mf-bar-fill" style="width:${Math.min(100,pro.pct||0)*2}%;background:#f59e0b"></div></div>
+              </div>
+            </div>
+            <div class="mf-own-item">
+              <span class="mf-own-label">Public${instPct ? ' / Inst' : ''}</span>
+              <div class="mf-own-row">
+                <span class="mf-own-val mf-trend-stable">${pubPct}${instPct ? ' · ' + instPct : ''}</span>
+              </div>
+            </div>
+            ${ctx.inst_held_pct != null ? `<div class="plan-item">
+              <div class="plan-label">Inst Held</div>
+              <div class="plan-value" style="color:#a78bfa">${ctx.inst_held_pct.toFixed(1)}%</div>
+            </div>` : ''}
+            ${ctx.quarters_dii_increasing != null ? `<div class="plan-item">
+              <div class="plan-label">DII Qtrs ↑</div>
+              <div class="plan-value" style="color:#2dd4bf">${ctx.quarters_dii_increasing}</div>
+            </div>` : ''}
+          </div>
+          ${mfCtx.quarters_dii_increasing != null ? `<div style="font-size:.67em;color:#64748b;margin-bottom:5px;">DII increasing in <span style="color:#2dd4bf;font-weight:700">${mfCtx.quarters_dii_increasing}</span> of last ${mfCtx.quarters_dii_increasing <= 6 ? 'recent' : ''} quarters · Conviction <span class="${convCls}">${conviction}</span></div>` : ''}
+          ${topMFHtml}
+        </div>
+      </div>`;
+    }
+
+    function toggleMFPanel(headerEl) {
+      const body = headerEl.nextElementSibling;
+      if (body) body.classList.toggle('open');
+    }
+
+    function _ptRenderCard(t) {      const sym      = (t.symbol || '').replace('.NS','').replace('.BO','');
       const rating   = t.rating || '';
       const setup    = (t.setup || '').replace(/_/g,' ');
       const tf       = (t.timeframe || '').toUpperCase();
@@ -1426,6 +1842,7 @@
       <div><b>Debt:</b> ${debtTriggerEsc}</div>
     </div>
   </div>
+  ${_renderMFPanel(t.mfHoldings || null, sym)}
 </div>`;
     }
 
@@ -1491,6 +1908,46 @@
         ptApplyFilters();
       } catch (err) {
         grid.innerHTML = `<p class="muted" style="padding:12px">⚠️ ${err.message}</p>`;
+      }
+    }
+
+    async function loadPerformanceDataWithMF() {
+      const market    = document.getElementById('ptMarket').value;
+      const timeframe = document.getElementById('ptTimeframe').value;
+      const inclExp   = document.getElementById('ptIncludeExpired').checked;
+      const grid      = document.getElementById('ptGrid');
+      const empty     = document.getElementById('ptEmpty');
+      const btn       = document.getElementById('ptMFBtn');
+
+      grid.innerHTML = '<p class="muted" style="padding:12px">🏦 Loading trades + MF/institutional data (may take 20-40s for first fetch)…</p>';
+      empty.style.display = 'none';
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Fetching…'; }
+
+      try {
+        const url = `/api/performance/trades/with-mf?market=${market}&timeframe=${timeframe}&include_expired=${inclExp}`;
+        const data = await api(url);
+        const trades = data.trades || [];
+        _ptRenderSummary(data.stats || {}, data.lastUpdated || '');
+
+        if (!trades.length) {
+          grid.innerHTML = '';
+          empty.style.display = '';
+          return;
+        }
+        grid.innerHTML = trades.map(_ptRenderCard).join('');
+        // Auto-open MF panels for cards with strong/accumulating signals
+        document.querySelectorAll('.mf-panel').forEach(panel => {
+          const sigEl = panel.querySelector('.mf-signal');
+          if (sigEl && (sigEl.classList.contains('mf-sig-strong') || sigEl.classList.contains('mf-sig-dii'))) {
+            const body = panel.querySelector('.mf-body');
+            if (body) body.classList.add('open');
+          }
+        });
+        ptApplyFilters();
+        if (btn) { btn.textContent = '✅ MF Loaded'; setTimeout(() => { if(btn) { btn.disabled=false; btn.textContent='🏦 Load with MF Holdings'; }}, 3000); }
+      } catch (err) {
+        grid.innerHTML = `<p class="muted" style="padding:12px">⚠️ ${err.message}</p>`;
+        if (btn) { btn.disabled = false; btn.textContent = '🏦 Load with MF Holdings'; }
       }
     }
 
