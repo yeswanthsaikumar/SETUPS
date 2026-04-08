@@ -21,6 +21,8 @@ from pathlib import Path
 ROOT      = Path(__file__).resolve().parents[3]
 OUTPUT    = ROOT / "output"
 CACHE_DIR = ROOT / "cache"
+RUN_HISTORY_JSON = OUTPUT / "trade_plans_run_history.json"
+RUN_HISTORY_MAX  = 20   # keep last N runs for appearance tracking
 sys.path.insert(0, str(ROOT / "apps" / "python" / "lib"))
 
 from utils import aggregate_weekly_bars, safe_return
@@ -198,6 +200,89 @@ def fmt_x(value: float | None) -> str:
     if abs(value) < 0.05:
         return "&mdash;"
     return f"{value:.2f}x"
+
+
+# ── Run-history helpers ──────────────────────────────────────────────────────
+
+def load_run_history() -> dict:
+    """Load the persisted run-history JSON (last RUN_HISTORY_MAX runs)."""
+    if not RUN_HISTORY_JSON.exists():
+        return {"runs": []}
+    try:
+        return json.loads(RUN_HISTORY_JSON.read_text(encoding="utf-8"))
+    except Exception:
+        return {"runs": []}
+
+
+def save_run_history(history: dict) -> None:
+    OUTPUT.mkdir(parents=True, exist_ok=True)
+    RUN_HISTORY_JSON.write_text(json.dumps(history, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def update_run_history(signals: list[dict]) -> dict:
+    """
+    Append the current run's symbols to the history, trimming to RUN_HISTORY_MAX.
+    Returns the updated history dict.
+    """
+    history = load_run_history()
+    entry = {
+        "date": datetime.now().strftime("%Y-%m-%d"),
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "symbols": sorted({s.get("symbol", "") for s in signals if s.get("symbol")}),
+    }
+    runs: list[dict] = history.get("runs", [])
+    runs.append(entry)
+    # Keep only the most recent RUN_HISTORY_MAX runs
+    history["runs"] = runs[-RUN_HISTORY_MAX:]
+    save_run_history(history)
+    return history
+
+
+def count_appearances(symbol: str, history: dict) -> tuple[int, int]:
+    """
+    Return (count, total_runs) where count = number of runs in history
+    that contain this symbol.
+    """
+    runs = history.get("runs", [])
+    count = sum(1 for r in runs if symbol in r.get("symbols", []))
+    return count, len(runs)
+
+
+# ── Price-performance helpers ────────────────────────────────────────────────
+
+def compute_price_performance(rows: list[dict]) -> dict:
+    """
+    Given daily OHLCV rows (sorted oldest→newest), compute price returns
+    for 1W (5 bars), 1M (21 bars), 3M (63 bars), 6M (126 bars).
+    Returns dict with keys: ret_1w, ret_1m, ret_3m, ret_6m (float|None).
+    """
+    closes = [_f(r.get("close")) for r in rows if _f(r.get("close")) > 0]
+    if not closes:
+        return {"ret_1w": None, "ret_1m": None, "ret_3m": None, "ret_6m": None}
+
+    def _ret(bars: int) -> float | None:
+        if len(closes) <= bars:
+            return None
+        base = closes[-(bars + 1)]
+        if base <= 0:
+            return None
+        return (closes[-1] / base - 1.0) * 100.0
+
+    return {
+        "ret_1w": _ret(5),
+        "ret_1m": _ret(21),
+        "ret_3m": _ret(63),
+        "ret_6m": _ret(126),
+    }
+
+
+def fmt_perf(value: float | None) -> str:
+    """Format a performance return value as coloured HTML span."""
+    if value is None:
+        return '<span class="perf-na">—</span>'
+    cls = "perf-up" if value >= 0 else "perf-dn"
+    sign = "+" if value >= 0 else ""
+    return f'<span class="{cls}">{sign}{value:.1f}%</span>'
 
 
 def extract_pct(text: str, keys: list[str]) -> float | None:
@@ -483,10 +568,33 @@ def sparkline_svg(closes: list[float], width=120, height=40) -> str:
 
 def _build_mf_html(mf_ctx: dict, sym: str) -> str:
     """Build the MF/Institutional holdings panel HTML for one signal card."""
-    if not mf_ctx or not mf_ctx.get("signal"):
+    if not mf_ctx:
+        return ""
+    signal = mf_ctx.get("signal", "UNKNOWN")
+
+    # Determine if we have ANY data worth showing
+    dii_pct_val  = (mf_ctx.get("dii") or {}).get("pct")
+    fii_pct_val  = (mf_ctx.get("fii") or {}).get("pct")
+    pro_pct_val  = (mf_ctx.get("promoters") or {}).get("pct")
+    inst_pct_val = mf_ctx.get("inst_held_pct")
+    top_mf_val   = mf_ctx.get("top_mf") or []
+    has_any_data = any(v is not None for v in (dii_pct_val, fii_pct_val, pro_pct_val, inst_pct_val)) or bool(top_mf_val)
+
+    if not has_any_data:
+        err = mf_ctx.get("screener_error", "")
+        if err and "not_listed" in str(err):
+            return ""   # private/unlisted company — truly no data
+        # Show a minimal "data loading" panel for Indian stocks instead of hiding
+        if sym.endswith(".NS") or sym.endswith(".BO"):
+            return (f'<div class="mf-panel">'
+                    f'<div class="mf-hdr" onclick="this.nextElementSibling.classList.toggle(\'open\')">'
+                    f'<span class="mf-hdr-lbl">🏦 Institutional</span>'
+                    f'<span class="mf-sig mf-sig-neutral">⟳ Fetching</span></div>'
+                    f'<div class="mf-body">'
+                    f'<div class="mf-swing" style="color:#64748b;font-size:.68em">Shareholding data will appear on next run after Screener.in cache warms up.</div>'
+                    f'</div></div>')
         return ""
 
-    signal = mf_ctx.get("signal", "UNKNOWN")
     sig_labels = {
         "STRONG_BUYING":    ("mf-sig-strong",   "🔥 Strong Buying"),
         "DII_ACCUMULATING": ("mf-sig-dii",      "↑ DIIs Buying"),
@@ -495,19 +603,31 @@ def _build_mf_html(mf_ctx: dict, sym: str) -> str:
         "FII_SELLING":      ("mf-sig-dist",     "⚠ FIIs Selling"),
         "NEUTRAL":          ("mf-sig-neutral",  "→ Stable"),
         "INST_HIGH":        ("mf-sig-fii",      "ℹ Inst. Held"),
-        "UNKNOWN":          ("mf-sig-neutral",  "⟳ No Data"),
+        "PROMOTER_HELD":    ("mf-sig-neutral",  "🏢 Promoter Held"),
+        "UNKNOWN":          ("mf-sig-neutral",  "⟳ Partial Data"),
     }
     sig_cls, sig_label = sig_labels.get(signal, ("mf-sig-neutral", signal))
 
     dii = mf_ctx.get("dii") or {}
     fii = mf_ctx.get("fii") or {}
     pro = mf_ctx.get("promoters") or {}
-    period = escape(mf_ctx.get("latest_period") or "")
-    conviction = mf_ctx.get("conviction", "NEUTRAL")
-    conv_cls = {"HIGH": "mf-conv-high", "MEDIUM": "mf-conv-medium", "LOW": "mf-conv-low"}.get(conviction, "mf-conv-neu")
+    pub = mf_ctx.get("public") or {}
+    period      = escape(mf_ctx.get("latest_period") or "")
+    conviction  = mf_ctx.get("conviction", "NEUTRAL")
+    conv_cls    = {"HIGH": "mf-conv-high", "MEDIUM": "mf-conv-medium",
+                   "LOW": "mf-conv-low"}.get(conviction, "mf-conv-neu")
+    inst_pct    = mf_ctx.get("inst_held_pct")
+    mf_sub_pct  = mf_ctx.get("mutual_funds_pct")
+    screener_err = mf_ctx.get("screener_error")
 
     def fmt(v, suffix="%"):
         return f"{v:.1f}{suffix}" if v is not None else "—"
+
+    def fmt_chg(v):
+        if v is None: return ""
+        sign = "+" if v >= 0 else ""
+        cls  = "mf-up" if v > 0.1 else ("mf-dn" if v < -0.1 else "mf-st")
+        return f' <span class="{cls}" style="font-size:.82em">({sign}{v:.1f}%)</span>'
 
     def trend_arrow(t):
         return {"up": "↑", "down": "↓"}.get(t or "", "→")
@@ -518,9 +638,48 @@ def _build_mf_html(mf_ctx: dict, sym: str) -> str:
     dii_pct  = fmt(dii.get("pct"))
     fii_pct  = fmt(fii.get("pct"))
     pro_pct  = fmt(pro.get("pct"))
-    dii_chg  = mf_ctx.get("dii_change_3q")
-    chg_text = (f" ({'+' if dii_chg >= 0 else ''}{dii_chg:.1f}% 3Q)" if dii_chg is not None else "")
+    pub_pct  = fmt(pub.get("pct"))
+
+    dii_chg_html = fmt_chg(dii.get("change_2q"))
+    fii_chg_html = fmt_chg(fii.get("change_2q"))
+
     swing_text = escape(mf_ctx.get("text") or mf_ctx.get("summary") or "")
+
+    # Quarterly DII trend mini-bar (last 6 quarters)
+    history = mf_ctx.get("dii_trend_history", [])
+    trend_bar_html = ""
+    if history:
+        dii_vals = [h.get("dii") for h in history if h.get("dii") is not None]
+        if dii_vals:
+            mn, mx = min(dii_vals), max(dii_vals)
+            span   = mx - mn if mx != mn else 1.0
+            segs   = []
+            for v in dii_vals[-6:]:
+                h_px = max(4, int((v - mn) / span * 18) + 2)
+                clr  = "#2dd4bf"
+                segs.append(f'<span class="mf-bar-seg" style="height:{h_px}px;background:{clr}" title="DII {v:.1f}%"></span>')
+            trend_bar_html = (
+                f'<div style="margin-bottom:5px">'
+                f'<div style="font-size:.62em;color:#64748b;margin-bottom:2px">DII trend ({len(dii_vals)}Q)</div>'
+                f'<div class="mf-dii-trend-bar">{"".join(segs)}</div>'
+                f'</div>'
+            )
+
+    # MF sub-% and inst_held note
+    extra_html = ""
+    if mf_sub_pct is not None:
+        extra_html += f'<div style="margin-top:4px;font-size:.65em;color:#7dd3fc">Mutual Funds (of DII): <b>{mf_sub_pct:.1f}%</b></div>'
+    if inst_pct is not None:
+        extra_html += (
+            f'<div style="margin-top:2px;font-size:.62em;color:#64748b">'
+            f'Institutional (float): {inst_pct:.1f}%</div>'
+        )
+    if screener_err and screener_err not in ("not_listed_on_screener",):
+        src_label = "yfinance only" if signal in ("INST_HIGH", "NEUTRAL", "UNKNOWN") else "Screener.in"
+        extra_html += (
+            f'<div style="margin-top:2px;font-size:.58em;color:#475569">'
+            f'⚠ Screener error ({screener_err}) — Source: {src_label}</div>'
+        )
 
     top_mf = (mf_ctx.get("top_mf") or [])[:5]
     top_mf_html = ""
@@ -530,8 +689,10 @@ def _build_mf_html(mf_ctx: dict, sym: str) -> str:
             f'<span class="mf-scheme-pct">{fmt(m.get("pct"))}</span></div>'
             for m in top_mf
         )
-        top_mf_html = f'<div class="mf-top"><div class="mf-top-lbl">Top MF Schemes</div>{items}</div>'
+        lbl = "Top Shareholders (yfinance)" if mf_ctx.get("_top_holders_source") == "yfinance" else "Top Shareholders"
+        top_mf_html = f'<div class="mf-top"><div class="mf-top-lbl">{lbl}</div>{items}</div>'
 
+    src_note = "yfinance" if screener_err else "Screener.in"
     return f"""<div class="mf-panel">
   <div class="mf-hdr" onclick="this.nextElementSibling.classList.toggle('open')">
     <span class="mf-hdr-lbl">🏦 Institutional{' · ' + period if period else ''}</span>
@@ -539,18 +700,21 @@ def _build_mf_html(mf_ctx: dict, sym: str) -> str:
   </div>
   <div class="mf-body">
     <div class="mf-swing">{swing_text}</div>
+    {trend_bar_html}
     <div class="mf-own-grid">
-      <div><span class="mf-own-lbl">DIIs{chg_text}</span><span class="{trend_cls(dii.get('trend'))} mf-own-val">{trend_arrow(dii.get('trend'))} {dii_pct}</span></div>
-      <div><span class="mf-own-lbl">FIIs</span><span class="{trend_cls(fii.get('trend'))} mf-own-val">{trend_arrow(fii.get('trend'))} {fii_pct}</span></div>
+      <div><span class="mf-own-lbl">DIIs</span><span class="{trend_cls(dii.get('trend'))} mf-own-val">{trend_arrow(dii.get('trend'))} {dii_pct}{dii_chg_html}</span></div>
+      <div><span class="mf-own-lbl">FIIs</span><span class="{trend_cls(fii.get('trend'))} mf-own-val">{trend_arrow(fii.get('trend'))} {fii_pct}{fii_chg_html}</span></div>
       <div><span class="mf-own-lbl">Promoters</span><span class="{trend_cls(pro.get('trend'))} mf-own-val">{trend_arrow(pro.get('trend'))} {pro_pct}</span></div>
-      <div><span class="mf-own-lbl">Conviction</span><span class="{conv_cls} mf-own-val">{conviction}</span></div>
+      <div><span class="mf-own-lbl">Public</span><span class="mf-st mf-own-val">→ {pub_pct}</span></div>
     </div>
+    {extra_html}
     {top_mf_html}
+    <div style="margin-top:4px;font-size:.6em;color:#475569">Conviction: <span class="{conv_cls}">{conviction}</span> · Source: {src_note}</div>
   </div>
 </div>"""
 
 
-def build_html(signals: list[dict]) -> str:
+def build_html(signals: list[dict], run_history: dict | None = None) -> str:
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     total = len(signals)
 
@@ -567,6 +731,18 @@ def build_html(signals: list[dict]) -> str:
     a_plus = sum(1 for s in signals if s.get("rating","") == "A+")
     a_rate  = sum(1 for s in signals if s.get("rating","") in ("A+","A"))
 
+    # ── Appearance stats across stored runs
+    _rh = run_history or {}
+    _rh_total = len(_rh.get("runs", []))
+    recurring_count = sum(
+        1 for s in signals
+        if count_appearances(s.get("symbol",""), _rh)[0] >= max(1, _rh_total // 2)
+    ) if _rh_total > 0 else 0
+    run_history_note = (
+        f"Run history: {_rh_total}/{RUN_HISTORY_MAX} runs stored"
+        if _rh_total > 0 else "First run — history starts now"
+    )
+
     # ── Build signal rows
     rows_html = []
     for i, sig in enumerate(signals):
@@ -580,6 +756,13 @@ def build_html(signals: list[dict]) -> str:
         svg = sparkline_svg(sparkline_data)
         is_weekly = tf_lbl.lower().startswith("weekly")
         price_rows = load_price_rows(sym, weekly=is_weekly)
+
+        # ── Appearance count over last 20 runs
+        app_count, app_total = count_appearances(sym, run_history or {})
+
+        # ── Price performance (always use daily rows for consistent periods)
+        daily_rows = load_price_rows(sym, weekly=False)
+        perf = compute_price_performance(daily_rows)
 
         regime     = sig.get("regimeState","")
         regime_str = ("Favorable" if "FAV" in regime and "UNFAV" not in regime
@@ -675,7 +858,7 @@ def build_html(signals: list[dict]) -> str:
         mf_html = _build_mf_html(mf_ctx, sym)
 
         rows_html.append(f"""
-<div class="sig-card" data-symbol="{sym}" data-setup="{setup}" data-rating="{rating}" data-sector="{sector}">
+<div class="sig-card" data-symbol="{sym}" data-setup="{setup}" data-rating="{rating}" data-sector="{sector}" data-appear="{app_count}" data-appear-total="{app_total}">
   <div class="sig-header">
     <div class="sig-left">
       <div class="sig-sym">{sym.replace('.NS','')}</div>
@@ -687,7 +870,10 @@ def build_html(signals: list[dict]) -> str:
     </div>
     <div class="sig-right">
       <div class="sig-sparkline">{svg}</div>
-      <div class="sig-rating {'rat-aplus' if rating=='A+' else 'rat-a' if rating=='A' else 'rat-b'}">{rating}</div>
+      <div style="display:flex;gap:5px;align-items:center;justify-content:flex-end;flex-wrap:wrap;">
+        <div class="sig-rating {'rat-aplus' if rating=='A+' else 'rat-a' if rating=='A' else 'rat-b'}">{rating}</div>
+        {f'<div class="appear-badge {"appear-hot" if app_count >= 15 else "appear-warm" if app_count >= 8 else "appear-cool"}" title="Appeared {app_count} times in last {app_total} runs">&#128257; {app_count}/{app_total}</div>' if app_total > 0 else ''}
+      </div>
     </div>
   </div>
 
@@ -735,6 +921,27 @@ def build_html(signals: list[dict]) -> str:
       <span class="sstat-label">RExp</span>
       <span style="color:#e3b341">{rexp_text}</span>
     </div>
+  </div>
+
+  <!-- Performance row -->
+  <div class="perf-row">
+    <div class="perf-cell">
+      <span class="perf-label">1W</span>
+      {fmt_perf(perf['ret_1w'])}
+    </div>
+    <div class="perf-cell">
+      <span class="perf-label">1M</span>
+      {fmt_perf(perf['ret_1m'])}
+    </div>
+    <div class="perf-cell">
+      <span class="perf-label">3M</span>
+      {fmt_perf(perf['ret_3m'])}
+    </div>
+    <div class="perf-cell">
+      <span class="perf-label">6M</span>
+      {fmt_perf(perf['ret_6m'])}
+    </div>
+    {f'<div class="perf-cell appear-cell"><span class="perf-label">Seen (20d)</span><span class="{"appear-hot" if app_count >= 15 else "appear-warm" if app_count >= 8 else "appear-cool"}">{app_count}/{app_total} runs</span></div>' if app_total > 0 else ''}
   </div>
 
   <div class="insight-chip" title="Hover card for fundamentals and macro trigger details">Fundamentals + Macro</div>
@@ -883,6 +1090,22 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
 .insight-summary{{font-size:.72em;color:#94a3b8;line-height:1.35;margin-bottom:4px}}
 .insight-raw{{font-size:.68em;color:#7f8a98;line-height:1.35}}
 
+/* PERFORMANCE ROW */
+.perf-row{{display:flex;gap:0;border-top:1px solid #21262d;background:#090e14;flex-wrap:wrap}}
+.perf-cell{{flex:1;min-width:60px;padding:7px 10px;text-align:center;border-right:1px solid #21262d}}
+.perf-cell:last-child{{border-right:none}}
+.perf-cell.appear-cell{{flex:1.3;min-width:90px}}
+.perf-label{{display:block;font-size:.62em;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;font-weight:600}}
+.perf-up{{font-size:.82em;font-weight:700;color:#3fb950}}
+.perf-dn{{font-size:.82em;font-weight:700;color:#f85149}}
+.perf-na{{font-size:.82em;color:#8b949e}}
+
+/* APPEARANCE BADGE */
+.appear-badge{{padding:2px 7px;border-radius:4px;font-size:.68em;font-weight:700;white-space:nowrap}}
+.appear-hot{{color:#ffd700;background:#2a2a00;border:1px solid #ffd70044}}
+.appear-warm{{color:#fb923c;background:#261400;border:1px solid #fb923c44}}
+.appear-cool{{color:#60a5fa;background:#0f1f3a;border:1px solid #1d4ed844}}
+
 /* NO RESULTS */
 .no-results{{text-align:center;padding:60px;color:#8b949e;font-size:1.1em}}
 
@@ -932,6 +1155,8 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
 .mf-scheme:last-child{{border-bottom:none}}
 .mf-scheme-name{{color:#c9d1d9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}}
 .mf-scheme-pct{{color:#7dd3fc;font-weight:700;flex-shrink:0;margin-left:6px}}
+.mf-dii-trend-bar{{display:flex;align-items:flex-end;gap:3px;height:22px}}
+.mf-bar-seg{{display:inline-block;width:10px;border-radius:2px 2px 0 0;min-height:4px}}
 </style>
 </head>
 <body>
@@ -939,12 +1164,13 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
 <div class="topbar">
   <div>
     <div class="topbar-title">&#127919; Live Breakout Trade Plans &mdash; NSE India</div>
-    <div class="topbar-sub">All active signals from latest scan &bull; {now}</div>
+    <div class="topbar-sub">All active signals from latest scan &bull; {now} &bull; {run_history_note}</div>
   </div>
   <div class="topbar-stats">
     <div class="tstat"><div class="tstat-v">{total}</div><div class="tstat-l">Signals</div></div>
     <div class="tstat"><div class="tstat-v" style="color:#ffd700">{a_plus}</div><div class="tstat-l">A+ Rated</div></div>
     <div class="tstat"><div class="tstat-v" style="color:#a5b4fc">{a_rate}</div><div class="tstat-l">A &amp; Above</div></div>
+    <div class="tstat"><div class="tstat-v" style="color:#fb923c">{recurring_count}</div><div class="tstat-l">Recurring</div></div>
     <div class="tstat"><div class="tstat-v" style="color:#86efac">{setup_counts.get('RANGE_EXPANSION',0)}</div><div class="tstat-l">Range Exp</div></div>
     <div class="tstat"><div class="tstat-v" style="color:#a5b4fc">{setup_counts.get('VCP',0)}</div><div class="tstat-l">VCP</div></div>
   </div>
@@ -986,8 +1212,16 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
     <option value="A">A &amp; Above</option>
     <option value="B">B &amp; Above</option>
   </select>
+  <select class="sel" id="appearFilter" onchange="applyFilters()" title="Filter by how many of the last {_rh_total} runs the setup appeared in">
+    <option value="">All Appearances</option>
+    <option value="50">Seen 50%+ runs</option>
+    <option value="75">Seen 75%+ runs</option>
+    <option value="high">Seen 15+ runs (Hot)</option>
+    <option value="warm">Seen 8+ runs</option>
+  </select>
   <button class="btn-filter" onclick="toggleSort('score')" id="btn-sort-score">&#128202; Sort: Score</button>
   <button class="btn-filter" onclick="toggleSort('symbol')" id="btn-sort-sym">&#9776; Sort: Symbol</button>
+  <button class="btn-filter" onclick="toggleSort('appear')" id="btn-sort-appear">&#128257; Sort: Recurring</button>
   <button class="btn-export" onclick="exportCSV()">&#8659; Export CSV</button>
   <span id="filterCount" style="color:#8b949e;font-size:.83em;margin-left:8px"></span>
 </div>
@@ -1005,6 +1239,9 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
   <div class="leg-item"><div class="leg-dot" style="background:#d8b4fe"></div>Breakout Pullback</div>
   <div class="leg-item"><div class="leg-dot" style="background:#ffd700"></div>A+ Rating</div>
   <div class="leg-item"><div class="leg-dot" style="background:#3fb950"></div>RS Positive</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#ffd700;border-radius:50%"></div>Hot (15+ runs)</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#fb923c;border-radius:50%"></div>Warm (8+ runs)</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#60a5fa;border-radius:50%"></div>New (&lt;8 runs)</div>
 </div>
 
 <div class="main">
@@ -1019,21 +1256,30 @@ let activeSector = '';
 let sortMode = 'score';
 
 function applyFilters() {{
-  const q     = document.getElementById('searchBox').value.toLowerCase();
-  const setup = document.getElementById('setupFilter').value;
-  const rating= document.getElementById('ratingFilter').value;
+  const q      = document.getElementById('searchBox').value.toLowerCase();
+  const setup  = document.getElementById('setupFilter').value;
+  const rating = document.getElementById('ratingFilter').value;
+  const appear = document.getElementById('appearFilter').value;
   let visible = 0;
   document.querySelectorAll('.sig-card').forEach(card => {{
     const sym    = (card.dataset.symbol||'').toLowerCase();
     const sec    = (card.dataset.sector||'').toLowerCase();
     const csetup = card.dataset.setup||'';
     const crate  = card.dataset.rating||'';
+    const capp   = parseInt(card.dataset.appear||'0', 10);
+    const ctotal = parseInt(card.dataset.appearTotal||'0', 10);
     let show = (sym.includes(q) || sec.includes(q));
     if(setup && csetup !== setup) show = false;
     if(rating === 'A+' && crate !== 'A+') show = false;
     if(rating === 'A'  && crate !== 'A+' && crate !== 'A') show = false;
     if(rating === 'B'  && crate === 'C') show = false;
     if(activeSector && (card.dataset.sector||'') !== activeSector) show = false;
+    if(appear) {{
+      if(appear === 'high'  && capp < 15) show = false;
+      if(appear === 'warm'  && capp < 8)  show = false;
+      if(appear === '50'    && ctotal > 0 && capp / ctotal < 0.5) show = false;
+      if(appear === '75'    && ctotal > 0 && capp / ctotal < 0.75) show = false;
+    }}
     card.style.display = show ? '' : 'none';
     if(show) visible++;
   }});
@@ -1055,23 +1301,33 @@ function toggleSort(mode) {{
   const cards = [...grid.querySelectorAll('.sig-card')];
   cards.sort((a, b) => {{
     if(mode === 'symbol') return (a.dataset.symbol||'').localeCompare(b.dataset.symbol||'');
+    if(mode === 'appear') return parseInt(b.dataset.appear||'0',10) - parseInt(a.dataset.appear||'0',10);
     return 0; // score order is default DOM order
   }});
   cards.forEach(c => grid.appendChild(c));
   document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
-  document.getElementById('btn-sort-' + (mode==='score'?'score':'sym')).classList.add('active');
+  const btnMap = {{'score':'btn-sort-score','symbol':'btn-sort-sym','appear':'btn-sort-appear'}};
+  const btnId = btnMap[mode];
+  if(btnId) document.getElementById(btnId)?.classList.add('active');
 }}
 
 function exportCSV() {{
-  const rows = [['Symbol','Sector','Setup','Rating','Entry','Stop','Shares','Regime','RS3M','RS6M','VolPct','RExp','EPSGrowth','DebtChange','MacroTrigger','MarketTrigger','FundSummary']];
+  const rows = [['Symbol','Sector','Setup','Rating','Entry','Stop','Shares','Regime','RS3M','RS6M','VolPct','RExp','1W%','1M%','3M%','6M%','SeenRuns','TotalRuns','EPSGrowth','DebtChange','MacroTrigger','MarketTrigger','FundSummary']];
   document.querySelectorAll('.sig-card').forEach(card => {{
     if(card.style.display === 'none') return;
     const planVals = [...card.querySelectorAll('.plan-value')].map(v => v.textContent.replace(/[₹,]/g,'').trim());
     const stats = [...card.querySelectorAll('.sig-stat span:last-child')].map(v => v.textContent.trim());
-    const epsGrowth = card.querySelector('.insight-item:nth-child(1) .insight-value')?.textContent?.trim() || '';
-    const debtChange = card.querySelector('.insight-item:nth-child(2) .insight-value')?.textContent?.trim() || '';
+    const perfCells = [...card.querySelectorAll('.perf-cell')];
+    const p1w = perfCells[0]?.querySelector('span:last-child')?.textContent?.trim() || '';
+    const p1m = perfCells[1]?.querySelector('span:last-child')?.textContent?.trim() || '';
+    const p3m = perfCells[2]?.querySelector('span:last-child')?.textContent?.trim() || '';
+    const p6m = perfCells[3]?.querySelector('span:last-child')?.textContent?.trim() || '';
+    const seenRuns   = card.dataset.appear || '0';
+    const totalRuns  = card.dataset.appearTotal || '0';
+    const epsGrowth    = card.querySelector('.insight-item:nth-child(1) .insight-value')?.textContent?.trim() || '';
+    const debtChange   = card.querySelector('.insight-item:nth-child(2) .insight-value')?.textContent?.trim() || '';
     const macroTrigger = card.querySelector('.insight-item:nth-child(3) .insight-pill')?.textContent?.trim() || '';
-    const marketTrigger = card.querySelector('.insight-item:nth-child(4) .insight-pill')?.textContent?.trim() || '';
+    const marketTrigger= card.querySelector('.insight-item:nth-child(4) .insight-pill')?.textContent?.trim() || '';
     const fundSummary = card.querySelector('.insight-summary')?.textContent?.trim() || '';
     rows.push([
       card.dataset.symbol,
@@ -1086,6 +1342,8 @@ function exportCSV() {{
       stats[2] || '',
       stats[3] || '',
       stats[4] || '',
+      p1w, p1m, p3m, p6m,
+      seenRuns, totalRuns,
       epsGrowth,
       debtChange,
       macroTrigger,
@@ -1122,7 +1380,7 @@ def _fetch_mf_holdings_for_signals(signals: list[dict]) -> None:
     print(f"  Fetching MF/institutional holdings for {len(symbols)} symbols…", flush=True)
     try:
         provider = MutualFundsProvider(cache_dir=str(CACHE_DIR), cache_ttl_hours=6)
-        raw = provider.fetch_batch(symbols, market="india", workers=8)
+        raw = provider.fetch_batch(symbols, market="india", workers=2)
         sym_map = {s: raw.get(s, {}) for s in symbols}
         for sig in signals:
             sym = sig.get("symbol", "")
@@ -1136,6 +1394,11 @@ def main():
     print("Generating Trade Plans page...")
     signals = load_signals()
     print(f"  Loaded {len(signals)} unique signals")
+
+    # ── Record this run in history (for appearance tracking)
+    print(f"  Updating run history ({RUN_HISTORY_MAX}-run window)…")
+    run_history = update_run_history(signals)
+    print(f"  Run history: {len(run_history.get('runs', []))} stored runs")
 
     hstats = hydrate_missing_fundamentals(signals)
     if hstats.get("needs_fundamentals", 0) > 0:
@@ -1159,7 +1422,7 @@ def main():
     # Fetch MF/institutional holdings (Screener.in + yfinance, 6h cache)
     _fetch_mf_holdings_for_signals(signals)
 
-    html = build_html(signals)
+    html = build_html(signals, run_history=run_history)
     out = OUTPUT / "trade_plans_live.html"
     out.write_text(html, encoding="utf-8")
     size = out.stat().st_size / 1024
