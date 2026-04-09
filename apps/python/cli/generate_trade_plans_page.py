@@ -487,7 +487,6 @@ def hydrate_missing_fundamentals(signals: list[dict]) -> dict:
     return stats
 
 def load_signals() -> list[dict]:
-    signals = []
     files = [
         ("vcp_hits_india_daily_full_LATEST.json",       "Daily"),
         ("vcp_hits_india_weekly_full_LATEST.json",      "Weekly"),
@@ -495,25 +494,49 @@ def load_signals() -> list[dict]:
         ("vcp_hits_india_daily_vcp_LATEST.json",        "Daily VCP"),
         ("vcp_hits_india_daily_range_expansion_LATEST.json", "Daily RExp"),
     ]
-    seen = {}
+    seen: dict[str, dict] = {}
+    # Track all unique (setup_type, tf_label) pairs per symbol
+    seen_setups: dict[str, list[tuple[str, str]]] = {}
+
     for fname, label in files:
         p = OUTPUT / fname
-        if not p.exists(): continue
+        if not p.exists():
+            continue
         try:
             data = json.loads(p.read_text())
-            if not isinstance(data, list): continue
+            if not isinstance(data, list):
+                continue
             for row in data:
-                sym = row.get("symbol","")
+                sym = row.get("symbol", "")
                 if not sym:
                     continue
                 row["_tf_label"] = label
+                setup = row.get("setup", "")
                 if sym in seen:
                     seen[sym] = _pick_better_row(seen[sym], row)
+                    # Accumulate additional setups (avoid strict duplicates)
+                    existing = seen_setups.setdefault(sym, [])
+                    if (setup, label) not in existing:
+                        existing.append((setup, label))
                 else:
                     seen[sym] = row
+                    seen_setups[sym] = [(setup, label)]
         except Exception:
             pass
-    return sorted(seen.values(), key=lambda x: -_f(x.get("score",0)))
+
+    # Attach the consolidated multi-setup list to each winning row
+    for sym, row in seen.items():
+        all_s = seen_setups.get(sym, [(row.get("setup", ""), row.get("_tf_label", ""))])
+        # Deduplicate by setup type (keep first occurrence of each type)
+        seen_types: set[str] = set()
+        unique: list[tuple[str, str]] = []
+        for st, lbl in all_s:
+            if st and st not in seen_types:
+                seen_types.add(st)
+                unique.append((st, lbl))
+        row["_all_setups"] = unique  # list of (setup_type, tf_label)
+
+    return sorted(seen.values(), key=lambda x: -_f(x.get("score", 0)))
 
 def build_position_plan(sig: dict) -> dict:
     entry = _f(sig.get("entry") or sig.get("close"))
@@ -646,6 +669,175 @@ def _build_bf_html(sig: dict) -> str:
     <span class="bf-t bf-t3">T3 {px(t3)}</span>
   </div>
   {dates_html}
+</div>"""
+
+
+def _build_rexp_html(sig: dict) -> str:
+    """Render the Range Expansion detail panel embedded in a signal card."""
+    rexp_val     = _f(sig.get("rexp") or 0)
+    vol_pct      = _f(sig.get("vol%") or 0)
+    range_pct    = _f(sig.get("range%") or sig.get("rangePct") or 0)
+    height_pct   = _f(sig.get("height%") or 0)
+    base_len     = sig.get("len") or sig.get("windowDays") or "—"
+    subtype      = str(sig.get("setupSubtype") or "")
+    pivot        = _f(sig.get("pivot") or 0)
+    t1           = _f(sig.get("T1") or 0)
+    t2           = _f(sig.get("T2") or 0)
+    t3           = _f(sig.get("T3") or 0)
+    dist_pct     = _f(sig.get("distFromPivot%") or sig.get("dist%") or 0)
+    days_above   = sig.get("daysAbovePivot") or "—"
+
+    def pct(v):   return f"{v:.1f}%" if v else "—"
+    def px(v):    return f"₹{v:.2f}" if v else "—"
+    def ratio(v): return f"{v:.2f}×" if v else "—"
+    def spct(v, pos_good=True):
+        if not v: return "—"
+        cls = "rexp-pos" if (v >= 0) == pos_good else "rexp-neg"
+        sign = "+" if v >= 0 else ""
+        return f'<span class="{cls}">{sign}{v:.1f}%</span>'
+
+    # Colour the RExp ratio: >2x = green, 1.5-2x = yellow, <1.5x = muted
+    rexp_color = "#4ade80" if rexp_val >= 2.0 else "#e3b341" if rexp_val >= 1.5 else "#94a3b8"
+    vol_color  = "#4ade80" if vol_pct >= 100 else "#e3b341" if vol_pct >= 50 else "#94a3b8"
+
+    # Subtype badge
+    st_map = {
+        "RANGE_EXPANSION_BREAKOUT": ("rexp-st-bo",  "🚀 Breakout Bar"),
+        "WATCHLIST":                ("rexp-st-wl",  "⏳ Pre-Breakout"),
+    }
+    st_cls, st_lbl = st_map.get(subtype, ("rexp-st-bo", f"📊 {subtype}" if subtype else "📊 Expansion"))
+
+    return f"""<div class="rexp-panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <span style="font-size:.7em;color:#86efac;font-weight:700;letter-spacing:.3px">📊 RANGE EXPANSION METRICS</span>
+    <span class="rexp-subtype {st_cls}">{st_lbl}</span>
+  </div>
+  <div class="rexp-row">
+    <div class="rexp-cell">
+      <div class="rexp-lbl">RExp Ratio</div>
+      <div class="rexp-val" style="color:{rexp_color}">{ratio(rexp_val)}</div>
+    </div>
+    <div class="rexp-cell">
+      <div class="rexp-lbl">Vol Spike</div>
+      <div class="rexp-val" style="color:{vol_color}">{spct(vol_pct)}</div>
+    </div>
+    <div class="rexp-cell">
+      <div class="rexp-lbl">Bar Range</div>
+      <div class="rexp-val" style="color:#94a3b8">{pct(range_pct)}</div>
+    </div>
+    <div class="rexp-cell">
+      <div class="rexp-lbl">Base Height</div>
+      <div class="rexp-val" style="color:#7dd3fc">{pct(height_pct)}</div>
+    </div>
+    <div class="rexp-cell">
+      <div class="rexp-lbl">Base Len</div>
+      <div class="rexp-val" style="color:#94a3b8">{base_len}d</div>
+    </div>
+    <div class="rexp-cell">
+      <div class="rexp-lbl">Dist Pivot</div>
+      <div class="rexp-val" style="color:#c084fc">{pct(dist_pct)}</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px;font-size:.7em;color:#6e7681">
+    <span>Pivot: <b style="color:#e2e8f0">{px(pivot)}</b></span>
+    <span>Days above pivot: <b style="color:#86efac">{days_above}</b></span>
+  </div>
+  <div class="rexp-targets">
+    <span style="color:#6e7681;font-size:.88em;align-self:center">Targets:</span>
+    <span class="rexp-t rexp-t1">T1 {px(t1)}</span>
+    <span class="rexp-t rexp-t2">T2 {px(t2)}</span>
+    <span class="rexp-t rexp-t3">T3 {px(t3)}</span>
+  </div>
+</div>"""
+
+
+def _build_bp_html(sig: dict) -> str:
+    """Render the Breakout Pullback detail panel embedded in a signal card."""
+    bo_date       = str(sig.get("abfpBreakoutDate") or "")
+    bo_level      = _f(sig.get("pivot") or 0)
+    peak_high     = _f(sig.get("abfpPeakHigh") or sig.get("max_after_breakout") or 0)
+    pullback_dep  = _f(sig.get("abfpPullbackDepth%") or sig.get("height%") or 0)
+    run_from_bo   = _f(sig.get("abfpRunFromBO%")     or sig.get("depth%") or 0)
+    bars_since    = sig.get("abfpBarsSincePeak")      or sig.get("len") or "—"
+    vol_ratio     = _f(sig.get("abfpPullbackVolRatio") or sig.get("pullback_vol_ratio") or 0)
+    days_above    = sig.get("daysAbovePivot") or "—"
+    dist_from_bo  = _f(sig.get("distFromPivot%") or 0)
+    t1            = _f(sig.get("T1") or 0)
+    t2            = _f(sig.get("T2") or 0)
+    t3            = _f(sig.get("T3") or 0)
+    subtype       = str(sig.get("setupSubtype") or "FIRST_PULLBACK")
+
+    def pct(v):   return f"{v:.1f}%" if v else "—"
+    def px(v):    return f"₹{v:.2f}" if v else "—"
+    def ratio(v): return f"{v:.2f}×" if v else "—"
+
+    # Volume dry-up quality
+    if vol_ratio > 0:
+        if vol_ratio < 0.70:
+            vol_color = "#4ade80"
+            vol_label = "Excellent Dry-up"
+        elif vol_ratio < 0.85:
+            vol_color = "#86efac"
+            vol_label = "Good Dry-up"
+        elif vol_ratio < 1.00:
+            vol_color = "#e3b341"
+            vol_label = "Mild Dry-up"
+        else:
+            vol_color = "#f87171"
+            vol_label = "No Dry-up"
+    else:
+        vol_color, vol_label = "#94a3b8", "—"
+
+    # Pullback depth quality
+    if pullback_dep < 5.0:
+        dep_color = "#4ade80"   # very tight
+    elif pullback_dep < 8.0:
+        dep_color = "#e3b341"   # acceptable
+    else:
+        dep_color = "#f87171"   # too deep
+
+    return f"""<div class="bp-panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <span style="font-size:.7em;color:#d8b4fe;font-weight:700;letter-spacing:.3px">🔁 BREAKOUT PULLBACK METRICS</span>
+    <span class="bp-subtype">⏪ {subtype.replace('_',' ').title()}</span>
+  </div>
+  <div class="bp-row">
+    <div class="bp-cell">
+      <div class="bp-lbl">BO Support</div>
+      <div class="bp-val" style="color:#79c0ff">{px(bo_level)}</div>
+    </div>
+    <div class="bp-cell">
+      <div class="bp-lbl">Post-BO Peak</div>
+      <div class="bp-val" style="color:#4ade80">{px(peak_high)}</div>
+    </div>
+    <div class="bp-cell">
+      <div class="bp-lbl">Run from BO</div>
+      <div class="bp-val" style="color:#86efac">+{pct(run_from_bo)}</div>
+    </div>
+    <div class="bp-cell">
+      <div class="bp-lbl">Pullback</div>
+      <div class="bp-val" style="color:{dep_color}">-{pct(pullback_dep)}</div>
+    </div>
+    <div class="bp-cell">
+      <div class="bp-lbl">Bars Since Peak</div>
+      <div class="bp-val" style="color:#94a3b8">{bars_since}d</div>
+    </div>
+    <div class="bp-cell">
+      <div class="bp-lbl">Vol Dry-up</div>
+      <div class="bp-val" style="color:{vol_color}" title="{vol_label}">{ratio(vol_ratio)}</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px;font-size:.7em;color:#6e7681">
+    <span>BO Date: <b style="color:#e2e8f0">{bo_date or '—'}</b></span>
+    <span>Days above BO: <b style="color:#d8b4fe">{days_above}</b></span>
+    <span>Dist from BO: <b style="color:#7dd3fc">{pct(dist_from_bo)}</b></span>
+  </div>
+  <div class="bp-targets">
+    <span style="color:#6e7681;font-size:.88em;align-self:center">Targets:</span>
+    <span class="bp-t bp-t1">T1 {px(t1)}</span>
+    <span class="bp-t bp-t2">T2 {px(t2)}</span>
+    <span class="bp-t bp-t3">T3 {px(t3)}</span>
+  </div>
 </div>"""
 
 
@@ -864,6 +1056,9 @@ def build_html(signals: list[dict], run_history: dict | None = None) -> str:
         setup_cls, setup_label, setup_tip = SETUP_META.get(
             setup, ("tag-bo", setup.replace("_"," "), ""))
 
+        # ── All setups this symbol appeared in (multi-setup support)
+        all_setups = sig.get("_all_setups") or [(setup, tf_lbl)]
+
         score = _f(sig.get("score",0))
         pivot = plan["entry"]  # entry IS the pivot area for current signals
         actual_pivot = _f(sig.get("pivot") or plan["entry"])
@@ -940,6 +1135,19 @@ def build_html(signals: list[dict], run_history: dict | None = None) -> str:
         mf_ctx = sig.get("_mf_context", {})
         mf_html = _build_mf_html(mf_ctx, sym)
 
+        # Build multi-setup tags HTML
+        def _setup_tag_html(st: str, tip: str = "") -> str:
+            sc, sl, stip = SETUP_META.get(st, ("tag-bo", st.replace("_", " "), ""))
+            tip_attr = f' title="{tip or stip}"' if (tip or stip) else ""
+            return f'<span class="{sc} sig-tag"{tip_attr}>{sl}</span>'
+
+        setup_tags_html = "".join(_setup_tag_html(st) for st, _lbl in all_setups)
+        # Multi-setup badge if stock shows in more than one setup type
+        multi_badge_html = ""
+        if len(all_setups) > 1:
+            labels_str = " + ".join(SETUP_META.get(st, (None, st.replace("_", " "), None))[1] for st, _ in all_setups)
+            multi_badge_html = f'<span class="multi-setup-badge" title="Appears in multiple setups: {labels_str}">🔀 Multi</span>'
+
         rows_html.append(f"""
 <div class="sig-card" data-symbol="{sym}" data-setup="{setup}" data-rating="{rating}" data-sector="{sector}" data-appear="{app_count}" data-appear-total="{app_total}">
   <div class="sig-header">
@@ -948,7 +1156,8 @@ def build_html(signals: list[dict], run_history: dict | None = None) -> str:
       <div class="sig-meta">
         <span class="badge-sec">{sector}</span>
         <span class="badge-tf">{tf_lbl}</span>
-        <span class="{setup_cls} sig-tag" title="{setup_tip}">{setup_label}</span>
+        {setup_tags_html}
+        {multi_badge_html}
       </div>
     </div>
     <div class="sig-right">
@@ -1054,7 +1263,9 @@ def build_html(signals: list[dict], run_history: dict | None = None) -> str:
     </div>
   </div>
   {mf_html}
-  {_build_bf_html(sig) if sig.get('setup') == 'BULL_FLAG' else ''}
+  {_build_bf_html(sig) if setup == 'BULL_FLAG' else ''}
+  {_build_rexp_html(sig) if setup == 'RANGE_EXPANSION' else ''}
+  {_build_bp_html(sig) if setup == 'BREAKOUT_PULLBACK' else ''}
 </div>""")
 
     sector_pills = "".join(
@@ -1258,6 +1469,38 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
 .bf-subtype{{display:inline-flex;padding:1px 7px;border-radius:99px;font-size:.65em;font-weight:700}}
 .bf-st-forming{{background:#0f1f3a;color:#60a5fa;border:1px solid #1d4ed855}}
 .bf-st-breakout{{background:#0a2a14;color:#4ade80;border:1px solid #16a34a55}}
+
+/* RANGE EXPANSION DETAIL PANEL */
+.rexp-panel{{border-top:1px solid #21262d;background:#050e08;padding:8px 16px 10px}}
+.rexp-row{{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 10px;margin-bottom:6px}}
+.rexp-cell{{background:#0a1510;border:1px solid #1a3020;border-radius:5px;padding:5px 8px}}
+.rexp-lbl{{font-size:.62em;color:#6e7681;text-transform:uppercase;letter-spacing:.35px;margin-bottom:2px}}
+.rexp-val{{font-size:.82em;font-weight:700}}
+.rexp-pos{{color:#4ade80}}.rexp-neg{{color:#f87171}}
+.rexp-targets{{display:flex;gap:6px;flex-wrap:wrap;font-size:.72em}}
+.rexp-t{{padding:2px 7px;border-radius:4px;font-weight:700}}
+.rexp-t1{{background:#052e16;color:#4ade80;border:1px solid #16a34a55}}
+.rexp-t2{{background:#052e16;color:#86efac;border:1px solid #16a34a77}}
+.rexp-t3{{background:#1a1a00;color:#ffd700;border:1px solid #ffd70055}}
+.rexp-subtype{{display:inline-flex;padding:1px 7px;border-radius:99px;font-size:.65em;font-weight:700}}
+.rexp-st-bo{{background:#0a2a14;color:#86efac;border:1px solid #16a34a55}}
+.rexp-st-wl{{background:#0f1f3a;color:#7dd3fc;border:1px solid #1d4ed855}}
+
+/* BREAKOUT PULLBACK DETAIL PANEL */
+.bp-panel{{border-top:1px solid #21262d;background:#0d0813;padding:8px 16px 10px}}
+.bp-row{{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 10px;margin-bottom:6px}}
+.bp-cell{{background:#120a1a;border:1px solid #2a1535;border-radius:5px;padding:5px 8px}}
+.bp-lbl{{font-size:.62em;color:#6e7681;text-transform:uppercase;letter-spacing:.35px;margin-bottom:2px}}
+.bp-val{{font-size:.82em;font-weight:700}}
+.bp-targets{{display:flex;gap:6px;flex-wrap:wrap;font-size:.72em}}
+.bp-t{{padding:2px 7px;border-radius:4px;font-weight:700}}
+.bp-t1{{background:#052e16;color:#4ade80;border:1px solid #16a34a55}}
+.bp-t2{{background:#052e16;color:#86efac;border:1px solid #16a34a77}}
+.bp-t3{{background:#1a1a00;color:#ffd700;border:1px solid #ffd70055}}
+.bp-subtype{{display:inline-flex;padding:1px 7px;border-radius:99px;font-size:.65em;font-weight:700;background:#2a1535;color:#d8b4fe;border:1px solid #7c3aed55}}
+
+/* MULTI-SETUP BADGE */
+.multi-setup-badge{{padding:2px 8px;border-radius:4px;font-size:.70em;font-weight:700;background:#1e1b4b;color:#a78bfa;border:1px solid #7c3aed55;white-space:nowrap}}
 </style>
 </head>
 <body>
@@ -1274,6 +1517,7 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
     <div class="tstat"><div class="tstat-v" style="color:#fb923c">{recurring_count}</div><div class="tstat-l">Recurring</div></div>
     <div class="tstat"><div class="tstat-v" style="color:#86efac">{setup_counts.get('RANGE_EXPANSION',0)}</div><div class="tstat-l">Range Exp</div></div>
     <div class="tstat"><div class="tstat-v" style="color:#a5b4fc">{setup_counts.get('VCP',0)}</div><div class="tstat-l">VCP</div></div>
+    <div class="tstat"><div class="tstat-v" style="color:#d8b4fe">{setup_counts.get('BREAKOUT_PULLBACK',0)}</div><div class="tstat-l">BP</div></div>
     <div class="tstat"><div class="tstat-v" style="color:#34d399">{setup_counts.get('BULL_FLAG',0)}</div><div class="tstat-l">Bull Flag</div></div>
   </div>
 </div>
@@ -1341,6 +1585,7 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
   <div class="leg-item"><div class="leg-dot" style="background:#7dd3fc"></div>Mean Reversion</div>
   <div class="leg-item"><div class="leg-dot" style="background:#d8b4fe"></div>Breakout Pullback</div>
   <div class="leg-item"><div class="leg-dot" style="background:#34d399"></div>Bull Flag</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#a78bfa"></div>🔀 Multi-Setup</div>
   <div class="leg-item"><div class="leg-dot" style="background:#ffd700"></div>A+ Rating</div>
   <div class="leg-item"><div class="leg-dot" style="background:#3fb950"></div>RS Positive</div>
   <div class="leg-item"><div class="leg-dot" style="background:#ffd700;border-radius:50%"></div>Hot (15+ runs)</div>
