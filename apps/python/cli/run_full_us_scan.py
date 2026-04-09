@@ -45,6 +45,7 @@ if str(LIB_DIR) not in _sys.path:
 from setup_detector import (
     detect_mean_reversion,
     detect_breakout_pullback,
+    detect_bull_flag,
     scan_symbols as py_scan_symbols,
     _load_bars as _mr_load_bars,
     _signal_to_dict as _mr_signal_to_dict,
@@ -97,6 +98,19 @@ def scan_symbols_for_breakout_pullback(symbols, cache_dir, lookback, timeframe, 
         min_price_floor=min_price_floor,
         min_score=min_score,
         setup_types=["BREAKOUT_PULLBACK"],
+    )
+
+
+def scan_symbols_for_bull_flag(symbols, cache_dir, lookback, timeframe, account_size, base_risk_pct, min_price_floor, min_score=35.0):
+    """Scan symbols for Bull Flag setups (tight flag + measured-move targets) using the unified setup_detector."""
+    return py_scan_symbols(
+        symbols, cache_dir, lookback,
+        timeframe=timeframe,
+        account_size=account_size,
+        base_risk_pct=base_risk_pct,
+        min_price_floor=min_price_floor,
+        min_score=min_score,
+        setup_types=["BULL_FLAG"],
     )
 
 # ── DEFAULTS ──────────────────────────────────────────────────────────────────
@@ -172,8 +186,8 @@ def parse_args():
     p = argparse.ArgumentParser(description="Full market breakout scan")
     p.add_argument("--symbols",   default=None)
     p.add_argument("--timeframe", choices=["daily", "weekly"], default="daily")
-    p.add_argument("--setups", choices=["both", "vcp", "range_expansion", "mean_reversion", "breakout_pullback", "full", "all"], default="full",
-                   help="Setup filter: full|both|vcp|range_expansion|mean_reversion|breakout_pullback|all(legacy alias for full)")
+    p.add_argument("--setups", choices=["both", "vcp", "range_expansion", "mean_reversion", "breakout_pullback", "bull_flag", "full", "all"], default="full",
+                   help="Setup filter: full|both|vcp|range_expansion|mean_reversion|breakout_pullback|bull_flag|all(legacy alias for full)")
     p.add_argument("--market-label", default=None, help="Optional market label for output names, e.g. us or india")
     p.add_argument("--exchange-suffix", default=None, help="Optional Yahoo suffix override such as .NS or .BO")
     p.add_argument("--lookback",  type=int, default=DEFAULT_LOOKBACK)
@@ -199,7 +213,7 @@ def parse_args():
     p.add_argument("--base-risk-pct", type=float, default=DEFAULT_BASE_RISK_PCT, help="Baseline risk-per-trade used to convert risk amount to R")
     args = p.parse_args()
     args.setups = normalize_setups_mode(args.setups)
-    if args.setups in {"mean_reversion", "breakout_pullback", "full"} and not _MR_AVAILABLE:
+    if args.setups in {"mean_reversion", "breakout_pullback", "bull_flag", "full"} and not _MR_AVAILABLE:
         p.error("Mean reversion / breakout pullback detector is unavailable; ensure apps/python/lib/setup_detector.py is importable")
     if args.batch <= 0:
         p.error("--batch must be greater than 0")
@@ -813,10 +827,10 @@ def infer_market_label(source_path: str) -> str:
 
 def _java_setups(setups: str) -> str | None:
     """Map --setups value to what Java understands. Returns None to skip Java entirely."""
-    if setups in ("mean_reversion", "breakout_pullback"):
+    if setups in ("mean_reversion", "breakout_pullback", "bull_flag"):
         return None   # Python-only; no Java call needed
     if setups == "full":
-        return "both"  # Java handles vcp+range_expansion; MR+ABFP handled by Python
+        return "both"  # Java handles vcp+range_expansion; MR+ABFP+BF handled by Python
     return setups  # both | vcp | range_expansion – pass through unchanged
 
 
@@ -862,6 +876,50 @@ def _run_abfp_scan(symbols: list[str], args) -> list[dict]:
     elapsed = time.time() - t0
     print(f"  Breakout-pullback scan done in {elapsed:.1f}s → {len(abfp_hits)} hits", flush=True)
     return abfp_hits
+
+
+def _run_bf_scan(symbols: list[str], args) -> list[dict]:
+    """Run Python Bull Flag scan on all symbols from cache (both daily and weekly bars)."""
+    if not _PY_BO_AVAILABLE:
+        print("  [WARN] setup_detector not available – skipping Bull Flag scan", flush=True)
+        return []
+    print(f"\n  Running Python Bull Flag scan on {len(symbols)} symbols from cache…", flush=True)
+    t0 = time.time()
+    # Run on the current timeframe first
+    bf_hits = scan_symbols_for_bull_flag(
+        symbols,
+        cache_dir=args.cache_dir,
+        lookback=args.lookback,
+        timeframe=args.timeframe,
+        account_size=args.account_size,
+        base_risk_pct=args.base_risk_pct,
+        min_price_floor=args.min_price_floor,
+        min_score=35.0,
+    )
+    # If running daily, also check weekly timeframe to catch higher-TF flags
+    if args.timeframe == "daily":
+        try:
+            bf_hits_weekly = scan_symbols_for_bull_flag(
+                symbols,
+                cache_dir=args.cache_dir,
+                lookback=max(args.lookback, 252),
+                timeframe="weekly",
+                account_size=args.account_size,
+                base_risk_pct=args.base_risk_pct,
+                min_price_floor=args.min_price_floor,
+                min_score=35.0,
+            )
+            # Add weekly hits that aren't already in daily (different subtype label will distinguish)
+            daily_syms = {h.get("symbol") for h in bf_hits}
+            for h in bf_hits_weekly:
+                if h.get("symbol") not in daily_syms:
+                    h["_tf_label"] = "Weekly"
+                    bf_hits.append(h)
+        except Exception as exc:
+            print(f"  [WARN] Bull Flag weekly scan failed: {exc}", flush=True)
+    elapsed = time.time() - t0
+    print(f"  Bull Flag scan done in {elapsed:.1f}s → {len(bf_hits)} hits", flush=True)
+    return bf_hits
 
 
 # Standard daily-bar cache file sizes produced by the downloader
@@ -2859,6 +2917,15 @@ def main():
             new_abfp = [h for h in abfp_hits if h.get("symbol") not in existing]
             all_hits.extend(new_abfp)
             append_event(events_path, "abfp_scan_complete", {"abfpHits": len(new_abfp), "abfpTotal": len(abfp_hits)})
+
+    # ── Bull Flag Python scan (tight flag + measured-move targets) ───────────
+    if args.setups in ("bull_flag", "full"):
+        bf_hits = _run_bf_scan(symbols, args)
+        if bf_hits:
+            existing = {h.get("symbol") for h in all_hits}
+            new_bf = [h for h in bf_hits if h.get("symbol") not in existing]
+            all_hits.extend(new_bf)
+            append_event(events_path, "bf_scan_complete", {"bfHits": len(new_bf), "bfTotal": len(bf_hits)})
 
     # ── Python breakout detector (optional) ─────────────────────────────────
     # Use the Python breakout detector to catch cases the Java scanner may miss
