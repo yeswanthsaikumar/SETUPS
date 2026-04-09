@@ -70,8 +70,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--setups",
         default="full",
-        choices=["full", "both", "vcp", "range_expansion", "mean_reversion", "breakout_pullback", "all"],
-        help="Setup filter: full, both, vcp, range_expansion, mean_reversion, breakout_pullback, or all (legacy alias for full)",
+        choices=["full", "both", "vcp", "range_expansion", "mean_reversion", "breakout_pullback", "bull_flag", "all"],
+        help="Setup filter: full, both, vcp, range_expansion, mean_reversion, breakout_pullback, bull_flag, or all (legacy alias for full)",
     )
     parser.add_argument("--cache-dir", default="cache")
     parser.add_argument("--cache-ttl", type=int, default=360)
@@ -213,6 +213,7 @@ def setup_split_counts(output_dir: Path, market: str, timeframe: str, setups: st
         out[key] = load_hits_count(output_dir / f"vcp_hits_{market}_{timeframe}_{key}_LATEST.json")
     if setups == "full":
         out["mean_reversion"] = load_hits_count(output_dir / f"vcp_hits_{market}_{timeframe}_mean_reversion_LATEST.json")
+        out["bull_flag"] = load_hits_count(output_dir / f"vcp_hits_{market}_{timeframe}_bull_flag_LATEST.json")
     return out
 
 

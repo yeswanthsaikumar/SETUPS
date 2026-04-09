@@ -39,7 +39,7 @@ RUN_BACKTEST = CLI_DIR / "run_backtest.py"
 class ScanJobRequest(BaseModel):
     markets: list[Literal["india", "us"]] = Field(default_factory=lambda: ["india", "us"])
     timeframes: list[Literal["daily", "weekly"]] = Field(default_factory=lambda: ["daily", "weekly"])
-    setups: Literal["full", "both", "vcp", "range_expansion", "mean_reversion", "breakout_pullback", "all"] = "full"
+    setups: Literal["full", "both", "vcp", "range_expansion", "mean_reversion", "breakout_pullback", "bull_flag", "all"] = "full"
     daily_lookback: int = 252
     weekly_lookback: int = 104
     workers: int = 6
@@ -216,7 +216,7 @@ def start_scan(req: ScanJobRequest) -> dict:
 def assistant_scan_brief(
     market: Literal["india", "us"] = "india",
     timeframe: Literal["daily", "weekly"] = "daily",
-    setups: Literal["full", "both", "vcp", "range_expansion", "mean_reversion", "breakout_pullback", "all"] = "full",
+    setups: Literal["full", "both", "vcp", "range_expansion", "mean_reversion", "breakout_pullback", "bull_flag", "all"] = "full",
     top_n: int = 12,
 ) -> dict:
     if top_n <= 0:
@@ -292,7 +292,7 @@ def stock_analyze(
     symbol: str,
     market: Literal["india", "us"] = "india",
     timeframe: Literal["daily", "weekly"] = "daily",
-    setups: Literal["full", "both", "vcp", "range_expansion", "mean_reversion", "breakout_pullback", "all"] = "full",
+    setups: Literal["full", "both", "vcp", "range_expansion", "mean_reversion", "breakout_pullback", "bull_flag", "all"] = "full",
     source: Literal["auto", "output", "live"] = "auto",
 ) -> dict:
     """Deep-dive analysis of a single stock using saved outputs and/or live scanner logic."""

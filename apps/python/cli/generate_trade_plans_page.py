@@ -92,6 +92,7 @@ SETUP_META = {
     "MEAN_REVERSION":    ("tag-mr",    "Mean Reversion",     "Buy as price reclaims SMA20 or bounces off lower BB. Stop 2x ATR below."),
     "BREAKOUT_PULLBACK": ("tag-bp",    "Breakout Pullback",  "Buy first pullback to prior breakout support on dry volume. Stop below BO level."),
     "BREAKOUT":          ("tag-bo",    "Breakout",           "Buy on confirmation close above prior high. Stop below swing low."),
+    "BULL_FLAG":         ("tag-bf",    "Bull Flag",          "Sharp pole + tight flag channel. Enter on breakout above flag high. Targets = flagpole measured move."),
 }
 
 def _f(v, d=0.0):
@@ -566,6 +567,88 @@ def sparkline_svg(closes: list[float], width=120, height=40) -> str:
             f'<polyline points="{" ".join(pts)}" fill="none" stroke="{color}" stroke-width="1.5"/>'
             f'</svg>')
 
+def _build_bf_html(sig: dict) -> str:
+    """Render the Bull Flag detail panel embedded in a signal card."""
+    pole_gain    = _f(sig.get("bfPoleGain%")   or sig.get("height%"))
+    flag_decline = _f(sig.get("bfFlagDecline%") or sig.get("depth%"))
+    flag_bars    = sig.get("bfFlagBars")   or sig.get("len") or "—"
+    flag_vol     = _f(sig.get("bfFlagVolRatio") or sig.get("mrPullbackVolRatio"))
+    tightness    = _f(sig.get("bfTightnessRatio") or 0)
+    pole_vol     = _f(sig.get("bfPoleVolRatio")   or 0)
+    flag_high    = _f(sig.get("bfFlagHigh")  or sig.get("pivot"))
+    flag_low     = _f(sig.get("bfFlagLow")   or sig.get("sl"))
+    pole_start   = sig.get("bfPoleStartDate", "")
+    pole_top     = sig.get("bfPoleTopDate",   "")
+    t1           = _f(sig.get("T1"))
+    t2           = _f(sig.get("T2"))
+    t3           = _f(sig.get("T3"))
+    subtype      = str(sig.get("setupSubtype") or "")
+
+    # Subtype badge
+    if subtype == "FLAG_BREAKOUT":
+        st_cls, st_lbl = "bf-st-breakout", "🚀 Breaking Out"
+    else:
+        st_cls, st_lbl = "bf-st-forming",  "⏳ Flag Forming"
+
+    # Format helpers
+    def pct(v): return f"{v:.1f}%" if v else "—"
+    def px(v):  return f"₹{v:.2f}" if v else "—"
+    def ratio(v): return f"{v:.2f}×" if v else "—"
+
+    vol_color = "#4ade80" if flag_vol and flag_vol < 0.75 else "#e3b341" if flag_vol and flag_vol < 0.9 else "#f87171"
+
+    dates_html = ""
+    if pole_start or pole_top:
+        dates_html = (
+            f'<div style="font-size:.62em;color:#6e7681;margin-top:4px">'
+            f'Pole: {escape(str(pole_start))} → {escape(str(pole_top))}</div>'
+        )
+
+    return f"""<div class="bf-panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <span style="font-size:.7em;color:#34d399;font-weight:700;letter-spacing:.3px">🏴 BULL FLAG METRICS</span>
+    <span class="bf-subtype {st_cls}">{st_lbl}</span>
+  </div>
+  <div class="bf-row">
+    <div class="bf-cell">
+      <div class="bf-lbl">Pole Gain</div>
+      <div class="bf-val bf-pole">{pct(pole_gain)}</div>
+    </div>
+    <div class="bf-cell">
+      <div class="bf-lbl">Flag Decline</div>
+      <div class="bf-val bf-flag">{pct(flag_decline)}</div>
+    </div>
+    <div class="bf-cell">
+      <div class="bf-lbl">Flag Bars</div>
+      <div class="bf-val" style="color:#94a3b8">{flag_bars}</div>
+    </div>
+    <div class="bf-cell">
+      <div class="bf-lbl">Vol Dry-up</div>
+      <div class="bf-val" style="color:{vol_color}">{ratio(flag_vol)}</div>
+    </div>
+    <div class="bf-cell">
+      <div class="bf-lbl">Tightness</div>
+      <div class="bf-val bf-vol">{ratio(tightness)}</div>
+    </div>
+    <div class="bf-cell">
+      <div class="bf-lbl">Pole Vol</div>
+      <div class="bf-val" style="color:#c084fc">{ratio(pole_vol)}</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px;font-size:.7em;color:#6e7681">
+    <span>Flag High: <b style="color:#e2e8f0">{px(flag_high)}</b></span>
+    <span>Flag Low: <b style="color:#e2e8f0">{px(flag_low)}</b></span>
+  </div>
+  <div class="bf-targets">
+    <span style="color:#6e7681;font-size:.88em;align-self:center">Targets:</span>
+    <span class="bf-t bf-t1">T1 {px(t1)}</span>
+    <span class="bf-t bf-t2">T2 {px(t2)}</span>
+    <span class="bf-t bf-t3">T3 {px(t3)}</span>
+  </div>
+  {dates_html}
+</div>"""
+
+
 def _build_mf_html(mf_ctx: dict, sym: str) -> str:
     """Build the MF/Institutional holdings panel HTML for one signal card."""
     if not mf_ctx:
@@ -971,6 +1054,7 @@ def build_html(signals: list[dict], run_history: dict | None = None) -> str:
     </div>
   </div>
   {mf_html}
+  {_build_bf_html(sig) if sig.get('setup') == 'BULL_FLAG' else ''}
 </div>""")
 
     sector_pills = "".join(
@@ -1033,6 +1117,7 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
 .tag-mr{{background:#1a2a3a;color:#7dd3fc}}
 .tag-bp{{background:#2a1a2a;color:#d8b4fe}}
 .tag-bo{{background:#2a1a0a;color:#fbbf24}}
+.tag-bf{{background:#0a2a1a;color:#34d399;border:1px solid #34d39944}}
 
 .sig-right{{display:flex;flex-direction:column;align-items:flex-end;gap:6px}}
 .sig-sparkline svg{{display:block}}
@@ -1157,6 +1242,22 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
 .mf-scheme-pct{{color:#7dd3fc;font-weight:700;flex-shrink:0;margin-left:6px}}
 .mf-dii-trend-bar{{display:flex;align-items:flex-end;gap:3px;height:22px}}
 .mf-bar-seg{{display:inline-block;width:10px;border-radius:2px 2px 0 0;min-height:4px}}
+
+/* BULL FLAG DETAIL PANEL */
+.bf-panel{{border-top:1px solid #21262d;background:#070d10;padding:8px 16px 10px}}
+.bf-row{{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 10px;margin-bottom:6px}}
+.bf-cell{{background:#0b1320;border:1px solid #1a2535;border-radius:5px;padding:5px 8px}}
+.bf-lbl{{font-size:.62em;color:#6e7681;text-transform:uppercase;letter-spacing:.35px;margin-bottom:2px}}
+.bf-val{{font-size:.82em;font-weight:700}}
+.bf-pole{{color:#34d399}}.bf-flag{{color:#fbbf24}}.bf-vol{{color:#60a5fa}}
+.bf-targets{{display:flex;gap:6px;flex-wrap:wrap;font-size:.72em}}
+.bf-t{{padding:2px 7px;border-radius:4px;font-weight:700}}
+.bf-t1{{background:#052e16;color:#4ade80;border:1px solid #16a34a55}}
+.bf-t2{{background:#052e16;color:#86efac;border:1px solid #16a34a77}}
+.bf-t3{{background:#1a1a00;color:#ffd700;border:1px solid #ffd70055}}
+.bf-subtype{{display:inline-flex;padding:1px 7px;border-radius:99px;font-size:.65em;font-weight:700}}
+.bf-st-forming{{background:#0f1f3a;color:#60a5fa;border:1px solid #1d4ed855}}
+.bf-st-breakout{{background:#0a2a14;color:#4ade80;border:1px solid #16a34a55}}
 </style>
 </head>
 <body>
@@ -1173,6 +1274,7 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
     <div class="tstat"><div class="tstat-v" style="color:#fb923c">{recurring_count}</div><div class="tstat-l">Recurring</div></div>
     <div class="tstat"><div class="tstat-v" style="color:#86efac">{setup_counts.get('RANGE_EXPANSION',0)}</div><div class="tstat-l">Range Exp</div></div>
     <div class="tstat"><div class="tstat-v" style="color:#a5b4fc">{setup_counts.get('VCP',0)}</div><div class="tstat-l">VCP</div></div>
+    <div class="tstat"><div class="tstat-v" style="color:#34d399">{setup_counts.get('BULL_FLAG',0)}</div><div class="tstat-l">Bull Flag</div></div>
   </div>
 </div>
 
@@ -1205,6 +1307,7 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
     <option value="VCP">VCP</option>
     <option value="MEAN_REVERSION">Mean Reversion</option>
     <option value="BREAKOUT_PULLBACK">Breakout Pullback</option>
+    <option value="BULL_FLAG">Bull Flag</option>
   </select>
   <select class="sel" id="ratingFilter" onchange="applyFilters()">
     <option value="">All Ratings</option>
@@ -1237,6 +1340,7 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
   <div class="leg-item"><div class="leg-dot" style="background:#86efac"></div>Range Expansion</div>
   <div class="leg-item"><div class="leg-dot" style="background:#7dd3fc"></div>Mean Reversion</div>
   <div class="leg-item"><div class="leg-dot" style="background:#d8b4fe"></div>Breakout Pullback</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#34d399"></div>Bull Flag</div>
   <div class="leg-item"><div class="leg-dot" style="background:#ffd700"></div>A+ Rating</div>
   <div class="leg-item"><div class="leg-dot" style="background:#3fb950"></div>RS Positive</div>
   <div class="leg-item"><div class="leg-dot" style="background:#ffd700;border-radius:50%"></div>Hot (15+ runs)</div>

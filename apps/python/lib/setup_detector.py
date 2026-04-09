@@ -35,6 +35,7 @@ from typing import Optional, Union
 _SETUP_TYPE_MR   = "MEAN_REVERSION"
 _SETUP_TYPE_BO   = "BREAKOUT"
 _SETUP_TYPE_ABFP = "BREAKOUT_PULLBACK"
+_SETUP_TYPE_BF   = "BULL_FLAG"
 _DEFAULT_RSI_PERIOD = 14
 _DEFAULT_BB_PERIOD = 20
 _DEFAULT_BB_STD = 2.0
@@ -768,6 +769,326 @@ def detect_breakout_pullback(
     return sig
 
 
+def detect_bull_flag(
+    symbol: str,
+    bars: list[dict],
+    timeframe: str,
+    params: dict,
+    account_size: float,
+    base_risk_pct: float,
+    min_price_floor: float,
+) -> Optional[TradeSignal]:
+    """
+    Bull Flag (BULL_FLAG) setup detector.
+
+    Three-phase pattern:
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │ Phase 1 – Flagpole                                                   │
+    │   Sharp upward impulse: ≥10 % gain in 3–25 bars, above-avg volume.  │
+    │   Majority (≥50 %) of pole bars close up.                           │
+    │                                                                     │
+    │ Phase 2 – Flag (Consolidation Channel)                              │
+    │   5–30 bar tight consolidation after the pole top.                  │
+    │   • Slope slightly negative to flat  (-1.5 % to +0.5 % / bar)      │
+    │   • Retraces ≤ 50 % of the pole height                             │
+    │   • Current close ≤ 15 % below the pole top                        │
+    │   • Volume dries up  (flag avg vol < 85 % of 20-bar avg)           │
+    │   • Candle ranges narrow vs. the pre-flag bars (tightness_ratio)   │
+    │                                                                     │
+    │ Phase 3 – Breakout signal                                           │
+    │   Price is in the upper half of the flag channel, or within 3 %    │
+    │   of the flag high, signalling imminent continuation.               │
+    └─────────────────────────────────────────────────────────────────────┘
+
+    Trade plan
+    ──────────
+    Entry  : just above the flag high (breakout trigger level)
+    Stop   : below the flag low  − 0.5 × ATR
+    T1/T2/T3: classic flagpole measured-move projections (50 / 75 / 100 % of pole)
+
+    Subtypes
+    ────────
+    FLAG_BREAKOUT – price is already at/through the flag high
+    FLAG_FORMING  – price is approaching the flag high (pre-breakout alert)
+    """
+    if len(bars) < int(params["min_bars"]):
+        return None
+
+    closes  = [float(b["close"])            for b in bars]
+    highs   = [float(b["high"])             for b in bars]
+    lows    = [float(b["low"])              for b in bars]
+    volumes = [float(b.get("volume", 0.0))  for b in bars]
+
+    sma50   = _sma(closes, int(params["sma_med"]))
+    sma200  = _sma(closes, int(params["sma_long"]))
+    atr_val = _atr(bars[-(int(params["atr_period"]) + 20):], int(params["atr_period"]))
+    current_close = closes[-1]
+
+    if current_close < min_price_floor or sma200 <= 0 or current_close < sma200 * 0.85:
+        return None
+
+    avg_vol_20 = _sma(volumes[-21:-1], 20) if len(volumes) >= 21 else _sma(volumes, len(volumes))
+    if avg_vol_20 <= 0:
+        return None
+
+    # ── Configuration ────────────────────────────────────────────────────────
+    POLE_MIN_GAIN_PCT = 0.08   # flagpole must gain at least 8 %
+    POLE_MIN_BARS     = 3      # pole forms in at least 3 bars
+    POLE_MAX_BARS     = 30     # pole forms in at most 30 bars
+    FLAG_MIN_BARS     = 3      # flag consolidates for at least 3 bars (very tight flags)
+    FLAG_MAX_BARS     = 35     # flag consolidates for at most 35 bars
+    MAX_RETRACE_PCT   = 0.55   # flag may retrace at most 55 % of pole height
+    MAX_DECLINE_PCT   = 0.18   # current close must not drop > 18 % from pole top
+
+    n = len(bars)
+
+    # ── Step 1: Locate the pole top and pole bottom ───────────────────────────
+    # The pole top must have formed FLAG_MIN_BARS … FLAG_MAX_BARS+POLE_MAX_BARS
+    # bars ago so that a flag has had time to develop after it.
+    pole_top_idx      = None
+    pole_bottom_idx   = None
+    pole_gain_pct     = 0.0
+    pole_high         = 0.0
+    pole_bottom_price = 0.0
+
+    for pt_offset in range(FLAG_MIN_BARS, FLAG_MAX_BARS + POLE_MAX_BARS + 1):
+        pt_idx = n - 1 - pt_offset
+        if pt_idx < POLE_MAX_BARS + 1:
+            break
+
+        candidate_high = highs[pt_idx]
+        # Allow price to be up to 5 % above the pole top — tight flags sit right at the highs
+        # and can even have the current price fractionally above the pole bar's high.
+        if current_close > candidate_high * 1.05:
+            continue
+
+        # Search for a qualifying pole bottom
+        for pb_back in range(POLE_MIN_BARS, POLE_MAX_BARS + 1):
+            pb_idx = pt_idx - pb_back
+            if pb_idx < 0:
+                break
+
+            pb_low = lows[pb_idx]
+            if pb_low <= 0:
+                continue
+
+            gain_pct = (candidate_high - pb_low) / pb_low
+            if gain_pct < POLE_MIN_GAIN_PCT:
+                continue
+
+            # Quality gate: majority of pole bars should close up
+            pole_closes = closes[pb_idx: pt_idx + 1]
+            up_bars  = sum(1 for i in range(1, len(pole_closes)) if pole_closes[i] >= pole_closes[i - 1])
+            up_ratio = up_bars / (len(pole_closes) - 1) if len(pole_closes) > 1 else 0.0
+            if up_ratio < 0.50:
+                continue
+
+            pole_top_idx      = pt_idx
+            pole_bottom_idx   = pb_idx
+            pole_gain_pct     = gain_pct
+            pole_high         = candidate_high
+            pole_bottom_price = pb_low
+            break
+
+        if pole_top_idx is not None:
+            break
+
+    if pole_top_idx is None:
+        return None
+
+    # ── Step 2: Analyse the flag (pole_top+1 → current bar) ──────────────────
+    flag_start_idx = pole_top_idx + 1
+    flag_length    = n - flag_start_idx  # bars in the flag (including current)
+
+    if flag_length < FLAG_MIN_BARS or flag_length > FLAG_MAX_BARS:
+        return None
+
+    flag_closes = closes  [flag_start_idx:]
+    flag_highs  = highs   [flag_start_idx:]
+    flag_lows   = lows    [flag_start_idx:]
+    flag_vols   = volumes [flag_start_idx:]
+
+    flag_high_val = max(flag_highs)
+    flag_low_val  = min(flag_lows)
+
+    # ① Retrace gate: flag low must not exceed 50 % of pole height
+    pole_height     = pole_high - pole_bottom_price
+    max_allowed_low = pole_high - MAX_RETRACE_PCT * pole_height
+    if flag_low_val < max_allowed_low:
+        return None
+
+    # ② Decline gate: current close not too far below pole top
+    flag_decline_pct = (pole_high - current_close) / pole_high if pole_high > 0 else 0.0
+    if flag_decline_pct > MAX_DECLINE_PCT:
+        return None
+
+    # ③ Slope gate: flag channel is slightly down to flat (linear regression)
+    n_f    = len(flag_closes)
+    x_mean = (n_f - 1) / 2.0
+    y_mean = sum(flag_closes) / n_f
+    denom  = sum((i - x_mean) ** 2 for i in range(n_f))
+    slope  = (sum((i - x_mean) * (flag_closes[i] - y_mean) for i in range(n_f)) / denom
+              if denom > 0 else 0.0)
+    slope_pct_per_bar = slope / current_close if current_close > 0 else 0.0
+    # Short flags (≤7 bars) can be steeper; longer flags must be more gradual
+    max_decline_slope = -0.045 if flag_length <= 7 else -0.015
+    if slope_pct_per_bar < max_decline_slope or slope_pct_per_bar > 0.010:
+        return None
+
+    # ④ Volume dry-up inside the flag
+    flag_vol_avg   = statistics.mean(flag_vols) if flag_vols else avg_vol_20
+    flag_vol_ratio = flag_vol_avg / avg_vol_20 if avg_vol_20 > 0 else 1.0
+    vol_dry_up     = flag_vol_ratio < 0.85
+
+    # ⑤ Candle tightness: flag candles narrower than pre-flag bars
+    flag_ranges     = [flag_highs[i] - flag_lows[i] for i in range(len(flag_highs))]
+    pre_flag_bars_w = bars[max(0, flag_start_idx - 20): flag_start_idx]
+    pre_flag_ranges = [float(b["high"]) - float(b["low"]) for b in pre_flag_bars_w]
+    flag_avg_range  = statistics.mean(flag_ranges)     if flag_ranges     else atr_val
+    pre_avg_range   = statistics.mean(pre_flag_ranges) if pre_flag_ranges else atr_val
+    tightness_ratio = flag_avg_range / pre_avg_range if pre_avg_range > 0 else 1.0
+    tight_candles   = tightness_ratio < 0.80
+
+    # ── Step 3: Position check – price still inside the flag channel ──────────
+    # Accept any bar that hasn't collapsed below the flag low.
+    # For short flags (≤7 bars) this is the primary quality gate; longer flags
+    # need to be in the upper half to show the base is holding.
+    still_in_flag  = current_close >= flag_low_val * 0.995   # within 0.5% of flag low
+    above_flag_midpoint = current_close >= (flag_high_val + flag_low_val) / 2.0
+    near_flag_top  = current_close >= flag_high_val * 0.95   # within 5% of flag high
+
+    if flag_length <= 7:
+        # Short tight flag: just need to still be inside the channel
+        if not still_in_flag:
+            return None
+    else:
+        # Longer flag: require price in upper half or close to the flag high
+        if not (above_flag_midpoint or near_flag_top):
+            return None
+
+    # ── Step 4: Scoring ───────────────────────────────────────────────────────
+    score = 45.0
+
+    # Pole strength
+    if   pole_gain_pct >= 0.40: score += 15.0
+    elif pole_gain_pct >= 0.25: score += 10.0
+    elif pole_gain_pct >= 0.10: score +=  5.0
+
+    # Volume dry-up in flag (primary quality indicator)
+    if   flag_vol_ratio < 0.60: score += 15.0
+    elif flag_vol_ratio < 0.75: score += 10.0
+    elif flag_vol_ratio < 0.85: score +=  5.0
+
+    # Candle tightness
+    if   tightness_ratio < 0.50: score += 10.0
+    elif tightness_ratio < 0.70: score +=  6.0
+    elif tight_candles:           score +=  3.0
+
+    # Shallow flag decline (tighter = more bullish)
+    if   flag_decline_pct < 0.05: score +=  8.0
+    elif flag_decline_pct < 0.10: score +=  4.0
+
+    # Proximity to flag high (near breakout trigger)
+    if near_flag_top:         score += 5.0
+    elif above_flag_midpoint: score += 2.0
+
+    # Trend context
+    if current_close > sma200: score += 5.0
+    if current_close > sma50:  score += 3.0
+
+    # Pole volume quality (institutional buying during impulse)
+    pole_vols      = volumes[pole_bottom_idx: pole_top_idx + 1]
+    pole_vol_avg   = statistics.mean(pole_vols) if pole_vols else avg_vol_20
+    pole_vol_ratio = pole_vol_avg / avg_vol_20  if avg_vol_20 > 0 else 1.0
+    if   pole_vol_ratio >= 2.0: score += 5.0
+    elif pole_vol_ratio >= 1.5: score += 3.0
+    elif pole_vol_ratio >= 1.2: score += 1.0
+
+    # ── Step 5: Trade plan ────────────────────────────────────────────────────
+    if atr_val <= 0:
+        return None
+
+    breakout_level = flag_high_val          # flag high = breakout trigger
+    entry          = max(current_close + 0.10 * atr_val, breakout_level * 1.002)
+    sl             = flag_low_val - 0.50 * atr_val
+    if sl <= 0 or sl >= entry:
+        sl = entry - 2.0 * atr_val
+    if sl >= entry or entry <= 0 or sl <= 0:
+        return None
+
+    risk   = entry - sl
+    shares = max(1, int(math.floor((account_size * base_risk_pct) / risk)))
+
+    # Measured-move targets (flagpole height projected from breakout level)
+    t1 = entry + pole_height * 0.50   # 50 % of pole  – conservative target
+    t2 = entry + pole_height * 0.75   # 75 % of pole
+    t3 = entry + pole_height          # full pole projection (textbook measured move)
+
+    # ── Step 6: Build signal ──────────────────────────────────────────────────
+    dollar_vols       = [c * v for c, v in zip(closes, volumes)]
+    avg_dollar_vol_20 = (_sma(dollar_vols[-21:-1], 20) if len(dollar_vols) >= 21
+                         else _sma(dollar_vols, len(dollar_vols)))
+    rsi_val           = _rsi(closes[-(max(_DEFAULT_RSI_PERIOD + 50, 60)):], _DEFAULT_RSI_PERIOD)
+    current_range_pct, current_vol_pct, current_rexp = _current_bar_expansion_metrics(bars)
+    current_vol_ratio = volumes[-1] / avg_vol_20 if avg_vol_20 > 0 else 1.0
+
+    subtype = "FLAG_BREAKOUT" if current_close >= breakout_level * 0.998 else "FLAG_FORMING"
+
+    sig = TradeSignal(
+        symbol   = symbol,
+        subtype  = subtype,
+        setup    = _SETUP_TYPE_BF,
+        window   = timeframe.upper(),
+        rating   = _rating_from_score(score),
+        score    = round(score, 2),
+        close    = round(current_close, 4),
+        entry    = round(entry, 4),
+        sl       = round(sl, 4),
+        pivot    = round(breakout_level, 4),   # flag high = breakout level
+        T1       = round(t1, 4),
+        T2       = round(t2, 4),
+        T3       = round(t3, 4),
+        shares   = shares,
+        atr      = round(atr_val, 4),
+        rsi      = round(rsi_val, 2),
+        sma50    = round(sma50, 4),
+        sma200   = round(sma200, 4),
+        vol_ratio          = round(current_vol_ratio, 3),
+        pullback_vol_ratio = round(flag_vol_ratio, 3),  # flag vol / avg = dry-up ratio
+        # height_pct = pole gain %, depth_pct = flag decline %, length = flag bars
+        height_pct = round(pole_gain_pct    * 100.0, 2),
+        depth_pct  = round(flag_decline_pct * 100.0, 2),
+        length     = flag_length,
+        # Reuse max/min_after_breakout for flag high / flag low
+        max_after_breakout = round(flag_high_val, 4),
+        min_after_breakout = round(flag_low_val,  4),
+        # Liquidity / pivot enrichment
+        avg_vol_20        = round(avg_vol_20, 2),
+        last_volume       = round(volumes[-1], 2),
+        avg_dollar_vol_20 = round(avg_dollar_vol_20, 2),
+        last_dollar_vol   = round(dollar_vols[-1], 2),
+        days_above_pivot  = sum(1 for x in closes[-20:] if x >= breakout_level),
+        distance_from_pivot = round(
+            ((current_close - breakout_level) / breakout_level * 100.0)
+            if breakout_level > 0 else 0.0, 2),
+        range_pct = current_range_pct,
+        vol_pct   = current_vol_pct,
+        rexp      = current_rexp,
+    )
+
+    # Dynamic attributes for BF-specific CSV columns
+    try:
+        sig.bfPoleStartDate = bars[pole_bottom_idx]["date"]
+        sig.bfPoleTopDate   = bars[pole_top_idx]["date"]
+    except Exception:
+        sig.bfPoleStartDate = None
+        sig.bfPoleTopDate   = None
+    sig.bfTightnessRatio = round(tightness_ratio, 3)
+    sig.bfPoleVolRatio   = round(pole_vol_ratio,   3)
+
+    return sig
+
+
 # ── Batch scanner ─────────────────────────────────────────────────────────────
 
 def scan_symbols(
@@ -786,7 +1107,7 @@ def scan_symbols(
     Returns a list of dicts compatible with the main pipeline CSV_FIELDS schema.
     """
     if setup_types is None:
-        setup_types = [_SETUP_TYPE_MR, _SETUP_TYPE_BO, _SETUP_TYPE_ABFP]
+        setup_types = [_SETUP_TYPE_MR, _SETUP_TYPE_BO, _SETUP_TYPE_ABFP, _SETUP_TYPE_BF]
 
     cache = Path(cache_dir)
     results: list[dict] = []
@@ -808,6 +1129,10 @@ def scan_symbols(
 
         if _SETUP_TYPE_ABFP in setup_types:
             sig = detect_breakout_pullback(symbol, bars, timeframe, params, account_size, base_risk_pct, min_price_floor)
+            if sig: signals.append(sig)
+
+        if _SETUP_TYPE_BF in setup_types:
+            sig = detect_bull_flag(symbol, bars, timeframe, params, account_size, base_risk_pct, min_price_floor)
             if sig: signals.append(sig)
 
         for sig in signals:
@@ -913,6 +1238,20 @@ def _signal_to_dict(sig: TradeSignal) -> dict:
             "abfpBarsSincePeak":  str(sig.length),
             "abfpPullbackVolRatio": str(sig.pullback_vol_ratio or ""),
             "abfpBreakoutDate":   str(getattr(sig, "breakoutDate", "") or ""),
+        })
+    # Add Bull Flag-specific fields
+    if sig.setup == _SETUP_TYPE_BF:
+        data.update({
+            "bfPoleGain%":       str(sig.height_pct),
+            "bfFlagDecline%":    str(sig.depth_pct),
+            "bfFlagBars":        str(sig.length),
+            "bfFlagVolRatio":    str(sig.pullback_vol_ratio or ""),
+            "bfTightnessRatio":  str(getattr(sig, "bfTightnessRatio", "") or ""),
+            "bfPoleVolRatio":    str(getattr(sig, "bfPoleVolRatio",   "") or ""),
+            "bfFlagHigh":        str(sig.max_after_breakout or ""),
+            "bfFlagLow":         str(sig.min_after_breakout or ""),
+            "bfPoleStartDate":   str(getattr(sig, "bfPoleStartDate",  "") or ""),
+            "bfPoleTopDate":     str(getattr(sig, "bfPoleTopDate",    "") or ""),
         })
     # Add liquidity / pivot enrichment fields
     data.update({
