@@ -55,35 +55,278 @@ except Exception:
 ACCOUNT_SIZE = 1_000_000
 RISK_PCT     = 0.01
 
+# ── Sector map (broad category) ──────────────────────────────────────────────
 SECTOR_MAP = {
+    # Banking
     "HDFCBANK":"Banking","ICICIBANK":"Banking","SBIN":"Banking","AXISBANK":"Banking",
     "KOTAKBANK":"Banking","INDUSINDBK":"Banking","BANDHANBNK":"Banking","FEDERALBNK":"Banking",
     "IDFCFIRSTB":"Banking","AUBANK":"Banking","CANBK":"Banking","BANKBARODA":"Banking",
     "PNB":"Banking","UNIONBANK":"Banking","IDBI":"Banking","RBLBANK":"Banking",
+    "DCBBANK":"Banking","KTKBANK":"Banking","KARURVYSYA":"Banking","TVSHLTD":"Banking",
+    "INDOTHAI":"Banking",
+    # IT / Technology
     "TCS":"IT","INFY":"IT","WIPRO":"IT","HCLTECH":"IT","TECHM":"IT","LTIM":"IT",
     "MPHASIS":"IT","COFORGE":"IT","PERSISTENT":"IT","KPITTECH":"IT","OFSS":"IT",
+    "AXISCADES":"IT","NINSYS":"IT","STLTECH":"IT","CENTUM":"IT","DATAPATTNS":"IT",
+    "SYRMA":"IT",
+    # FMCG
     "HINDUNILVR":"FMCG","ITC":"FMCG","NESTLEIND":"FMCG","BRITANNIA":"FMCG",
     "DABUR":"FMCG","MARICO":"FMCG","COLPAL":"FMCG","GODREJCP":"FMCG",
+    "ZYDUSWELL":"FMCG","BAJAJCON":"FMCG","CCL":"FMCG","PKTEA":"FMCG",
+    "HONASA":"FMCG","GMBREW":"FMCG","HNDFDS":"FMCG","TRAVELFOOD":"FMCG",
+    "PRSMJOHNSN":"FMCG",
+    # Pharma / Healthcare
     "SUNPHARMA":"Pharma","DRREDDY":"Pharma","CIPLA":"Pharma","DIVISLAB":"Pharma",
     "TORNTPHARM":"Pharma","LUPIN":"Pharma","AUROPHARMA":"Pharma","ALKEM":"Pharma",
     "IPCALAB":"Pharma","GLENMARK":"Pharma","GRANULES":"Pharma","LAURUSLABS":"Pharma",
+    "AJANTPHARM":"Pharma","NATCOPHARM":"Pharma","EMCURE":"Pharma","JBCHEPHARM":"Pharma",
+    "JAGSNPHARM":"Pharma","BLISSGVS":"Pharma","SHILPAMED":"Pharma","SMSPHARMA":"Pharma",
+    "VENUSREM":"Pharma","AKUMS":"Pharma","SENORES":"Pharma","ENTERO":"Pharma",
+    "MEDPLUS":"Pharma","ALIVUS":"Pharma","ASTERDM":"Pharma","SAILIFE":"Pharma",
+    "PFOCUS":"Pharma",
+    # Auto & Auto Ancillaries
     "MARUTI":"Auto","TATAMOTORS":"Auto","HEROMOTOCO":"Auto","EICHERMOT":"Auto",
-    "TVSMOTOR":"Auto","ASHOKLEY":"Auto","TIINDIA":"Auto","MOTHERSON":"Auto",
-    "RELIANCE":"Energy","ONGC":"Energy","BPCL":"Energy","IOC":"Energy","HINDPETRO":"Energy",
-    "GAIL":"Energy","COALINDIA":"Energy","ADANIGREEN":"Energy","NTPC":"Energy","POWERGRID":"Energy",
+    "TVSMOTOR":"Auto","ASHOKLEY":"Auto","TIINDIA":"Auto","MOTHERSON":"Auto","M&M":"Auto",
+    "FORCEMOT":"Auto","GNA":"Auto","SHRIPISTON":"Auto","SANSERA":"Auto",
+    "LUMAXTECH":"Auto","PRICOLLTD":"Auto","WHEELS":"Auto","SETCO":"Auto",
+    "SONAMLTD":"Auto","CARRARO":"Auto","SCHAEFFLER":"Auto","TIMKEN":"Auto",
+    "SPAL":"Auto","APARINDS":"Auto",
+    # Metals & Mining
     "TATASTEEL":"Metals","HINDALCO":"Metals","JSWSTEEL":"Metals","SAIL":"Metals",
     "VEDL":"Metals","NMDC":"Metals","HINDZINC":"Metals","APLAPOLLO":"Metals",
-    "ADANIENT":"Infra","ADANIPORTS":"Infra","L&T":"Infra","ADANIPOWER":"Infra",
-    "BAJFINANCE":"NBFC","BAJAJFINSV":"NBFC","CHOLAFIN":"NBFC","M&MFIN":"NBFC",
-    "MUTHOOTFIN":"NBFC","MANAPPURAM":"NBFC","LICHSGFIN":"NBFC","PFC":"NBFC","RECLTD":"NBFC",
+    "JINDALSTEL":"Metals","HINDCOPPER":"Metals","GPIL":"Metals","WELCORP":"Metals",
+    "JINDALSAW":"Metals","NELCAST":"Metals","BHARATFORG":"Metals",
+    "GRAPHITE":"Metals","STEELCAS":"Metals","SARDAEN":"Metals","LLOYDSME":"Metals",
+    # Cables & Wires
+    "KEI":"Cables","PRECWIRE":"Cables","STLTECH":"Cables","SUMEETINDS":"Cables",
+    "SPECTRUM":"Cables",
+    # Electronic Components
+    "CENTUM":"Electronics","SYRMA":"Electronics","DATAPATTNS":"Electronics",
+    "AXISCADES":"Electronics","AEROFLEX":"Electronics","VOLTAMP":"Electronics",
+    "POWERINDIA":"Electronics","TDPOWERSYS":"Electronics","KRN":"Electronics",
+    "ADVAIT":"Electronics","INOXINDIA":"Electronics",
+    # Capital Goods / Engineering
+    "ABB":"Cap Goods","BHEL":"Cap Goods","BEL":"Cap Goods","CUMMINSIND":"Cap Goods",
+    "THERMAX":"Cap Goods","SIEMENS":"Cap Goods","KIRLOSENG":"Cap Goods",
+    "DYNAMATECH":"Cap Goods","RPSGVENT":"Cap Goods","MTARTECH":"Cap Goods",
+    "TIIL":"Cap Goods","LOKESHMACH":"Cap Goods","ACI":"Cap Goods",
+    "PIXTRANS":"Cap Goods","KMEW":"Cap Goods","AIAENG":"Cap Goods",
+    # Energy & Power
+    "RELIANCE":"Energy","ONGC":"Energy","BPCL":"Energy","IOC":"Energy","HINDPETRO":"Energy",
+    "GAIL":"Energy","COALINDIA":"Energy","NTPC":"Energy","POWERGRID":"Energy",
+    "TATAPOWER":"Energy","NLCINDIA":"Energy","MRPL":"Energy","CHENNPETRO":"Energy",
+    "SPLPETRO":"Energy","ADANIPOWER":"Energy",
+    # Renewable Energy / Solar
+    "WAAREEENER":"Renewable","ACMESOLAR":"Renewable","ADANIENSOL":"Renewable",
+    "ATHERENERG":"Renewable","PREMIERENE":"Renewable","ADANIGREEN":"Renewable",
+    # Chemicals / Specialty Chemicals
+    "NAVINFLUOR":"Chemicals","NOCIL":"Chemicals","GUJALKALI":"Chemicals",
+    "AETHER":"Chemicals","DCMSHRIRAM":"Chemicals","DENORA":"Chemicals",
+    "COMSYN":"Chemicals","PRAJIND":"Chemicals","DEEPINDS":"Chemicals",
+    "LINCOLN":"Chemicals",
+    # Sugar
+    "RENUKA":"Sugar","TRIVENI":"Sugar","BALRAMCHIN":"Sugar","DALMIASUG":"Sugar",
+    "DHAMPURSUG":"Sugar","AVADHSUGAR":"Sugar","MAWANASUG":"Sugar","KMSUGAR":"Sugar",
+    "UTTAMSUGAR":"Sugar","UGARSUGAR":"Sugar","DWARKESH":"Sugar","DEEDEV":"Sugar",
+    # Textiles & Apparel
+    "ARVIND":"Textiles","SANGAMIND":"Textiles","RUBYMILLS":"Textiles",
+    "SPORTKING":"Textiles","NITINSPIN":"Textiles","NAHARSPING":"Textiles",
+    "LGBBROSLTD":"Textiles","NITIRAJ":"Textiles","ABCOTS":"Textiles",
+    "ICIL":"Textiles","SALONA":"Textiles","STYLAMIND":"Textiles",
+    "STYLEBAAZA":"Textiles","MANOMAY":"Textiles","SHIVAUM":"Textiles",
+    # Packaging
+    "EPL":"Packaging","JINDALPOLY":"Packaging","PREMIERPOL":"Packaging",
+    "XPROINDIA":"Packaging","ORICONENT":"Packaging","SESHAPAPER":"Packaging",
+    # Infrastructure / Construction
+    "ADANIENT":"Infra","ADANIPORTS":"Infra","L&T":"Infra","IRB":"Infra",
+    "CEIGALL":"Infra","TEXINFRA":"Infra","MANGLMCEM":"Infra","BHAGYANGR":"Infra",
+    "GODAVARIB":"Infra",
+    # Financial Services
+    "BAJFINANCE":"Financials","BAJAJFINSV":"Financials","CHOLAFIN":"Financials",
+    "M&MFIN":"Financials","MUTHOOTFIN":"Financials","MANAPPURAM":"Financials",
+    "LICHSGFIN":"Financials","PFC":"Financials","RECLTD":"Financials",
+    "SHRIRAMFIN":"Financials","MCX":"Financials","ANGELONE":"Financials",
+    "BSE":"Financials","ANANDRATHI":"Financials","DBSTOCKBRO":"Financials",
+    "ABSLAMC":"Financials","MANCREDIT":"Financials","SAMMAANCAP":"Financials",
+    "ONELIFECAP":"Financials","TFCILTD":"Financials","STARHEALTH":"Financials",
+    "HDFCLIFE":"Financials","SBILIFE":"Financials","ICICIPRU":"Financials",
+    # Consumer Durables / Retail
     "TITAN":"Consumer","ASIANPAINT":"Consumer","PIDILITIND":"Consumer","HAVELLS":"Consumer",
-    "VOLTAS":"Consumer","DIXON":"Consumer","CROMPTON":"Consumer",
+    "VOLTAS":"Consumer","DIXON":"Consumer","CROMPTON":"Consumer","LENSKART":"Consumer",
+    "THANGAMAYL":"Consumer",
+    # Internet / Tech Platforms
     "NAUKRI":"Internet","ZOMATO":"Internet","PAYTM":"Internet","IRCTC":"Internet",
+    # Real Estate
     "DLF":"RealEstate","GODREJPROP":"RealEstate","OBEROIRLTY":"RealEstate","PRESTIGE":"RealEstate",
-    "SIEMENS":"Cap Goods","ABB":"Cap Goods","BHEL":"Cap Goods","BEL":"Cap Goods",
-    "CUMMINSIND":"Cap Goods","THERMAX":"Cap Goods",
-    "HDFCLIFE":"Insurance","SBILIFE":"Insurance","ICICIPRU":"Insurance",
-    "M&M":"Auto",
+    # Shipping & Logistics
+    "GESHIP":"Shipping","SEAMECLTD":"Shipping","COASTCORP":"Shipping","JETFREIGHT":"Shipping",
+    # Agri / Food Processing
+    "AVANTIFEED":"Agri","TIRUPATIFL":"Agri","PKTEA":"Agri",
+    # Defense
+    "DYNAMATECH":"Defense","MTARTECH":"Defense","DATAPATTNS":"Defense","BEL":"Defense",
+    # Other
+    "STAR":"Other","SGIL":"Other","SGMART":"Other","MWL":"Other","AVL":"Other",
+    "DCI":"Other","SBC":"Other","DBOL":"Other","LEMERITE":"Other","MEGASTAR":"Other",
+    "NDLVENTURE":"Other","JPOLYINVST":"Other","TEAMGTY":"Other","SOUTHWEST":"Other",
+    "NARMADA":"Other","PASHUPATI":"Other","PRIVISCL":"Other","SAKAR":"Other",
+    "AERONEU":"Other","LGEINDIA":"Other","GRMOVER":"Other",
+}
+
+# ── Industry map (sub-sector level) ──────────────────────────────────────────
+INDUSTRY_MAP = {
+    # Banking - PSU
+    "SBIN":"PSU Banks","CANBK":"PSU Banks","BANKBARODA":"PSU Banks","PNB":"PSU Banks",
+    "UNIONBANK":"PSU Banks","IDBI":"PSU Banks",
+    # Banking - Private
+    "HDFCBANK":"Private Banks","ICICIBANK":"Private Banks","AXISBANK":"Private Banks",
+    "KOTAKBANK":"Private Banks","INDUSINDBK":"Private Banks","FEDERALBNK":"Private Banks",
+    "IDFCFIRSTB":"Private Banks","RBLBANK":"Private Banks",
+    # Banking - Small Finance / Regional
+    "BANDHANBNK":"Small Finance Banks","AUBANK":"Small Finance Banks",
+    "DCBBANK":"Regional Banks","KTKBANK":"Regional Banks","KARURVYSYA":"Regional Banks",
+    "TVSHLTD":"Regional Banks","INDOTHAI":"Regional Banks",
+    # IT Services
+    "TCS":"IT Services","INFY":"IT Services","WIPRO":"IT Services","HCLTECH":"IT Services",
+    "TECHM":"IT Services","LTIM":"IT Services","MPHASIS":"IT Services",
+    "COFORGE":"IT Services","PERSISTENT":"IT Services","KPITTECH":"IT Services",
+    "OFSS":"IT Services","NINSYS":"IT Services","AXISCADES":"IT Engineering",
+    # Electronic Components & Defense Electronics
+    "CENTUM":"Electronic Components","SYRMA":"Electronic Components",
+    "DATAPATTNS":"Defense Electronics","AEROFLEX":"Electronic Components",
+    "KRN":"Electronic Components","ADVAIT":"Electronic Components",
+    "INOXINDIA":"Electronic Components",
+    # Electrical Equipment & Cables
+    "KEI":"Cables & Wires","PRECWIRE":"Cables & Wires","SUMEETINDS":"Cables & Wires",
+    "SPECTRUM":"Cables & Wires","STLTECH":"Optical Fiber Cables",
+    "VOLTAMP":"Transformers","POWERINDIA":"Electrical Equipment",
+    "TDPOWERSYS":"Electrical Equipment","ABB":"Electrical Equipment",
+    "SIEMENS":"Electrical Equipment",
+    # FMCG - Personal Care
+    "HINDUNILVR":"FMCG - Personal Care","DABUR":"FMCG - Personal Care",
+    "MARICO":"FMCG - Personal Care","COLPAL":"FMCG - Personal Care",
+    "GODREJCP":"FMCG - Personal Care","BAJAJCON":"FMCG - Personal Care",
+    "HONASA":"FMCG - Personal Care",
+    # FMCG - Foods & Beverages
+    "ITC":"FMCG - Foods","NESTLEIND":"FMCG - Foods","BRITANNIA":"FMCG - Foods",
+    "ZYDUSWELL":"FMCG - Foods","CCL":"FMCG - Beverages","GMBREW":"FMCG - Beverages",
+    "PKTEA":"FMCG - Tea","HNDFDS":"FMCG - Foods","TRAVELFOOD":"FMCG - Foods",
+    "PRSMJOHNSN":"FMCG - Foods",
+    # Pharma - Formulations
+    "SUNPHARMA":"Pharma Formulations","DRREDDY":"Pharma Formulations",
+    "CIPLA":"Pharma Formulations","DIVISLAB":"Pharma Formulations",
+    "TORNTPHARM":"Pharma Formulations","LUPIN":"Pharma Formulations",
+    "ALKEM":"Pharma Formulations","IPCALAB":"Pharma Formulations",
+    "GLENMARK":"Pharma Formulations","AJANTPHARM":"Pharma Formulations",
+    "NATCOPHARM":"Pharma Formulations","EMCURE":"Pharma Formulations",
+    "JBCHEPHARM":"Pharma Formulations","BLISSGVS":"Pharma Formulations",
+    "SENORES":"Pharma Formulations","PFOCUS":"Pharma Formulations",
+    # Pharma - API / Specialty
+    "AUROPHARMA":"Pharma API","GRANULES":"Pharma API","LAURUSLABS":"Pharma API",
+    "JAGSNPHARM":"Pharma API","SMSPHARMA":"Pharma API","VENUSREM":"Pharma API",
+    "AKUMS":"Pharma Contract Mfg",
+    # Healthcare Services
+    "SHILPAMED":"Medical Devices","ASTERDM":"Hospitals","MEDPLUS":"Pharmacy Retail",
+    "SAILIFE":"Healthcare Services","ALIVUS":"Healthcare Services",
+    "ENTERO":"Pharma Distribution",
+    # Auto - OEM
+    "MARUTI":"Auto OEM - 4W","TATAMOTORS":"Auto OEM - 4W","M&M":"Auto OEM - 4W",
+    "HEROMOTOCO":"Auto OEM - 2W","TVSMOTOR":"Auto OEM - 2W","EICHERMOT":"Auto OEM - 2W",
+    "ASHOKLEY":"Auto OEM - CV","FORCEMOT":"Auto OEM - CV","TIINDIA":"Auto Ancillaries",
+    "MOTHERSON":"Auto Ancillaries",
+    # Auto Ancillaries - Forgings & Castings
+    "BHARATFORG":"Metal Forgings & Castings","GNA":"Metal Forgings & Castings",
+    "NELCAST":"Metal Forgings & Castings","SHRIPISTON":"Metal Forgings & Castings",
+    "SANSERA":"Metal Forgings & Castings","CARRARO":"Metal Forgings & Castings",
+    # Auto Ancillaries - Other
+    "LUMAXTECH":"Auto Ancillaries","PRICOLLTD":"Auto Ancillaries",
+    "WHEELS":"Auto Ancillaries","SETCO":"Auto Ancillaries","SONAMLTD":"Auto Ancillaries",
+    "SCHAEFFLER":"Bearings","TIMKEN":"Bearings","SPAL":"Auto Ancillaries",
+    "APARINDS":"Cables & Wires",
+    # Metals - Steel
+    "TATASTEEL":"Steel","JSWSTEEL":"Steel","SAIL":"Steel","JINDALSTEL":"Steel",
+    "GPIL":"Steel - Sponge Iron","STEELCAS":"Steel Tubes","LLOYDSME":"Steel",
+    "SARDAEN":"Steel","WELCORP":"Steel Pipes","JINDALSAW":"Steel Pipes",
+    "APLAPOLLO":"Steel Pipes",
+    # Metals - Non-Ferrous / Mining
+    "HINDALCO":"Aluminium","VEDL":"Diversified Metals","NMDC":"Metal & Mining",
+    "HINDZINC":"Zinc & Lead","HINDCOPPER":"Copper Mining","GRAPHITE":"Graphite Electrodes",
+    "NELCAST":"Metal Forgings & Castings",
+    # Energy - Oil & Gas
+    "RELIANCE":"Oil & Gas","ONGC":"Oil & Gas","BPCL":"Oil Refining","IOC":"Oil Refining",
+    "HINDPETRO":"Oil Refining","GAIL":"Gas Distribution","MRPL":"Oil Refining",
+    "CHENNPETRO":"Oil Refining","SPLPETRO":"Petroleum Products",
+    # Energy - Power
+    "COALINDIA":"Coal & Mining","NTPC":"Power Generation","POWERGRID":"Power Transmission",
+    "TATAPOWER":"Power Generation","NLCINDIA":"Power Generation","ADANIPOWER":"Power Generation",
+    # Renewable Energy
+    "WAAREEENER":"Solar Panels","ACMESOLAR":"Solar IPP","ADANIENSOL":"Solar IPP",
+    "ATHERENERG":"Solar IPP","PREMIERENE":"Renewable Energy","ADANIGREEN":"Renewable Energy",
+    # Chemicals
+    "NAVINFLUOR":"Specialty Chemicals - Fluorine","NOCIL":"Specialty Chemicals",
+    "GUJALKALI":"Specialty Chemicals - Alkali","AETHER":"Specialty Chemicals",
+    "DCMSHRIRAM":"Specialty Chemicals","DENORA":"Specialty Chemicals",
+    "COMSYN":"Specialty Chemicals","PRAJIND":"Ethanol / Bio Energy",
+    "DEEPINDS":"Specialty Chemicals","LINCOLN":"Specialty Chemicals",
+    # Sugar
+    "RENUKA":"Sugar","TRIVENI":"Sugar","BALRAMCHIN":"Sugar","DALMIASUG":"Sugar",
+    "DHAMPURSUG":"Sugar","AVADHSUGAR":"Sugar","MAWANASUG":"Sugar","KMSUGAR":"Sugar",
+    "UTTAMSUGAR":"Sugar","UGARSUGAR":"Sugar","DWARKESH":"Sugar","DEEDEV":"Sugar",
+    # Textiles - Spinning / Yarn
+    "NITINSPIN":"Textiles - Spinning","NAHARSPING":"Textiles - Spinning",
+    "SPORTKING":"Textiles - Synthetic","SANGAMIND":"Textiles - Fabric",
+    "RUBYMILLS":"Textiles - Fabric","LGBBROSLTD":"Textiles - Fabric",
+    "NITIRAJ":"Textiles - Fabric","ICIL":"Textiles - Fabric","SALONA":"Textiles",
+    "ABCOTS":"Cotton / Agri","ARVIND":"Textiles - Apparel","SHIVAUM":"Textiles",
+    "MANOMAY":"Textiles","STYLAMIND":"Textiles - Home",
+    # Apparel / Retail
+    "STYLEBAAZA":"Apparel Retail",
+    # Packaging
+    "EPL":"Packaging - Laminates","JINDALPOLY":"Packaging - Films",
+    "PREMIERPOL":"Packaging - Plastics","XPROINDIA":"Packaging - Films",
+    "ORICONENT":"Packaging - Containers","SESHAPAPER":"Paper & Packaging",
+    # Capital Goods / Engineering
+    "CUMMINSIND":"Engines & Compressors","THERMAX":"Heat Exchange & Boilers",
+    "KIRLOSENG":"Pumps & Compressors","BHEL":"Heavy Engineering","BEL":"Defense Electronics",
+    "TIIL":"Textile Machinery","LOKESHMACH":"Machine Tools","AIAENG":"Cutting Tools",
+    "RPSGVENT":"Ventilation Equipment","ACI":"Engineering",
+    "PIXTRANS":"Power Transmission","KMEW":"Engineering",
+    # Defense
+    "DYNAMATECH":"Defense","MTARTECH":"Aerospace & Defense",
+    "DATAPATTNS":"Defense Electronics",
+    # Infrastructure
+    "ADANIENT":"Diversified Infra","ADANIPORTS":"Ports & Logistics",
+    "L&T":"EPC & Construction","IRB":"Roads & Highways",
+    "CEIGALL":"Roads & Highways","TEXINFRA":"Construction",
+    "MANGLMCEM":"Cement","BHAGYANGR":"Roads & Highways","GODAVARIB":"Irrigation",
+    # Financial Services
+    "BAJFINANCE":"Consumer Finance","BAJAJFINSV":"Insurance & Finance",
+    "CHOLAFIN":"Vehicle Finance","M&MFIN":"Vehicle Finance",
+    "MUTHOOTFIN":"Gold Loans","MANAPPURAM":"Gold Loans",
+    "LICHSGFIN":"Housing Finance","PFC":"Power Finance","RECLTD":"Power Finance",
+    "SHRIRAMFIN":"Vehicle Finance","MANCREDIT":"NBFC","TFCILTD":"NBFC",
+    "SAMMAANCAP":"Capital Markets","ONELIFECAP":"Capital Markets",
+    # Broking & Exchanges
+    "MCX":"Commodity Exchange","ANGELONE":"Stock Broking","BSE":"Stock Exchange",
+    "ANANDRATHI":"Wealth Management","DBSTOCKBRO":"Stock Broking",
+    "ABSLAMC":"Asset Management",
+    # Insurance
+    "STARHEALTH":"Health Insurance","HDFCLIFE":"Life Insurance",
+    "SBILIFE":"Life Insurance","ICICIPRU":"Life Insurance",
+    # Consumer
+    "TITAN":"Jewelry & Watches","THANGAMAYL":"Gold Jewelry",
+    "ASIANPAINT":"Paints","PIDILITIND":"Adhesives & Chemicals",
+    "HAVELLS":"Consumer Electricals","VOLTAS":"Air Conditioners",
+    "DIXON":"Consumer Electronics","CROMPTON":"Consumer Electricals",
+    "LENSKART":"Eyewear Retail",
+    # Internet / Platforms
+    "NAUKRI":"Online Recruitment","ZOMATO":"Food Delivery","PAYTM":"Fintech",
+    "IRCTC":"Travel & Hospitality",
+    # Shipping
+    "GESHIP":"Shipping","SEAMECLTD":"Shipping Services",
+    "COASTCORP":"Logistics","JETFREIGHT":"Logistics",
+    # Agri
+    "AVANTIFEED":"Aquaculture / Shrimp Feed","TIRUPATIFL":"Flour Milling",
+    "PKTEA":"Tea Plantations",
 }
 
 SETUP_META = {
@@ -106,6 +349,10 @@ def _f(v, d=0.0):
 def get_sector(symbol: str) -> str:
     base = symbol.replace(".NS","").replace(".BO","")
     return SECTOR_MAP.get(base, "Other")
+
+def get_industry(symbol: str) -> str:
+    base = symbol.replace(".NS","").replace(".BO","")
+    return INDUSTRY_MAP.get(base, SECTOR_MAP.get(base, "Other"))
 
 def _load_price_rows_uncached(symbol: str) -> list[dict]:
     for suffix in ["_900", "_504", "_252"]:
@@ -996,11 +1243,20 @@ def build_html(signals: list[dict], run_history: dict | None = None) -> str:
     # Sector counts for summary
     sector_counts: dict[str, int] = {}
     setup_counts:  dict[str, int] = {}
+    industry_counts: dict[str, int] = {}
+    sector_a_counts: dict[str, int] = {}   # A/A+ only
+    industry_a_counts: dict[str, int] = {} # A/A+ only
     for s in signals:
         sec = get_sector(s.get("symbol",""))
+        ind = get_industry(s.get("symbol",""))
         setup = s.get("setup","Other")
+        rating = s.get("rating","")
         sector_counts[sec] = sector_counts.get(sec, 0) + 1
         setup_counts[setup] = setup_counts.get(setup, 0) + 1
+        industry_counts[ind] = industry_counts.get(ind, 0) + 1
+        if rating in ("A+", "A"):
+            sector_a_counts[sec] = sector_a_counts.get(sec, 0) + 1
+            industry_a_counts[ind] = industry_a_counts.get(ind, 0) + 1
 
     top_sectors = sorted(sector_counts.items(), key=lambda x: -x[1])[:8]
     a_plus = sum(1 for s in signals if s.get("rating","") == "A+")
@@ -1025,6 +1281,7 @@ def build_html(signals: list[dict], run_history: dict | None = None) -> str:
         setup  = sig.get("setup","")
         rating = sig.get("rating","")
         sector = get_sector(sym)
+        industry = get_industry(sym)
         tf_lbl = sig.get("_tf_label","Daily")
         plan   = build_position_plan(sig)
         sparkline_data = load_sparkline(sym)
@@ -1149,7 +1406,7 @@ def build_html(signals: list[dict], run_history: dict | None = None) -> str:
             multi_badge_html = f'<span class="multi-setup-badge" title="Appears in multiple setups: {labels_str}">🔀 Multi</span>'
 
         rows_html.append(f"""
-<div class="sig-card" data-symbol="{sym}" data-setup="{setup}" data-rating="{rating}" data-sector="{sector}" data-appear="{app_count}" data-appear-total="{app_total}">
+<div class="sig-card" data-symbol="{sym}" data-setup="{setup}" data-rating="{rating}" data-sector="{sector}" data-industry="{industry}" data-appear="{app_count}" data-appear-total="{app_total}">
   <div class="sig-header">
     <div class="sig-left">
       <div class="sig-sym">{sym.replace('.NS','')}</div>
@@ -1273,6 +1530,58 @@ def build_html(signals: list[dict], run_history: dict | None = None) -> str:
         for s, c in top_sectors
     )
 
+    # ── Build sector rally heatmap ─────────────────────────────────────────────
+    sorted_sectors = sorted(sector_counts.items(), key=lambda x: -x[1])
+    max_sec = max((v for _, v in sorted_sectors), default=1)
+
+    def _rally_intensity(count: int, max_count: int) -> str:
+        r = count / max_count if max_count > 0 else 0
+        if r >= 0.6:   return "rally-hot"
+        if r >= 0.35:  return "rally-warm"
+        if r >= 0.15:  return "rally-cool"
+        return "rally-low"
+
+    sector_heatmap_rows = ""
+    for sec, cnt in sorted_sectors:
+        a_cnt = sector_a_counts.get(sec, 0)
+        pct = cnt / total * 100 if total else 0
+        bar_w = cnt / max_sec * 100
+        cls = _rally_intensity(cnt, max_sec)
+        sector_heatmap_rows += (
+            f'<div class="rally-row {cls}" onclick="filterSector(\'{sec}\')" title="Click to filter">'
+            f'<div class="rally-name">{sec}</div>'
+            f'<div class="rally-bar-wrap"><div class="rally-bar-fill" style="width:{bar_w:.0f}%"></div></div>'
+            f'<div class="rally-cnt">{cnt} signals</div>'
+            f'<div class="rally-a">A/A+: <b>{a_cnt}</b></div>'
+            f'<div class="rally-pct">{pct:.0f}%</div>'
+            f'</div>'
+        )
+
+    # ── Build industry rally heatmap (top 30 industries) ──────────────────────
+    sorted_industries = sorted(industry_counts.items(), key=lambda x: -x[1])[:35]
+    max_ind = max((v for _, v in sorted_industries), default=1)
+
+    industry_heatmap_rows = ""
+    for ind, cnt in sorted_industries:
+        a_cnt = industry_a_counts.get(ind, 0)
+        bar_w = cnt / max_ind * 100
+        cls = _rally_intensity(cnt, max_ind)
+        industry_heatmap_rows += (
+            f'<div class="rally-row {cls}" onclick="filterIndustry(\'{ind.replace(chr(39), "")}\')"\n'
+            f'title="Click to filter to {ind}">'
+            f'<div class="rally-name">{ind}</div>'
+            f'<div class="rally-bar-wrap"><div class="rally-bar-fill" style="width:{bar_w:.0f}%"></div></div>'
+            f'<div class="rally-cnt">{cnt} signals</div>'
+            f'<div class="rally-a">A/A+: <b>{a_cnt}</b></div>'
+            f'</div>'
+        )
+
+    # ── Build industry filter options ──────────────────────────────────────────
+    industry_options = "".join(
+        f'<option value="{ind}">{ind} ({cnt})</option>'
+        for ind, cnt in sorted_industries
+    )
+
     rows_str = "\n".join(rows_html)
 
     return f"""<!DOCTYPE html>
@@ -1300,6 +1609,34 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
 .search-box{{min-width:200px}}
 .btn-filter{{padding:7px 14px;border:1px solid #30363d;border-radius:6px;background:transparent;color:#79c0ff;cursor:pointer;font-size:.82em;transition:all .15s}}
 .btn-filter:hover,.btn-filter.active{{background:#1f6feb;border-color:#58a6ff;color:#fff}}
+
+/* SECTOR & INDUSTRY RALLY HEATMAP */
+.heatmap-section{{padding:16px 28px;background:#0d1117;border-bottom:1px solid #21262d}}
+.heatmap-header{{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px}}
+.heatmap-title{{font-size:.95em;font-weight:700;color:#79c0ff}}
+.heatmap-sub{{font-size:.75em;color:#8b949e}}
+.heatmap-grid{{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin-bottom:6px}}
+@media(max-width:900px){{.heatmap-grid{{grid-template-columns:1fr}}}}
+.heatmap-col-title{{font-size:.78em;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;border-bottom:1px solid #21262d;padding-bottom:4px}}
+.rally-row{{display:grid;grid-template-columns:140px 1fr 90px 70px 36px;gap:4px 8px;align-items:center;padding:4px 8px;border-radius:5px;cursor:pointer;transition:background .15s;margin-bottom:2px}}
+.rally-row:hover{{background:#1a2433}}
+.rally-name{{font-size:.78em;font-weight:600;color:#c9d1d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+.rally-bar-wrap{{background:#0a0f16;border-radius:3px;height:6px;overflow:hidden}}
+.rally-bar-fill{{height:100%;border-radius:3px;transition:width .4s}}
+.rally-hot  .rally-bar-fill{{background:linear-gradient(90deg,#f85149,#ffa500)}}
+.rally-warm .rally-bar-fill{{background:linear-gradient(90deg,#e3b341,#f5a623)}}
+.rally-cool .rally-bar-fill{{background:linear-gradient(90deg,#3fb950,#58a6ff)}}
+.rally-low  .rally-bar-fill{{background:#30363d}}
+.rally-hot  .rally-name{{color:#ffa07a}}
+.rally-warm .rally-name{{color:#e3b341}}
+.rally-cool .rally-name{{color:#79c0ff}}
+.rally-cnt{{font-size:.72em;color:#8b949e;text-align:right}}
+.rally-a{{font-size:.72em;color:#58a6ff;text-align:right}}
+.rally-a b{{color:#4ade80}}
+.rally-pct{{font-size:.68em;color:#8b949e;text-align:right}}
+.heatmap-toggle{{font-size:.72em;color:#58a6ff;cursor:pointer;text-decoration:underline;margin-top:4px;display:inline-block}}
+.heatmap-ind-panel{{display:none;margin-top:8px;border-top:1px solid #21262d;padding-top:8px}}
+.heatmap-ind-panel.open{{display:block}}
 .btn-export{{padding:7px 14px;border:1px solid #2ea043;border-radius:6px;background:transparent;color:#3fb950;cursor:pointer;font-size:.82em}}
 .btn-export:hover{{background:#2ea04322}}
 
@@ -1544,7 +1881,7 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
 </div>
 
 <div class="controls-bar">
-  <input class="search-box" id="searchBox" placeholder="&#128269; Search symbol, sector..." oninput="applyFilters()">
+  <input class="search-box" id="searchBox" placeholder="&#128269; Search symbol, sector, industry..." oninput="applyFilters()">
   <select class="sel" id="setupFilter" onchange="applyFilters()">
     <option value="">All Setups</option>
     <option value="RANGE_EXPANSION">Range Expansion</option>
@@ -1558,6 +1895,10 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
     <option value="A+">A+ Only</option>
     <option value="A">A &amp; Above</option>
     <option value="B">B &amp; Above</option>
+  </select>
+  <select class="sel" id="industryFilter" onchange="applyFilters()" title="Filter by sub-sector / industry">
+    <option value="">All Industries</option>
+    {industry_options}
   </select>
   <select class="sel" id="appearFilter" onchange="applyFilters()" title="Filter by how many of the last {_rh_total} runs the setup appeared in">
     <option value="">All Appearances</option>
@@ -1577,6 +1918,39 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
   <span style="color:#8b949e;font-size:.8em;font-weight:600">Sector:</span>
   <span class="sector-pill active" onclick="filterSector('')">All</span>
   {sector_pills}
+</div>
+
+<!-- ── Sector & Industry Rally Heatmap ─────────────────────────────────── -->
+<div class="heatmap-section">
+  <div class="heatmap-header">
+    <div>
+      <div class="heatmap-title">🔥 Sector &amp; Industry Rally Radar</div>
+      <div class="heatmap-sub">Concentration of breakout signals by sector and sub-industry — click any row to filter cards</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;font-size:.72em;color:#8b949e">
+      <span style="color:#ffa07a;font-weight:700">■</span> Hot &nbsp;
+      <span style="color:#e3b341;font-weight:700">■</span> Warm &nbsp;
+      <span style="color:#79c0ff;font-weight:700">■</span> Building &nbsp;
+      <span style="color:#8b949e;font-weight:700">■</span> Low
+      <button class="btn-filter" onclick="resetAllFilters()" style="margin-left:8px;padding:3px 10px;font-size:.75em">↺ Reset</button>
+    </div>
+  </div>
+  <div class="heatmap-grid">
+    <div>
+      <div class="heatmap-col-title">📊 Sector Rally (Broad)</div>
+      {sector_heatmap_rows}
+    </div>
+    <div>
+      <div class="heatmap-col-title">🔬 Sub-Industry Rally (Drill-down)</div>
+      <span class="heatmap-toggle" onclick="this.nextElementSibling.classList.toggle('open')">▶ Expand / Collapse industry heatmap</span>
+      <div class="heatmap-ind-panel open">
+        {industry_heatmap_rows}
+      </div>
+    </div>
+  </div>
+  <div style="font-size:.68em;color:#6e7681;margin-top:4px">
+    🔍 Tip: Click any sector/industry row above to instantly filter all cards below. Use the Industry dropdown in the controls bar for multi-step filtering.
+  </div>
 </div>
 
 <div class="legend">
@@ -1602,27 +1976,31 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
 
 <script>
 let activeSector = '';
+let activeIndustry = '';
 let sortMode = 'score';
 
 function applyFilters() {{
-  const q      = document.getElementById('searchBox').value.toLowerCase();
-  const setup  = document.getElementById('setupFilter').value;
-  const rating = document.getElementById('ratingFilter').value;
-  const appear = document.getElementById('appearFilter').value;
+  const q        = document.getElementById('searchBox').value.toLowerCase();
+  const setup    = document.getElementById('setupFilter').value;
+  const rating   = document.getElementById('ratingFilter').value;
+  const appear   = document.getElementById('appearFilter').value;
+  const industry = document.getElementById('industryFilter').value || activeIndustry;
   let visible = 0;
   document.querySelectorAll('.sig-card').forEach(card => {{
     const sym    = (card.dataset.symbol||'').toLowerCase();
     const sec    = (card.dataset.sector||'').toLowerCase();
+    const ind    = (card.dataset.industry||'').toLowerCase();
     const csetup = card.dataset.setup||'';
     const crate  = card.dataset.rating||'';
     const capp   = parseInt(card.dataset.appear||'0', 10);
     const ctotal = parseInt(card.dataset.appearTotal||'0', 10);
-    let show = (sym.includes(q) || sec.includes(q));
+    let show = (sym.includes(q) || sec.includes(q) || ind.includes(q));
     if(setup && csetup !== setup) show = false;
     if(rating === 'A+' && crate !== 'A+') show = false;
     if(rating === 'A'  && crate !== 'A+' && crate !== 'A') show = false;
     if(rating === 'B'  && crate === 'C') show = false;
     if(activeSector && (card.dataset.sector||'') !== activeSector) show = false;
+    if(industry && (card.dataset.industry||'') !== industry) show = false;
     if(appear) {{
       if(appear === 'high'  && capp < 15) show = false;
       if(appear === 'warm'  && capp < 8)  show = false;
@@ -1638,10 +2016,34 @@ function applyFilters() {{
 
 function filterSector(sec) {{
   activeSector = sec;
+  activeIndustry = '';
+  document.getElementById('industryFilter').value = '';
   document.querySelectorAll('.sector-pill').forEach(p => p.classList.remove('active'));
   const pills = document.querySelectorAll('.sector-pill');
   pills.forEach(p => {{ if(p.onclick.toString().includes("'" + sec + "'") || (sec==='' && p.onclick.toString().includes("''"))) p.classList.add('active'); }});
   applyFilters();
+}}
+
+function filterIndustry(ind) {{
+  activeIndustry = ind;
+  activeSector = '';
+  document.querySelectorAll('.sector-pill').forEach(p => p.classList.remove('active'));
+  const sel = document.getElementById('industryFilter');
+  if(sel) sel.value = ind;
+  applyFilters();
+}}
+
+function resetAllFilters() {{
+  activeSector = ''; activeIndustry = '';
+  document.getElementById('searchBox').value = '';
+  document.getElementById('setupFilter').value = '';
+  document.getElementById('ratingFilter').value = '';
+  document.getElementById('industryFilter').value = '';
+  document.getElementById('appearFilter').value = '';
+  document.querySelectorAll('.sector-pill').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sector-pill')[0]?.classList.add('active');
+  applyFilters();
+}}
 }}
 
 function toggleSort(mode) {{
