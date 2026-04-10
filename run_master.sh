@@ -147,13 +147,14 @@ echo ""
 # ─────────────────────────────────────────────────────────────────────────────
 # STEP 3 — Trade Plans page with MF/Institutional holdings
 # ─────────────────────────────────────────────────────────────────────────────
-echo -e "${BOLD}▶ Step 3/3 — Generating Trade Plans page (with MF holdings)…${RESET}"
+echo -e "${BOLD}▶ Step 3/3 — Generating Trade Plans + Market Breadth Dashboard…${RESET}"
 START_TP=$SECONDS
 
 python3 apps/python/cli/generate_trade_plans_page.py || true   # non-fatal
+python3 apps/python/cli/generate_breadth_dashboard.py || true  # non-fatal
 
 TP_TIME=$((SECONDS - START_TP))
-echo -e "${GREEN}   ✅ Trade Plans page done in ${TP_TIME}s${RESET}"
+echo -e "${GREEN}   ✅ Trade Plans + Breadth done in ${TP_TIME}s${RESET}"
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -1923,32 +1923,71 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
 .btn-filter:hover,.btn-filter.active{{background:#1f6feb;border-color:#58a6ff;color:#fff}}
 
 /* SECTOR & INDUSTRY RALLY HEATMAP */
-.heatmap-section{{padding:16px 28px;background:#0d1117;border-bottom:1px solid #21262d}}
-.heatmap-header{{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px}}
+.heatmap-section{{padding:16px 28px 20px;background:#0d1117;border-bottom:1px solid #21262d}}
+.heatmap-header{{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px}}
 .heatmap-title{{font-size:.95em;font-weight:700;color:#79c0ff}}
-.heatmap-sub{{font-size:.75em;color:#8b949e}}
-.heatmap-grid{{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin-bottom:6px}}
+.heatmap-sub{{font-size:.75em;color:#8b949e;margin-top:2px}}
+.heatmap-header-actions{{display:flex;gap:8px;align-items:center;flex-wrap:wrap}}
+.btn-breadth{{padding:5px 12px;border:1px solid #3fb95055;border-radius:6px;background:#0a1f0e;
+  color:#3fb950;cursor:pointer;font-size:.76em;font-weight:600;text-decoration:none;
+  display:inline-flex;align-items:center;gap:5px;transition:all .15s}}
+.btn-breadth:hover{{background:#3fb95022;border-color:#3fb950;color:#4ade80}}
+.heatmap-grid{{display:grid;grid-template-columns:1fr 1fr;gap:6px 28px;margin-bottom:6px}}
 @media(max-width:900px){{.heatmap-grid{{grid-template-columns:1fr}}}}
-.heatmap-col-title{{font-size:.78em;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;border-bottom:1px solid #21262d;padding-bottom:4px}}
-.rally-row{{display:grid;grid-template-columns:140px 1fr 90px 70px 36px;gap:4px 8px;align-items:center;padding:4px 8px;border-radius:5px;cursor:pointer;transition:background .15s;margin-bottom:2px}}
-.rally-row:hover{{background:#1a2433}}
+.heatmap-col-title{{font-size:.75em;font-weight:700;color:#8b949e;text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:0;padding-bottom:6px}}
+/* Sector rows */
+.rally-row{{display:grid;grid-template-columns:136px 1fr 70px 55px 34px;gap:4px 6px;
+  align-items:center;padding:5px 8px;border-radius:6px;cursor:pointer;
+  transition:background .12s;margin-bottom:2px}}
+.rally-row:hover{{background:#131c2e}}
 .rally-name{{font-size:.78em;font-weight:600;color:#c9d1d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
-.rally-bar-wrap{{background:#0a0f16;border-radius:3px;height:6px;overflow:hidden}}
+.rally-bar-wrap{{background:#0a0f16;border-radius:3px;height:5px;overflow:hidden}}
 .rally-bar-fill{{height:100%;border-radius:3px;transition:width .4s}}
 .rally-hot  .rally-bar-fill{{background:linear-gradient(90deg,#f85149,#ffa500)}}
 .rally-warm .rally-bar-fill{{background:linear-gradient(90deg,#e3b341,#f5a623)}}
 .rally-cool .rally-bar-fill{{background:linear-gradient(90deg,#3fb950,#58a6ff)}}
-.rally-low  .rally-bar-fill{{background:#30363d}}
+.rally-low  .rally-bar-fill{{background:#2d333b}}
 .rally-hot  .rally-name{{color:#ffa07a}}
 .rally-warm .rally-name{{color:#e3b341}}
 .rally-cool .rally-name{{color:#79c0ff}}
-.rally-cnt{{font-size:.72em;color:#8b949e;text-align:right}}
-.rally-a{{font-size:.72em;color:#58a6ff;text-align:right}}
+.rally-cnt{{font-size:.7em;color:#8b949e;text-align:right}}
+.rally-a{{font-size:.7em;color:#58a6ff;text-align:right}}
 .rally-a b{{color:#4ade80}}
-.rally-pct{{font-size:.68em;color:#8b949e;text-align:right}}
-.heatmap-toggle{{font-size:.72em;color:#58a6ff;cursor:pointer;text-decoration:underline;margin-top:4px;display:inline-block}}
-.heatmap-ind-panel{{display:none;margin-top:8px;border-top:1px solid #21262d;padding-top:8px}}
-.heatmap-ind-panel.open{{display:block}}
+.rally-pct{{font-size:.67em;color:#475569;text-align:right}}
+/* Industry sub-panel */
+.ind-panel-hdr{{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:6px;padding:6px 0 6px;border-bottom:1px solid #21262d}}
+.ind-panel-hdr-left{{display:flex;align-items:center;gap:10px}}
+.ind-col-title{{font-size:.75em;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.5px}}
+.ind-toggle-btn{{padding:3px 10px;border:1px solid #30363d;border-radius:5px;
+  background:transparent;color:#58a6ff;cursor:pointer;font-size:.7em;transition:all .12s}}
+.ind-toggle-btn:hover{{background:#1f6feb22;border-color:#58a6ff}}
+/* Industry column header row */
+.ind-col-hdr{{display:grid;grid-template-columns:148px 1fr 46px 34px 50px 44px;gap:3px 6px;
+  padding:2px 8px 5px;margin-bottom:1px}}
+.ind-col-hdr span{{font-size:.62em;font-weight:700;color:#475569;text-transform:uppercase;
+  letter-spacing:.4px;text-align:right}}
+.ind-col-hdr span:first-child{{text-align:left;color:#8b949e}}
+.ind-col-hdr span:nth-child(2){{text-align:left}}
+/* Industry rows */
+.rally-row-ind{{display:grid;grid-template-columns:148px 1fr 46px 34px 50px 44px;gap:3px 6px;
+  align-items:center;padding:4px 8px;border-radius:6px;cursor:pointer;
+  transition:background .12s,border-left .12s;margin-bottom:2px;
+  border-left:3px solid transparent}}
+.rally-row-ind:hover{{background:#131c2e}}
+.rally-emerging{{border-left-color:#3fb95066!important;background:#050f0722}}
+.rally-emerging:hover{{background:#050f07aa}}
+.rally-building{{border-left-color:#e3b34166!important;background:#0c0b0022}}
+.rally-building:hover{{background:#0c0b00aa}}
+.rally-ma20{{font-size:.7em;font-weight:700;text-align:right;white-space:nowrap}}
+.rally-ma50{{font-size:.67em;color:#7dd3fc;text-align:right;white-space:nowrap}}
+.heatmap-ind-panel{{max-height:360px;overflow-y:auto;scrollbar-width:thin;
+  scrollbar-color:#30363d #0d1117;padding-right:2px}}
+.heatmap-ind-panel.collapsed{{display:none}}
+.heatmap-ind-panel::-webkit-scrollbar{{width:4px}}
+.heatmap-ind-panel::-webkit-scrollbar-track{{background:#0d1117}}
+.heatmap-ind-panel::-webkit-scrollbar-thumb{{background:#30363d;border-radius:4px}}
 .btn-export{{padding:7px 14px;border:1px solid #2ea043;border-radius:6px;background:transparent;color:#3fb950;cursor:pointer;font-size:.82em}}
 .btn-export:hover{{background:#2ea04322}}
 
@@ -2237,31 +2276,44 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
   <div class="heatmap-header">
     <div>
       <div class="heatmap-title">🔥 Sector &amp; Industry Rally Radar</div>
-      <div class="heatmap-sub">Concentration of breakout signals by sector and sub-industry — click any row to filter cards</div>
+      <div class="heatmap-sub">Concentration of breakout signals — click any row to filter signal cards below</div>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;font-size:.72em;color:#8b949e">
-      <span style="color:#ffa07a;font-weight:700">■</span> Hot &nbsp;
-      <span style="color:#e3b341;font-weight:700">■</span> Warm &nbsp;
-      <span style="color:#79c0ff;font-weight:700">■</span> Building &nbsp;
-      <span style="color:#8b949e;font-weight:700">■</span> Low
-      <button class="btn-filter" onclick="resetAllFilters()" style="margin-left:8px;padding:3px 10px;font-size:.75em">↺ Reset</button>
+    <div class="heatmap-header-actions">
+      <span style="font-size:.72em;color:#8b949e">
+        <span style="color:#ffa07a;font-weight:700">■</span> Hot &nbsp;
+        <span style="color:#e3b341;font-weight:700">■</span> Warm &nbsp;
+        <span style="color:#79c0ff;font-weight:700">■</span> Building &nbsp;
+        <span style="color:#475569;font-weight:700">■</span> Low
+      </span>
+      <a class="btn-breadth" href="market_breadth.html" target="_blank">📊 Full Breadth Map ↗</a>
+      <button class="btn-filter" onclick="resetAllFilters()" style="padding:5px 12px;font-size:.76em">↺ Reset</button>
     </div>
   </div>
   <div class="heatmap-grid">
     <div>
-      <div class="heatmap-col-title">📊 Sector Rally (Broad)</div>
+      <div class="heatmap-col-title" style="border-bottom:1px solid #21262d;margin-bottom:6px">📊 Sector Rally (Broad)</div>
       {sector_heatmap_rows}
     </div>
     <div>
-      <div class="heatmap-col-title">🔬 Sub-Industry Rally (Drill-down)</div>
-      <span class="heatmap-toggle" onclick="this.nextElementSibling.classList.toggle('open')">▶ Expand / Collapse industry heatmap</span>
-      <div class="heatmap-ind-panel open">
+      <div class="ind-panel-hdr">
+        <div class="ind-panel-hdr-left">
+          <span class="ind-col-title">🔬 Sub-Industry Breadth</span>
+          <span style="font-size:.66em;color:#475569">(top 35 by signals)</span>
+        </div>
+        <button class="ind-toggle-btn" id="indToggleBtn" onclick="toggleIndPanel()">▲ Collapse</button>
+      </div>
+      <div class="ind-col-hdr">
+        <span>Industry</span><span></span>
+        <span>Sig</span><span>A+</span>
+        <span>&gt;20MA</span><span>&gt;50MA</span>
+      </div>
+      <div class="heatmap-ind-panel" id="indPanel">
         {industry_heatmap_rows}
       </div>
     </div>
   </div>
-  <div style="font-size:.68em;color:#6e7681;margin-top:4px">
-    🔍 Tip: Click any sector/industry row above to instantly filter all cards below. Use the Industry dropdown in the controls bar for multi-step filtering.
+  <div style="font-size:.66em;color:#475569;margin-top:6px">
+    💡 Click sector/industry rows to filter cards · <b style="color:#3fb950">Green left border</b> = EMERGING (25–65% &gt;20MA) · <b style="color:#e3b341">Yellow</b> = BUILDING (65–80%) · <a href="market_breadth.html" target="_blank" style="color:#58a6ff;text-decoration:none">📊 Full Market Breadth Dashboard →</a>
   </div>
 </div>
 
@@ -2357,6 +2409,14 @@ function resetAllFilters() {{
   document.querySelectorAll('.sector-pill').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.sector-pill')[0]?.classList.add('active');
   applyFilters();
+}}
+
+function toggleIndPanel() {{
+  const panel = document.getElementById('indPanel');
+  const btn   = document.getElementById('indToggleBtn');
+  if (!panel) return;
+  const collapsed = panel.classList.toggle('collapsed');
+  btn.textContent = collapsed ? '▼ Expand' : '▲ Collapse';
 }}
 
 function toggleSort(mode) {{
