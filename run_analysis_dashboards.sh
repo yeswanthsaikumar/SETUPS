@@ -1,14 +1,14 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────────────────────────
 # run_analysis_dashboards.sh
-# Generates all HTML analysis dashboards:
+# Generates all HTML analysis dashboards in parallel:
 #   1. Live Trade Plans + MF/Institutional holdings → output/trade_plans_live.html
 #   2. Sector & Macro Analysis                      → output/sector_macro_analysis.html
-#   3. Hub Index                                    → output/index.html
+#   3. Market Breadth + Trend Detection             → output/market_breadth.html
 #
 # Usage:
 #   ./run_analysis_dashboards.sh
-#   ./run_analysis_dashboards.sh --skip-mf          (skip MF holdings fetch, faster)
+#   ./run_analysis_dashboards.sh --skip-mf   (skip MF holdings fetch, faster)
 # ─────────────────────────────────────────────────────────────────────────────
 
 set -e
@@ -32,12 +32,20 @@ echo "  SETUPS Analysis Dashboard Generator"
 echo "  $(date '+%Y-%m-%d %H:%M:%S')"
 echo "========================================================"
 echo ""
+echo "  Generating 3 dashboards in parallel:"
+echo "  • Trade Plans + MF Holdings"
+echo "  • Sector & Macro Analysis"
+echo "  • Market Breadth + Trend Detection"
+if [ "$SKIP_MF" = false ]; then
+  echo "  Note: MF data fetched from Screener.in (cached 6h). May take 30-60s."
+fi
+echo ""
 
-# ── 1. Live Trade Plans (with MF holdings) + Sector & Macro (parallel) ───────
+# ── 1. Live Trade Plans (with MF holdings) + Sector & Macro + Market Breadth ───────
 if [ "$SKIP_MF" = true ]; then
-  echo "[1/2] Generating Trade Plans (MF skipped) + Sector & Macro (parallel)..."
+  echo "[1/1] Generating Trade Plans (MF skipped) + Sector & Macro + Market Breadth..."
 else
-  echo "[1/2] Generating Trade Plans + MF/Institutional Holdings + Sector & Macro (parallel)..."
+  echo "[1/1] Generating Trade Plans + MF/Institutional Holdings + Sector & Macro + Market Breadth..."
   echo "      Note: First run fetches MF data from Screener.in (cached 6h). May take 30-60s."
 fi
 
@@ -45,38 +53,37 @@ python3 apps/python/cli/generate_trade_plans_page.py &
 PID_TRADE_PLANS=$!
 python3 apps/python/cli/generate_sector_macro_page.py &
 PID_SECTOR_MACRO=$!
+python3 apps/python/cli/generate_breadth_dashboard.py &
+PID_BREADTH=$!
 
 STATUS_TRADE_PLANS=0
 STATUS_SECTOR_MACRO=0
+STATUS_BREADTH=0
 wait "$PID_TRADE_PLANS"  || STATUS_TRADE_PLANS=$?
 wait "$PID_SECTOR_MACRO" || STATUS_SECTOR_MACRO=$?
+wait "$PID_BREADTH"      || STATUS_BREADTH=$?
 
+echo ""
 if [ "$STATUS_TRADE_PLANS" -ne 0 ] || [ "$STATUS_SECTOR_MACRO" -ne 0 ]; then
-  echo "Dashboard generation failed (trade_plans=$STATUS_TRADE_PLANS, sector_macro=$STATUS_SECTOR_MACRO)."
+  echo "  ✖ Dashboard generation failed (trade_plans=$STATUS_TRADE_PLANS, sector_macro=$STATUS_SECTOR_MACRO)"
   exit 1
 fi
+[ "$STATUS_BREADTH" -ne 0 ] && echo "  ⚠ Market breadth dashboard failed (non-fatal)"
 
-echo "      → output/trade_plans_live.html  (🏦 includes MF/institutional holdings)"
-echo "      → output/sector_macro_analysis.html"
-echo ""
-
-# ── Summary ───────────────────────────────────────────────────────────────────
 echo "========================================================"
-echo "  All dashboards generated successfully!"
+echo "  ✅ All dashboards generated successfully!"
 echo ""
-echo "  Open in browser:"
-echo "  output/trade_plans_live.html        (Trade Plans + MF Holdings)"
-echo "  output/sector_macro_analysis.html   (Sectors & Macro)"
-echo "  output/index.html                   (Hub)"
+echo "  output/trade_plans_live.html      (Trade Plans + MF Holdings)"
+echo "  output/sector_macro_analysis.html (Sectors & Macro)"
+echo "  output/market_breadth.html        (📊 Market Breadth + Trend Detection)"
 echo ""
-echo "  Web Console (scan/backtest/analyze):"
-echo "  ./run_web.sh                         (starts at http://localhost:8000)"
+echo "  Web Console:  ./run_web.sh   →   http://localhost:8000"
 echo "========================================================"
 
 # Auto-open in browser (macOS)
 if command -v open &>/dev/null; then
   open output/trade_plans_live.html
-  sleep 0.3
+  sleep 0.4
   open output/market_breadth.html
 fi
 

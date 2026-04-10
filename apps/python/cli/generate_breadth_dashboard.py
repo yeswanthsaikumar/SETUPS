@@ -4,13 +4,6 @@ generate_breadth_dashboard.py
 ─────────────────────────────
 Standalone Market Breadth & Trend Detection Dashboard — NSE India
 
-Scans ALL cached price data to answer:
-  • Which industries have stocks breaking out early? (EMERGING stage)
-  • Where are volume clusters forming? (institutional accumulation signal)
-  • Which industries have the most new 52-week highs?
-  • How does each sector's RS vs Nifty look? (rotation tracker)
-  • What stage of the cycle is each sector in?
-
 Outputs: output/market_breadth.html
 Run:     python3 apps/python/cli/generate_breadth_dashboard.py
 """
@@ -23,16 +16,13 @@ from datetime import datetime
 from html import escape
 from pathlib import Path
 
-ROOT      = Path(__file__).resolve().parents[3]   # SETUPS/
+ROOT      = Path(__file__).resolve().parents[3]
 OUTPUT    = ROOT / "output"
 CACHE_DIR = ROOT / "cache"
 
 sys.path.insert(0, str(ROOT / "apps" / "python" / "lib"))
 sys.path.insert(0, str(ROOT / "apps" / "python" / "cli"))
 
-# ── Import the full classification maps ───────────────────────────────────────
-# generate_trade_plans_page has the most complete hardcoded INDUSTRY_MAP/SECTOR_MAP
-# nse_taxonomy.py then overlays the CSV overrides on top
 try:
     from generate_trade_plans_page import INDUSTRY_MAP as _TP_IND, SECTOR_MAP as _TP_SEC, _f
 except Exception:
@@ -43,7 +33,6 @@ except Exception:
         except Exception:
             return d
 
-# Merge: CSV (nse_taxonomy) wins over hardcoded
 _CSV_IND: dict[str, str] = {}
 _CSV_SEC: dict[str, str] = {}
 _CSV_PATH = ROOT / "data" / "nse_stock_taxonomy.csv"
@@ -54,17 +43,14 @@ if _CSV_PATH.exists():
                 t = row.get("nse_ticker","").strip().upper()
                 s = row.get("sector","").strip()
                 i = row.get("industry","").strip()
-                if t and s:
-                    _CSV_SEC[t] = s
-                if t and i:
-                    _CSV_IND[t] = i
+                if t and s: _CSV_SEC[t] = s
+                if t and i: _CSV_IND[t] = i
     except Exception:
         pass
 
-INDUSTRY_MAP: dict[str, str] = {**_TP_IND, **_CSV_IND}   # CSV overrides
+INDUSTRY_MAP: dict[str, str] = {**_TP_IND, **_CSV_IND}
 SECTOR_MAP:   dict[str, str] = {**_TP_SEC, **_CSV_SEC}
 
-# Derive sector for each industry (first stock wins)
 _IND_TO_SEC: dict[str, str] = {}
 for _t, _ind in INDUSTRY_MAP.items():
     if _ind not in _IND_TO_SEC:
@@ -73,58 +59,34 @@ for _t, _ind in INDUSTRY_MAP.items():
 NOW = datetime.now().strftime("%Y-%m-%d %H:%M")
 
 
-# ── Price-data helpers ────────────────────────────────────────────────────────
+# ── Price helpers ──────────────────────────────────────────────────────────────
 
 def _load_prices(ticker: str) -> list[dict]:
-    """
-    Load OHLCV rows for a ticker from the cache directory.
-    Tries: {TICKER}.NS_*.csv then {TICKER}_*.csv, longest first.
-    Returns rows sorted oldest→newest.
-    """
-    candidates = []
-    for suffix in ["_900", "_728", "_504", "_252", "_60", "_30"]:
+    best: list[dict] = []
+    for suffix in ["_900", "_728", "_504", "_252"]:
         for name in (f"{ticker}.NS{suffix}.csv", f"{ticker}{suffix}.csv"):
             p = CACHE_DIR / name
-            if p.exists():
-                candidates.append(p)
-                break   # take longest suffix found for each naming pattern
-
-    # Also try without .NS suffix variants
-    for suffix in ["_900", "_728", "_504", "_252", "_60", "_30"]:
-        p = CACHE_DIR / f"{ticker}{suffix}.csv"
-        if p.exists() and p not in candidates:
-            candidates.append(p)
+            if not p.exists():
+                continue
+            rows: list[dict] = []
+            try:
+                with open(p, newline="", encoding="utf-8") as f:
+                    for row in csv.DictReader(f):
+                        c = _f(row.get("close"))
+                        if c > 0:
+                            rows.append({"close": c, "volume": _f(row.get("volume", 0))})
+            except Exception:
+                pass
+            if len(rows) > len(best):
+                best = rows
+            if best:
+                break
+        if best:
             break
-
-    if not candidates:
-        return []
-
-    # pick the file with the most rows = best history
-    best: list[dict] = []
-    for p in candidates[:3]:
-        rows: list[dict] = []
-        try:
-            with open(p, newline="", encoding="utf-8") as f:
-                for row in csv.DictReader(f):
-                    c = _f(row.get("close"))
-                    if c > 0:
-                        rows.append({
-                            "date":   row.get("date",""),
-                            "open":   _f(row.get("open", c)),
-                            "high":   _f(row.get("high", c)),
-                            "low":    _f(row.get("low",  c)),
-                            "close":  c,
-                            "volume": _f(row.get("volume", 0)),
-                        })
-        except Exception:
-            pass
-        if len(rows) > len(best):
-            best = rows
     return best
 
 
 def _load_nifty() -> list[float]:
-    """Load ^NSEI closing prices (longest available)."""
     for suffix in ["_900", "_728", "_504", "_252"]:
         p = CACHE_DIR / f"^NSEI{suffix}.csv"
         if not p.exists():
@@ -143,39 +105,30 @@ def _load_nifty() -> list[float]:
     return []
 
 
-# ── Metric computation ────────────────────────────────────────────────────────
-
-def _rs_vs_benchmark(stock_closes: list[float],
-                     bench_closes: list[float],
-                     periods: int = 63) -> float | None:
-    """Return % outperformance of stock vs benchmark over `periods` trading days."""
-    if len(stock_closes) <= periods or len(bench_closes) <= periods:
+def _rs(stock: list[float], bench: list[float], periods: int = 63) -> float | None:
+    if len(stock) <= periods or len(bench) <= periods:
         return None
-    s_ret = (stock_closes[-1] / stock_closes[-(periods + 1)] - 1.0) * 100.0
-    b_ret = (bench_closes[-1] / bench_closes[-(periods + 1)] - 1.0) * 100.0
-    return round(s_ret - b_ret, 1)
+    return round((stock[-1]/stock[-(periods+1)] - 1)*100 - (bench[-1]/bench[-(periods+1)] - 1)*100, 1)
 
 
-def _new_52w_highs_last_n(closes: list[float], n: int = 5) -> int:
-    """Count sessions in the last `n` bars that set a new 52-week high."""
+def _new52wh(closes: list[float], n: int = 5) -> int:
     if len(closes) < 252 + n:
         return 0
     count = 0
     for i in range(-n, 0):
-        window = closes[max(0, i - 252): i]
+        window = closes[max(0, i-252): i]
         if window and closes[i] >= max(window):
             count += 1
     return count
 
 
-def compute_industry_metrics(industry: str,
-                              nifty_closes: list[float]) -> dict | None:
-    """Compute comprehensive breadth metrics for one industry."""
+# ── Metric computation ─────────────────────────────────────────────────────────
+
+def compute_industry_metrics(industry: str, nifty_closes: list[float]) -> dict | None:
     peers = [t for t, ind in INDUSTRY_MAP.items() if ind == industry]
     if not peers:
         return None
-
-    a20 = a50 = a200 = at_52wh = vol_spike = new_52wh_total = total = 0
+    a20 = a50 = a200 = at52 = vol_spike = new52 = total = 0
     rs3m_list: list[float] = []
     rs1m_list: list[float] = []
 
@@ -183,764 +136,683 @@ def compute_industry_metrics(industry: str,
         rows = _load_prices(ticker)
         if len(rows) < 20:
             continue
-        closes  = [r["close"]  for r in rows]
+        closes  = [r["close"] for r in rows]
         volumes = [r["volume"] for r in rows]
-        last    = closes[-1]
-        total  += 1
-
-        # MA breadth
-        if last > sum(closes[-20:]) / 20:
-            a20 += 1
-        if len(closes) >= 50 and last > sum(closes[-50:]) / 50:
-            a50 += 1
-        if len(closes) >= 200 and last > sum(closes[-200:]) / 200:
-            a200 += 1
-
-        # 52W high proximity (within 5 %)
+        last = closes[-1]
+        total += 1
+        if last > sum(closes[-20:]) / 20:                           a20  += 1
+        if len(closes) >= 50  and last > sum(closes[-50:])/50:      a50  += 1
+        if len(closes) >= 200 and last > sum(closes[-200:])/200:    a200 += 1
         hi52 = max(closes[-252:]) if len(closes) >= 252 else max(closes)
-        if last >= hi52 * 0.95:
-            at_52wh += 1
-
-        # New 52W highs in last 5 sessions
-        new_52wh_total += _new_52w_highs_last_n(closes, n=5)
-
-        # Volume spike — any of last 5 bars > 1.5× 20-day avg (excluding last 5)
+        if last >= hi52 * 0.95:    at52 += 1
+        new52 += _new52wh(closes, 5)
         if len(volumes) >= 25:
             avg_vol = sum(volumes[-25:-5]) / 20
-            if avg_vol > 0 and any(v > avg_vol * 1.5 for v in volumes[-5:]):
+            if avg_vol > 0 and any(v > avg_vol*1.5 for v in volumes[-5:]):
                 vol_spike += 1
-
-        # RS vs Nifty
-        rs3m = _rs_vs_benchmark(closes, nifty_closes, 63)
-        rs1m = _rs_vs_benchmark(closes, nifty_closes, 21)
-        if rs3m is not None:
-            rs3m_list.append(rs3m)
-        if rs1m is not None:
-            rs1m_list.append(rs1m)
+        r3 = _rs(closes, nifty_closes, 63)
+        r1 = _rs(closes, nifty_closes, 21)
+        if r3 is not None: rs3m_list.append(r3)
+        if r1 is not None: rs1m_list.append(r1)
 
     if total == 0:
         return None
+    p20  = round(a20  / total * 100)
+    p50  = round(a50  / total * 100)
+    p200 = round(a200 / total * 100)
+    p52  = round(at52 / total * 100)
+    avg_rs3m = round(sum(rs3m_list)/len(rs3m_list), 1) if rs3m_list else None
+    avg_rs1m = round(sum(rs1m_list)/len(rs1m_list), 1) if rs1m_list else None
+    vs_pct   = round(vol_spike / total * 100)
 
-    pct_20  = round(a20  / total * 100)
-    pct_50  = round(a50  / total * 100)
-    pct_200 = round(a200 / total * 100)
-    pct_52w = round(at_52wh / total * 100)
-    avg_rs3m = round(sum(rs3m_list) / len(rs3m_list), 1) if rs3m_list else None
-    avg_rs1m = round(sum(rs1m_list) / len(rs1m_list), 1) if rs1m_list else None
-    vol_spike_pct = round(vol_spike / total * 100)
+    if p20 >= 80:   stage, sc, se = "EXTENDED", "#f85149", "🔴"
+    elif p20 >= 65: stage, sc, se = "BUILDING",  "#e3b341", "🟡"
+    elif p20 >= 25: stage, sc, se = "EMERGING",  "#3fb950", "🟢"
+    else:           stage, sc, se = "WEAK",      "#475569", "⚫"
 
-    # Stage classification
-    if pct_20 >= 80:
-        stage, sc, se = "EXTENDED",  "#f85149", "🔴"
-    elif pct_20 >= 65:
-        stage, sc, se = "BUILDING",  "#e3b341", "🟡"
-    elif pct_20 >= 25:
-        stage, sc, se = "EMERGING",  "#3fb950", "🟢"
-    else:
-        stage, sc, se = "WEAK",      "#475569", "⚫"
-
-    # Composite breadth score
-    score = round(pct_20 * 0.3 + pct_50 * 0.4 + pct_200 * 0.3)
-
-    # Momentum: is RS improving (1M RS vs 3M RS)?
-    rs_momentum = "UP" if (avg_rs1m is not None and avg_rs3m is not None
-                           and avg_rs1m > avg_rs3m) else "FLAT"
-
+    score = round(p20*0.3 + p50*0.4 + p200*0.3)
     return {
-        "industry":       industry,
-        "sector":         _IND_TO_SEC.get(industry, "Other"),
-        "total":          total,
-        "pct_20ma":       pct_20,
-        "pct_50ma":       pct_50,
-        "pct_200ma":      pct_200,
-        "pct_52wh":       pct_52w,
-        "new_52wh":       new_52wh_total,
-        "vol_spike_pct":  vol_spike_pct,
-        "avg_rs3m":       avg_rs3m,
-        "avg_rs1m":       avg_rs1m,
-        "rs_momentum":    rs_momentum,
-        "stage":          stage,
-        "stage_color":    sc,
-        "stage_emoji":    se,
-        "breadth_score":  score,
+        "industry": industry, "sector": _IND_TO_SEC.get(industry, "Other"),
+        "total": total, "pct_20ma": p20, "pct_50ma": p50, "pct_200ma": p200,
+        "pct_52wh": p52, "new_52wh": new52, "vol_spike_pct": vs_pct,
+        "avg_rs3m": avg_rs3m, "avg_rs1m": avg_rs1m,
+        "stage": stage, "stage_color": sc, "stage_emoji": se, "breadth_score": score,
     }
 
 
-def compute_sector_metrics(sector: str,
-                            industry_data: list[dict]) -> dict:
-    """Roll up industry metrics to sector level."""
+def compute_sector_metrics(sector: str, industry_data: list[dict]) -> dict:
     rows = [d for d in industry_data if d.get("sector") == sector]
     if not rows:
         return {}
     n = sum(r["total"] for r in rows)
     if n == 0:
         return {}
-
-    # Weighted averages (weighted by stock count)
-    def _wavg(key: str) -> float:
+    def _wa(key):
         vals = [(r[key], r["total"]) for r in rows if r.get(key) is not None]
-        if not vals:
-            return 0.0
-        return round(sum(v * w for v, w in vals) / sum(w for _, w in vals), 1)
-
-    p20  = _wavg("pct_20ma")
-    p50  = _wavg("pct_50ma")
-    p200 = _wavg("pct_200ma")
-    rs3m = _wavg("avg_rs3m")
-    rs1m = _wavg("avg_rs1m")
-
-    if p20 >= 80:
-        stage, sc, se = "EXTENDED",  "#f85149", "🔴"
-    elif p20 >= 65:
-        stage, sc, se = "BUILDING",  "#e3b341", "🟡"
-    elif p20 >= 25:
-        stage, sc, se = "EMERGING",  "#3fb950", "🟢"
-    else:
-        stage, sc, se = "WEAK",      "#475569", "⚫"
-
-    # Cycle position heuristic
-    EARLY_SECTORS  = {"Financials", "Consumer", "Internet", "RealEstate"}
-    MID_SECTORS    = {"IT", "Cap Goods", "Electronics", "Cables", "Defense", "Metals"}
-    LATE_SECTORS   = {"Energy", "Renewable", "Chemicals", "Infra"}
-    DEF_SECTORS    = {"FMCG", "Pharma", "Banking", "Agri", "Sugar"}
-
-    if sector in EARLY_SECTORS:
-        cycle_phase = "Early Cycle"
-    elif sector in MID_SECTORS:
-        cycle_phase = "Mid Cycle"
-    elif sector in LATE_SECTORS:
-        cycle_phase = "Late Cycle"
-    elif sector in DEF_SECTORS:
-        cycle_phase = "Defensive"
-    else:
-        cycle_phase = "Other"
-
-    return {
-        "sector":       sector,
-        "industry_cnt": len(rows),
-        "stock_count":  n,
-        "pct_20ma":     p20,
-        "pct_50ma":     p50,
-        "pct_200ma":    p200,
-        "avg_rs3m":     rs3m,
-        "avg_rs1m":     rs1m,
-        "stage":        stage,
-        "stage_color":  sc,
-        "stage_emoji":  se,
-        "cycle_phase":  cycle_phase,
-    }
+        if not vals: return 0.0
+        return round(sum(v*w for v, w in vals) / sum(w for _, w in vals), 1)
+    p20 = _wa("pct_20ma"); p50 = _wa("pct_50ma"); p200 = _wa("pct_200ma")
+    rs3m = _wa("avg_rs3m"); rs1m = _wa("avg_rs1m")
+    if p20 >= 80:   stage, sc, se = "EXTENDED", "#f85149", "🔴"
+    elif p20 >= 65: stage, sc, se = "BUILDING",  "#e3b341", "🟡"
+    elif p20 >= 25: stage, sc, se = "EMERGING",  "#3fb950", "🟢"
+    else:           stage, sc, se = "WEAK",      "#475569", "⚫"
+    EARLY = {"Financials","Consumer","Internet","RealEstate"}
+    MID   = {"IT","Cap Goods","Electronics","Cables","Defense","Metals"}
+    LATE  = {"Energy","Renewable","Chemicals","Infra"}
+    DEF   = {"FMCG","Pharma","Banking","Agri","Sugar"}
+    cycle = ("Early Cycle" if sector in EARLY else "Mid Cycle" if sector in MID
+             else "Late Cycle" if sector in LATE else "Defensive" if sector in DEF else "Other")
+    return {"sector": sector, "industry_cnt": len(rows), "stock_count": n,
+            "pct_20ma": p20, "pct_50ma": p50, "pct_200ma": p200,
+            "avg_rs3m": rs3m, "avg_rs1m": rs1m,
+            "stage": stage, "stage_color": sc, "stage_emoji": se, "cycle_phase": cycle}
 
 
-# ── HTML helpers ──────────────────────────────────────────────────────────────
+# ── HTML helpers ───────────────────────────────────────────────────────────────
 
-def _color_pct(pct: int | None, invert: bool = False) -> str:
+def _stage_cfg(stage: str) -> tuple[str, str, str, str]:
+    return {"EXTENDED": ("#f85149","#1f0a0a","#f8514944","🔴"),
+            "BUILDING": ("#e3b341","#1a1500","#e3b34144","🟡"),
+            "EMERGING": ("#3fb950","#0a1f0e","#3fb95044","🟢"),
+            "WEAK":     ("#475569","#0f1117","#47556944","⚫")
+            }.get(stage, ("#475569","#0f1117","#47556944","⚫"))
+
+
+def _rs_badge(v: float | None) -> str:
+    if v is None: return '<span class="rs-na">—</span>'
+    cls = "rs-strong" if v>=5 else "rs-pos" if v>=0 else "rs-neg" if v>=-5 else "rs-weak"
+    sign = "+" if v >= 0 else ""
+    return f'<span class="{cls}">{sign}{v:.1f}%</span>'
+
+
+def _stage_pill(stage: str) -> str:
+    c, bg, b, e = _stage_cfg(stage)
+    return f'<span class="stage-pill" style="color:{c};background:{bg};border-color:{b}">{e} {stage}</span>'
+
+
+def _inline_bars(p20, p50, p200) -> str:
+    html = ""
+    for pct, lbl in ((p20,">20MA"),(p50,">50MA"),(p200,">200MA")):
+        v = max(0, min(100, pct or 0))
+        clr = "#f85149" if v>=75 else "#e3b341" if v>=55 else "#3fb950" if v>=30 else "#334155"
+        bw  = round(v/100*100)
+        html += (f'<div class="ibar"><span class="ibar-lbl">{lbl}</span>'
+                 f'<div class="ibar-track"><div class="ibar-fill" style="width:{bw}%;background:{clr}"></div></div>'
+                 f'<span class="ibar-val" style="color:{clr}">{pct if pct is not None else "—"}%</span></div>')
+    return html
+
+
+def _breadth_strip(p20, p50, p200) -> str:
+    html = ""
+    for pct, lbl in ((p20,"20MA"),(p50,"50MA"),(p200,"200MA")):
+        v = max(0, min(100, pct or 0))
+        clr = "#f85149" if v>=75 else "#e3b341" if v>=55 else "#3fb950" if v>=30 else "#334155"
+        bw  = round(v/100*100)
+        html += (f'<div class="strip-row">'
+                 f'<span class="strip-lbl">{lbl}</span>'
+                 f'<div class="strip-track"><div class="strip-fill" style="width:{bw}%;background:{clr}"></div></div>'
+                 f'<span class="strip-val" style="color:{clr}">{pct if pct is not None else "—"}%</span>'
+                 f'</div>')
+    return f'<div class="breadth-strip">{html}</div>'
+
+
+def _pct_bar(pct: int | None, w: int = 52) -> str:
     if pct is None:
-        return "#475569"
-    v = (100 - pct) if invert else pct
-    if v >= 75:
-        return "#f85149"
-    if v >= 55:
-        return "#e3b341"
-    if v >= 30:
-        return "#3fb950"
-    return "#475569"
+        return '<span class="pct-na">—</span>'
+    v = max(0, min(100, pct))
+    clr = "#f85149" if v>=75 else "#e3b341" if v>=55 else "#3fb950" if v>=30 else "#334155"
+    bw  = round(v/100*w)
+    return (f'<span style="color:{clr};font-weight:700;font-size:.83em">{pct}%</span>'
+            f'<svg width="{w}" height="4" style="vertical-align:middle;margin-left:4px">'
+            f'<rect width="{w}" height="4" rx="2" fill="#21262d"/>'
+            f'<rect width="{bw}" height="4" rx="2" fill="{clr}"/></svg>')
 
 
-def _fmt_rs(v: float | None) -> str:
-    if v is None:
-        return '<span style="color:#475569">—</span>'
-    color = "#3fb950" if v >= 0 else "#f85149"
-    sign  = "+" if v >= 0 else ""
-    return f'<span style="color:{color};font-weight:700">{sign}{v:.1f}%</span>'
+def _score_ring(score: int) -> str:
+    circ = 62.83
+    pct  = max(0, min(100, score))
+    dash = pct/100*circ
+    clr  = "#f85149" if score>=60 else "#e3b341" if score>=40 else "#3fb950" if score>=20 else "#334155"
+    return (f'<svg width="26" height="26" style="vertical-align:middle" title="Score: {score}/100">'
+            f'<circle cx="13" cy="13" r="10" fill="none" stroke="#21262d" stroke-width="3"/>'
+            f'<circle cx="13" cy="13" r="10" fill="none" stroke="{clr}" stroke-width="3" '
+            f'stroke-dasharray="{dash:.1f} {circ:.1f}" stroke-dashoffset="{circ/4:.1f}" stroke-linecap="round"/>'
+            f'<text x="13" y="17" text-anchor="middle" font-size="7.5" fill="{clr}" font-weight="bold">{score}</text>'
+            f'</svg>')
 
 
-def _pct_cell(v: int | None, stage_color: str = "#475569") -> str:
-    if v is None:
-        return '<td style="color:#475569;text-align:center">—</td>'
-    return f'<td style="color:{stage_color};text-align:center;font-weight:700">{v}%</td>'
+def _vol_display(vs: int) -> str:
+    if vs == 0: return '<span class="pct-na">—</span>'
+    clr = "#f85149" if vs>=55 else "#e3b341" if vs>=25 else "#7dd3fc"
+    bw  = round(vs/100*40)
+    return (f'<span style="color:{clr};font-weight:{"700" if vs>=25 else "400"};font-size:.82em">{vs}%</span>'
+            f'<svg width="40" height="4" style="vertical-align:middle;margin-left:3px">'
+            f'<rect width="40" height="4" rx="2" fill="#21262d"/>'
+            f'<rect width="{bw}" height="4" rx="2" fill="{clr}"/></svg>')
 
 
-def _stage_badge(stage: str, color: str, emoji: str) -> str:
-    bg = {"EXTENDED": "#2a1a1a", "BUILDING": "#2a2200",
-          "EMERGING": "#0a2a14", "WEAK": "#1a1a1a"}.get(stage, "#1a1a1a")
-    return (f'<span style="background:{bg};color:{color};border:1px solid {color}44;'
-            f'padding:1px 7px;border-radius:99px;font-size:.72em;font-weight:700;'
-            f'white-space:nowrap">{emoji} {stage}</span>')
-
+# ── build_html ─────────────────────────────────────────────────────────────────
 
 def build_html(industry_data: list[dict], sector_data: list[dict]) -> str:
-    now_str = NOW
+    total_ind    = len(industry_data)
+    total_stocks = sum(d["total"] for d in industry_data)
+    ec = sum(1 for d in industry_data if d["stage"]=="EMERGING")
+    bc = sum(1 for d in industry_data if d["stage"]=="BUILDING")
+    xc = sum(1 for d in industry_data if d["stage"]=="EXTENDED")
+    wc = sum(1 for d in industry_data if d["stage"]=="WEAK")
 
-    # ── Summary stats ──────────────────────────────────────────────────────────
-    total_industries = len(industry_data)
-    total_stocks     = sum(d["total"] for d in industry_data)
-    emerging_cnt = sum(1 for d in industry_data if d["stage"] == "EMERGING")
-    building_cnt = sum(1 for d in industry_data if d["stage"] == "BUILDING")
-    extended_cnt = sum(1 for d in industry_data if d["stage"] == "EXTENDED")
-    weak_cnt     = sum(1 for d in industry_data if d["stage"] == "WEAK")
+    vol_clusters = sorted([d for d in industry_data if d.get("vol_spike_pct",0)>=15],
+                          key=lambda x: -x.get("vol_spike_pct",0))[:12]
+    hi52_leaders = sorted([d for d in industry_data if d.get("new_52wh",0)>0],
+                          key=lambda x: -x.get("new_52wh",0))[:12]
+    early_trends = sorted([d for d in industry_data if d["stage"] in ("EMERGING","BUILDING")],
+                          key=lambda x: -(x.get("avg_rs3m") or -99))[:24]
 
-    # Top volume-cluster industries (vol_spike_pct >= 20%)
-    vol_clusters = sorted(
-        [d for d in industry_data if d.get("vol_spike_pct", 0) >= 20],
-        key=lambda x: -x.get("vol_spike_pct", 0)
-    )[:12]
-
-    # Top 52W-high momentum industries
-    hi52_leaders = sorted(
-        [d for d in industry_data if d.get("new_52wh", 0) > 0],
-        key=lambda x: -x.get("new_52wh", 0)
-    )[:12]
-
-    # Emerging + building sorted by RS3M
-    early_trends = sorted(
-        [d for d in industry_data if d["stage"] in ("EMERGING", "BUILDING")],
-        key=lambda x: -(x.get("avg_rs3m") or -99)
-    )[:20]
-
-    # ── Sector rotation table ──────────────────────────────────────────────────
-    sector_rows_html = ""
+    # ── Sector cards ──────────────────────────────────────────────────────────
+    CYCLE_CLS = {"Early Cycle":"cycle-early","Mid Cycle":"cycle-mid",
+                 "Late Cycle":"cycle-late","Defensive":"cycle-def"}
+    sec_cards = ""
     for sd in sorted(sector_data, key=lambda x: -(x.get("avg_rs3m") or -99)):
         sec   = sd["sector"]
-        p20   = sd.get("pct_20ma")
-        p50   = sd.get("pct_50ma")
-        p200  = sd.get("pct_200ma")
-        rs3m  = sd.get("avg_rs3m")
-        rs1m  = sd.get("avg_rs1m")
-        stage = sd["stage"]
-        sc    = sd["stage_color"]
-        se    = sd["stage_emoji"]
-        n     = sd["stock_count"]
-        cycle = sd.get("cycle_phase", "")
-        cycle_cls_map = {
-            "Early Cycle": "cycle-early",
-            "Mid Cycle":   "cycle-mid",
-            "Late Cycle":  "cycle-late",
-            "Defensive":   "cycle-def",
-        }
-        cycle_cls = cycle_cls_map.get(cycle, "")
-        rs_dir = "↑" if sd.get("avg_rs1m", 0) >= (sd.get("avg_rs3m") or 0) else "↓"
-        rs_dir_color = "#3fb950" if rs_dir == "↑" else "#f85149"
+        p20   = sd.get("pct_20ma"); p50 = sd.get("pct_50ma"); p200 = sd.get("pct_200ma")
+        rs3m  = sd.get("avg_rs3m"); rs1m = sd.get("avg_rs1m")
+        stage = sd["stage"]; sc,sbg,sb,se = _stage_cfg(stage)
+        n     = sd["stock_count"]; ni = sd.get("industry_cnt",0)
+        cycle = sd.get("cycle_phase","Other"); ccls = CYCLE_CLS.get(cycle,"")
+        up = rs1m is not None and rs3m is not None and rs1m > rs3m
+        arr = f'<span style="color:{"#3fb950" if up else "#f85149"};font-weight:700">{"↑" if up else "↓"}</span>'
+        sec_cards += (
+            f'<div class="sec-card" style="border-top:3px solid {sc}">'
+            f'<div class="sec-top"><div class="sec-name">{escape(sec)}</div>{_stage_pill(stage)}</div>'
+            f'<div class="sec-meta"><span class="{ccls} cycle-badge">{cycle}</span>'
+            f'<span class="sec-n">{n} stocks · {ni} ind.</span></div>'
+            f'<div class="ibar-group">{_inline_bars(p20,p50,p200)}</div>'
+            f'<div class="sec-rs">'
+            f'<div><span class="rs-label">RS 3M</span>{_rs_badge(rs3m)}</div>'
+            f'<div><span class="rs-label">RS 1M</span>{_rs_badge(rs1m)} {arr}</div>'
+            f'</div></div>'
+        )
 
-        sector_rows_html += f"""<tr>
-          <td style="font-weight:700;color:#c9d1d9">{escape(sec)}</td>
-          <td><span class="{cycle_cls} cycle-badge">{cycle}</span></td>
-          <td style="text-align:center;color:{sc};font-weight:700">{se} {stage}</td>
-          <td style="text-align:center;color:{_color_pct(p20)}">{p20 if p20 is not None else '—'}%</td>
-          <td style="text-align:center;color:{_color_pct(p50)}">{p50 if p50 is not None else '—'}%</td>
-          <td style="text-align:center;color:{_color_pct(p200)}">{p200 if p200 is not None else '—'}%</td>
-          <td style="text-align:center">{_fmt_rs(rs3m)}</td>
-          <td style="text-align:center">{_fmt_rs(rs1m)} <span style="color:{rs_dir_color}">{rs_dir}</span></td>
-          <td style="text-align:center;color:#8b949e">{n}</td>
-        </tr>"""
-
-    # ── Full industry table ────────────────────────────────────────────────────
-    ind_rows_html = ""
-    for d in industry_data:
-        ind    = d["industry"]
-        sec    = d.get("sector", "")
-        p20    = d.get("pct_20ma")
-        p50    = d.get("pct_50ma")
-        p200   = d.get("pct_200ma")
-        p52    = d.get("pct_52wh")
-        rs3m   = d.get("avg_rs3m")
-        rs1m   = d.get("avg_rs1m")
-        vs     = d.get("vol_spike_pct", 0)
-        n52    = d.get("new_52wh", 0)
-        n      = d.get("total", 0)
-        stage  = d["stage"]
-        sc     = d["stage_color"]
-        se     = d["stage_emoji"]
-        score  = d.get("breadth_score", 0)
-
-        vs_color  = "#f85149" if vs >= 40 else "#e3b341" if vs >= 20 else "#475569"
-        n52_color = "#3fb950" if n52 >= 3 else "#e3b341" if n52 >= 1 else "#475569"
-
-        ind_rows_html += f"""<tr class="ind-row" data-stage="{stage}" data-sector="{escape(sec)}" data-score="{score}">
-          <td style="font-weight:600;color:#c9d1d9;white-space:nowrap">{escape(ind)}</td>
-          <td style="color:#8b949e;font-size:.78em">{escape(sec)}</td>
-          <td>{_stage_badge(stage, sc, se)}</td>
-          <td style="text-align:center;color:{_color_pct(p20)};font-weight:700">{p20 if p20 is not None else '—'}%</td>
-          <td style="text-align:center;color:{_color_pct(p50)}">{p50 if p50 is not None else '—'}%</td>
-          <td style="text-align:center;color:{_color_pct(p200)}">{p200 if p200 is not None else '—'}%</td>
-          <td style="text-align:center;color:#7dd3fc">{p52 if p52 is not None else '—'}%</td>
-          <td style="text-align:center">{_fmt_rs(rs3m)}</td>
-          <td style="text-align:center">{_fmt_rs(rs1m)}</td>
-          <td style="text-align:center;color:{vs_color};font-weight:{'700' if vs >= 20 else '400'}">{vs}%</td>
-          <td style="text-align:center;color:{n52_color};font-weight:{'700' if n52 >= 1 else '400'}">{n52}</td>
-          <td style="text-align:center;color:#e3b341;font-weight:700">{score}</td>
-          <td style="text-align:center;color:#8b949e">{n}</td>
-        </tr>"""
-
-    # ── Volume cluster chips ───────────────────────────────────────────────────
-    vol_chips_html = ""
-    for d in vol_clusters:
-        ind   = d["industry"]
-        sec   = d.get("sector", "")
-        vs    = d.get("vol_spike_pct", 0)
-        p20   = d.get("pct_20ma", 0)
-        stage = d["stage"]
-        sc    = d["stage_color"]
-        se    = d["stage_emoji"]
-        intensity = "🔥🔥" if vs >= 60 else "🔥"
-        vol_chips_html += f"""
-          <div class="cluster-chip" onclick="filterIndustry('{escape(ind.replace("'",""))}')"
-               title="{escape(ind)} — {vs}% of stocks had vol spike in last 5 days | >20MA: {p20}%">
-            <div class="cluster-name">{escape(ind)}</div>
-            <div class="cluster-sec">{escape(sec)}</div>
-            <div class="cluster-vol">{intensity} {vs}% vol spikes</div>
-            <div class="cluster-stage" style="color:{sc}">{se} {stage}</div>
-          </div>"""
-
-    # ── 52W High leaders chips ────────────────────────────────────────────────
-    hi52_chips_html = ""
-    for d in hi52_leaders:
-        ind  = d["industry"]
-        sec  = d.get("sector", "")
-        n52  = d.get("new_52wh", 0)
-        p52  = d.get("pct_52wh", 0)
-        stage = d["stage"]
-        sc    = d["stage_color"]
-        se    = d["stage_emoji"]
-        hi52_chips_html += f"""
-          <div class="hi52-chip" onclick="filterIndustry('{escape(ind.replace("'",""))}')"
-               title="{escape(ind)} — {n52} new 52W highs in last 5 sessions | {p52}% near 52W high">
-            <div class="cluster-name">{escape(ind)}</div>
-            <div class="cluster-sec">{escape(sec)}</div>
-            <div class="cluster-vol">🏔 {n52} new 52W highs (5d)</div>
-            <div class="cluster-stage" style="color:{sc}">{se} {stage} | {p52}% near hi</div>
-          </div>"""
-
-    # ── Early trend chips ─────────────────────────────────────────────────────
-    early_chips_html = ""
+    # ── Emerging trend cards ──────────────────────────────────────────────────
+    early_cards = ""
     for d in early_trends:
-        ind   = d["industry"]
-        sec   = d.get("sector", "")
-        p20   = d.get("pct_20ma", 0)
-        rs3m  = d.get("avg_rs3m")
-        n     = d.get("total", 0)
-        stage = d["stage"]
-        sc    = d["stage_color"]
-        se    = d["stage_emoji"]
-        badge = "⚡ EMERGING" if stage == "EMERGING" else "🟡 BUILDING"
-        badge_cls = "chip-emerging" if stage == "EMERGING" else "chip-building"
-        rs_str = f"+{rs3m:.1f}%" if rs3m is not None and rs3m >= 0 else (f"{rs3m:.1f}%" if rs3m is not None else "—")
-        early_chips_html += f"""
-          <div class="trend-chip {badge_cls}" onclick="filterIndustry('{escape(ind.replace("'",""))}')"
-               title="{escape(ind)} — {p20}% above 20MA | RS3M: {rs_str}">
-            <span class="chip-badge">{badge}</span>
-            <span class="chip-name">{escape(ind)}</span>
-            <span class="chip-meta">{p20}% &gt;20MA · RS {rs_str}</span>
-            <span class="chip-n">{n} stocks</span>
-          </div>"""
+        ind = d["industry"]; sec = d.get("sector","")
+        p20=d.get("pct_20ma",0); p50=d.get("pct_50ma",0); p200=d.get("pct_200ma",0)
+        rs3m=d.get("avg_rs3m"); rs1m=d.get("avg_rs1m")
+        vs=d.get("vol_spike_pct",0); n52=d.get("new_52wh",0); n=d.get("total",0)
+        stage=d["stage"]; sc,sbg,sb,_ = _stage_cfg(stage)
+        ecls = "chip-em" if stage=="EMERGING" else "chip-bl"
+        badge = "⚡ EMERGING" if stage=="EMERGING" else "🟡 BUILDING"
+        notes_html = "".join([
+            f'<span class="note-vol">🔥 {vs}% vol</span>' if vs>=15 else "",
+            f'<span class="note-hi">🏔 {n52} 52W hi</span>' if n52>0 else "",
+        ])
+        safe = escape(ind.replace("'",""))
+        early_cards += (
+            f'<div class="early-card {ecls}" onclick="filterIndustry(\'{safe}\')">'
+            f'<div class="ec-top">'
+            f'<div><div class="ec-name">{escape(ind)}</div><div class="ec-sec">{escape(sec)} · {n} stocks</div></div>'
+            f'<span class="stage-pill" style="color:{sc};background:{sbg};border-color:{sb}">{badge}</span>'
+            f'</div>'
+            f'{_breadth_strip(p20,p50,p200)}'
+            f'<div class="ec-rs">'
+            f'<div><span class="rs-label">RS 3M</span>{_rs_badge(rs3m)}</div>'
+            f'<div><span class="rs-label">RS 1M</span>{_rs_badge(rs1m)}</div>'
+            f'{("<div class=\"ec-notes\">" + notes_html + "</div>") if notes_html else ""}'
+            f'</div></div>'
+        )
 
-    # ── Build the active industry dropdown ────────────────────────────────────
+    # ── Volume cluster cards ──────────────────────────────────────────────────
+    vol_cards = ""
+    for d in vol_clusters:
+        ind=d["industry"]; sec=d.get("sector",""); vs=d.get("vol_spike_pct",0)
+        p20=d.get("pct_20ma",0); rs3m=d.get("avg_rs3m"); n=d.get("total",0)
+        stage=d["stage"]; sc,sbg,sb,se = _stage_cfg(stage)
+        clr  = "#f85149" if vs>=60 else "#e3b341" if vs>=35 else "#7dd3fc"
+        icon = "🔥🔥🔥" if vs>=70 else "🔥🔥" if vs>=40 else "🔥"
+        bw   = round(vs/100*100)
+        safe = escape(ind.replace("'",""))
+        vol_cards += (
+            f'<div class="vol-card" onclick="filterIndustry(\'{safe}\')">'
+            f'<div class="vc-top"><span class="vc-icon">{icon}</span>{_stage_pill(stage)}</div>'
+            f'<div class="vc-name">{escape(ind)}</div>'
+            f'<div class="vc-sec">{escape(sec)} · {n} stocks</div>'
+            f'<div class="vc-track"><div class="vc-fill" style="width:{bw}%;background:{clr}"></div></div>'
+            f'<div class="vc-val" style="color:{clr}">{vs}% stocks with vol spike</div>'
+            f'<div class="vc-foot"><span class="pct-na">{p20}% &gt;20MA</span>{_rs_badge(rs3m)}</div>'
+            f'</div>'
+        )
+    if not vol_cards:
+        vol_cards = '<div class="empty-state">No volume clusters detected (threshold: ≥15% of industry stocks with vol &gt;1.5× avg, last 5 sessions).</div>'
+
+    # ── 52W High cards ────────────────────────────────────────────────────────
+    hi52_cards = ""
+    for d in hi52_leaders:
+        ind=d["industry"]; sec=d.get("sector",""); n52=d.get("new_52wh",0)
+        p52=d.get("pct_52wh",0); rs3m=d.get("avg_rs3m"); n=d.get("total",0)
+        stage=d["stage"]; sc,sbg,sb,se = _stage_cfg(stage)
+        bw52 = round(p52/100*100)
+        safe  = escape(ind.replace("'",""))
+        hi52_cards += (
+            f'<div class="hi52-card" onclick="filterIndustry(\'{safe}\')">'
+            f'<div class="hc-badge">🏔 {n52} new highs <span class="hc-span">(last 5d)</span></div>'
+            f'<div class="hc-name">{escape(ind)}</div>'
+            f'<div class="hc-sec">{escape(sec)} · {n} stocks</div>'
+            f'<div class="hc-track"><div class="hc-fill" style="width:{bw52}%"></div></div>'
+            f'<div class="hc-pct">{p52}% near 52W high</div>'
+            f'<div class="hc-foot">{_stage_pill(stage)}{_rs_badge(rs3m)}</div>'
+            f'</div>'
+        )
+    if not hi52_cards:
+        hi52_cards = '<div class="empty-state">No new 52-week highs in the last 5 sessions.</div>'
+
+    # ── Industry table rows ───────────────────────────────────────────────────
+    ind_rows = ""
+    for d in industry_data:
+        ind=d["industry"]; sec=d.get("sector","")
+        p20=d.get("pct_20ma"); p50=d.get("pct_50ma"); p200=d.get("pct_200ma")
+        p52=d.get("pct_52wh"); rs3m=d.get("avg_rs3m"); rs1m=d.get("avg_rs1m")
+        vs=d.get("vol_spike_pct",0); n52=d.get("new_52wh",0); n=d.get("total",0)
+        stage=d["stage"]; sc,sbg,sb,se = _stage_cfg(stage); score=d.get("breadth_score",0)
+        up  = rs1m is not None and rs3m is not None and rs1m > rs3m
+        arr = f'<span style="color:{"#3fb950" if up else "#f85149"};font-size:.85em">{"↑" if up else "↓"}</span>'
+        n52_clr = "#3fb950" if n52>=3 else "#e3b341" if n52>=1 else "#475569"
+        p52_str = f'<span style="color:#7dd3fc;font-size:.82em">{p52}%</span>' if p52 is not None else '<span class="pct-na">—</span>'
+        ind_escaped = escape(ind)
+        ind_rows += (
+            f'<tr class="ind-row" data-industry="{ind_escaped}" '
+            f'data-stage="{stage}" data-sector="{escape(sec)}" data-score="{score}" '
+            f'style="border-left:3px solid {sc}33">'
+            f'<td class="ind-name" title="{ind_escaped}">{ind_escaped}</td>'
+            f'<td><span class="sec-badge">{escape(sec)}</span></td>'
+            f'<td>{_stage_pill(stage)}</td>'
+            f'<td class="pct-cell">{_pct_bar(p20)}</td>'
+            f'<td class="pct-cell">{_pct_bar(p50)}</td>'
+            f'<td class="pct-cell">{_pct_bar(p200)}</td>'
+            f'<td class="pct-cell">{p52_str}</td>'
+            f'<td class="pct-cell">{_rs_badge(rs3m)}</td>'
+            f'<td class="pct-cell">{_rs_badge(rs1m)} {arr}</td>'
+            f'<td class="pct-cell">{_vol_display(vs)}</td>'
+            f'<td class="pct-cell" style="color:{n52_clr};font-weight:{"700" if n52>0 else "400"}">'
+            f'{"🏔 " if n52>0 else ""}{n52 if n52>0 else "—"}</td>'
+            f'<td class="pct-cell">{_score_ring(score)}</td>'
+            f'<td class="pct-cell pct-na">{n}</td>'
+            f'</tr>'
+        )
+
     all_sectors = sorted({d.get("sector","") for d in industry_data if d.get("sector")})
-    sector_options = "\n".join(
-        f'<option value="{s}">{escape(s)}</option>' for s in all_sectors
-    )
+    sec_opts = "\n".join(f'<option value="{s}">{escape(s)}</option>' for s in all_sectors)
+
+    row_json = json.dumps([
+        {"industry": d["industry"], "sector": d.get("sector",""), "stage": d["stage"],
+         "pct_20ma": d.get("pct_20ma",0), "pct_50ma": d.get("pct_50ma",0),
+         "pct_200ma": d.get("pct_200ma",0), "pct_52wh": d.get("pct_52wh",0),
+         "avg_rs3m": d.get("avg_rs3m") or -999, "avg_rs1m": d.get("avg_rs1m") or -999,
+         "vol_spike_pct": d.get("vol_spike_pct",0), "new_52wh": d.get("new_52wh",0),
+         "breadth_score": d.get("breadth_score",0), "total": d.get("total",0)}
+        for d in industry_data
+    ])
+
+    css = """
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#0a0f16;--border:#21262d;--border2:#30363d;
+  --text:#c9d1d9;--muted:#8b949e;--dim:#475569;--blue:#58a6ff;--green:#3fb950;
+  --yellow:#e3b341;--red:#f85149;--accent:#79c0ff}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.45}
+
+.topbar{background:linear-gradient(135deg,#0d1117,#111827);border-bottom:1px solid var(--border);
+  padding:12px 24px;display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.topbar-title{color:var(--accent);font-size:1.1em;font-weight:800;letter-spacing:-.3px}
+.topbar-sub{color:var(--muted);font-size:.72em;margin-top:2px}
+.stat-pills{display:flex;gap:6px;flex-wrap:wrap}
+.sp{display:flex;flex-direction:column;align-items:center;background:var(--bg3);
+  border:1px solid var(--border);border-radius:8px;padding:5px 12px;min-width:54px}
+.sp-v{font-size:1.15em;font-weight:800}
+.sp-l{font-size:.58em;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:1px}
+
+.nav-bar{background:var(--bg2);border-bottom:1px solid var(--border);padding:7px 24px;
+  display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.nav-link{padding:3px 11px;border:1px solid var(--border2);border-radius:99px;color:var(--muted);
+  font-size:.75em;cursor:pointer;transition:all .15s;text-decoration:none}
+.nav-link:hover{border-color:var(--blue);color:var(--blue)}
+.nav-ext{color:var(--accent);border-color:#79c0ff33}
+.nav-ext:hover{background:#79c0ff11}
+
+.ctrl-bar{background:#0f1621;border-bottom:1px solid var(--border);padding:7px 24px;
+  display:flex;gap:7px;align-items:center;flex-wrap:wrap;position:sticky;top:61px;z-index:90}
+.ci{padding:5px 9px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;
+  color:var(--text);font-size:.78em;outline:none;transition:border .15s}
+.ci:focus{border-color:var(--blue)}
+.ci.wide{min-width:190px}
+.cb{padding:4px 11px;border:1px solid var(--border2);border-radius:6px;background:transparent;
+  color:var(--accent);cursor:pointer;font-size:.75em;transition:all .15s;white-space:nowrap}
+.cb:hover{background:#1f6feb;border-color:var(--blue);color:#fff}
+.cb.reset{color:var(--red);border-color:#f8514933}
+.cb.reset:hover{background:#1a0a0a;border-color:var(--red)}
+#rowCount{color:var(--muted);font-size:.73em}
+
+.section{padding:18px 24px;border-bottom:1px solid var(--border)}
+.sec-hdr{margin-bottom:14px}
+.sec-hdr h2{font-size:.92em;font-weight:700;color:var(--accent);margin-bottom:4px}
+.sec-hdr p{font-size:.74em;color:var(--muted);line-height:1.6;max-width:900px}
+
+.stage-pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;
+  border-radius:99px;font-size:.68em;font-weight:700;border:1px solid transparent;white-space:nowrap}
+.cycle-badge{display:inline-flex;padding:2px 8px;border-radius:99px;font-size:.68em;font-weight:700;
+  white-space:nowrap;border:1px solid transparent}
+.cycle-early{background:#0a2a14;color:#4ade80;border-color:#16a34a33}
+.cycle-mid{background:#0f1f3a;color:#60a5fa;border-color:#1d4ed833}
+.cycle-late{background:#2a2200;color:#e3b341;border-color:#92400e33}
+.cycle-def{background:#1a1a2e;color:#a5b4fc;border-color:#4c1d9533}
+
+.rs-strong{font-weight:700;color:#4ade80;font-size:.8em}
+.rs-pos{font-weight:600;color:#3fb950;font-size:.8em}
+.rs-neg{font-weight:600;color:#f87171;font-size:.8em}
+.rs-weak{font-weight:700;color:#f85149;font-size:.8em}
+.rs-na{color:var(--dim);font-size:.8em}
+.rs-label{color:var(--muted);font-size:.64em;text-transform:uppercase;letter-spacing:.3px;margin-right:4px}
+
+.sec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.sec-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+  padding:14px 15px;transition:box-shadow .2s,transform .2s}
+.sec-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.4);transform:translateY(-2px)}
+.sec-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:6px}
+.sec-name{font-size:1em;font-weight:800;color:var(--text)}
+.sec-meta{margin-bottom:10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sec-n{color:var(--dim);font-size:.68em}
+.ibar-group{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.ibar{display:flex;align-items:center;gap:5px}
+.ibar-lbl{font-size:.6em;color:var(--dim);width:34px;flex-shrink:0;font-weight:600;text-transform:uppercase}
+.ibar-track{flex:1;height:5px;background:#1a2030;border-radius:3px;overflow:hidden}
+.ibar-fill{height:100%;border-radius:3px;transition:width .4s}
+.ibar-val{font-size:.68em;font-weight:700;width:28px;text-align:right;flex-shrink:0}
+.sec-rs{display:flex;gap:10px;flex-wrap:wrap}
+
+.early-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.early-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+  padding:13px 15px;cursor:pointer;transition:all .2s}
+.chip-em{border-color:#3fb95033}
+.chip-em:hover{border-color:var(--green);background:#050f07;box-shadow:0 4px 16px rgba(63,185,80,.13)}
+.chip-bl{border-color:#e3b34133}
+.chip-bl:hover{border-color:var(--yellow);background:#0c0b00;box-shadow:0 4px 16px rgba(227,179,65,.13)}
+.ec-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:6px}
+.ec-name{font-size:.88em;font-weight:700;color:var(--text);margin-bottom:2px}
+.ec-sec{font-size:.68em;color:var(--muted)}
+.ec-rs{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;align-items:center}
+.ec-notes{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+
+.breadth-strip{display:flex;flex-direction:column;gap:4px;margin:4px 0 6px}
+.strip-row{display:flex;align-items:center;gap:5px}
+.strip-lbl{font-size:.58em;color:var(--dim);width:32px;flex-shrink:0;font-weight:600;text-transform:uppercase}
+.strip-track{flex:1;height:4px;background:#1a2030;border-radius:2px;overflow:hidden}
+.strip-fill{height:100%;border-radius:2px;transition:width .4s}
+.strip-val{font-size:.67em;font-weight:700;width:28px;text-align:right;flex-shrink:0}
+
+.note-vol{display:inline-flex;padding:1px 6px;border-radius:4px;font-size:.63em;font-weight:600;
+  background:#1a1200;color:#e3b341;border:1px solid #e3b34133}
+.note-hi{display:inline-flex;padding:1px 6px;border-radius:4px;font-size:.63em;font-weight:600;
+  background:#0a1a08;color:#4ade80;border:1px solid #3fb95033}
+
+.vol-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:10px}
+.vol-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:12px 13px;cursor:pointer;transition:all .2s}
+.vol-card:hover{border-color:var(--yellow);background:#0b0900;box-shadow:0 4px 14px rgba(227,179,65,.12)}
+.vc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.vc-icon{font-size:1.05em}
+.vc-name{font-size:.84em;font-weight:700;color:var(--text);margin-bottom:2px}
+.vc-sec{font-size:.68em;color:var(--muted);margin-bottom:8px}
+.vc-track{height:5px;background:#21262d;border-radius:3px;overflow:hidden;margin-bottom:4px}
+.vc-fill{height:100%;border-radius:3px;transition:width .4s}
+.vc-val{font-size:.71em;font-weight:700;margin-bottom:7px}
+.vc-foot{display:flex;gap:8px;align-items:center}
+
+.hi52-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:10px}
+.hi52-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:12px 13px;cursor:pointer;transition:all .2s}
+.hi52-card:hover{border-color:var(--green);background:#050f07;box-shadow:0 4px 14px rgba(63,185,80,.12)}
+.hc-badge{font-size:.8em;font-weight:700;color:#4ade80;margin-bottom:7px}
+.hc-span{font-size:.82em;color:var(--muted);font-weight:400}
+.hc-name{font-size:.84em;font-weight:700;color:var(--text);margin-bottom:2px}
+.hc-sec{font-size:.68em;color:var(--muted);margin-bottom:8px}
+.hc-track{height:5px;background:#21262d;border-radius:3px;overflow:hidden;margin-bottom:4px}
+.hc-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#3fb950,#4ade80)}
+.hc-pct{font-size:.68em;color:var(--muted);margin-bottom:7px}
+.hc-foot{display:flex;gap:8px;align-items:center}
+
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+.tbl{width:100%;border-collapse:collapse;font-size:.78em}
+.tbl thead{position:sticky;top:0;z-index:10}
+.tbl th{background:#080d13;border-bottom:2px solid var(--border);padding:8px 10px;
+  color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-size:.65em;
+  white-space:nowrap;cursor:pointer;user-select:none;transition:color .15s}
+.tbl th:hover{color:var(--blue)}
+.tbl th[data-col].thsort-asc::after{content:" ↑";color:var(--blue)}
+.tbl th[data-col].thsort-desc::after{content:" ↓";color:var(--blue)}
+.tbl th[data-col]:not(.thsort-asc):not(.thsort-desc)::after{content:" ↕";color:var(--dim)}
+.tbl td{padding:7px 10px;border-bottom:1px solid #0f1520;white-space:nowrap}
+.tbl tbody tr:hover td{background:#0b1018}
+.tbl tbody tr:last-child td{border-bottom:none}
+.ind-row.hidden{display:none}
+.ind-name{font-weight:600;color:var(--text);max-width:185px;overflow:hidden;text-overflow:ellipsis}
+.sec-badge{background:#141a24;color:var(--muted);padding:1px 6px;border-radius:4px;font-size:.7em;white-space:nowrap}
+.pct-cell{white-space:nowrap}
+.pct-na{color:var(--dim);font-size:.78em}
+
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.72em;color:var(--muted);margin-bottom:12px}
+.leg{display:flex;align-items:center;gap:5px}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.empty-state{color:var(--dim);font-size:.8em;padding:14px 16px;background:var(--bg2);
+  border-radius:8px;border:1px solid var(--border)}
+.footer{padding:14px 24px;color:var(--dim);font-size:.7em;border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+
+@media(max-width:680px){
+  .sec-grid{grid-template-columns:1fr 1fr}
+  .early-grid,.vol-grid,.hi52-grid{grid-template-columns:1fr}
+  .stat-pills{gap:4px}.sp{padding:4px 8px;min-width:48px}
+}"""
 
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Market Breadth Dashboard — NSE India | {now_str}</title>
-<style>
-*{{box-sizing:border-box;margin:0;padding:0}}
-body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;padding:0}}
-
-/* TOPBAR */
-.topbar{{background:linear-gradient(135deg,#0d1117,#1a2433);border-bottom:1px solid #21262d;padding:16px 28px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;position:sticky;top:0;z-index:50;backdrop-filter:blur(8px)}}
-.topbar-title{{color:#79c0ff;font-size:1.25em;font-weight:700}}
-.topbar-sub{{color:#8b949e;font-size:.8em;margin-top:3px}}
-.stats-row{{display:flex;gap:16px;flex-wrap:wrap}}
-.stat-box{{text-align:center;min-width:60px}}
-.stat-v{{font-size:1.3em;font-weight:700}}
-.stat-l{{font-size:.68em;color:#8b949e;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}}
-
-/* CONTROLS */
-.ctrl-bar{{background:#161b22;border-bottom:1px solid #21262d;padding:10px 28px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;position:sticky;top:68px;z-index:40}}
-.sel,.search-box{{padding:7px 11px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:.82em}}
-.search-box{{min-width:180px}}
-.btn{{padding:6px 13px;border:1px solid #30363d;border-radius:6px;background:transparent;color:#79c0ff;cursor:pointer;font-size:.8em;transition:all .15s}}
-.btn:hover,.btn.active{{background:#1f6feb;border-color:#58a6ff;color:#fff}}
-.btn-link{{color:#58a6ff;text-decoration:none;font-size:.82em;padding:6px 10px;border:1px solid #21262d;border-radius:6px;cursor:pointer}}
-.btn-link:hover{{background:#1f6feb22;border-color:#58a6ff}}
-
-/* SECTIONS */
-.section{{padding:18px 28px;border-bottom:1px solid #21262d}}
-.sec-title{{font-size:1em;font-weight:700;color:#79c0ff;margin-bottom:4px}}
-.sec-sub{{font-size:.78em;color:#8b949e;margin-bottom:12px}}
-
-/* STAGE BREADTH LEGEND */
-.legend-row{{display:flex;gap:12px;flex-wrap:wrap;font-size:.78em;margin-bottom:12px}}
-.leg{{display:flex;align-items:center;gap:6px;color:#8b949e}}
-.leg-dot{{width:10px;height:10px;border-radius:2px}}
-
-/* SECTOR ROTATION TABLE */
-.tbl{{width:100%;border-collapse:collapse;font-size:.82em}}
-.tbl th{{background:#0a0f16;border-bottom:2px solid #21262d;padding:7px 10px;color:#8b949e;text-transform:uppercase;letter-spacing:.4px;font-size:.72em;white-space:nowrap;cursor:pointer;user-select:none}}
-.tbl th:hover{{color:#58a6ff}}
-.tbl td{{padding:6px 10px;border-bottom:1px solid #1a1f2a;white-space:nowrap}}
-.tbl tr:hover td{{background:#0f141a}}
-
-/* CYCLE BADGES */
-.cycle-badge{{padding:2px 8px;border-radius:99px;font-size:.72em;font-weight:700;white-space:nowrap}}
-.cycle-early{{background:#0a2a14;color:#4ade80;border:1px solid #16a34a44}}
-.cycle-mid{{background:#0f1f3a;color:#60a5fa;border:1px solid #1d4ed844}}
-.cycle-late{{background:#2a2200;color:#e3b341;border:1px solid #92400e44}}
-.cycle-def{{background:#1a1a2e;color:#a5b4fc;border:1px solid #4c1d9544}}
-
-/* CHIP GRIDS */
-.chip-row{{display:flex;gap:10px;flex-wrap:wrap}}
-
-.cluster-chip{{background:#0d1117;border:1px solid #21262d;border-radius:10px;padding:10px 14px;min-width:180px;cursor:pointer;transition:all .15s}}
-.cluster-chip:hover{{border-color:#e3b341;background:#1a1500}}
-.cluster-name{{font-weight:700;color:#c9d1d9;font-size:.85em;margin-bottom:2px}}
-.cluster-sec{{color:#8b949e;font-size:.72em;margin-bottom:4px}}
-.cluster-vol{{color:#e3b341;font-size:.78em;font-weight:600;margin-bottom:2px}}
-.cluster-stage{{font-size:.72em;font-weight:600}}
-
-.hi52-chip{{background:#0d1117;border:1px solid #21262d;border-radius:10px;padding:10px 14px;min-width:180px;cursor:pointer;transition:all .15s}}
-.hi52-chip:hover{{border-color:#3fb950;background:#0a1a0a}}
-
-.trend-chip{{background:#0d1117;border:1px solid #21262d;border-radius:10px;padding:10px 14px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:3px;min-width:190px}}
-.chip-emerging{{border-color:#3fb95044}}
-.chip-emerging:hover{{border-color:#3fb950;background:#0a1a0a}}
-.chip-building{{border-color:#e3b34144}}
-.chip-building:hover{{border-color:#e3b341;background:#1a1500}}
-.chip-badge{{font-size:.68em;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#8b949e}}
-.chip-emerging .chip-badge{{color:#3fb950}}
-.chip-building .chip-badge{{color:#e3b341}}
-.chip-name{{font-weight:700;color:#c9d1d9;font-size:.85em}}
-.chip-meta{{color:#8b949e;font-size:.72em}}
-.chip-n{{color:#475569;font-size:.68em}}
-
-/* FULL BREADTH TABLE */
-.ind-tbl-wrap{{overflow-x:auto}}
-.ind-row.hidden{{display:none}}
-.sort-icon::after{{content:" ↕";color:#475569}}
-.sort-asc::after{{content:" ↑";color:#58a6ff}}
-.sort-desc::after{{content:" ↓";color:#58a6ff}}
-
-/* NAV LINKS */
-.nav-pills{{display:flex;gap:8px;flex-wrap:wrap;padding:12px 28px;background:#0d1117;border-bottom:1px solid #21262d}}
-.nav-pill{{padding:5px 14px;border:1px solid #30363d;border-radius:99px;color:#8b949e;font-size:.8em;cursor:pointer;text-decoration:none;transition:all .15s}}
-.nav-pill:hover{{border-color:#58a6ff;color:#58a6ff}}
-
-/* FOOTER */
-.footer{{padding:20px 28px;color:#475569;font-size:.75em;border-top:1px solid #21262d;margin-top:8px}}
-</style>
+<title>Market Breadth — NSE India | {NOW}</title>
+<style>{css}</style>
 </head>
 <body>
 
 <div class="topbar">
   <div>
     <div class="topbar-title">📊 Market Breadth &amp; Trend Detection — NSE India</div>
-    <div class="topbar-sub">Generated {now_str} &bull; Scans ALL cached price data, no signal filter</div>
+    <div class="topbar-sub">{NOW} &bull; All cached price data · no signal filter</div>
   </div>
-  <div class="stats-row">
-    <div class="stat-box"><div class="stat-v">{total_stocks}</div><div class="stat-l">Stocks Tracked</div></div>
-    <div class="stat-box"><div class="stat-v">{total_industries}</div><div class="stat-l">Industries</div></div>
-    <div class="stat-box"><div class="stat-v" style="color:#3fb950">{emerging_cnt}</div><div class="stat-l">🟢 Emerging</div></div>
-    <div class="stat-box"><div class="stat-v" style="color:#e3b341">{building_cnt}</div><div class="stat-l">🟡 Building</div></div>
-    <div class="stat-box"><div class="stat-v" style="color:#f85149">{extended_cnt}</div><div class="stat-l">🔴 Extended</div></div>
-    <div class="stat-box"><div class="stat-v" style="color:#475569">{weak_cnt}</div><div class="stat-l">⚫ Weak</div></div>
+  <div class="stat-pills">
+    <div class="sp"><div class="sp-v">{total_stocks}</div><div class="sp-l">Stocks</div></div>
+    <div class="sp"><div class="sp-v">{total_ind}</div><div class="sp-l">Industries</div></div>
+    <div class="sp" style="border-color:#3fb95044"><div class="sp-v" style="color:#3fb950">{ec}</div><div class="sp-l">🟢 Emerging</div></div>
+    <div class="sp" style="border-color:#e3b34144"><div class="sp-v" style="color:#e3b341">{bc}</div><div class="sp-l">🟡 Building</div></div>
+    <div class="sp" style="border-color:#f8514944"><div class="sp-v" style="color:#f85149">{xc}</div><div class="sp-l">🔴 Extended</div></div>
+    <div class="sp"><div class="sp-v" style="color:#475569">{wc}</div><div class="sp-l">⚫ Weak</div></div>
   </div>
 </div>
 
-<div class="nav-pills">
-  <a class="nav-pill" href="#rotation">🔄 Sector Rotation</a>
-  <a class="nav-pill" href="#trends">⚡ Emerging Trends</a>
-  <a class="nav-pill" href="#volume">🔥 Volume Clusters</a>
-  <a class="nav-pill" href="#highs">🏔 52W High Leaders</a>
-  <a class="nav-pill" href="#fullmap">📋 Full Breadth Map</a>
-  <a class="nav-pill btn-link" href="trade_plans_live.html">↩ Trade Plans</a>
+<div class="nav-bar">
+  <a class="nav-link" href="#rotation">🔄 Sector Rotation</a>
+  <a class="nav-link" href="#trends">⚡ Emerging Trends</a>
+  <a class="nav-link" href="#volume">🔥 Vol Clusters</a>
+  <a class="nav-link" href="#highs">🏔 52W Leaders</a>
+  <a class="nav-link" href="#fullmap">📋 Full Map</a>
+  <a class="nav-link nav-ext" href="trade_plans_live.html">↩ Trade Plans</a>
 </div>
 
 <div class="ctrl-bar">
-  <input class="search-box" id="indSearch" placeholder="🔍 Filter industry..." oninput="applyFilter()">
-  <select class="sel" id="stageFilter" onchange="applyFilter()">
+  <input class="ci wide" id="indSearch" placeholder="🔍 Filter industry or sector…" oninput="applyFilter()">
+  <select class="ci" id="stageFilter" onchange="applyFilter()">
     <option value="">All Stages</option>
-    <option value="EMERGING">🟢 Emerging</option>
-    <option value="BUILDING">🟡 Building</option>
-    <option value="EXTENDED">🔴 Extended</option>
-    <option value="WEAK">⚫ Weak</option>
+    <option value="EMERGING">🟢 Emerging (25–65%)</option>
+    <option value="BUILDING">🟡 Building (65–80%)</option>
+    <option value="EXTENDED">🔴 Extended (&gt;80%)</option>
+    <option value="WEAK">⚫ Weak (&lt;25%)</option>
   </select>
-  <select class="sel" id="sectorFilter" onchange="applyFilter()">
+  <select class="ci" id="sectorFilter" onchange="applyFilter()">
     <option value="">All Sectors</option>
-    {sector_options}
+    {sec_opts}
   </select>
-  <button class="btn" onclick="sortTable('score')">Sort: Score ↕</button>
-  <button class="btn" onclick="sortTable('pct_20ma')">Sort: >20MA ↕</button>
-  <button class="btn" onclick="sortTable('avg_rs3m')">Sort: RS3M ↕</button>
-  <button class="btn" onclick="sortTable('new_52wh')">Sort: 52W Hi ↕</button>
-  <button class="btn" onclick="sortTable('vol_spike_pct')">Sort: Vol Spike ↕</button>
-  <button class="btn" onclick="resetFilter()" style="color:#f85149">↺ Reset</button>
-  <span id="rowCount" style="color:#8b949e;font-size:.8em;margin-left:4px"></span>
+  <button class="cb" onclick="sortTable('breadth_score')">Score</button>
+  <button class="cb" onclick="sortTable('pct_20ma')">&gt;20MA</button>
+  <button class="cb" onclick="sortTable('avg_rs3m')">RS 3M</button>
+  <button class="cb" onclick="sortTable('new_52wh')">52W Hi</button>
+  <button class="cb" onclick="sortTable('vol_spike_pct')">Vol Spike</button>
+  <button class="cb reset" onclick="resetFilter()">↺ Reset</button>
+  <span id="rowCount"></span>
 </div>
 
-<!-- ── SECTOR ROTATION ──────────────────────────────────────────────────────── -->
 <div class="section" id="rotation">
-  <div class="sec-title">🔄 Sector Rotation Tracker</div>
-  <div class="sec-sub">
-    Sectors sorted by 3-Month RS vs Nifty. RS momentum (1M vs 3M arrow) shows if strength is accelerating ↑ or fading ↓.
-    <b>Early Cycle</b> sectors lead at market bottoms; <b>Late Cycle</b> sectors lag at peaks.
+  <div class="sec-hdr">
+    <h2>🔄 Sector Rotation Tracker</h2>
+    <p>Sectors ranked by RS vs Nifty (3M). Inline bars = % stocks above 20/50/200 MA.
+    RS 1M arrow shows if momentum is <b>accelerating ↑ or fading ↓</b>.
+    <b>Early Cycle</b> leads at bottoms · <b>Mid Cycle</b> peak growth ·
+    <b>Late Cycle</b> commodity inflation · <b>Defensive</b> recession shelter.</p>
   </div>
-  <div class="legend-row">
-    <div class="leg"><span class="cycle-badge cycle-early">Early Cycle</span> Financials, Consumer — lead at market bottom</div>
-    <div class="leg"><span class="cycle-badge cycle-mid">Mid Cycle</span> IT, Cap Goods, Defense — peak growth phase</div>
-    <div class="leg"><span class="cycle-badge cycle-late">Late Cycle</span> Energy, Chemicals, Metals — commodity inflation</div>
-    <div class="leg"><span class="cycle-badge cycle-def">Defensive</span> FMCG, Pharma, Banking — recession shelter</div>
-  </div>
-  <div style="overflow-x:auto">
-    <table class="tbl">
-      <thead><tr>
-        <th>Sector</th>
-        <th>Cycle Phase</th>
-        <th>Breadth Stage</th>
-        <th title=">20MA">%&gt;20MA</th>
-        <th title=">50MA">%&gt;50MA</th>
-        <th title=">200MA">%&gt;200MA</th>
-        <th>RS 3M vs Nifty</th>
-        <th>RS 1M (trend)</th>
-        <th>Stocks</th>
-      </tr></thead>
-      <tbody>{sector_rows_html}</tbody>
-    </table>
-  </div>
+  <div class="sec-grid">{sec_cards}</div>
 </div>
 
-<!-- ── EMERGING TRENDS ────────────────────────────────────────────────────── -->
 <div class="section" id="trends">
-  <div class="sec-title">⚡ Emerging &amp; Building Trends</div>
-  <div class="sec-sub">
-    Industries in the <b style="color:#3fb950">EMERGING</b> (25–65% above 20MA) or
-    <b style="color:#e3b341">BUILDING</b> (65–80%) stage, sorted by RS vs Nifty.
-    These are the best setup zones — not yet extended, with leadership vs the index.
+  <div class="sec-hdr">
+    <h2>⚡ Emerging &amp; Building Trends</h2>
+    <p>Industries in <b style="color:#3fb950">EMERGING</b> (25–65% &gt;20MA) or
+    <b style="color:#e3b341">BUILDING</b> (65–80%) stage, ranked by RS vs Nifty.
+    Breadth strip = 20MA→50MA→200MA participation depth.
+    Best entry = EMERGING + positive RS + 🔥 vol spike.</p>
   </div>
-  {"<div class='chip-row'>" + early_chips_html + "</div>" if early_chips_html else
-   "<div style='color:#475569;font-size:.85em;padding:12px 0'>No emerging/building industries with enough tracked stocks right now.</div>"}
+  {"<div class='early-grid'>" + early_cards + "</div>" if early_cards
+   else '<div class="empty-state">No emerging/building industries with ≥2 tracked stocks right now.</div>'}
 </div>
 
-<!-- ── VOLUME CLUSTERS ────────────────────────────────────────────────────── -->
 <div class="section" id="volume">
-  <div class="sec-title">🔥 Volume Cluster Radar</div>
-  <div class="sec-sub">
-    Industries where ≥20% of stocks had a volume spike (&gt;1.5× 20-day avg) in the last 5 sessions.
-    Multiple stocks spiking together = probable institutional accumulation signal.
+  <div class="sec-hdr">
+    <h2>🔥 Volume Cluster Radar</h2>
+    <p>Industries where ≥15% of stocks had a volume spike (&gt;1.5× 20-day avg) in the last 5 sessions.
+    Simultaneous spikes = probable <b>institutional accumulation</b>.</p>
   </div>
-  {"<div class='chip-row'>" + vol_chips_html + "</div>" if vol_chips_html else
-   "<div style='color:#475569;font-size:.85em;padding:12px 0'>No volume clusters detected (threshold: 20%+ of industry stocks with vol &gt;1.5× avg in last 5 days).</div>"}
+  <div class="vol-grid">{vol_cards}</div>
 </div>
 
-<!-- ── 52W HIGH LEADERS ────────────────────────────────────────────────────── -->
 <div class="section" id="highs">
-  <div class="sec-title">🏔 52-Week High Momentum Leaders</div>
-  <div class="sec-sub">
-    Industries with the most new all-time / 52-week highs in the last 5 sessions.
-    These are the <b>strongest breadth leaders</b> — money is rotating in.
+  <div class="sec-hdr">
+    <h2>🏔 52-Week High Momentum Leaders</h2>
+    <p>Industries with the most new 52-week highs in the last 5 sessions.
+    Multiple stocks at new highs together = <b>strongest breadth leadership signal</b>.</p>
   </div>
-  {"<div class='chip-row'>" + hi52_chips_html + "</div>" if hi52_chips_html else
-   "<div style='color:#475569;font-size:.85em;padding:12px 0'>No new 52-week highs detected in the last 5 sessions across tracked stocks.</div>"}
+  <div class="hi52-grid">{hi52_cards}</div>
 </div>
 
-<!-- ── FULL BREADTH MAP ───────────────────────────────────────────────────── -->
 <div class="section" id="fullmap">
-  <div class="sec-title">📋 Full Industry Breadth Map</div>
-  <div class="sec-sub">
-    All {total_industries} tracked industries sorted by composite breadth score.
-    Click column headers to sort. Use the filter bar above to narrow down.
-    <br><b>Breadth Score</b> = 30%×(>20MA) + 40%×(>50MA) + 30%×(>200MA). Higher = stronger.
-    <b>Vol Spike %</b> = % of industry stocks with unusual volume in last 5 sessions.
-    <b>52W Hi (5d)</b> = count of new 52W highs in last 5 sessions.
+  <div class="sec-hdr">
+    <h2>📋 Full Industry Breadth Map</h2>
+    <p>All {total_ind} tracked industries. Click column headers to sort. Left border = stage color.
+    <b>Score ring</b> = 30%×(&gt;20MA) + 40%×(&gt;50MA) + 30%×(&gt;200MA).
+    <b>Vol%</b> = vol spike % in last 5 days · <b>52W(5d)</b> = new highs in last 5 sessions.</p>
   </div>
-  <div class="legend-row">
-    <div class="leg"><div class="leg-dot" style="background:#3fb950"></div>EMERGING (25–65% >20MA) — Early accumulation ← best buy zone</div>
-    <div class="leg"><div class="leg-dot" style="background:#e3b341"></div>BUILDING (65–80%) — Momentum building</div>
-    <div class="leg"><div class="leg-dot" style="background:#f85149"></div>EXTENDED (>80%) — Watch for pullback</div>
-    <div class="leg"><div class="leg-dot" style="background:#475569"></div>WEAK (<25%) — Avoid</div>
+  <div class="legend">
+    <div class="leg"><div class="leg-dot" style="background:#3fb950"></div>EMERGING 25–65% &gt;20MA — best entry</div>
+    <div class="leg"><div class="leg-dot" style="background:#e3b341"></div>BUILDING 65–80%</div>
+    <div class="leg"><div class="leg-dot" style="background:#f85149"></div>EXTENDED &gt;80% — pullback risk</div>
+    <div class="leg"><div class="leg-dot" style="background:#334155"></div>WEAK &lt;25% — avoid</div>
   </div>
-  <div class="ind-tbl-wrap">
+  <div class="tbl-wrap">
     <table class="tbl" id="indTable">
       <thead><tr>
-        <th class="sort-icon" data-col="industry" onclick="sortTable('industry')">Industry</th>
-        <th class="sort-icon" data-col="sector" onclick="sortTable('sector')">Sector</th>
+        <th data-col="industry" onclick="sortTable('industry')">Industry</th>
+        <th data-col="sector" onclick="sortTable('sector')">Sector</th>
         <th>Stage</th>
-        <th class="sort-icon" data-col="pct_20ma" onclick="sortTable('pct_20ma')" title="% stocks above 20-day MA">%&gt;20MA</th>
-        <th class="sort-icon" data-col="pct_50ma" onclick="sortTable('pct_50ma')" title="% stocks above 50-day MA">%&gt;50MA</th>
-        <th class="sort-icon" data-col="pct_200ma" onclick="sortTable('pct_200ma')" title="% stocks above 200-day MA">%&gt;200MA</th>
-        <th class="sort-icon" data-col="pct_52wh" onclick="sortTable('pct_52wh')" title="% within 5% of 52W high">%@52W</th>
-        <th class="sort-icon" data-col="avg_rs3m" onclick="sortTable('avg_rs3m')" title="Avg RS vs Nifty, 3 months">RS 3M</th>
-        <th class="sort-icon" data-col="avg_rs1m" onclick="sortTable('avg_rs1m')" title="Avg RS vs Nifty, 1 month">RS 1M</th>
-        <th class="sort-icon" data-col="vol_spike_pct" onclick="sortTable('vol_spike_pct')" title="% stocks with vol spike (>1.5x avg) in last 5 days">Vol Spike%</th>
-        <th class="sort-icon" data-col="new_52wh" onclick="sortTable('new_52wh')" title="New 52W highs in last 5 sessions">52W Hi (5d)</th>
-        <th class="sort-icon" data-col="breadth_score" onclick="sortTable('breadth_score')">Score</th>
-        <th class="sort-icon" data-col="total" onclick="sortTable('total')">Stocks</th>
+        <th data-col="pct_20ma" onclick="sortTable('pct_20ma')" title="% above 20-day MA">&gt;20MA</th>
+        <th data-col="pct_50ma" onclick="sortTable('pct_50ma')" title="% above 50-day MA">&gt;50MA</th>
+        <th data-col="pct_200ma" onclick="sortTable('pct_200ma')" title="% above 200-day MA">&gt;200MA</th>
+        <th data-col="pct_52wh" onclick="sortTable('pct_52wh')" title="% within 5% of 52W high">@52W</th>
+        <th data-col="avg_rs3m" onclick="sortTable('avg_rs3m')" title="RS vs Nifty 3M">RS 3M</th>
+        <th data-col="avg_rs1m" onclick="sortTable('avg_rs1m')" title="RS vs Nifty 1M">RS 1M</th>
+        <th data-col="vol_spike_pct" onclick="sortTable('vol_spike_pct')" title="Vol spike % last 5d">Vol%</th>
+        <th data-col="new_52wh" onclick="sortTable('new_52wh')" title="New 52W highs last 5 sessions">52W(5d)</th>
+        <th data-col="breadth_score" onclick="sortTable('breadth_score')" title="Composite score">Score</th>
+        <th data-col="total" onclick="sortTable('total')">N</th>
       </tr></thead>
-      <tbody id="indTbody">{ind_rows_html}</tbody>
+      <tbody id="indTbody">{ind_rows}</tbody>
     </table>
   </div>
 </div>
 
 <div class="footer">
-  Market Breadth Dashboard · Generated {now_str} ·
-  Data from locally cached OHLCV CSVs — no live data fetched.
-  Rerun after new scan to refresh breadth metrics.
+  <span>📊 Market Breadth Dashboard — NSE India &bull; {NOW}</span>
+  <span>Locally cached OHLCV data · No live API · Rerun after scan to refresh</span>
 </div>
 
 <script>
-// ── Row data (embedded) ───────────────────────────────────────────────────────
-const rowData = {json.dumps([
-    {
-        "industry":      d["industry"],
-        "sector":        d.get("sector",""),
-        "stage":         d["stage"],
-        "pct_20ma":      d.get("pct_20ma",0),
-        "pct_50ma":      d.get("pct_50ma",0),
-        "pct_200ma":     d.get("pct_200ma",0),
-        "pct_52wh":      d.get("pct_52wh",0),
-        "avg_rs3m":      d.get("avg_rs3m") or -999,
-        "avg_rs1m":      d.get("avg_rs1m") or -999,
-        "vol_spike_pct": d.get("vol_spike_pct",0),
-        "new_52wh":      d.get("new_52wh",0),
-        "breadth_score": d.get("breadth_score",0),
-        "total":         d.get("total",0),
-    }
-    for d in industry_data
-])};
-
-let sortCol   = 'breadth_score';
-let sortDir   = -1;   // -1 = desc, 1 = asc
-let curFilter = '';
-let curStage  = '';
-let curSector = '';
-
-function applyFilter() {{
-  curFilter = document.getElementById('indSearch').value.toLowerCase();
-  curStage  = document.getElementById('stageFilter').value;
-  curSector = document.getElementById('sectorFilter').value;
-  renderTable();
-}}
-
-function filterIndustry(ind) {{
-  document.getElementById('indSearch').value = ind;
-  curFilter = ind.toLowerCase();
-  renderTable();
-  document.getElementById('fullmap').scrollIntoView({{behavior:'smooth'}});
-}}
-
-function resetFilter() {{
-  document.getElementById('indSearch').value = '';
-  document.getElementById('stageFilter').value = '';
-  document.getElementById('sectorFilter').value = '';
-  curFilter = ''; curStage = ''; curSector = '';
-  renderTable();
-}}
-
-function sortTable(col) {{
-  if (sortCol === col) sortDir = -sortDir;
-  else {{ sortCol = col; sortDir = -1; }}
-  document.querySelectorAll('.tbl th').forEach(th => {{
-    th.className = th.dataset.col === col
-      ? (sortDir === -1 ? 'sort-desc' : 'sort-asc')
-      : (th.dataset.col ? 'sort-icon' : '');
-  }});
-  renderTable();
-}}
-
-function renderTable() {{
-  const filtered = rowData.filter(d => {{
-    if (curFilter && !d.industry.toLowerCase().includes(curFilter) &&
-        !d.sector.toLowerCase().includes(curFilter)) return false;
-    if (curStage  && d.stage  !== curStage)  return false;
-    if (curSector && d.sector !== curSector) return false;
+const rowData={row_json};
+let sortCol='breadth_score',sortDir=-1,curFilter='',curStage='',curSector='';
+function applyFilter(){{curFilter=document.getElementById('indSearch').value.toLowerCase();curStage=document.getElementById('stageFilter').value;curSector=document.getElementById('sectorFilter').value;renderTable();}}
+function filterIndustry(ind){{document.getElementById('indSearch').value=ind;curFilter=ind.toLowerCase();curStage='';curSector='';document.getElementById('stageFilter').value='';document.getElementById('sectorFilter').value='';renderTable();document.getElementById('fullmap').scrollIntoView({{behavior:'smooth'}});}}
+function resetFilter(){{document.getElementById('indSearch').value='';document.getElementById('stageFilter').value='';document.getElementById('sectorFilter').value='';curFilter='';curStage='';curSector='';renderTable();}}
+function sortTable(col){{sortDir=(sortCol===col)?-sortDir:-1;sortCol=col;document.querySelectorAll('.tbl th[data-col]').forEach(th=>{{th.className=th.dataset.col===col?(sortDir===-1?'thsort-desc':'thsort-asc'):''}});renderTable();}}
+function renderTable(){{
+  const filtered=rowData.filter(d=>{{
+    if(curFilter&&!d.industry.toLowerCase().includes(curFilter)&&!d.sector.toLowerCase().includes(curFilter))return false;
+    if(curStage&&d.stage!==curStage)return false;
+    if(curSector&&d.sector!==curSector)return false;
     return true;
   }});
-  filtered.sort((a, b) => {{
-    let va = a[sortCol], vb = b[sortCol];
-    if (typeof va === 'string') return sortDir * va.localeCompare(vb);
-    return sortDir * ((vb || -999) - (va || -999));
-  }});
-  const ids = new Set(filtered.map(d => d.industry));
-  document.querySelectorAll('#indTbody .ind-row').forEach(tr => {{
-    const show = ids.has(tr.cells[0].textContent.trim());
-    tr.classList.toggle('hidden', !show);
-  }});
-  // Re-sort DOM
-  const tbody = document.getElementById('indTbody');
-  filtered.forEach(d => {{
-    const tr = [...tbody.querySelectorAll('.ind-row')].find(
-      r => r.cells[0].textContent.trim() === d.industry
-    );
-    if (tr) tbody.appendChild(tr);
-  }});
-  document.getElementById('rowCount').textContent = filtered.length + ' industries';
+  filtered.sort((a,b)=>{{const va=a[sortCol],vb=b[sortCol];if(typeof va==='string')return sortDir*va.localeCompare(vb);return sortDir*((vb??-999)-(va??-999));}});
+  const ids=new Set(filtered.map(d=>d.industry));
+  const tbody=document.getElementById('indTbody');
+  tbody.querySelectorAll('.ind-row').forEach(tr=>{{tr.classList.toggle('hidden',!ids.has(tr.dataset.industry));}});
+  filtered.forEach(d=>{{const tr=tbody.querySelector('.ind-row[data-industry="'+d.industry.replace(/"/g,'&quot;')+'"]');if(tr)tbody.appendChild(tr);}});
+  document.getElementById('rowCount').textContent=filtered.length+' industries shown';
 }}
-
-// Init
-document.addEventListener('DOMContentLoaded', () => renderTable());
+document.addEventListener('DOMContentLoaded',()=>renderTable());
 </script>
 </body>
 </html>"""
 
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
     print("Generating Market Breadth Dashboard…", flush=True)
-    print(f"  INDUSTRY_MAP: {len(INDUSTRY_MAP)} stocks · SECTOR_MAP: {len(SECTOR_MAP)} stocks", flush=True)
-
-    # Load Nifty benchmark
+    print(f"  INDUSTRY_MAP: {len(INDUSTRY_MAP)} · SECTOR_MAP: {len(SECTOR_MAP)}", flush=True)
     nifty_closes = _load_nifty()
-    if nifty_closes:
-        print(f"  Nifty benchmark loaded: {len(nifty_closes)} sessions", flush=True)
-    else:
-        print("  ⚠ Nifty (^NSEI) price data not found — RS metrics will be empty", flush=True)
+    print(f"  Nifty: {len(nifty_closes)} sessions" if nifty_closes else "  ⚠ ^NSEI not found", flush=True)
 
-    # Compute per-industry metrics
     all_industries = sorted(set(INDUSTRY_MAP.values()))
-    print(f"  Computing breadth for {len(all_industries)} industries…", flush=True)
-
+    print(f"  Computing {len(all_industries)} industries…", flush=True)
     industry_data: list[dict] = []
-    for i, ind in enumerate(all_industries, 1):
-        metrics = compute_industry_metrics(ind, nifty_closes)
-        if metrics and metrics.get("total", 0) >= 2:   # need ≥2 stocks to be meaningful
-            industry_data.append(metrics)
-
-    # Sort by breadth score descending
+    for ind in all_industries:
+        m = compute_industry_metrics(ind, nifty_closes)
+        if m and m.get("total", 0) >= 2:
+            industry_data.append(m)
     industry_data.sort(key=lambda x: -x.get("breadth_score", 0))
+    print(f"  {len(industry_data)} industries with ≥2 stocks", flush=True)
 
-    print(f"  {len(industry_data)} industries with ≥2 stocks of price data", flush=True)
-
-    # Compute sector-level aggregates
     all_sectors = sorted(set(d["sector"] for d in industry_data))
-    sector_data = [compute_sector_metrics(s, industry_data) for s in all_sectors]
-    sector_data = [s for s in sector_data if s]
+    sector_data = [s for s in (compute_sector_metrics(s, industry_data) for s in all_sectors) if s]
 
-    # Generate HTML
     html = build_html(industry_data, sector_data)
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    out = OUTPUT / "market_breadth.html"
+    out  = OUTPUT / "market_breadth.html"
     out.write_text(html, encoding="utf-8")
-    size_kb = out.stat().st_size / 1024
-    print(f"  ✅ Output: {out}  ({size_kb:.0f} KB)", flush=True)
+    print(f"  ✅ {out}  ({out.stat().st_size/1024:.0f} KB)", flush=True)
 
-    # Print summary
-    stage_counts = {}
-    for d in industry_data:
-        stage_counts[d["stage"]] = stage_counts.get(d["stage"], 0) + 1
-    for stage, cnt in sorted(stage_counts.items()):
-        print(f"     {stage}: {cnt} industries", flush=True)
-
-    # Top emerging
-    emerging = [d for d in industry_data if d["stage"] == "EMERGING"][:5]
-    if emerging:
-        print("  Top EMERGING industries:", flush=True)
-        for d in emerging:
-            rs = d.get("avg_rs3m")
-            rs_str = f"RS={rs:+.1f}%" if rs is not None else ""
-            print(f"     {d['industry']} ({d['sector']}) — {d['pct_20ma']}% >20MA {rs_str}", flush=True)
+    counts: dict[str, int] = {}
+    for d in industry_data: counts[d["stage"]] = counts.get(d["stage"], 0) + 1
+    for s, c in sorted(counts.items()): print(f"     {s}: {c}", flush=True)
+    for d in [d for d in industry_data if d["stage"]=="EMERGING"][:5]:
+        rs = d.get("avg_rs3m")
+        suffix = f" RS={rs:+.1f}%" if rs is not None else ""
+        print(f"     ⚡ {d['industry']} ({d['sector']}) — {d['pct_20ma']}%>20MA{suffix}", flush=True)
 
 
 if __name__ == "__main__":
