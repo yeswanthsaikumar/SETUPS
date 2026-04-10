@@ -173,6 +173,13 @@ if [ -f "$TRADE_PLANS" ]; then
     sleep 0.5
     open "$ABS_TP" 2>/dev/null || xdg-open "$ABS_TP" 2>/dev/null || true
 fi
+BREADTH="${OUTPUT_DIR}/market_breadth.html"
+if [ -f "$BREADTH" ]; then
+    ABS_BR="$(cd "$(dirname "$BREADTH")" && pwd)/$(basename "$BREADTH")"
+    echo -e "${BOLD}${GREEN}📊 Market Breadth    → file://${ABS_BR}${RESET}"
+    sleep 0.3
+    open "$ABS_BR" 2>/dev/null || xdg-open "$ABS_BR" 2>/dev/null || true
+fi
 
 TOTAL=$((SCAN_TIME + RPT_TIME + TP_TIME))
 echo ""

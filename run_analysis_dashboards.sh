@@ -76,5 +76,7 @@ echo "========================================================"
 # Auto-open in browser (macOS)
 if command -v open &>/dev/null; then
   open output/trade_plans_live.html
+  sleep 0.3
+  open output/market_breadth.html
 fi
 
