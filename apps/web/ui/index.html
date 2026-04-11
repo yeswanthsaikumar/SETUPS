@@ -200,6 +200,151 @@
     .compare-summary { list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.7; }
     .compare-summary li { margin: 4px 0; }
     #analyzerResult { display: none; }
+
+    /* ── Watchlist Pattern Lab ──────────────────────────────────────────── */
+    .wl-section { margin-top: 24px; }
+    .wl-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .wl-title  { font-size: 1.2em; font-weight: 800; color: #e2e8f0; }
+    .wl-subtitle { font-size: 12px; color: #64748b; margin-top: 2px; }
+    .wl-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 14px; }
+    .wl-controls input, .wl-controls select { background: #0b1220; border: 1px solid #334155; color: #e2e8f0; border-radius: 6px; padding: 7px 10px; font-size: 13px; }
+    .wl-controls textarea { background: #0b1220; border: 1px solid #334155; color: #e2e8f0; border-radius: 6px; padding: 7px 10px; font-size: 13px; resize: vertical; width: 100%; }
+    .wl-btn { background: #1d4ed8; border: none; color: #fff; padding: 8px 18px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; }
+    .wl-btn:hover { background: #2563eb; }
+    .wl-btn:disabled { background: #334155; cursor: not-allowed; }
+    .wl-btn-sm { padding: 5px 12px; font-size: 12px; }
+    .wl-btn-teal { background: #0f766e; }
+    .wl-btn-teal:hover { background: #0d9488; }
+    .wl-btn-amber { background: #92400e; }
+    .wl-btn-amber:hover { background: #b45309; }
+
+    /* Market context bar */
+    .wl-mkt-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+    .wl-mkt-chip { background: #0b1220; border: 1px solid #334155; border-radius: 8px; padding: 8px 14px; min-width: 100px; text-align: center; }
+    .wl-mkt-chip .v { font-size: 1.15em; font-weight: 800; }
+    .wl-mkt-chip .l { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: .4px; margin-top: 2px; }
+    .wl-mkt-phase { background: #0b1220; border: 1px solid #334155; border-radius: 8px; padding: 8px 14px; flex: 1; min-width: 200px; font-size: 12px; color: #94a3b8; }
+    .wl-mkt-phase b { color: #e2e8f0; }
+
+    /* Phase timeline */
+    .wl-phase-timeline { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
+    .wl-phase-pill { padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; border: 1px solid transparent; white-space: nowrap; }
+    .wl-phase-decline { background: #450a0a; color: #f87171; border-color: #7f1d1d; }
+    .wl-phase-recovery { background: #052e16; color: #4ade80; border-color: #14532d; }
+    .wl-phase-consolidation { background: #1c1917; color: #fbbf24; border-color: #44403c; }
+    .wl-phase-unknown { background: #0f172a; color: #64748b; border-color: #334155; }
+
+    /* Summary table */
+    .wl-table-wrap { overflow-x: auto; margin-bottom: 16px; }
+    .wl-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .wl-table th { background: #0b1220; border-bottom: 2px solid #334155; padding: 7px 10px; text-align: left; color: #7dd3fc; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; white-space: nowrap; cursor: pointer; user-select: none; }
+    .wl-table th:hover { color: #bfdbfe; }
+    .wl-table td { border-bottom: 1px solid #1e293b; padding: 7px 10px; vertical-align: middle; white-space: nowrap; }
+    .wl-table tr:hover td { background: #0f1925; }
+    .wl-table tr.wl-leader td { background: #061218; }
+    .wl-sym-cell { font-weight: 800; font-size: 13px; color: #e2e8f0; cursor: pointer; }
+    .wl-sym-cell:hover { color: #60a5fa; }
+    .wl-action-buy  { color: #4ade80; font-weight: 700; }
+    .wl-action-watch { color: #facc15; font-weight: 600; }
+    .wl-action-avoid { color: #f87171; }
+    .wl-score-bar { display: inline-block; width: 50px; height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; vertical-align: middle; margin-left: 4px; }
+    .wl-score-fill { height: 100%; border-radius: 3px; }
+    .wl-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+    .wl-badge-s2 { background: #052e16; color: #4ade80; }
+    .wl-badge-s1 { background: #0c1a2e; color: #7dd3fc; }
+    .wl-badge-s3 { background: #2a1900; color: #fbbf24; }
+    .wl-badge-s4 { background: #2a0d0d; color: #f87171; }
+
+    /* Leader cards */
+    .wl-leaders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .wl-card { background: #0b1220; border: 1px solid #334155; border-radius: 12px; overflow: hidden; transition: border-color .2s; }
+    .wl-card:hover { border-color: #475569; }
+    .wl-card.elite { border-color: #92400e; box-shadow: 0 0 12px #92400e33; }
+    .wl-card.strong { border-color: #14532d; }
+    .wl-card-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 14px 8px; }
+    .wl-card-sym { font-size: 1.1em; font-weight: 800; color: #e2e8f0; }
+    .wl-card-company { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .wl-card-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
+    .wl-pattern-badge { padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; border: 1px solid transparent; }
+    .wl-card-price-row { display: flex; align-items: baseline; gap: 8px; padding: 4px 14px 8px; }
+    .wl-price { font-size: 1.3em; font-weight: 800; color: #e2e8f0; }
+    .wl-ret { font-size: 12px; font-weight: 700; }
+    .wl-ret-pos { color: #4ade80; }
+    .wl-ret-neg { color: #f87171; }
+    .wl-metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid #1e293b; border-bottom: 1px solid #1e293b; }
+    .wl-metric { padding: 8px 10px; border-right: 1px solid #1e293b; }
+    .wl-metric:last-child { border-right: none; }
+    .wl-metric-l { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 3px; }
+    .wl-metric-v { font-size: .95em; font-weight: 700; }
+    .wl-signals-list { padding: 8px 14px; font-size: 11px; color: #94a3b8; line-height: 1.7; }
+    .wl-signals-list span { display: block; }
+    .wl-trade-plan { display: grid; grid-template-columns: repeat(3, 1fr) 1fr; background: #050e1a; border-top: 1px solid #1e293b; }
+    .wl-tp-cell { padding: 8px 10px; border-right: 1px solid #1e293b; }
+    .wl-tp-cell:last-child { border-right: none; }
+    .wl-tp-label { font-size: 10px; color: #64748b; text-transform: uppercase; margin-bottom: 2px; }
+    .wl-tp-val   { font-size: .9em; font-weight: 700; }
+    .wl-tp-entry { color: #7dd3fc; }
+    .wl-tp-stop  { color: #f87171; }
+    .wl-tp-t1    { color: #4ade80; }
+    .wl-tp-rr    { color: #fbbf24; }
+    .wl-card-footer { display: flex; gap: 8px; flex-wrap: wrap; padding: 8px 12px; border-top: 1px solid #1e293b; align-items: center; }
+    .wl-conviction-bar { flex: 1; height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; }
+    .wl-conviction-fill { height: 100%; border-radius: 3px; }
+    .wl-conviction-label { font-size: 11px; color: #94a3b8; white-space: nowrap; }
+
+    /* Phase behavior table inside card */
+    .wl-phase-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 6px; }
+    .wl-phase-table th { color: #64748b; padding: 4px 8px; border-bottom: 1px solid #1e293b; text-align: left; font-weight: 600; font-size: 10px; }
+    .wl-phase-table td { padding: 4px 8px; border-bottom: 1px solid #0f172a; }
+    .wl-phase-table tr:last-child td { border-bottom: none; }
+    .wl-excess-pos { color: #4ade80; }
+    .wl-excess-neg { color: #f87171; }
+
+    /* News feed */
+    .wl-news-list { list-style: none; padding: 0; margin: 0; }
+    .wl-news-item { border-bottom: 1px solid #1e293b; padding: 6px 0; }
+    .wl-news-item:last-child { border-bottom: none; }
+    .wl-news-title { font-size: 12px; color: #e2e8f0; line-height: 1.4; }
+    .wl-news-title a { color: #60a5fa; text-decoration: none; }
+    .wl-news-title a:hover { text-decoration: underline; }
+    .wl-news-meta { font-size: 10px; color: #64748b; margin-top: 2px; }
+
+    /* Fundamentals panel */
+    .wl-fund-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-top: 8px; }
+    .wl-fund-item { background: #0b1220; border: 1px solid #1e293b; border-radius: 6px; padding: 7px 10px; }
+    .wl-fund-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: .3px; }
+    .wl-fund-val   { font-size: .95em; font-weight: 700; margin-top: 2px; }
+
+    /* Deep dive panel */
+    .wl-deep-panel { background: #0b1220; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-top: 16px; }
+    .wl-deep-tabs  { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; }
+    .wl-deep-tab   { padding: 5px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; background: #111827; border: 1px solid #334155; color: #94a3b8; }
+    .wl-deep-tab.active { background: #1d4ed8; border-color: #2563eb; color: #fff; }
+    .wl-deep-pane  { display: none; }
+    .wl-deep-pane.active { display: block; }
+
+    /* Sparkline mini chart */
+    .wl-sparkline { display: block; width: 100%; height: 50px; }
+
+    /* Loading state */
+    .wl-loading { display: flex; align-items: center; gap: 10px; color: #64748b; font-size: 13px; padding: 20px 0; }
+    .wl-spinner { width: 16px; height: 16px; border: 2px solid #334155; border-top-color: #60a5fa; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    .wl-empty { color: #64748b; font-size: 13px; padding: 30px 0; text-align: center; }
+    .wl-error { color: #f87171; font-size: 13px; padding: 10px; background: #1a0808; border-radius: 6px; border: 1px solid #7f1d1d; }
+
+    /* Checklist */
+    .wl-checklist { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
+    .wl-check-item { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 6px 10px; background: #0b1220; border-radius: 6px; border: 1px solid #1e293b; }
+    .wl-check-pass { color: #4ade80; }
+    .wl-check-fail { color: #f87171; }
+    .wl-check-neutral { color: #fbbf24; }
+
+    /* Comparison mode */
+    .wl-compare-row { display: grid; gap: 10px; }
+
+    /* Sorting indicator */
+    .sort-asc::after  { content: " ↑"; }
+    .sort-desc::after { content: " ↓"; }
   </style>
 </head>
 <body>
@@ -474,6 +619,160 @@
           <pre id="arRawData" style="display:none;max-height:320px;font-size:11px;"></pre>
         </div>
       </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- ── 🔬 Watchlist Pattern Lab ──────────────────────────────────────── -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <section class="card analyzer-full wl-section" id="patternLabSection">
+      <div class="wl-header">
+        <div>
+          <div class="wl-title">🔬 Watchlist Pattern Lab</div>
+          <div class="wl-subtitle">
+            Identify RS Leader stocks: hold during market falls → consolidate → lead the next upmove.
+            Pattern: SLTTECH, AEROFLEX, PFOCUS etc. +30-50% Jan-Feb → held March correction → flew when macro cleared.
+          </div>
+        </div>
+        <button class="wl-btn wl-btn-sm" onclick="wlLoadDefaultList()">Load Example List</button>
+      </div>
+
+      <!-- Controls -->
+      <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:end;margin-bottom:12px;">
+        <div>
+          <label style="font-size:12px;color:#93c5fd;display:block;margin-bottom:4px;">Stock List (comma or line separated, e.g. SLTTECH,AEROFLEX,PFOCUS)</label>
+          <textarea id="wlSymbols" rows="3" placeholder="SLTTECH, AEROFLEX, PFOCUS, AVANTIFEED, BAJAJCON, CENTUM, ATLANTAELE, POWERINDIA" style="width:100%;background:#0b1220;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:8px;font-size:13px;box-sizing:border-box;resize:vertical;"></textarea>
+        </div>
+        <div>
+          <label style="font-size:12px;color:#93c5fd;display:block;margin-bottom:4px;">Market</label>
+          <select id="wlMarket" style="background:#0b1220;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:8px;font-size:13px;">
+            <option value="india" selected>India (NSE)</option>
+            <option value="us">US</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;color:#93c5fd;display:block;margin-bottom:4px;">Workers</label>
+          <input id="wlWorkers" type="number" value="4" min="1" max="10" style="width:60px;background:#0b1220;border:1px solid #334155;color:#e2e8f0;border-radius:6px;padding:8px;font-size:13px;" />
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <button class="wl-btn" id="wlAnalyzeBtn" onclick="wlAnalyze()" style="white-space:nowrap;">🔍 Analyze Watchlist</button>
+          <button class="wl-btn wl-btn-teal wl-btn-sm" onclick="wlLoadMarketPhases()" style="white-space:nowrap;">📊 Market Phases</button>
+        </div>
+      </div>
+
+      <!-- Options row -->
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:#94a3b8;">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" id="wlIncludeNews" checked /> Include News</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" id="wlIncludeFund" checked /> Fundamentals</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" id="wlIncludeMF" checked /> FII/DII Holdings</label>
+        <span id="wlStatus" style="margin-left:auto;color:#64748b;"></span>
+      </div>
+
+      <!-- Pattern Checklist info -->
+      <details style="margin-bottom:14px;">
+        <summary style="cursor:pointer;font-size:12px;color:#7dd3fc;user-select:none;">📋 RS Leader Pattern Checklist (click to expand)</summary>
+        <ul class="wl-checklist" style="margin-top:8px;">
+          <li class="wl-check-item"><span>✅</span> Stock declined &lt; market during correction (RS line held)</li>
+          <li class="wl-check-item"><span>✅</span> Tight, low-volume base (consolidation tightness &lt; 10%)</li>
+          <li class="wl-check-item"><span>✅</span> Stage 2 uptrend: Price &gt; MA50 &gt; MA150 &gt; MA200</li>
+          <li class="wl-check-item"><span>✅</span> Volume dry-up in base (&lt; 70% of avg volume)</li>
+          <li class="wl-check-item"><span>✅</span> RS Score &gt; 75 vs Nifty (IBD-style multi-period)</li>
+          <li class="wl-check-item"><span>✅</span> DII / institutional accumulating (smart money signal)</li>
+          <li class="wl-check-item"><span>✅</span> Positive earnings trajectory (EPS growth QoQ/YoY)</li>
+          <li class="wl-check-item"><span>✅</span> ADR &gt; 3% (enough daily range for swing trades)</li>
+          <li class="wl-check-item"><span>✅</span> Near breakout pivot (within 5% of base high)</li>
+          <li class="wl-check-item"><span>✅</span> Macro/sector catalyst visible</li>
+        </ul>
+      </details>
+
+      <!-- Market context bar -->
+      <div id="wlMktBar" style="display:none;">
+        <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">Market Context — Nifty50</div>
+        <div class="wl-mkt-bar" id="wlMktChips"></div>
+        <div id="wlPhaseTimeline" class="wl-phase-timeline" style="margin-bottom:12px;"></div>
+        <div id="wlPhaseSummary" style="font-size:12px;color:#94a3b8;padding:8px 12px;background:#0b1220;border-radius:6px;border:1px solid #1e293b;margin-bottom:14px;"></div>
+      </div>
+
+      <!-- Loading state -->
+      <div id="wlLoading" style="display:none;" class="wl-loading">
+        <div class="wl-spinner"></div>
+        <span id="wlLoadingText">Analyzing watchlist… fetching price data, computing RS scores, running pattern detection…</span>
+      </div>
+
+      <!-- Error -->
+      <div id="wlError" style="display:none;" class="wl-error"></div>
+
+      <!-- Results -->
+      <div id="wlResults" style="display:none;">
+
+        <!-- RS Leaders Leaderboard -->
+        <div id="wlLeaderSection" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <h3 style="margin:0;font-size:14px;color:#ffd700;">🌟 RS Leaders — Outperforming Market</h3>
+            <span id="wlLeaderCount" class="muted"></span>
+          </div>
+          <div class="wl-leaders-grid" id="wlLeadersGrid"></div>
+        </div>
+
+        <!-- Summary Table -->
+        <div style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+          <h3 style="margin:0;font-size:14px;color:#7dd3fc;">📋 Full Watchlist Summary</h3>
+          <div style="display:flex;gap:6px;">
+            <button class="wl-btn wl-btn-sm" style="background:#1e293b;" onclick="wlSortTable('conviction')">Sort: Conviction</button>
+            <button class="wl-btn wl-btn-sm" style="background:#1e293b;" onclick="wlSortTable('rs_score')">Sort: RS Score</button>
+            <button class="wl-btn wl-btn-sm" style="background:#1e293b;" onclick="wlSortTable('ret_60d')">Sort: 60d Return</button>
+            <button class="wl-btn wl-btn-sm wl-btn-amber" onclick="wlExportCSV()">⬇ CSV</button>
+          </div>
+        </div>
+        <div class="wl-table-wrap">
+          <table class="wl-table" id="wlSummaryTable">
+            <thead>
+              <tr>
+                <th onclick="wlSortTable('symbol')">Symbol</th>
+                <th onclick="wlSortTable('price')">Price</th>
+                <th onclick="wlSortTable('ret_20d')">20d Ret%</th>
+                <th onclick="wlSortTable('ret_60d')">60d Ret%</th>
+                <th onclick="wlSortTable('rs_score')">RS Score</th>
+                <th onclick="wlSortTable('adr_pct')">ADR%</th>
+                <th onclick="wlSortTable('stage')">Stage</th>
+                <th onclick="wlSortTable('pattern')">Pattern</th>
+                <th onclick="wlSortTable('conviction')">Conviction</th>
+                <th onclick="wlSortTable('action')">Action</th>
+                <th>Entry</th>
+                <th>Stop</th>
+                <th>T1</th>
+                <th>R:R</th>
+                <th>Setup</th>
+              </tr>
+            </thead>
+            <tbody id="wlTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- Deep Dive -->
+        <div id="wlDeepDive" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <h3 style="margin:0;font-size:14px;color:#c4b5fd;">🔎 Deep Dive: <span id="wlDeepSym"></span></h3>
+            <button class="wl-btn wl-btn-sm" style="background:#1e293b;" onclick="document.getElementById('wlDeepDive').style.display='none'">✕ Close</button>
+          </div>
+          <div class="wl-deep-panel">
+            <div class="wl-deep-tabs">
+              <button class="wl-deep-tab active" onclick="wlSwitchTab(this,'wlTabThesis')">📊 Trade Thesis</button>
+              <button class="wl-deep-tab" onclick="wlSwitchTab(this,'wlTabPattern')">🎯 Pattern Analysis</button>
+              <button class="wl-deep-tab" onclick="wlSwitchTab(this,'wlTabFund')">📈 Fundamentals</button>
+              <button class="wl-deep-tab" onclick="wlSwitchTab(this,'wlTabMF')">🏦 FII/DII</button>
+              <button class="wl-deep-tab" onclick="wlSwitchTab(this,'wlTabNews')">📰 News</button>
+              <button class="wl-deep-tab" onclick="wlSwitchTab(this,'wlTabPhases')">📉 Phase Behavior</button>
+            </div>
+            <div id="wlTabThesis" class="wl-deep-pane active"></div>
+            <div id="wlTabPattern" class="wl-deep-pane"></div>
+            <div id="wlTabFund" class="wl-deep-pane"></div>
+            <div id="wlTabMF" class="wl-deep-pane"></div>
+            <div id="wlTabNews" class="wl-deep-pane"></div>
+            <div id="wlTabPhases" class="wl-deep-pane"></div>
+          </div>
+        </div>
+
+      </div><!-- #wlResults -->
     </section>
 
     <!-- ── Performance Tracker ──────────────────────────────────────────────── -->
@@ -1956,6 +2255,810 @@
       const timeframe = document.getElementById('ptTimeframe').value;
       window.open(`/reports/performance_tracker_${market}_${timeframe}_LATEST.html`, '_blank');
     }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ── Watchlist Pattern Lab ─────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════════
+
+    let _wlData    = null;   // full analysis result
+    let _wlTable   = [];     // summary table rows
+    let _wlSortCol = 'conviction';
+    let _wlSortDir = -1;     // -1 = descending
+
+    const WL_DEFAULT = 'SLTTECH, AEROFLEX, PFOCUS, AVANTIFEED, BAJAJCON, CENTUM, ATLANTAELE, POWERINDIA';
+
+    function wlLoadDefaultList() {
+      document.getElementById('wlSymbols').value = WL_DEFAULT;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    function _wlFmt(v, decimals = 1, suffix = '') {
+      if (v == null || v === '') return '—';
+      const n = Number(v);
+      if (isNaN(n)) return String(v);
+      return n.toFixed(decimals) + suffix;
+    }
+
+    function _wlRet(v) {
+      if (v == null) return '<span class="muted">—</span>';
+      const n = Number(v);
+      const cls = n >= 0 ? 'wl-ret-pos' : 'wl-ret-neg';
+      return `<span class="${cls}">${n >= 0 ? '+' : ''}${n.toFixed(1)}%</span>`;
+    }
+
+    function _wlActionHtml(action, label) {
+      // label may come from backend (has emoji + full text), use it when available
+      if (label) {
+        const color = action === 'BUY_NOW' ? '#4ade80' : action === 'WATCH_CLOSELY' ? '#facc15'
+                    : action === 'AVOID' ? '#f87171' : '#7dd3fc';
+        return `<span style="font-weight:700;font-size:11px;color:${color};">${label}</span>`;
+      }
+      const map = {
+        'BUY_NOW':       '<span class="wl-action-buy">🟢 BUY ON BREAKOUT</span>',
+        'WATCH_CLOSELY': '<span class="wl-action-watch">🟡 WATCH CLOSELY</span>',
+        'WATCH':         '<span class="wl-action-watch">🔵 ON WATCHLIST</span>',
+        'AVOID':         '<span class="wl-action-avoid">🔴 AVOID</span>',
+      };
+      return map[action] || `<span class="muted">${action || '—'}</span>`;
+    }
+
+    function _wlStageBadge(stage) {
+      const map = {1:'wl-badge-s1',2:'wl-badge-s2',3:'wl-badge-s3',4:'wl-badge-s4'};
+      const cls = map[stage] || 'wl-badge-s1';
+      return stage ? `<span class="wl-badge ${cls}">S${stage}</span>` : '—';
+    }
+
+    function _wlScoreBar(score, color) {
+      const w = Math.min(100, Math.max(0, score || 0));
+      const c = color || (w >= 70 ? '#4ade80' : w >= 50 ? '#fbbf24' : '#f87171');
+      return `<div class="wl-score-bar"><div class="wl-score-fill" style="width:${w}%;background:${c};"></div></div>`;
+    }
+
+    function _wlSparkline(closes, width=120, height=40) {
+      if (!closes || closes.length < 2) return '';
+      const min = Math.min(...closes);
+      const max = Math.max(...closes);
+      const range = max - min || 1;
+      const n = closes.length;
+      const pts = closes.map((v, i) => {
+        const x = (i / (n - 1)) * (width - 4) + 2;
+        const y = height - 4 - ((v - min) / range) * (height - 8);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+      const last = closes[closes.length - 1];
+      const first = closes[0];
+      const color = last >= first ? '#4ade80' : '#f87171';
+      return `<svg class="wl-sparkline" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+        <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`;
+    }
+
+    // ── Market Phases ─────────────────────────────────────────────────────────
+
+    async function wlLoadMarketPhases() {
+      const bar   = document.getElementById('wlMktBar');
+      const chips = document.getElementById('wlMktChips');
+      const tl    = document.getElementById('wlPhaseTimeline');
+      const summ  = document.getElementById('wlPhaseSummary');
+
+      bar.style.display = 'block';
+      chips.innerHTML   = '<span class="muted">Loading Nifty data…</span>';
+
+      try {
+        const d = await api('/api/watchlist/market-phases?days=252');
+        chips.innerHTML = `
+          <div class="wl-mkt-chip"><div class="v">${_wlFmt(d.nifty_current, 0)}</div><div class="l">Nifty Now</div></div>
+        `;
+        // Phase pills
+        tl.innerHTML = (d.recent_phases || []).map(p => {
+          const cls = {decline:'wl-phase-decline', recovery:'wl-phase-recovery',
+                        consolidation:'wl-phase-consolidation'}[p.phase] || 'wl-phase-unknown';
+          return `<span class="wl-phase-pill ${cls}">${p.phase.toUpperCase()} ${p.start_date}→${p.end_date} ${p.change_pct > 0 ? '+' : ''}${p.change_pct}%</span>`;
+        }).join('');
+        summ.innerHTML = `<b>Recent Phase Sequence:</b> ${d.phase_summary || '—'}`;
+      } catch (e) {
+        chips.innerHTML = `<span class="wl-error">${e.message}</span>`;
+      }
+    }
+
+    // ── Main Analyze ──────────────────────────────────────────────────────────
+
+    async function wlAnalyze() {
+      const raw = (document.getElementById('wlSymbols').value || '').trim();
+      if (!raw) { alert('Please enter at least one stock symbol.'); return; }
+
+      // Parse symbols
+      const symbols = raw.split(/[\n,;]+/).map(s => s.trim().toUpperCase()).filter(Boolean);
+      if (!symbols.length) { alert('No valid symbols found.'); return; }
+
+      const market  = document.getElementById('wlMarket').value;
+      const workers = parseInt(document.getElementById('wlWorkers').value) || 4;
+      const incNews = document.getElementById('wlIncludeNews').checked;
+      const incFund = document.getElementById('wlIncludeFund').checked;
+      const incMF   = document.getElementById('wlIncludeMF').checked;
+
+      // Update UI
+      const btn = document.getElementById('wlAnalyzeBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Analyzing…';
+      document.getElementById('wlLoading').style.display = 'flex';
+      document.getElementById('wlError').style.display  = 'none';
+      document.getElementById('wlResults').style.display = 'none';
+      document.getElementById('wlStatus').textContent    = `Analyzing ${symbols.length} stocks…`;
+
+      // Show market bar with loading
+      await wlLoadMarketPhases();
+
+      try {
+        const body = JSON.stringify({
+          symbols, market, workers,
+          include_news: incNews,
+          include_fundamentals: incFund,
+          include_mf: incMF,
+        });
+        const data = await fetch('/api/watchlist/analyze', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body,
+        }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); });
+
+        _wlData  = data;
+        _wlTable = data.summary_table || [];
+
+        document.getElementById('wlStatus').textContent =
+          `✅ ${data.successful}/${data.total_symbols} analyzed in ${new Date(data.analyzed_at).toLocaleTimeString()}`;
+
+        wlRenderAll(data);
+
+      } catch (err) {
+        document.getElementById('wlError').style.display = 'block';
+        document.getElementById('wlError').textContent   = `❌ Error: ${err.message}`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔍 Analyze Watchlist';
+        document.getElementById('wlLoading').style.display = 'none';
+      }
+    }
+
+    // ── Render all results ────────────────────────────────────────────────────
+
+    function wlRenderAll(data) {
+      document.getElementById('wlResults').style.display = 'block';
+
+      // Leaders
+      const leaders = data.leaders || [];
+      const lsec    = document.getElementById('wlLeaderSection');
+      if (leaders.length > 0) {
+        lsec.style.display = 'block';
+        document.getElementById('wlLeaderCount').textContent = `${leaders.length} leader${leaders.length > 1 ? 's' : ''} detected`;
+        const cards = (data.results || [])
+          .filter(r => r.pattern && r.pattern.pattern_detected && !r.error)
+          .sort((a, b) => (b.pattern.pattern_score || 0) - (a.pattern.pattern_score || 0));
+        document.getElementById('wlLeadersGrid').innerHTML = cards.map(wlRenderLeaderCard).join('');
+      } else {
+        lsec.style.display = 'none';
+      }
+
+      // Summary table
+      wlRenderTable();
+
+      // Hide deep dive
+      document.getElementById('wlDeepDive').style.display = 'none';
+    }
+
+    // ── Leader Card ───────────────────────────────────────────────────────────
+
+    function wlRenderLeaderCard(r) {
+      const s    = r.summary   || {};
+      const th   = r.thesis    || {};
+      const pat  = r.pattern   || {};
+      const rs   = r.rs        || {};
+      const adr  = r.adr       || {};
+      const mf   = r.mf_holdings || {};
+      const fund = r.fundamentals || {};
+      const prices = r.prices  || {};
+
+      const patScore = pat.pattern_score || 0;
+      const patColor = pat.pattern_color || '#94a3b8';
+      const isElite  = patScore >= 85;
+      const isStrong = patScore >= 70;
+      const cardCls  = isElite ? 'wl-card elite' : (isStrong ? 'wl-card strong' : 'wl-card');
+
+      const sparkSvg = _wlSparkline(prices.close || [], 120, 40);
+
+      const retHtml = `
+        ${_wlRet(s.ret_20d)} <span class="muted" style="font-size:10px;">20d</span>
+        &nbsp;${_wlRet(s.ret_60d)} <span class="muted" style="font-size:10px;">60d</span>
+      `;
+
+      const signals = (pat.signals || []).slice(0, 4).map(sig =>
+        `<span>${sig}</span>`).join('');
+
+      const mfBadge = mf.smart_money_signal === 'ACCUMULATING'
+        ? '<span class="wl-badge" style="background:#052e16;color:#2dd4bf;border:1px solid #0d948844;">🏦 Smart Money ↑</span>'
+        : '';
+
+      const diiTrend = mf.dii_trend === 'up'
+        ? '<span class="wl-badge" style="background:#0a2220;color:#2dd4bf;">DII↑</span>' : '';
+      const fiiTrend = mf.fii_trend === 'up'
+        ? '<span class="wl-badge" style="background:#0f1f3a;color:#60a5fa;">FII↑</span>' : '';
+
+      const companyName = fund.company_name || '';
+      const mcapLabel   = fund.mcap_label || '';
+      const epsBadge    = fund.eps_qoq_pct != null
+        ? `<span class="wl-badge" style="background:#1a1a00;color:#ffd700;">EPS ${fund.eps_qoq_pct > 0 ? '+' : ''}${_wlFmt(fund.eps_qoq_pct, 0)}% QoQ</span>`
+        : '';
+
+      const setupBadge = th.setup_type
+        ? `<span class="wl-badge" style="background:#1e293b;color:#7dd3fc;">${th.setup_type.replace(/_/g,' ')}</span>`
+        : '';
+
+      return `<div class="${cardCls}" id="wlcard-${r.symbol}">
+        <div class="wl-card-header">
+          <div>
+            <div class="wl-card-sym" onclick="wlShowDeepDive('${r.symbol}')" style="cursor:pointer;text-decoration:underline dotted;">${r.symbol}</div>
+            <div class="wl-card-company">${companyName} ${mcapLabel ? '· ' + mcapLabel : ''}</div>
+            <div class="wl-card-badges" style="margin-top:6px;">
+              <span class="wl-pattern-badge" style="background:${patColor}22;color:${patColor};border-color:${patColor}44;">${pat.pattern_label || ''}</span>
+              ${setupBadge}${epsBadge}${diiTrend}${fiiTrend}${mfBadge}
+            </div>
+          </div>
+          <div style="text-align:right;">
+            ${sparkSvg}
+            <div style="font-size:11px;color:#64748b;margin-top:2px;">${(prices.dates || []).slice(-1)[0] || ''}</div>
+          </div>
+        </div>
+
+        <div class="wl-card-price-row">
+          <span class="wl-price">₹${_wlFmt(s.current_price, 2)}</span>
+          <span style="font-size:12px;color:#64748b;">${retHtml}</span>
+        </div>
+
+        <div class="wl-metrics-grid">
+          <div class="wl-metric">
+            <div class="wl-metric-l">RS Score</div>
+            <div class="wl-metric-v" style="color:${rs.rs_color || '#7dd3fc'};">${rs.rs_score || '—'}<span style="font-size:10px;color:#64748b;">/99</span></div>
+          </div>
+          <div class="wl-metric">
+            <div class="wl-metric-l">ADR%</div>
+            <div class="wl-metric-v">${_wlFmt(adr.adr_pct, 1, '%')}</div>
+          </div>
+          <div class="wl-metric">
+            <div class="wl-metric-l">Stage</div>
+            <div class="wl-metric-v">${_wlStageBadge(s.stage)}</div>
+          </div>
+          <div class="wl-metric">
+            <div class="wl-metric-l">Conviction</div>
+            <div class="wl-metric-v" style="color:${s.conviction >= 75 ? '#ffd700' : s.conviction >= 55 ? '#4ade80' : '#94a3b8'};">${s.conviction || 0}%</div>
+          </div>
+        </div>
+
+        <div class="wl-signals-list">${signals || '<span class="muted">No signals</span>'}</div>
+
+        <div class="wl-trade-plan">
+          <div class="wl-tp-cell">
+            <div class="wl-tp-label">Entry</div>
+            <div class="wl-tp-val wl-tp-entry">₹${_wlFmt(th.entry_breakout, 2)}</div>
+          </div>
+          <div class="wl-tp-cell">
+            <div class="wl-tp-label">Stop</div>
+            <div class="wl-tp-val wl-tp-stop">₹${_wlFmt(th.stop_loss, 2)} <span style="font-size:10px;color:#f87171;">-${_wlFmt(th.risk_pct, 1)}%</span></div>
+          </div>
+          <div class="wl-tp-cell">
+            <div class="wl-tp-label">Target 1 / 2 / 3</div>
+            <div class="wl-tp-val wl-tp-t1">₹${_wlFmt(th.target1, 2)} / ${_wlFmt(th.target2, 2)} / ${_wlFmt(th.target3, 2)}</div>
+          </div>
+          <div class="wl-tp-cell">
+            <div class="wl-tp-label">R:R T1/T2</div>
+            <div class="wl-tp-val wl-tp-rr">${_wlFmt(th.rr_t1, 1)}:1 / ${_wlFmt(th.rr_t2, 1)}:1</div>
+          </div>
+        </div>
+
+        <div class="wl-card-footer">
+          <div class="wl-conviction-bar" style="max-width:120px;">
+            <div class="wl-conviction-fill" style="width:${patScore}%;background:${patColor};"></div>
+          </div>
+          <span class="wl-conviction-label">Pattern: ${patScore}/100</span>
+          <span style="flex:1;"></span>
+          <button class="wl-btn wl-btn-sm" onclick="wlShowDeepDive('${r.symbol}')">🔎 Deep Dive</button>
+          ${_wlActionHtml(th.action, th.action_label)}
+        </div>
+      </div>`;
+    }
+
+    // ── Summary Table ─────────────────────────────────────────────────────────
+
+    function wlRenderTable() {
+      const sorted = [..._wlTable].sort((a, b) => {
+        const av = a[_wlSortCol] != null ? Number(a[_wlSortCol]) || a[_wlSortCol] : '';
+        const bv = b[_wlSortCol] != null ? Number(b[_wlSortCol]) || b[_wlSortCol] : '';
+        if (av < bv) return _wlSortDir;
+        if (av > bv) return -_wlSortDir;
+        return 0;
+      });
+
+      const tbody = document.getElementById('wlTableBody');
+      if (!sorted.length) {
+        tbody.innerHTML = '<tr><td colspan="15" class="wl-empty">No results</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = sorted.map(row => {
+        if (row.error) {
+          return `<tr><td class="wl-sym-cell">${row.symbol}</td><td colspan="14" style="color:#f87171;font-size:11px;">${row.error}</td></tr>`;
+        }
+        const patText = (row.pattern || '').replace(/[🌟🚀✅🔵⚠️]/g, '').trim();
+        const stageBadge = _wlStageBadge(row.stage);
+        const conScore  = row.conviction || 0;
+        const conColor  = conScore >= 72 ? '#ffd700' : conScore >= 58 ? '#4ade80' : '#94a3b8';
+
+        // Extended / Consolidating badges
+        const extBadge  = row.is_extended
+          ? `<span title="${row.extension_reason || 'Extended — wait for pullback'}" style="color:#fb923c;font-size:10px;font-weight:700;margin-left:4px;cursor:help;">⏳EXT</span>` : '';
+        const restBadge = row.is_consolidating
+          ? `<span title="Resting after big move — ideal entry zone forming" style="color:#4ade80;font-size:10px;font-weight:700;margin-left:4px;cursor:help;">💤REST</span>` : '';
+
+        const setupLabel = row.is_extended ? '⏳ EXTENDED'
+                         : row.is_consolidating ? '💤 RESTING'
+                         : (row.setup || '').replace(/_/g,' ');
+        const setupColor = row.is_extended ? '#fb923c' : row.is_consolidating ? '#4ade80' : '#94a3b8';
+
+        return `<tr class="${row.action === 'BUY_NOW' ? 'wl-leader' : ''}">
+          <td><span class="wl-sym-cell" onclick="wlShowDeepDive('${row.symbol}')">${row.symbol}</span>${extBadge}${restBadge}</td>
+          <td>₹${_wlFmt(row.price, 2)}</td>
+          <td>${_wlRet(row.ret_20d)}</td>
+          <td>${_wlRet(row.ret_60d)}</td>
+          <td>
+            <span style="font-weight:700;color:${row.rs_score >= 80 ? '#4ade80' : row.rs_score >= 60 ? '#fbbf24' : '#94a3b8'};">${row.rs_score || '—'}</span>
+            ${_wlScoreBar(row.rs_score, row.rs_score >= 80 ? '#4ade80' : '#7dd3fc')}
+          </td>
+          <td>${_wlFmt(row.adr_pct, 1, '%')}</td>
+          <td>${stageBadge}</td>
+          <td style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;">${patText.slice(0, 30)}</td>
+          <td>
+            <span style="font-weight:700;color:${conColor};">${conScore}</span>
+            ${_wlScoreBar(conScore, conColor)}
+          </td>
+          <td>${_wlActionHtml(row.action, row.action_label)}</td>
+          <td style="color:#7dd3fc;">₹${_wlFmt(row.entry, 2)}</td>
+          <td style="color:#f87171;">₹${_wlFmt(row.stop, 2)}</td>
+          <td style="color:#4ade80;">₹${_wlFmt(row.t1, 2)}</td>
+          <td style="color:#fbbf24;">${_wlFmt(row.rr_t1, 1)}:1</td>
+          <td style="font-size:11px;color:${setupColor};font-weight:${row.is_consolidating ? '700' : '400'};">${setupLabel}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function wlSortTable(col) {
+      if (_wlSortCol === col) _wlSortDir *= -1;
+      else { _wlSortCol = col; _wlSortDir = -1; }
+      wlRenderTable();
+    }
+
+    // ── Deep Dive ─────────────────────────────────────────────────────────────
+
+    function wlShowDeepDive(symbol) {
+      if (!_wlData) return;
+      const r = (_wlData.results || []).find(x => x.symbol === symbol);
+      if (!r) return;
+
+      document.getElementById('wlDeepSym').textContent = symbol;
+      document.getElementById('wlDeepDive').style.display = 'block';
+
+      // Scroll to deep dive
+      setTimeout(() => document.getElementById('wlDeepDive').scrollIntoView({behavior:'smooth', block:'start'}), 100);
+
+      // Switch to first tab
+      document.querySelectorAll('.wl-deep-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.wl-deep-pane').forEach(p => p.classList.remove('active'));
+      document.querySelector('.wl-deep-tab').classList.add('active');
+      document.getElementById('wlTabThesis').classList.add('active');
+
+      // Render each tab
+      wlRenderThesisTab(r);
+      wlRenderPatternTab(r);
+      wlRenderFundTab(r);
+      wlRenderMFTab(r);
+      wlRenderNewsTab(r);
+      wlRenderPhasesTab(r);
+    }
+
+    function wlSwitchTab(btn, paneId) {
+      btn.closest('.wl-deep-panel').querySelectorAll('.wl-deep-tab').forEach(t => t.classList.remove('active'));
+      btn.closest('.wl-deep-panel').querySelectorAll('.wl-deep-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(paneId).classList.add('active');
+    }
+
+    function wlRenderThesisTab(r) {
+      const th  = r.thesis    || {};
+      const s   = r.summary   || {};
+      const rs  = r.rs        || {};
+      const adr = r.adr       || {};
+      const tr  = r.trend     || {};
+      const vol = r.volume    || {};
+      const con = r.consolidation || {};
+
+      const catalysts = (th.catalysts || []).map(c => `<li>${c}</li>`).join('');
+      const periodRets = Object.entries(rs.period_returns || {}).map(([p, d]) =>
+        `<div class="wl-fund-item">
+          <div class="wl-fund-label">${p}</div>
+          <div class="wl-fund-val" style="color:${d.excess_pct >= 0 ? '#4ade80' : '#f87171'};">
+            Stock: ${d.excess_pct >= 0 ? '+' : ''}${_wlFmt(d.stock_ret_pct, 1)}%
+            <span style="font-size:10px;color:#64748b;">Mkt: ${d.market_ret_pct >= 0 ? '+' : ''}${_wlFmt(d.market_ret_pct, 1)}%</span>
+          </div>
+          <div style="font-size:10px;color:${d.excess_pct >= 0 ? '#4ade80' : '#f87171'};">Excess: ${d.excess_pct >= 0 ? '+' : ''}${_wlFmt(d.excess_pct, 1)}%</div>
+        </div>`
+      ).join('');
+
+      document.getElementById('wlTabThesis').innerHTML = `
+        <div style="margin-bottom:14px;">
+          <div style="font-size:1.1em;font-weight:700;margin-bottom:4px;">${th.action_label || ''}</div>
+          <div style="font-size:12px;color:#94a3b8;line-height:1.6;">${th.summary || '—'}</div>
+        </div>
+
+        <!-- Trade Plan -->
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px;color:#7dd3fc;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;">Trade Plan</div>
+          <div class="plan-grid">
+            ${_planItem('Entry (Breakout)', '₹' + _wlFmt(th.entry_breakout, 2))}
+            ${_planItem('Entry (Pullback)', '₹' + _wlFmt(th.entry_pullback, 2))}
+            ${_planItem('Stop Loss', '₹' + _wlFmt(th.stop_loss, 2) + ' (-' + _wlFmt(th.risk_pct, 1) + '%)')}
+            ${_planItem('Target 1', '₹' + _wlFmt(th.target1, 2) + ' (' + _wlFmt(th.rr_t1, 1) + ':1 R:R)')}
+            ${_planItem('Target 2', '₹' + _wlFmt(th.target2, 2) + ' (' + _wlFmt(th.rr_t2, 1) + ':1 R:R)')}
+            ${_planItem('Target 3', '₹' + _wlFmt(th.target3, 2) + ' (' + _wlFmt(th.rr_t3, 1) + ':1 R:R)')}
+            ${_planItem('Position Size (1% risk on ₹10L)', th.shares_1pct_risk_1M_capital + ' shares')}
+            ${_planItem('Position Value', '₹' + (th.position_value_1pct_risk || '—'))}
+            ${_planItem('Conviction Score', (th.conviction_score || '—') + '/100')}
+            ${_planItem('Setup Type', (th.setup_type || '—').replace(/_/g,' '))}
+            ${_planItem('ADR%', _wlFmt(adr.adr_pct, 1, '%') + ' — ' + (adr.adr_label || ''))}
+            ${_planItem('RS Score', (rs.rs_score || '—') + '/99 — ' + (rs.rs_label || ''))}
+          </div>
+        </div>
+
+        <!-- Trend Structure -->
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px;color:#7dd3fc;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;">Trend Structure</div>
+          <div class="plan-grid">
+            ${_planItem('Stage', tr.stage_label || '—')}
+            ${_planItem('MA20', '₹' + _wlFmt(tr.ma20, 2) + (tr.above_ma20 ? ' ✅' : ' 🔴'))}
+            ${_planItem('MA50', '₹' + _wlFmt(tr.ma50, 2) + (tr.above_ma50 ? ' ✅' : ' 🔴'))}
+            ${_planItem('MA200', '₹' + _wlFmt(tr.ma200, 2) + (tr.above_ma200 ? ' ✅' : ' 🔴'))}
+            ${_planItem('52W High', '₹' + _wlFmt(tr.high_52w, 2))}
+            ${_planItem('From 52W High', _wlFmt(tr.pct_from_52w_high, 1, '%'))}
+            ${_planItem('52W Range Pos', _wlFmt(tr.pct_from_52w_range, 0, '%') + ' of range')}
+          </div>
+        </div>
+
+        <!-- Consolidation -->
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px;color:#7dd3fc;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;">Consolidation Quality — ${con.quality_label || '—'}</div>
+          <div class="plan-grid">
+            ${_planItem('Base Depth', _wlFmt(con.base_depth_pct, 1, '%'))}
+            ${_planItem('Tightness', _wlFmt(con.tightness_pct, 1, '%') + ' std/mean')}
+            ${_planItem('Base Length', (con.base_length_days || '—') + ' days')}
+            ${_planItem('Vol Dry-Up', _wlFmt(con.vol_dry_up_ratio, 2) + 'x' + (con.vol_dry_up_ratio < 0.7 ? ' 🔵 Good' : ''))}
+            ${_planItem('Up/Dn Vol Ratio', _wlFmt(con.up_down_vol_ratio, 2))}
+            ${_planItem('Pivot Point', '₹' + _wlFmt(con.pivot_point, 2))}
+            ${_planItem('From Pivot', _wlFmt(con.pct_from_pivot, 1, '%'))}
+            ${_planItem('Consol Score', (con.consolidation_score || '—') + '/100')}
+          </div>
+        </div>
+
+        <!-- Volume -->
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px;color:#7dd3fc;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;">Volume Analysis</div>
+          <div class="plan-grid">
+            ${_planItem('Signal', `<span style="color:${vol.vol_color || '#94a3b8'};">${vol.vol_signal || '—'}</span>`)}
+            ${_planItem('Dry-up', vol.dry_up_label || '—')}
+            ${_planItem('Up/Dn Vol', _wlFmt(vol.up_down_vol_ratio, 2))}
+            ${_planItem('Avg Vol 20d', _wlFmtVol(vol.avg_vol_20d))}
+            ${_planItem('Accum Days', vol.accumulation_days || '—')}
+            ${_planItem('Distrib Days', vol.distribution_days || '—')}
+          </div>
+        </div>
+
+        <!-- RS Period Returns -->
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px;color:#7dd3fc;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;">RS vs Market by Period</div>
+          <div class="wl-fund-grid">${periodRets || '—'}</div>
+        </div>
+
+        ${catalysts ? `
+        <!-- Catalysts -->
+        <div>
+          <div style="font-size:12px;color:#7dd3fc;font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;">Catalysts</div>
+          <ul style="margin:0;padding-left:16px;font-size:13px;color:#94a3b8;line-height:2;">${catalysts}</ul>
+        </div>` : ''}
+      `;
+    }
+
+    function _wlFmtVol(v) {
+      if (!v) return '—';
+      if (v >= 1e7) return (v/1e7).toFixed(1) + ' Cr';
+      if (v >= 1e5) return (v/1e5).toFixed(1) + ' L';
+      return v.toLocaleString();
+    }
+
+    function wlRenderPatternTab(r) {
+      const pat = r.pattern || {};
+      const checks = pat.pattern_checks || {};
+      const signals = (pat.signals || []).map(s => `<li style="padding:4px 0;">${s}</li>`).join('');
+      const checkList = Object.entries(checks).map(([k, v]) => {
+        const label = k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        return `<div class="wl-check-item">
+          <span class="${v ? 'wl-check-pass' : 'wl-check-fail'}">${v ? '✅' : '❌'}</span>
+          <span>${label}</span>
+        </div>`;
+      }).join('');
+
+      const phaseRows = (pat.phase_behavior || []).map(p => `
+        <tr>
+          <td><span class="wl-phase-pill ${p.phase === 'decline' ? 'wl-phase-decline' : p.phase === 'recovery' ? 'wl-phase-recovery' : 'wl-phase-consolidation'}" style="font-size:10px;">${p.phase.toUpperCase()}</span></td>
+          <td>${p.start_date} → ${p.end_date}</td>
+          <td style="color:${p.market_chg_pct >= 0 ? '#4ade80' : '#f87171'};">${p.market_chg_pct >= 0 ? '+' : ''}${_wlFmt(p.market_chg_pct, 1)}%</td>
+          <td style="color:${p.stock_chg_pct >= 0 ? '#4ade80' : '#f87171'};">${p.stock_chg_pct >= 0 ? '+' : ''}${_wlFmt(p.stock_chg_pct, 1)}%</td>
+          <td><span class="${p.excess_pct >= 0 ? 'wl-excess-pos' : 'wl-excess-neg'}">${p.excess_pct >= 0 ? '+' : ''}${_wlFmt(p.excess_pct, 1)}%</span></td>
+          <td style="font-size:11px;color:#94a3b8;">${p.quality || ''}</td>
+          <td>${_wlScoreBar(p.phase_score, p.excess_pct >= 0 ? '#4ade80' : '#f87171')}</td>
+        </tr>`).join('');
+
+      document.getElementById('wlTabPattern').innerHTML = `
+        <div style="margin-bottom:12px;">
+          <span style="font-size:1.1em;font-weight:700;color:${pat.pattern_color || '#94a3b8'};">${pat.pattern_label || '—'}</span>
+          <span style="margin-left:10px;font-size:13px;color:#94a3b8;">Score: ${pat.pattern_score || 0}/100</span>
+          <div style="margin-top:6px;height:8px;background:#1e293b;border-radius:4px;overflow:hidden;max-width:300px;">
+            <div style="height:100%;border-radius:4px;background:${pat.pattern_color || '#94a3b8'};width:${pat.pattern_score || 0}%;transition:width .4s;"></div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px;color:#7dd3fc;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;">Pattern Checklist</div>
+          <div class="wl-checklist">${checkList || '<span class="muted">—</span>'}</div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px;color:#7dd3fc;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;">Detection Signals</div>
+          <ul style="margin:0;padding-left:16px;font-size:13px;color:#94a3b8;line-height:1.8;">${signals || '—'}</ul>
+        </div>
+
+        ${phaseRows ? `
+        <div>
+          <div style="font-size:12px;color:#7dd3fc;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px;">Behavior During Market Phases</div>
+          <div style="overflow-x:auto;">
+            <table class="wl-phase-table">
+              <thead><tr>
+                <th>Phase</th><th>Period</th><th>Market</th><th>Stock</th><th>Excess</th><th>Quality</th><th>Score</th>
+              </tr></thead>
+              <tbody>${phaseRows}</tbody>
+            </table>
+          </div>
+        </div>` : ''}
+      `;
+    }
+
+    function wlRenderFundTab(r) {
+      const f = r.fundamentals || {};
+      if (f.error) {
+        document.getElementById('wlTabFund').innerHTML = `<div class="wl-error">${f.error}</div>`;
+        return;
+      }
+
+      const items = [
+        ['Company', f.company_name || '—'],
+        ['Sector', f.sector || '—'],
+        ['Industry', f.industry || '—'],
+        ['Market Cap', f.mcap_label || '—'],
+        ['P/E Ratio', _wlFmt(f.pe_ratio, 1)],
+        ['P/B Ratio', _wlFmt(f.pb_ratio, 2)],
+        ['ROE %', _wlFmt(f.roe_pct, 1, '%')],
+        ['ROA %', _wlFmt(f.roa_pct, 1, '%')],
+        ['Debt/Equity', _wlFmt(f.debt_to_equity, 2)],
+        ['Current Ratio', _wlFmt(f.current_ratio, 2)],
+        ['EPS (TTM)', _wlFmt(f.eps_ttm, 2)],
+        ['EPS (Fwd)', _wlFmt(f.eps_fwd, 2)],
+        ['EPS Growth QoQ', f.eps_qoq_pct != null ? (f.eps_qoq_pct >= 0 ? '+' : '') + _wlFmt(f.eps_qoq_pct, 1, '%') : '—'],
+        ['Revenue Growth YoY', f.revenue_yoy_pct != null ? (f.revenue_yoy_pct >= 0 ? '+' : '') + _wlFmt(f.revenue_yoy_pct, 1, '%') : '—'],
+        ['Earnings Growth YoY', f.earnings_yoy_pct != null ? (f.earnings_yoy_pct >= 0 ? '+' : '') + _wlFmt(f.earnings_yoy_pct, 1, '%') : '—'],
+        ['Debt Trend', f.debt_trend || '—'],
+        ['Earnings Quality', f.earnings_quality || '—'],
+        ['Free Cash Flow', f.free_cashflow ? '₹' + (f.free_cashflow/1e7).toFixed(0) + ' Cr' : '—'],
+        ['Dividend Yield', f.dividend_yield ? _wlFmt(f.dividend_yield * 100, 2, '%') : '—'],
+      ];
+
+      document.getElementById('wlTabFund').innerHTML = `
+        <div style="margin-bottom:10px;font-size:12px;color:#94a3b8;">
+          Fundamental data from yfinance. Debt trend: ${f.debt_trend || '—'} | Earnings quality: ${f.earnings_quality || '—'}
+        </div>
+        <div class="wl-fund-grid">
+          ${items.map(([l, v]) => `
+            <div class="wl-fund-item">
+              <div class="wl-fund-label">${l}</div>
+              <div class="wl-fund-val" style="color:${String(v).includes('+') ? '#4ade80' : String(v).startsWith('-') ? '#f87171' : '#e2e8f0'};">${v}</div>
+            </div>`).join('')}
+        </div>
+      `;
+    }
+
+    function wlRenderMFTab(r) {
+      const mf = r.mf_holdings || {};
+      if (mf.error) {
+        document.getElementById('wlTabMF').innerHTML = `<div class="wl-error">${mf.error}</div>`;
+        return;
+      }
+
+      const signalColor = {
+        'ACCUMULATING':  '#4ade80',
+        'DISTRIBUTING':  '#f87171',
+        'NEUTRAL':       '#94a3b8',
+        'UNKNOWN':       '#64748b',
+      }[mf.smart_money_signal] || '#94a3b8';
+
+      const trendIcon = (t) => t === 'up' ? '↑' : t === 'down' ? '↓' : '→';
+      const trendColor = (t) => t === 'up' ? '#4ade80' : t === 'down' ? '#f87171' : '#94a3b8';
+
+      document.getElementById('wlTabMF').innerHTML = `
+        <div style="margin-bottom:14px;">
+          <div style="font-size:1em;font-weight:700;color:${signalColor};margin-bottom:6px;">
+            Smart Money Signal: ${mf.smart_money_signal || 'UNKNOWN'}
+          </div>
+          <div style="font-size:13px;color:#94a3b8;line-height:1.6;">${mf.swing_signal || mf.summary || '—'}</div>
+        </div>
+
+        <div class="wl-fund-grid" style="margin-bottom:14px;">
+          <div class="wl-fund-item">
+            <div class="wl-fund-label">Promoters</div>
+            <div class="wl-fund-val">${_wlFmt(mf.promoters_pct, 1, '%')} <span style="color:${trendColor(mf.promoters_trend)};">${trendIcon(mf.promoters_trend)}</span></div>
+          </div>
+          <div class="wl-fund-item">
+            <div class="wl-fund-label">FII%</div>
+            <div class="wl-fund-val" style="color:${trendColor(mf.fii_trend)};">${_wlFmt(mf.fii_pct, 1, '%')} ${trendIcon(mf.fii_trend)}</div>
+          </div>
+          <div class="wl-fund-item">
+            <div class="wl-fund-label">DII%</div>
+            <div class="wl-fund-val" style="color:${trendColor(mf.dii_trend)};">${_wlFmt(mf.dii_pct, 1, '%')} ${trendIcon(mf.dii_trend)}</div>
+          </div>
+          <div class="wl-fund-item">
+            <div class="wl-fund-label">Public%</div>
+            <div class="wl-fund-val">${_wlFmt(mf.public_pct, 1, '%')}</div>
+          </div>
+          <div class="wl-fund-item">
+            <div class="wl-fund-label">DII Accumulating</div>
+            <div class="wl-fund-val" style="color:${mf.dii_accumulating ? '#4ade80' : '#f87171'};">${mf.dii_accumulating ? '✅ YES' : '❌ NO'}</div>
+          </div>
+        </div>
+
+        <div style="font-size:12px;color:#94a3b8;">${mf.summary || '—'}</div>
+      `;
+    }
+
+    function wlRenderNewsTab(r) {
+      const news = r.news || [];
+      if (!news.length) {
+        document.getElementById('wlTabNews').innerHTML = '<div class="wl-empty">No news found for this symbol.</div>';
+        return;
+      }
+      const items = news.map(n => `
+        <li class="wl-news-item">
+          <div class="wl-news-title">
+            ${n.link ? `<a href="${n.link}" target="_blank" rel="noopener">${n.title || '—'}</a>` : (n.title || '—')}
+          </div>
+          <div class="wl-news-meta">${n.source || ''} · ${n.date || ''}</div>
+        </li>`).join('');
+
+      document.getElementById('wlTabNews').innerHTML = `
+        <ul class="wl-news-list">${items}</ul>
+        <div style="margin-top:10px;font-size:11px;color:#64748b;">
+          💡 News sources: Yahoo Finance, Economic Times, Moneycontrol, LiveMint, NSE Announcements, Screener.in
+        </div>
+      `;
+    }
+
+    function wlRenderPhasesTab(r) {
+      const pb = (r.pattern || {}).phase_behavior || [];
+      if (!pb.length) {
+        document.getElementById('wlTabPhases').innerHTML = '<div class="wl-empty">No phase behavior data available.</div>';
+        return;
+      }
+
+      const mktPhases = (_wlData && _wlData.market_phases) || [];
+      const phaseSummary = (_wlData && _wlData.market_context && _wlData.market_context.phase_summary) || '—';
+
+      const rows = pb.map(p => {
+        const phaseCls = p.phase === 'decline' ? 'wl-phase-decline' : p.phase === 'recovery' ? 'wl-phase-recovery' : 'wl-phase-consolidation';
+        const qualityColor = {
+          'HOLDING_STRONG': '#ffd700', 'RESILIENT': '#4ade80', 'LEADING': '#4ade80',
+          'OUTPERFORMING': '#86efac', 'STABLE': '#7dd3fc', 'BUILDING': '#4ade80',
+          'WEAK': '#fbbf24', 'VERY_WEAK': '#f87171', 'LAGGING': '#f87171', 'CORRECTING': '#f87171',
+        }[p.quality] || '#94a3b8';
+        return `
+          <tr>
+            <td><span class="wl-phase-pill ${phaseCls}" style="font-size:10px;">${p.phase.toUpperCase()}</span></td>
+            <td style="font-size:11px;">${p.start_date}<br/>${p.end_date}</td>
+            <td style="color:${p.market_chg_pct >= 0 ? '#4ade80' : '#f87171'};font-weight:700;">${p.market_chg_pct >= 0 ? '+' : ''}${_wlFmt(p.market_chg_pct, 1)}%</td>
+            <td style="color:${p.stock_chg_pct >= 0 ? '#4ade80' : '#f87171'};font-weight:700;">${p.stock_chg_pct >= 0 ? '+' : ''}${_wlFmt(p.stock_chg_pct, 1)}%</td>
+            <td><span style="color:${p.excess_pct >= 0 ? '#4ade80' : '#f87171'};font-weight:700;">${p.excess_pct >= 0 ? '+' : ''}${_wlFmt(p.excess_pct, 1)}%</span></td>
+            <td style="color:${qualityColor};font-weight:700;">${p.quality || '—'}</td>
+            <td>
+              <div style="background:#1e293b;height:6px;border-radius:3px;width:80px;overflow:hidden;">
+                <div style="height:100%;background:${p.excess_pct >= 0 ? '#4ade80' : '#f87171'};width:${Math.min(100,p.phase_score)}%;border-radius:3px;"></div>
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
+
+      // Summary interpretation
+      const declines = pb.filter(p => p.phase === 'decline');
+      const recoveries = pb.filter(p => p.phase === 'recovery');
+      const avgDecExcess = declines.length ? (declines.reduce((s,p)=>s+p.excess_pct,0)/declines.length).toFixed(1) : null;
+      const avgRecExcess = recoveries.length ? (recoveries.reduce((s,p)=>s+p.excess_pct,0)/recoveries.length).toFixed(1) : null;
+
+      document.getElementById('wlTabPhases').innerHTML = `
+        <div style="margin-bottom:14px;padding:10px 14px;background:#0b1220;border-radius:8px;border:1px solid #1e293b;">
+          <div style="font-size:12px;color:#64748b;margin-bottom:6px;">Market Phase Sequence</div>
+          <div style="font-size:12px;color:#94a3b8;">${phaseSummary}</div>
+        </div>
+
+        ${avgDecExcess !== null || avgRecExcess !== null ? `
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+          ${avgDecExcess !== null ? `
+          <div class="wl-mkt-chip" style="background:${Number(avgDecExcess) >= 0 ? '#052e16' : '#2a0d0d'};border-color:${Number(avgDecExcess) >= 0 ? '#14532d' : '#7f1d1d'};">
+            <div class="v" style="color:${Number(avgDecExcess) >= 0 ? '#4ade80' : '#f87171'};">${Number(avgDecExcess) >= 0 ? '+' : ''}${avgDecExcess}%</div>
+            <div class="l">Avg Excess<br/>During Declines</div>
+          </div>` : ''}
+          ${avgRecExcess !== null ? `
+          <div class="wl-mkt-chip" style="background:${Number(avgRecExcess) >= 0 ? '#052e16' : '#2a0d0d'};border-color:${Number(avgRecExcess) >= 0 ? '#14532d' : '#7f1d1d'};">
+            <div class="v" style="color:${Number(avgRecExcess) >= 0 ? '#4ade80' : '#f87171'};">${Number(avgRecExcess) >= 0 ? '+' : ''}${avgRecExcess}%</div>
+            <div class="l">Avg Excess<br/>During Recoveries</div>
+          </div>` : ''}
+          <div class="wl-mkt-chip">
+            <div class="v">${declines.length}</div><div class="l">Decline Phases</div>
+          </div>
+          <div class="wl-mkt-chip">
+            <div class="v">${recoveries.length}</div><div class="l">Recovery Phases</div>
+          </div>
+        </div>` : ''}
+
+        <div style="overflow-x:auto;">
+          <table class="wl-phase-table">
+            <thead>
+              <tr>
+                <th>Phase</th><th>Period</th><th>Nifty</th><th>Stock</th><th>Excess RS</th><th>Behavior</th><th>Score</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:12px;font-size:12px;color:#64748b;">
+          💡 Excess RS = Stock Return − Market Return during that phase.
+          Positive during declines = stock held better than market (RS Leader indicator).
+          Positive during recoveries = stock led the recovery (momentum leader).
+        </div>
+      `;
+    }
+
+    // ── CSV Export ────────────────────────────────────────────────────────────
+
+    function wlExportCSV() {
+      if (!_wlTable || !_wlTable.length) return;
+      const headers = ['Symbol','Price','Ret_20d','Ret_60d','RS_Score','ADR_Pct','Stage','Pattern','Conviction','Action','Entry','Stop','T1','T2','T3','RR_T1','Setup'];
+      const rows = _wlTable.map(r => [
+        r.symbol, r.price, r.ret_20d, r.ret_60d, r.rs_score, r.adr_pct,
+        r.stage, (r.pattern || '').replace(/[^\w\s]/g,''), r.conviction, r.action,
+        r.entry, r.stop, r.t1, r.t2, r.t3, r.rr_t1, r.setup,
+      ].map(v => v == null ? '' : String(v)).join(','));
+      const csv = [headers.join(','), ...rows].join('\n');
+      const a = document.createElement('a');
+      a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+      a.download = `watchlist_pattern_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+    }
+
+    // ── Auto-load market phases on page load ──────────────────────────────────
+    // (Lazy — only loads when user first opens the section)
+
   </script>
 </body>
 </html>
