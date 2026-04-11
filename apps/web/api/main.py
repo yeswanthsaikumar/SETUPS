@@ -29,6 +29,7 @@ from trade_plan_assistant import brief_as_json, build_scan_brief
 from stock_analyzer import analyze_stock
 import performance_tracker as _pt
 from mutual_funds_provider import MutualFundsProvider, swing_context as _mf_swing_context
+import watchlist_pattern_engine as _wpe
 
 _mf_provider = MutualFundsProvider(cache_dir=str(ROOT / "cache"), cache_ttl_hours=6)
 
@@ -545,3 +546,133 @@ def perf_trades_with_mf(
     }
 
 
+# ── Watchlist Pattern Lab ─────────────────────────────────────────────────────
+
+class WatchlistAnalysisRequest(BaseModel):
+    symbols: list[str] = Field(
+        default=["SLTTECH", "AEROFLEX", "PFOCUS", "AVANTIFEED", "BAJAJCON", "CENTUM", "ATLANTAELE", "POWERINDIA"],
+        description="List of stock symbols to analyze (NSE tickers without .NS suffix for India)"
+    )
+    market: Literal["india", "us"] = "india"
+    workers: int = Field(default=5, ge=1, le=12)
+    include_news: bool = True
+    include_fundamentals: bool = True
+    include_mf: bool = True
+
+
+@app.post("/api/watchlist/analyze")
+def watchlist_analyze(req: WatchlistAnalysisRequest) -> dict:
+    """
+    Analyze a list of stocks for RS Leader patterns, setups, fundamentals,
+    FII/DII activity, news, and generate full trade thesis for each.
+
+    Detects stocks that:
+    - Hold / outperform during market declines
+    - Consolidate tightly while market corrects
+    - Are positioned to lead the next market upleg
+    """
+    if not req.symbols:
+        raise HTTPException(status_code=400, detail="symbols list cannot be empty")
+
+    # Sanitize symbols
+    symbols = [s.strip().upper() for s in req.symbols if s.strip()]
+    if not symbols:
+        raise HTTPException(status_code=400, detail="No valid symbols provided")
+
+    result = _wpe.analyze_watchlist(
+        symbols=symbols,
+        market=req.market,
+        workers=req.workers,
+        include_news=req.include_news,
+        include_fundamentals=req.include_fundamentals,
+        include_mf=req.include_mf,
+    )
+    return result
+
+
+@app.get("/api/watchlist/analyze-single")
+def watchlist_analyze_single(
+    symbol: str,
+    market: Literal["india", "us"] = "india",
+    include_news: bool = True,
+    include_fundamentals: bool = True,
+    include_mf: bool = True,
+) -> dict:
+    """Deep-dive RS Leader analysis for a single stock."""
+    if not symbol or not symbol.strip():
+        raise HTTPException(status_code=400, detail="symbol is required")
+
+    result = _wpe.analyze_single_stock(
+        symbol=symbol.strip().upper(),
+        market=market,
+        include_news=include_news,
+        include_fundamentals=include_fundamentals,
+        include_mf=include_mf,
+    )
+    if result.get("error") and not result.get("rs"):
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+
+@app.get("/api/watchlist/market-phases")
+def market_phases_endpoint(
+    days: int = 252,
+) -> dict:
+    """
+    Detect Nifty50 market phases: decline, consolidation, recovery.
+    Returns structured phase map for the last `days` trading days.
+    """
+    market_prices = _wpe.fetch_market_prices(days=max(days, 252))
+    if not market_prices:
+        raise HTTPException(status_code=503, detail="Could not fetch Nifty50 data")
+
+    phases = _wpe.detect_market_phases(market_prices)
+    closes = market_prices.get("close", [])
+
+    return {
+        "nifty_current": round(closes[-1], 2) if closes else None,
+        "nifty_dates":   market_prices.get("dates", [])[-30:],
+        "nifty_closes":  [round(c, 2) for c in closes[-30:]],
+        "phases":        phases,
+        "phase_summary": _wpe._summarize_phases(phases),
+        "phase_count":   len(phases),
+        "recent_phases": phases[-5:] if phases else [],
+    }
+
+
+@app.get("/api/watchlist/default-list")
+def default_watchlist() -> dict:
+    """Return the default example watchlist with context about the RS Leader pattern."""
+    return {
+        "default_symbols": [
+            "SLTTECH", "AEROFLEX", "PFOCUS", "AVANTIFEED",
+            "BAJAJCON", "CENTUM", "ATLANTAELE", "POWERINDIA",
+            "MATARTECH",
+        ],
+        "pattern_description": (
+            "RS Leader Pattern: These stocks gave 30-50% returns Jan-Feb, "
+            "consolidated while the entire market fell in March (Iran-US tensions), "
+            "then flew high once macro cleared. "
+            "This tool identifies such stocks before the breakout."
+        ),
+        "key_metrics": [
+            "RS Score vs Nifty (IBD-style)",
+            "Behavior during market declines",
+            "Consolidation tightness & base quality",
+            "ADR % — opportunity per trade",
+            "FII/DII institutional activity",
+            "Earnings & debt trends",
+            "News & macro catalysts",
+            "Entry / Stop / Targets / Risk:Reward",
+        ],
+        "pattern_checklist": [
+            "Stock held / declined < market during correction",
+            "Tight, low-volume consolidation in base",
+            "RS line making new highs or holding near highs",
+            "Stage 2 uptrend: price > MA50 > MA150 > MA200",
+            "DII or smart money accumulating",
+            "Positive earnings trajectory (EPS growth QoQ/YoY)",
+            "Volume dry-up in base, expansion on breakout",
+            "Macro catalyst visible (earnings, sector tailwind, policy)",
+        ],
+    }

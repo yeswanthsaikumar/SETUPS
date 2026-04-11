@@ -2331,6 +2331,505 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
   <div class="leg-item"><div class="leg-dot" style="background:#60a5fa;border-radius:50%"></div>New (&lt;8 runs)</div>
 </div>
 
+<div class="legend">
+  <div class="leg-item"><div class="leg-dot" style="background:#a5b4fc"></div>VCP Breakout</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#86efac"></div>Range Expansion</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#7dd3fc"></div>Mean Reversion</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#d8b4fe"></div>Breakout Pullback</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#34d399"></div>Bull Flag</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#a78bfa"></div>🔀 Multi-Setup</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#ffd700"></div>A+ Rating</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#3fb950"></div>RS Positive</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#ffd700;border-radius:50%"></div>Hot (15+ runs)</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#fb923c;border-radius:50%"></div>Warm (8+ runs)</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#60a5fa;border-radius:50%"></div>New (&lt;8 runs)</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- ── 🔬 Watchlist Pattern Lab (Integrated) ──────────────────────────── -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<style>
+.wpl-wrap{{margin:0 28px 20px;border:1px solid #21262d;border-radius:10px;overflow:hidden;background:#0d1117}}
+.wpl-header{{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#111820;cursor:pointer;user-select:none;border-bottom:1px solid #21262d}}
+.wpl-header-left{{display:flex;align-items:center;gap:10px}}
+.wpl-title{{font-size:.95em;font-weight:700;color:#79c0ff}}
+.wpl-subtitle{{font-size:.73em;color:#8b949e;margin-left:4px}}
+.wpl-toggle-btn{{font-size:.75em;color:#79c0ff;background:#0d1117;border:1px solid #30363d;border-radius:5px;padding:3px 10px;cursor:pointer}}
+.wpl-body{{padding:14px 16px;display:none}}
+.wpl-body.open{{display:block}}
+.wpl-controls-row{{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px}}
+.wpl-input{{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;border-radius:6px;padding:7px 10px;font-size:.83em;min-width:200px}}
+.wpl-textarea{{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;border-radius:6px;padding:7px 10px;font-size:.83em;width:100%;resize:none}}
+.wpl-btn{{background:#1f6feb;border:none;color:#fff;padding:7px 16px;border-radius:6px;cursor:pointer;font-weight:700;font-size:.83em;white-space:nowrap}}
+.wpl-btn:hover{{background:#388bfd}}
+.wpl-btn:disabled{{background:#30363d;cursor:not-allowed}}
+.wpl-btn-sm{{padding:4px 10px;font-size:.75em}}
+.wpl-btn-teal{{background:#0f766e}}.wpl-btn-teal:hover{{background:#0d9488}}
+.wpl-btn-amber{{background:#92400e}}.wpl-btn-amber:hover{{background:#b45309}}
+.wpl-mkt-bar{{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}}
+.wpl-mkt-chip{{background:#0d1117;border:1px solid #21262d;border-radius:7px;padding:6px 12px;text-align:center;min-width:80px}}
+.wpl-mkt-chip .v{{font-size:1em;font-weight:800;color:#58a6ff}}
+.wpl-mkt-chip .l{{font-size:.65em;color:#8b949e;text-transform:uppercase;letter-spacing:.4px;margin-top:1px}}
+.wpl-phase-pill{{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.7em;font-weight:700;margin:2px;border:1px solid transparent}}
+.wpl-phase-decline{{background:#450a0a;color:#f87171;border-color:#7f1d1d}}
+.wpl-phase-recovery{{background:#052e16;color:#4ade80;border-color:#14532d}}
+.wpl-phase-consolidation{{background:#1c1917;color:#fbbf24;border-color:#44403c}}
+.wpl-table-wrap{{overflow-x:auto;margin-top:8px}}
+.wpl-table{{width:100%;border-collapse:collapse;font-size:.78em}}
+.wpl-table th{{background:#111820;border-bottom:2px solid #21262d;padding:6px 8px;text-align:left;color:#79c0ff;font-size:.7em;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;cursor:pointer}}
+.wpl-table th:hover{{color:#c9d1d9}}
+.wpl-table td{{border-bottom:1px solid #161b22;padding:6px 8px;vertical-align:middle;white-space:nowrap}}
+.wpl-table tr:hover td{{background:#0d1520}}
+.wpl-table tr.wpl-leader td{{background:#061218}}
+.wpl-sym{{font-weight:800;color:#c9d1d9;cursor:pointer;text-decoration:underline dotted}}
+.wpl-sym:hover{{color:#58a6ff}}
+.wpl-pos{{color:#4ade80;font-weight:700}}.wpl-neg{{color:#f87171;font-weight:700}}
+.wpl-bar{{display:inline-block;width:40px;height:5px;background:#21262d;border-radius:3px;overflow:hidden;vertical-align:middle;margin-left:3px}}
+.wpl-bar-fill{{height:100%;border-radius:3px}}
+.wpl-badge{{display:inline-block;padding:1px 6px;border-radius:4px;font-size:.7em;font-weight:700}}
+.wpl-s2{{background:#052e16;color:#4ade80}}.wpl-s1{{background:#0c1a2e;color:#7dd3fc}}
+.wpl-s3{{background:#2a1900;color:#fbbf24}}.wpl-s4{{background:#2a0d0d;color:#f87171}}
+.wpl-loading{{display:flex;align-items:center;gap:8px;color:#8b949e;font-size:.83em;padding:12px 0}}
+.wpl-spinner{{width:14px;height:14px;border:2px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:wplspin .7s linear infinite}}
+@keyframes wplspin{{to{{transform:rotate(360deg)}}}}
+.wpl-error{{color:#f87171;font-size:.83em;padding:8px;background:#1a0808;border-radius:6px;border:1px solid #7f1d1d;margin-top:6px}}
+/* Deep dive drawer */
+.wpl-drawer{{background:#111820;border:1px solid #21262d;border-radius:8px;padding:14px;margin-top:10px;display:none}}
+.wpl-drawer.open{{display:block}}
+.wpl-drawer-tabs{{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #21262d}}
+.wpl-dtab{{padding:4px 12px;border-radius:5px;font-size:.75em;cursor:pointer;background:#0d1117;border:1px solid #30363d;color:#8b949e}}
+.wpl-dtab.active{{background:#1f6feb;border-color:#388bfd;color:#fff}}
+.wpl-dpane{{display:none;font-size:.8em;line-height:1.7;color:#8b949e}}.wpl-dpane.active{{display:block}}
+.wpl-plan-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;margin-top:6px}}
+.wpl-plan-item{{background:#0d1117;border:1px solid #21262d;border-radius:6px;padding:6px 8px}}
+.wpl-plan-label{{font-size:.65em;color:#8b949e;text-transform:uppercase;letter-spacing:.3px}}
+.wpl-plan-value{{font-size:.88em;font-weight:700;margin-top:2px}}
+.wpl-news-list{{list-style:none;padding:0;margin:0}}
+.wpl-news-item{{border-bottom:1px solid #161b22;padding:5px 0}}
+.wpl-news-item:last-child{{border-bottom:none}}
+.wpl-news-a{{color:#58a6ff;text-decoration:none;font-size:.8em;line-height:1.4}}
+.wpl-news-a:hover{{text-decoration:underline}}
+.wpl-news-meta{{font-size:.65em;color:#8b949e;margin-top:1px}}
+.wpl-phase-tbl{{width:100%;border-collapse:collapse;font-size:.75em}}
+.wpl-phase-tbl th{{color:#8b949e;padding:3px 6px;border-bottom:1px solid #21262d;text-align:left;font-size:.7em}}
+.wpl-phase-tbl td{{padding:3px 6px;border-bottom:1px solid #0d1117}}
+.wpl-checklist{{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:5px;list-style:none;padding:0;margin:8px 0}}
+.wpl-chk{{display:flex;align-items:center;gap:6px;font-size:.76em;padding:4px 8px;background:#0d1117;border:1px solid #161b22;border-radius:5px}}
+</style>
+
+<div class="wpl-wrap">
+  <div class="wpl-header" onclick="wplToggle()">
+    <div class="wpl-header-left">
+      <span class="wpl-title">🔬 Watchlist Pattern Lab</span>
+      <span class="wpl-subtitle">— RS Leaders · Phase Behavior · Trade Thesis · News · FII/DII</span>
+      <span id="wplStatus" style="font-size:.7em;color:#4ade80;margin-left:8px"></span>
+    </div>
+    <button class="wpl-toggle-btn" id="wplToggleBtn">▼ Open</button>
+  </div>
+  <div class="wpl-body" id="wplBody">
+
+    <div style="display:grid;grid-template-columns:1fr auto auto auto auto;gap:8px;align-items:end;margin-bottom:10px">
+      <div>
+        <div style="font-size:.72em;color:#8b949e;margin-bottom:3px">Stock List <span style="color:#475569">(auto-loaded from this page's signals)</span></div>
+        <textarea id="wplSymbols" class="wpl-textarea" rows="2" placeholder="AEROFLEX, CENTUM, PFOCUS..."></textarea>
+      </div>
+      <div>
+        <div style="font-size:.72em;color:#8b949e;margin-bottom:3px">Workers</div>
+        <input id="wplWorkers" type="number" value="4" min="1" max="10" class="wpl-input" style="width:56px">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <button class="wpl-btn" id="wplAnalyzeBtn" onclick="wplAnalyze()">🔍 Analyze</button>
+        <button class="wpl-btn wpl-btn-teal wpl-btn-sm" onclick="wplLoadFromPage()">📋 Load From Page</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <button class="wpl-btn wpl-btn-sm" style="background:#21262d" onclick="wplLoadPhases()">📊 Market Phases</button>
+        <button class="wpl-btn wpl-btn-amber wpl-btn-sm" onclick="wplExportCSV()">⬇ CSV</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:14px;font-size:.76em;color:#8b949e;flex-wrap:wrap;margin-bottom:10px">
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="wplNews" checked> News</label>
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="wplFund" checked> Fundamentals</label>
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="wplMF" checked> FII/DII</label>
+    </div>
+
+    <!-- Market context -->
+    <div id="wplMktBar" style="display:none;margin-bottom:10px">
+      <div style="font-size:.66em;color:#8b949e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px">Nifty50 Phase Map</div>
+      <div class="wpl-mkt-bar" id="wplMktChips"></div>
+      <div id="wplPhases" style="margin-top:5px"></div>
+    </div>
+
+    <!-- Loading -->
+    <div id="wplLoading" style="display:none" class="wpl-loading">
+      <div class="wpl-spinner"></div>
+      <span id="wplLoadingTxt">Fetching price data, computing RS scores, detecting patterns…</span>
+    </div>
+    <div id="wplError" style="display:none" class="wpl-error"></div>
+
+    <!-- Summary table -->
+    <div id="wplResultsWrap" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:.83em;font-weight:700;color:#79c0ff">📋 Watchlist Summary</span>
+        <div style="display:flex;gap:5px">
+          <button class="wpl-btn wpl-btn-sm" style="background:#21262d" onclick="wplSort('conviction')">Conviction</button>
+          <button class="wpl-btn wpl-btn-sm" style="background:#21262d" onclick="wplSort('rs_score')">RS Score</button>
+          <button class="wpl-btn wpl-btn-sm" style="background:#21262d" onclick="wplSort('ret_60d')">60d Ret</button>
+        </div>
+      </div>
+      <div class="wpl-table-wrap">
+        <table class="wpl-table">
+          <thead>
+            <tr>
+              <th onclick="wplSort('symbol')">Symbol</th>
+              <th onclick="wplSort('price')">Price</th>
+              <th onclick="wplSort('ret_20d')">20d%</th>
+              <th onclick="wplSort('ret_60d')">60d%</th>
+              <th onclick="wplSort('rs_score')">RS</th>
+              <th onclick="wplSort('adr_pct')">ADR%</th>
+              <th onclick="wplSort('stage')">Stage</th>
+              <th onclick="wplSort('pattern_score')">Pattern</th>
+              <th onclick="wplSort('conviction')">Conv.</th>
+              <th>Action</th>
+              <th>Entry</th>
+              <th>Stop</th>
+              <th>T1</th>
+              <th>R:R</th>
+              <th>Setup</th>
+            </tr>
+          </thead>
+          <tbody id="wplTbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Deep dive drawer -->
+      <div class="wpl-drawer" id="wplDrawer">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-weight:700;color:#c9d1d9">🔎 <span id="wplDrawerSym"></span></span>
+          <button class="wpl-btn wpl-btn-sm" style="background:#21262d" onclick="document.getElementById('wplDrawer').classList.remove('open')">✕ Close</button>
+        </div>
+        <div class="wpl-drawer-tabs">
+          <button class="wpl-dtab active" onclick="wplDTab(this,'wplDThesis')">📊 Thesis</button>
+          <button class="wpl-dtab" onclick="wplDTab(this,'wplDPattern')">🎯 Pattern</button>
+          <button class="wpl-dtab" onclick="wplDTab(this,'wplDFund')">📈 Funds</button>
+          <button class="wpl-dtab" onclick="wplDTab(this,'wplDMF')">🏦 FII/DII</button>
+          <button class="wpl-dtab" onclick="wplDTab(this,'wplDNews')">📰 News</button>
+          <button class="wpl-dtab" onclick="wplDTab(this,'wplDPhases')">📉 Phases</button>
+        </div>
+        <div id="wplDThesis" class="wpl-dpane active"></div>
+        <div id="wplDPattern" class="wpl-dpane"></div>
+        <div id="wplDFund" class="wpl-dpane"></div>
+        <div id="wplDMF" class="wpl-dpane"></div>
+        <div id="wplDNews" class="wpl-dpane"></div>
+        <div id="wplDPhases" class="wpl-dpane"></div>
+      </div>
+    </div>
+
+  </div><!-- /.wpl-body -->
+</div><!-- /.wpl-wrap -->
+
+<script>
+// ── Watchlist Pattern Lab ─────────────────────────────────────────────────────
+const WPL_API = 'http://localhost:8000';
+let _wplData = null, _wplTable = [], _wplSortCol = 'conviction', _wplSortDir = -1;
+
+function wplToggle() {{
+  const body = document.getElementById('wplBody');
+  const btn  = document.getElementById('wplToggleBtn');
+  const open = body.classList.toggle('open');
+  btn.textContent = open ? '▲ Close' : '▼ Open';
+  if (open && !_wplData) {{ wplLoadFromPage(); wplLoadPhases(); }}
+}}
+
+function wplLoadFromPage() {{
+  // Collect all unique symbols currently visible on the page
+  const syms = [...new Set(
+    [...document.querySelectorAll('.sig-card[data-symbol]')]
+      .map(c => c.dataset.symbol.replace(/\\.NS$|\\.BO$/i,''))
+      .filter(Boolean)
+  )];
+  if (syms.length) document.getElementById('wplSymbols').value = syms.slice(0,25).join(', ');
+}}
+
+function _wplFmt(v, d=1, sfx='') {{
+  if (v == null || v === '') return '—';
+  const n = Number(v);
+  return isNaN(n) ? String(v) : n.toFixed(d) + sfx;
+}}
+
+function _wplRet(v) {{
+  if (v == null) return '<span style="color:#8b949e">—</span>';
+  const n = Number(v), c = n >= 0 ? 'wpl-pos' : 'wpl-neg';
+  return `<span class="${{c}}">${{n>=0?'+':''}}${{n.toFixed(1)}}%</span>`;
+}}
+
+function _wplBar(score, color) {{
+  const w = Math.min(100, Math.max(0, score||0));
+  return `<div class="wpl-bar"><div class="wpl-bar-fill" style="width:${{w}}%;background:${{color||'#58a6ff'}};"></div></div>`;
+}}
+
+function _wplStageBadge(stage) {{
+  const map = {{1:'wpl-s1',2:'wpl-s2',3:'wpl-s3',4:'wpl-s4'}};
+  return stage ? `<span class="wpl-badge ${{map[stage]||'wpl-s1'}}">S${{stage}}</span>` : '—';
+}}
+
+function _wplAction(action, label) {{
+  if (label) {{
+    const c = action==='BUY_NOW'?'#4ade80':action==='WATCH_CLOSELY'?'#facc15':action==='AVOID'?'#f87171':'#7dd3fc';
+    return `<span style="font-weight:700;font-size:.78em;color:${{c}};">${{label}}</span>`;
+  }}
+  const m = {{BUY_NOW:'<span style="color:#4ade80;font-weight:700">🟢 BUY</span>',WATCH_CLOSELY:'<span style="color:#facc15;font-weight:700">🟡 WATCH</span>',WATCH:'<span style="color:#7dd3fc">🔵 WATCH</span>',AVOID:'<span style="color:#f87171">🔴 AVOID</span>'}};
+  return m[action] || `<span style="color:#8b949e">${{action||'—'}}</span>`;
+}}
+
+async function wplLoadPhases() {{
+  const bar = document.getElementById('wplMktBar');
+  const chips = document.getElementById('wplMktChips');
+  const phases = document.getElementById('wplPhases');
+  bar.style.display = 'block';
+  chips.innerHTML = '<span style="color:#8b949e;font-size:.78em">Loading Nifty…</span>';
+  try {{
+    const d = await fetch(WPL_API + '/api/watchlist/market-phases').then(r=>r.json());
+    chips.innerHTML = `<div class="wpl-mkt-chip"><div class="v">${{d.nifty_current?.toFixed(0)||'—'}}</div><div class="l">Nifty</div></div>`;
+    phases.innerHTML = (d.recent_phases||[]).map(p => {{
+      const cls = p.phase==='decline'?'wpl-phase-decline':p.phase==='recovery'?'wpl-phase-recovery':'wpl-phase-consolidation';
+      return `<span class="wpl-phase-pill ${{cls}}">${{p.phase.toUpperCase()}} ${{p.start_date}}→${{p.end_date}} ${{p.change_pct>0?'+':''}}${{p.change_pct}}%</span>`;
+    }}).join('');
+  }} catch(e) {{ chips.innerHTML = `<span style="color:#f87171">API offline: ${{e.message}}</span>`; }}
+}}
+
+async function wplAnalyze() {{
+  const raw = (document.getElementById('wplSymbols').value||'').trim();
+  if (!raw) {{ wplLoadFromPage(); return; }}
+  const symbols = raw.split(/[,\\n;]+/).map(s=>s.trim().toUpperCase()).filter(Boolean);
+  if (!symbols.length) return;
+
+  const btn = document.getElementById('wplAnalyzeBtn');
+  btn.disabled = true; btn.textContent = '⏳ Analyzing…';
+  document.getElementById('wplLoading').style.display = 'flex';
+  document.getElementById('wplError').style.display = 'none';
+  document.getElementById('wplResultsWrap').style.display = 'none';
+  document.getElementById('wplStatus').textContent = `Analyzing ${{symbols.length}} stocks…`;
+
+  await wplLoadPhases();
+
+  try {{
+    const body = JSON.stringify({{
+      symbols, market:'india',
+      workers: parseInt(document.getElementById('wplWorkers').value)||4,
+      include_news: document.getElementById('wplNews').checked,
+      include_fundamentals: document.getElementById('wplFund').checked,
+      include_mf: document.getElementById('wplMF').checked,
+    }});
+    const data = await fetch(WPL_API + '/api/watchlist/analyze', {{
+      method:'POST', headers:{{'Content-Type':'application/json'}}, body
+    }}).then(r=>{{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }});
+    _wplData = data;
+    _wplTable = data.summary_table || [];
+    document.getElementById('wplStatus').textContent = `✅ ${{data.successful}}/${{data.total_symbols}} done`;
+    document.getElementById('wplResultsWrap').style.display = 'block';
+    wplRenderTable();
+  }} catch(e) {{
+    document.getElementById('wplError').style.display = 'block';
+    document.getElementById('wplError').textContent = '❌ ' + e.message + ' — Is the API server running at localhost:8000?';
+  }} finally {{
+    btn.disabled = false; btn.textContent = '🔍 Analyze';
+    document.getElementById('wplLoading').style.display = 'none';
+  }}
+}}
+
+function wplSort(col) {{
+  if (_wplSortCol===col) _wplSortDir*=-1; else {{_wplSortCol=col;_wplSortDir=-1;}}
+  wplRenderTable();
+}}
+
+function wplRenderTable() {{
+  const sorted = [..._wplTable].sort((a,b)=>{{
+    const av = a[_wplSortCol]!=null ? Number(a[_wplSortCol])||a[_wplSortCol] : '';
+    const bv = b[_wplSortCol]!=null ? Number(b[_wplSortCol])||b[_wplSortCol] : '';
+    return av<bv?_wplSortDir:av>bv?-_wplSortDir:0;
+  }});
+  const tbody = document.getElementById('wplTbody');
+  if (!sorted.length) {{ tbody.innerHTML='<tr><td colspan="15" style="color:#8b949e;padding:12px">No results</td></tr>'; return; }}
+  tbody.innerHTML = sorted.map(row=>{{
+    if (row.error) return `<tr><td class="wpl-sym">${{row.symbol}}</td><td colspan="14" style="color:#f87171;font-size:.75em">${{row.error}}</td></tr>`;
+    const pat = (row.pattern||'').replace(/[🌟🚀✅🔵⚠️]/g,'').trim().slice(0,20);
+    const cv = row.conviction||0;
+    const cc = cv>=72?'#ffd700':cv>=58?'#4ade80':'#94a3b8';
+    const extBadge = row.is_extended ? '<span title="'+( row.extension_reason||'Extended')+ '" style="color:#fb923c;font-size:.65em;margin-left:3px;cursor:help">⏳EXT</span>' : '';
+    const restBadge = row.is_consolidating ? '<span title="Resting after move" style="color:#4ade80;font-size:.65em;margin-left:3px;cursor:help">💤REST</span>' : '';
+    const setupLbl = row.is_extended?'⏳ EXTENDED':row.is_consolidating?'💤 RESTING':(row.setup||'').replace(/_/g,' ');
+    const setupClr = row.is_extended?'#fb923c':row.is_consolidating?'#4ade80':'#8b949e';
+    return `<tr class="${{row.action==='BUY_NOW'?'wpl-leader':''}}">
+      <td><span class="wpl-sym" onclick="wplDeepDive('${{row.symbol}}')">${{row.symbol}}</span>${{extBadge}}${{restBadge}}</td>
+      <td>₹${{_wplFmt(row.price,2)}}</td>
+      <td>${{_wplRet(row.ret_20d)}}</td>
+      <td>${{_wplRet(row.ret_60d)}}</td>
+      <td><span style="font-weight:700;color:${{row.rs_score>=80?'#4ade80':row.rs_score>=60?'#fbbf24':'#8b949e'}}">${{row.rs_score||'—'}}</span>${{_wplBar(row.rs_score,'#4ade80')}}</td>
+      <td>${{_wplFmt(row.adr_pct,1,'%')}}</td>
+      <td>${{_wplStageBadge(row.stage)}}</td>
+      <td style="font-size:.72em;color:#8b949e">${{pat}}</td>
+      <td><span style="font-weight:700;color:${{cc}}">${{cv}}</span>${{_wplBar(cv,cc)}}</td>
+      <td>${{_wplAction(row.action, row.action_label)}}</td>
+      <td style="color:#7dd3fc">₹${{_wplFmt(row.entry,2)}}</td>
+      <td style="color:#f87171">₹${{_wplFmt(row.stop,2)}}</td>
+      <td style="color:#4ade80">₹${{_wplFmt(row.t1,2)}}</td>
+      <td style="color:#fbbf24">${{_wplFmt(row.rr_t1,1)}}:1</td>
+      <td style="font-size:.72em;color:${{setupClr}};font-weight:${{row.is_consolidating?'700':'400'}}">${{setupLbl}}</td>
+    </tr>`;
+  }}).join('');
+}}
+
+function wplDeepDive(symbol) {{
+  if (!_wplData) return;
+  const r = (_wplData.results||[]).find(x=>x.symbol===symbol);
+  if (!r) return;
+  const drawer = document.getElementById('wplDrawer');
+  document.getElementById('wplDrawerSym').textContent = symbol;
+  drawer.classList.add('open');
+  drawer.scrollIntoView({{behavior:'smooth',block:'nearest'}});
+  // Reset tabs
+  drawer.querySelectorAll('.wpl-dtab').forEach(t=>t.classList.remove('active'));
+  drawer.querySelectorAll('.wpl-dpane').forEach(p=>p.classList.remove('active'));
+  drawer.querySelector('.wpl-dtab').classList.add('active');
+  document.getElementById('wplDThesis').classList.add('active');
+  // Render
+  _wplRenderThesis(r); _wplRenderPattern(r); _wplRenderFund(r);
+  _wplRenderMF(r); _wplRenderNews(r); _wplRenderPhasesBehav(r);
+}}
+
+function wplDTab(btn, paneId) {{
+  btn.closest('.wpl-drawer').querySelectorAll('.wpl-dtab').forEach(t=>t.classList.remove('active'));
+  btn.closest('.wpl-drawer').querySelectorAll('.wpl-dpane').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(paneId).classList.add('active');
+}}
+
+function _wplPI(label, val) {{
+  return `<div class="wpl-plan-item"><div class="wpl-plan-label">${{label}}</div><div class="wpl-plan-value">${{val}}</div></div>`;
+}}
+
+function _wplRenderThesis(r) {{
+  const th=r.thesis||{{}}, s=r.summary||{{}}, rs=r.rs||{{}}, adr=r.adr||{{}}, tr=r.trend||{{}}, con=r.consolidation||{{}};
+  const cats=(th.catalysts||[]).map(c=>`<li>${{c}}</li>`).join('');
+  document.getElementById('wplDThesis').innerHTML = `
+    <div style="font-size:.88em;font-weight:700;margin-bottom:4px">${{th.action_label||''}}</div>
+    <div style="color:#8b949e;margin-bottom:10px">${{th.summary||'—'}}</div>
+    <div class="wpl-plan-grid">
+      ${{_wplPI('Entry (Breakout)','₹'+_wplFmt(th.entry_breakout,2))}}
+      ${{_wplPI('Entry (Pullback)','₹'+_wplFmt(th.entry_pullback,2))}}
+      ${{_wplPI('Stop Loss','₹'+_wplFmt(th.stop_loss,2)+' (-'+_wplFmt(th.risk_pct,1)+'%)')}}
+      ${{_wplPI('T1 (1.5R)','₹'+_wplFmt(th.target1,2))}}
+      ${{_wplPI('T2 (2.5R)','₹'+_wplFmt(th.target2,2))}}
+      ${{_wplPI('T3 (4R)','₹'+_wplFmt(th.target3,2))}}
+      ${{_wplPI('R:R T1/T2',_wplFmt(th.rr_t1,1)+':1 / '+_wplFmt(th.rr_t2,1)+':1')}}
+      ${{_wplPI('RS Score',(rs.rs_score||'—')+'/99 — '+(rs.rs_label||''))}}
+      ${{_wplPI('ADR%',_wplFmt(adr.adr_pct,1,'%')+' — '+(adr.adr_label||''))}}
+      ${{_wplPI('Stage',tr.stage_label||'—')}}
+      ${{_wplPI('MA50','₹'+_wplFmt(tr.ma50,2)+(tr.above_ma50?' ✅':' ❌'))}}
+      ${{_wplPI('MA200','₹'+_wplFmt(tr.ma200,2)+(tr.above_ma200?' ✅':' ❌'))}}
+      ${{_wplPI('From 52W High',_wplFmt(tr.pct_from_52w_high,1,'%'))}}
+      ${{_wplPI('Conviction',(th.conviction_score||'—')+'/100')}}
+      ${{_wplPI('Setup',( th.setup_type||'—').replace(/_/g,' '))}}
+      ${{_wplPI('Pos Size (1% risk ₹10L)',(th.shares_1pct_risk_1M_capital||'—')+' sh')}}
+    </div>
+    ${{cats?'<div style="margin-top:8px;font-size:.8em;color:#8b949e"><b style="color:#c9d1d9">Catalysts:</b><ul style="padding-left:14px;margin-top:2px">'+cats+'</ul></div>':''}}
+  `;
+}}
+
+function _wplRenderPattern(r) {{
+  const pat=r.pattern||{{}};
+  const checks=Object.entries(pat.pattern_checks||{{}}).map(([k,v])=>
+    `<li class="wpl-chk"><span style="color:${{v?'#4ade80':'#f87171'}}">${{v?'✅':'❌'}}</span>${{k.replace(/_/g,' ')}}</li>`
+  ).join('');
+  const sigs=(pat.signals||[]).map(s=>`<li>${{s}}</li>`).join('');
+  document.getElementById('wplDPattern').innerHTML = `
+    <div style="font-size:.9em;font-weight:700;color:${{pat.pattern_color||'#8b949e'}};margin-bottom:6px">${{pat.pattern_label||'—'}} &nbsp; Score: ${{pat.pattern_score||0}}/100</div>
+    <div style="height:6px;background:#21262d;border-radius:3px;max-width:240px;overflow:hidden;margin-bottom:10px">
+      <div style="height:100%;border-radius:3px;background:${{pat.pattern_color||'#8b949e'}};width:${{pat.pattern_score||0}}%"></div></div>
+    ${{checks?'<div style="font-size:.78em;font-weight:600;color:#8b949e;margin-bottom:5px">Checklist</div><ul class="wpl-checklist">'+checks+'</ul>':''}}
+    ${{sigs?'<div style="font-size:.78em;font-weight:600;color:#8b949e;margin:8px 0 4px">Signals</div><ul style="padding-left:14px;font-size:.8em;color:#8b949e;line-height:1.8">'+sigs+'</ul>':''}}
+  `;
+}}
+
+function _wplRenderFund(r) {{
+  const f=r.fundamentals||{{}};
+  if (f.error) {{document.getElementById('wplDFund').innerHTML=`<div class="wpl-error">${{f.error}}</div>`; return;}}
+  const items=[['Company',f.company_name||'—'],['Sector',f.sector||'—'],['Market Cap',f.mcap_label||'—'],
+    ['P/E',_wplFmt(f.pe_ratio,1)],['ROE%',_wplFmt(f.roe_pct,1,'%')],['D/E',_wplFmt(f.debt_to_equity,2)],
+    ['EPS TTM',_wplFmt(f.eps_ttm,2)],['EPS QoQ',f.eps_qoq_pct!=null?(f.eps_qoq_pct>=0?'+':'')+_wplFmt(f.eps_qoq_pct,1,'%'):'—'],
+    ['Rev YoY',f.revenue_yoy_pct!=null?(f.revenue_yoy_pct>=0?'+':'')+_wplFmt(f.revenue_yoy_pct,1,'%'):'—'],
+    ['Debt Trend',f.debt_trend||'—'],['Earnings Quality',f.earnings_quality||'—']];
+  document.getElementById('wplDFund').innerHTML = `<div class="wpl-plan-grid">`+
+    items.map(([l,v])=>`<div class="wpl-plan-item"><div class="wpl-plan-label">${{l}}</div><div class="wpl-plan-value" style="color:${{String(v).startsWith('+')?'#4ade80':String(v).startsWith('-')?'#f87171':'#c9d1d9'}}">${{v}}</div></div>`).join('')+'</div>';
+}}
+
+function _wplRenderMF(r) {{
+  const mf=r.mf_holdings||{{}};
+  if (mf.error) {{document.getElementById('wplDMF').innerHTML=`<div class="wpl-error">${{mf.error}}</div>`; return;}}
+  const sc=mf.smart_money_signal||'UNKNOWN';
+  const sc_c={{ACCUMULATING:'#4ade80',DISTRIBUTING:'#f87171',NEUTRAL:'#94a3b8'}}[sc]||'#8b949e';
+  const ti=t=>t==='up'?'↑':t==='down'?'↓':'→';
+  const tc=t=>t==='up'?'#4ade80':t==='down'?'#f87171':'#8b949e';
+  document.getElementById('wplDMF').innerHTML = `
+    <div style="font-size:.88em;font-weight:700;color:${{sc_c}};margin-bottom:6px">Signal: ${{sc}}</div>
+    <div style="color:#8b949e;margin-bottom:8px;font-size:.8em">${{mf.swing_signal||mf.summary||'—'}}</div>
+    <div class="wpl-plan-grid">
+      <div class="wpl-plan-item"><div class="wpl-plan-label">Promoters</div><div class="wpl-plan-value">${{_wplFmt(mf.promoters_pct,1,'%')}} ${{ti(mf.promoters_trend)}}</div></div>
+      <div class="wpl-plan-item"><div class="wpl-plan-label">FII%</div><div class="wpl-plan-value" style="color:${{tc(mf.fii_trend)}}">${{_wplFmt(mf.fii_pct,1,'%')}} ${{ti(mf.fii_trend)}}</div></div>
+      <div class="wpl-plan-item"><div class="wpl-plan-label">DII%</div><div class="wpl-plan-value" style="color:${{tc(mf.dii_trend)}}">${{_wplFmt(mf.dii_pct,1,'%')}} ${{ti(mf.dii_trend)}}</div></div>
+      <div class="wpl-plan-item"><div class="wpl-plan-label">DII Accum</div><div class="wpl-plan-value" style="color:${{mf.dii_accumulating?'#4ade80':'#f87171'}}">${{mf.dii_accumulating?'✅ YES':'❌ NO'}}</div></div>
+    </div>`;
+}}
+
+function _wplRenderNews(r) {{
+  const news=r.news||[];
+  if (!news.length) {{document.getElementById('wplDNews').innerHTML='<div style="color:#8b949e">No news found.</div>'; return;}}
+  document.getElementById('wplDNews').innerHTML = '<ul class="wpl-news-list">'+
+    news.map(n=>`<li class="wpl-news-item">
+      ${{n.link?`<a class="wpl-news-a" href="${{n.link}}" target="_blank" rel="noopener">${{n.title||'—'}}</a>`:(n.title||'—')}}
+      <div class="wpl-news-meta">${{n.source||''}} · ${{n.date||''}}</div>
+    </li>`).join('')+'</ul>';
+}}
+
+function _wplRenderPhasesBehav(r) {{
+  const pb=(r.pattern||{{}}).phase_behavior||[];
+  if (!pb.length) {{document.getElementById('wplDPhases').innerHTML='<div style="color:#8b949e">No phase data.</div>'; return;}}
+  const rows=pb.map(p=>{{
+    const pc=p.phase==='decline'?'wpl-phase-decline':p.phase==='recovery'?'wpl-phase-recovery':'wpl-phase-consolidation';
+    return `<tr>
+      <td><span class="wpl-phase-pill ${{pc}}" style="font-size:.65em">${{p.phase.toUpperCase()}}</span></td>
+      <td style="font-size:.75em">${{p.start_date}}</td><td style="font-size:.75em">${{p.end_date}}</td>
+      <td style="color:${{p.market_chg_pct>=0?'#4ade80':'#f87171'}};font-weight:700">${{p.market_chg_pct>=0?'+':''}}${{_wplFmt(p.market_chg_pct,1)}}%</td>
+      <td style="color:${{p.stock_chg_pct>=0?'#4ade80':'#f87171'}};font-weight:700">${{p.stock_chg_pct>=0?'+':''}}${{_wplFmt(p.stock_chg_pct,1)}}%</td>
+      <td style="color:${{p.excess_pct>=0?'#4ade80':'#f87171'}};font-weight:700">${{p.excess_pct>=0?'+':''}}${{_wplFmt(p.excess_pct,1)}}%</td>
+      <td style="font-size:.72em;color:#8b949e">${{p.quality||''}}</td>
+    </tr>`;
+  }}).join('');
+  document.getElementById('wplDPhases').innerHTML = `
+    <table class="wpl-phase-tbl">
+      <thead><tr><th>Phase</th><th>Start</th><th>End</th><th>Nifty</th><th>Stock</th><th>Excess RS</th><th>Behavior</th></tr></thead>
+      <tbody>${{rows}}</tbody>
+    </table>
+    <div style="margin-top:8px;font-size:.72em;color:#475569">Excess RS = Stock − Market. Positive during declines = RS Leader.</div>`;
+}}
+
+function wplExportCSV() {{
+  if (!_wplTable.length) return;
+  const h=['Symbol','Price','20d%','60d%','RS','ADR%','Stage','Pattern','Conviction','Action','Entry','Stop','T1','R:R','Setup'];
+  const rows=_wplTable.map(r=>[r.symbol,r.price,r.ret_20d,r.ret_60d,r.rs_score,r.adr_pct,r.stage,
+    (r.pattern||'').replace(/[^\w\s]/g,''),r.conviction,r.action,r.entry,r.stop,r.t1,r.rr_t1,r.setup
+  ].map(v=>v==null?'':String(v)).join(','));
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent([h.join(','),...rows].join('\\n'));
+  a.download='wpl_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}}
+
+// Auto-load symbols from page on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {{ wplLoadFromPage(); }});
+</script>
+
 <div class="main">
   <div class="signals-grid" id="signalsGrid">
     {rows_str}
