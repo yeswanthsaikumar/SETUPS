@@ -129,6 +129,12 @@ SECTOR_MAP = {
     "ELGI":"Cap Goods","GRINDMASTER":"Cap Goods","RITEFIL":"Cap Goods",
     "ISGEC":"Cap Goods","TRIVENIENG":"Cap Goods","TEXRAIL":"Cap Goods",
     "RIIL":"Cap Goods","PATELENG":"Cap Goods","KNRCON":"Cap Goods",
+    "DEEDEV":"Cap Goods","CGPOWER":"Cap Goods","GEPIL":"Cap Goods","INOXAIR":"Cap Goods",
+    "APARINDS":"Cap Goods","VOLTAMP":"Cap Goods","TDPOWERSYS":"Cap Goods","GRSE":"Cap Goods",
+    "MDL":"Cap Goods","COCHINSHIP":"Cap Goods","BEML":"Cap Goods","MAZDOCK":"Cap Goods",
+    "SKIPPER":"Cap Goods","KECL":"Cap Goods","KALPATPOWR":"Cap Goods","SANGHVI":"Cap Goods",
+    "ELGIEQUIP":"Cap Goods","KIRLOSBROS":"Cap Goods","POWERMECH":"Cap Goods","NRAIL":"Cap Goods",
+    "ESAB":"Cap Goods","HONAUT":"Cap Goods","3MINDIA":"Cap Goods",
     # Energy & Power
     "RELIANCE":"Energy","ONGC":"Energy","BPCL":"Energy","IOC":"Energy","HINDPETRO":"Energy",
     "GAIL":"Energy","COALINDIA":"Energy","NTPC":"Energy","POWERGRID":"Energy",
@@ -140,6 +146,8 @@ SECTOR_MAP = {
     "WAAREEENER":"Renewable","ACMESOLAR":"Renewable","ADANIENSOL":"Renewable",
     "ATHERENERG":"Renewable","PREMIERENE":"Renewable","ADANIGREEN":"Renewable",
     "SUZLON":"Renewable","WINDWORLD":"Renewable","KENERGY":"Renewable",
+    "INDIGRID":"Renewable","GREENKO":"Renewable","RATTANINDIA":"Renewable",
+    "WEBSOL":"Renewable","PREMIER":"Renewable","REGEN":"Renewable","AVAADA":"Renewable",
     # Chemicals / Specialty Chemicals
     "NAVINFLUOR":"Chemicals","NOCIL":"Chemicals","GUJALKALI":"Chemicals",
     "AETHER":"Chemicals","DCMSHRIRAM":"Chemicals","DENORA":"Chemicals",
@@ -150,10 +158,12 @@ SECTOR_MAP = {
     "PCBL":"Chemicals","SRF":"Chemicals","ATUL":"Chemicals","AAVAS":"Chemicals",
     "FLUOROCHEM":"Chemicals","CAMLIN":"Chemicals","BASF":"Chemicals",
     "SUDARSCHEM":"Chemicals","ALKYLAMINE":"Chemicals",
+    "ROSSARI":"Chemicals","TRANSPEK":"Chemicals","DEEPAKNTR":"Chemicals",
+    "EPIGRAL":"Chemicals","CHEMCON":"Chemicals","PAUSHAKLTD":"Chemicals",
     # Sugar
     "RENUKA":"Sugar","TRIVENI":"Sugar","BALRAMCHIN":"Sugar","DALMIASUG":"Sugar",
     "DHAMPURSUG":"Sugar","AVADHSUGAR":"Sugar","MAWANASUG":"Sugar","KMSUGAR":"Sugar",
-    "UTTAMSUGAR":"Sugar","UGARSUGAR":"Sugar","DWARKESH":"Sugar","DEEDEV":"Sugar",
+    "UTTAMSUGAR":"Sugar","UGARSUGAR":"Sugar","DWARKESH":"Sugar",
     "DHAMPUR":"Sugar","SIMBHAOLI":"Sugar","DCMSHRIRAM":"Sugar",
     # Textiles & Apparel
     "ARVIND":"Textiles","SANGAMIND":"Textiles","RUBYMILLS":"Textiles",
@@ -364,7 +374,7 @@ INDUSTRY_MAP = {
     # Sugar
     "RENUKA":"Sugar","TRIVENI":"Sugar","BALRAMCHIN":"Sugar","DALMIASUG":"Sugar",
     "DHAMPURSUG":"Sugar","AVADHSUGAR":"Sugar","MAWANASUG":"Sugar","KMSUGAR":"Sugar",
-    "UTTAMSUGAR":"Sugar","UGARSUGAR":"Sugar","DWARKESH":"Sugar","DEEDEV":"Sugar",
+    "UTTAMSUGAR":"Sugar","UGARSUGAR":"Sugar","DWARKESH":"Sugar",
     "DHAMPUR":"Sugar","SIMBHAOLI":"Sugar",
     # Textiles - Spinning / Yarn
     "NITINSPIN":"Textiles - Spinning","NAHARSPING":"Textiles - Spinning",
@@ -394,12 +404,15 @@ INDUSTRY_MAP = {
     "ELGI":"Compressors","GRINDMASTER":"Grinders & Machines",
     "ISGEC":"Heavy Engineering","TRIVENIENG":"Engineering",
     "TEXRAIL":"Railway Equipment","RIIL":"Engineering","PATELENG":"EPC",
-    "KNRCON":"Roads & Highways","RITEFIL":"Filtration",
+    "DEEDEV":"Industrial Piping & Pressure Vessels","KNRCON":"Roads & Highways","RITEFIL":"Filtration",
     # Defense
     "DYNAMATECH":"Aerospace & Defense","MTARTECH":"Aerospace & Defense",
     "DATAPATTNS":"Defense Electronics","HAL":"Aerospace & Defense",
     "BDSL":"Defense","PARAS":"Defense","MIDHANI":"Aerospace Alloys",
     "ASTRA":"Defense","IDEAFORGE":"Drones","ZEN":"Defense",
+    "GRSE":"Shipbuilding Defense","COCHINSHIP":"Shipbuilding","MDL":"Submarine Builder",
+    "ROSSELL":"Aerospace Components","ELCOMPONENT":"Defense Electronics",
+    "BEML":"Heavy Engineering Defense","MAZDOCK":"Shipbuilding",
     # Infrastructure
     "ADANIENT":"Diversified Infra","ADANIPORTS":"Ports & Logistics",
     "L&T":"EPC & Construction","IRB":"Roads & Highways",
@@ -411,6 +424,44 @@ INDUSTRY_MAP = {
     "GPPL":"Ports & Logistics","CONCOR":"Rail Logistics","BLUEDART":"Air Logistics",
     "SHREYAS":"Shipping & Logistics","TCI":"Road Logistics","SCI":"Shipping",
     "DELHIVERY":"Last Mile Logistics","MAHLOG":"Logistics",
+    "PSPPROJECT":"EPC","LIKHITHA":"Pipeline EPC","WABAG":"Water Treatment",
+    "ALLCARGO":"Freight Logistics","GATI":"Road Logistics","SNOWMAN":"Cold Chain",
+    "INDIAGRID":"Power Transmission InvIT","KALINDEE":"Rail Electrification",
+    "APOLLOPIPE":"CPVC Pipes","PRINCEPIPE":"CPVC Pipes",
+    # Cement
+    "INDIACEM":"Cement","JKCEMENT":"Cement","RAMCOCEM":"Cement",
+    "HEIDELBERG":"Cement","BIRLACORP":"Cement","SHREECEM":"Cement",
+    "AMBUJACEM":"Cement","ACCIND":"Cement","DALMIACEM":"Cement",
+    "JSWCEM":"Cement","NUVOCO":"Cement","SANGHI":"Cement",
+    # Consumer - Retail / QSR / Hotels
+    "DMART":"Retail - Hypermarket","VMART":"Value Retail","TRENT":"Retail - Fashion",
+    "SPENCERS":"Retail","SHOPSTOP":"Retail - Dept Store",
+    "JUBLFOOD":"QSR - Domino's","DEVYANI":"QSR - KFC/Pizza Hut","WESTLIFE":"QSR - McDonald's",
+    "BARBEQUE":"Casual Dining","SPECIALITY":"Casual Dining","JUBILANT":"Diversified Consumer",
+    "INDHOTELS":"Hotels","EIHOTEL":"Hotels - Oberoi","LEMONTRE":"Budget Hotels",
+    "CHALET":"Hotels","TAJGVK":"Hotels","SAMHI":"Hotels","VENTIVE":"Hospitality",
+    "GMRINFRA":"Airports","INTERGLOBE":"Aviation","IRCTC":"Online Travel - Rail",
+    "EASEMYTRIP":"Online Travel","MAHINDHOLIDAY":"Resorts & Tourism","WONDERLA":"Amusement Parks",
+    # Consumer - Electronics / Appliances
+    "WHIRLPOOL":"Home Appliances","VOLTAS":"Air Conditioning","CROMPTON":"Consumer Electricals",
+    "ORIENTELEC":"Consumer Electricals","VGUARD":"Consumer Electricals","SYMPHONY":"Air Coolers",
+    "BAJAJELEC":"Consumer Electricals","HAVELLS":"Consumer Electricals",
+    "LLOYDS":"Air Conditioning","GODREJAP":"Home Appliances",
+    # Consumer - Jewellery & Accessories
+    "KALYANKJIL":"Jewellery","DPABHUSHAN":"Jewellery","GOLDIAM":"Jewellery",
+    "VAIBHAVGBL":"Jewellery","SENCO":"Jewellery","PCJEWELLER":"Jewellery",
+    "THANGAMAYL":"Jewellery","SKYGOLD":"Jewellery",
+    # Consumer - Tiles / Sanitaryware / Home
+    "CERA":"Sanitaryware","HINDWARE":"Sanitaryware","KAJARIACER":"Tiles",
+    "ASIANTILES":"Tiles","SOMANY":"Tiles","ORIENTBELL":"Tiles",
+    "GREENPANEL":"Wood Panels","CENTURYPLY":"Plywood","BOROSIL":"Glassware",
+    # Consumer - Footwear
+    "METRO":"Footwear","CAMPUS":"Footwear","BATA":"Footwear","RELAXO":"Footwear",
+    "LIBERTY":"Footwear","KHADIM":"Footwear",
+    # Media / Entertainment
+    "SAREGAMA":"Music & Content","PVRINOX":"Multiplex","NAZARA":"Gaming",
+    "DELTACORP":"Gaming & Casinos","SUNTV":"TV Broadcasting",
+    "ZEEL":"TV Broadcasting","NETWORK18":"TV Broadcasting",
     # Financial Services
     "BAJFINANCE":"Consumer Finance","BAJAJFINSV":"Insurance & Finance",
     "CHOLAFIN":"Vehicle Finance","M&MFIN":"Vehicle Finance",
@@ -423,6 +474,11 @@ INDUSTRY_MAP = {
     "5PAISA":"Stock Broking","IIFL":"NBFC","CREDITACC":"Microfinance",
     "KFINTECH":"Financial Technology","CAMS":"Financial Technology",
     "SBFC":"NBFC","REPCO":"Housing Finance",
+    "SPANDANA":"Microfinance","FUSION":"Microfinance","SATIN":"Microfinance",
+    "HDFCAMC":"Asset Management","ABSLAMC":"Asset Management","UTIAMC":"Asset Management",
+    "LICI":"Insurance - Life","GICRE":"Insurance - Reinsurance","NIACL":"Insurance - General",
+    "HDFCLIFE":"Insurance - Life","SBILIFE":"Insurance - Life","MAXHEALTH":"Hospitals",
+    "STARHEALTH":"Insurance - Health","CDSL":"Depository","IRFC":"Railway Finance",
     # Broking & Exchanges — grouped as Capital Markets for rally scanning
     "MCX":"Capital Markets","BSE":"Capital Markets",
     "ANANDRATHI":"Capital Markets",
