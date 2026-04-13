@@ -1,7 +1,8 @@
 # SETUPS System Status
 
-**Last Updated:** April 13, 2026  
-**Dashboard:** `output/market_breadth.html` · `output/trade_plans_live.html`
+**Last Updated:** April 14, 2026  
+**Dashboard:** `output/market_breadth.html` · `output/trade_plans_live.html`  
+**Trade Board:** http://localhost:8000/board
 
 ---
 
@@ -44,6 +45,54 @@ PSU Banks, Pharma, Metals, Real Estate, India Manufacturing, Sugar
 ### Phase 5 — Sector Rotation Tracker
 - Rotation Score per sector · ROTATING IN/OUT signals
 
+### Phase 7 — Trade Board (`/board`)
+Live position tracker with real-time P&L, mini charts, and scan signal import.
+
+**URL:** `http://localhost:8000/board`  
+**Data store:** `output/trade_board.json`
+
+#### Position Cards
+- 📈 Gain % + ₹ amount (from entry or exit price for closed trades)
+- **▲/▼ Day change chip** — live today's move (% and ₹) from previous close vs CMP
+- **EMA badge** — injected after mini chart loads: `Above MAs` / `EMA20 ⚠` / `Below MAs ⚠`
+- **Status-aware footer** — `⏱ Holding 14d` for open · `🛑 SL HIT · 7d` / `✅ T1 HIT · 5d` / `🏆 T3 HIT` for closed
+- Mini candlestick chart with EMA5/20/50 and entry/SL/target price lines
+
+#### Stats Bar (top)
+- **Positions** — open count / total / closed
+- **Day's P&L** — real-time sum of today's move across all open positions
+- **Total P&L** — unrealised (open) + realised (closed) combined
+- **Open Risk** — total ₹ at risk to stop-loss across open positions
+- **Locked Profit** — cumulative ₹ from T1/T2/T3 exits
+
+#### Position Detail Panel (click any card)
+- Full-size 90-day candlestick chart with EMA lines + entry/SL/T1/T2/T3 price lines
+- **Trade Plan grid** — T1/T2/T3 targets with Risk:Reward (e.g. `T2 · 2.4R`) and % from entry
+- **Risk summary** — risk/share × quantity = total ₹ at risk
+- **Today's Move** — `▲ 1.5% · ₹2,400` (open positions only)
+- Exit info for closed positions (exit price, exit date, hold duration)
+
+#### Scan Signals Drawer (📡 button)
+- Pulls latest `open_trades_india_daily_full_LATEST.json` (falls back to `vcp_hits_*`)
+- Shows setup, VOL %, and Dist % per signal
+- **One-click import** → pre-fills entry, SL, T1, T2, T3, setup, rating, notes into Add Modal
+
+#### Equity Curve + Performance Summary
+- Area chart of cumulative P&L across all closed trades
+- **Win Rate · Avg Win · Avg Loss · Expectancy** stats row
+
+#### API Endpoints
+| Endpoint | Description |
+|---|---|
+| `GET /board` | Trade Board HTML page |
+| `GET /api/trade-board/positions` | All positions enriched with CMP, gain, day change |
+| `POST /api/trade-board/positions` | Add a new position |
+| `PUT /api/trade-board/positions/{id}` | Update status, SL, exit price/date |
+| `DELETE /api/trade-board/positions/{id}` | Delete a position |
+| `GET /api/trade-board/chart/{symbol}` | OHLCV + EMA5/20/50 from cache |
+| `GET /api/trade-board/equity` | Equity curve + cumulative P&L |
+| `GET /api/trade-board/scan-signals` | Latest scan signals for quick import |
+
 ### Live Trades UI Enhancement
 - Added **Market Breadth ↗** and **Trade Plans ↗** quick links in Performance Tracker panel
 
@@ -54,16 +103,21 @@ PSU Banks, Pharma, Metals, Real Estate, India Manufacturing, Sugar
 
 ---
 
-## 📊 Current Market (April 13, 2026)
+## 📊 Current Market (April 14, 2026)
 - **Regime**: CORRECTION (Score: 37/100) · **Oscillator**: STRONG BUY (+9.6)
 - **Top Accelerating**: Packaging - Films, Renewable Energy, Defense Electronics, EV Vehicles, Shipbuilding
 - **Taxonomy**: 1,360 stocks · 380 industries · 24 sectors
 
 ## 🚀 How to Run
 ```bash
+# Start the full web console (includes Trade Board)
+source .venv/bin/activate && uvicorn apps.web.api.main:app --host 0.0.0.0 --port 8000
+
+# Open Trade Board
+open http://localhost:8000/board
+
 ./run_analysis_dashboards.sh                          # Full dashboards (all)
 python3 apps/python/cli/generate_breadth_dashboard.py # Breadth only (fast)
 python3 scripts/add_missing_stocks.py                 # Add new stocks to taxonomy
 python3 scripts/fix_misclassifications2.py            # Fix sector/industry errors
 ```
-

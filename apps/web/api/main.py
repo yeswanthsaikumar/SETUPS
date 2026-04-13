@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+import csv
 import json
 import os
 import subprocess
 import sys
 import threading
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,8 +22,11 @@ OUTPUT_DIR = ROOT / "output"
 CLI_DIR = ROOT / "apps" / "python" / "cli"
 PY_LIB_DIR = ROOT / "apps" / "python" / "lib"
 UI_INDEX = ROOT / "apps" / "web" / "ui" / "index.html"
+TRADE_BOARD_UI = ROOT / "apps" / "web" / "ui" / "trade_board.html"
 WEB_JOBS_DIR = OUTPUT_DIR / "web_jobs"
 PERF_TRACKER_JSON = OUTPUT_DIR / "performance_tracker.json"
+TRADE_BOARD_JSON = OUTPUT_DIR / "trade_board.json"   # ← new trade board store
+CACHE_DIR = ROOT / "cache"
 
 sys.path.insert(0, str(PY_LIB_DIR))
 from trade_plan_assistant import brief_as_json, build_scan_brief
@@ -68,6 +72,37 @@ class JobRecord(BaseModel):
     finished_at: str | None = None
     return_code: int | None = None
     log_file: str
+
+
+class TradeBoardPosition(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
+    symbol: str
+    name: str = ""
+    entry: float
+    quantity: int = 1
+    sl: float = 0.0
+    t1: float = 0.0
+    t2: float = 0.0
+    t3: float = 0.0
+    setup: str = ""
+    rating: str = ""
+    notes: str = ""
+    entry_date: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
+    status: Literal["OPEN","CLOSED","SL_HIT","T1_HIT","T2_HIT","T3_HIT"] = "OPEN"
+    exit_price: Optional[float] = None
+    exit_date: Optional[str] = None
+    tags: list[str] = Field(default_factory=list)
+
+class TradeBoardUpdate(BaseModel):
+    status: Optional[str] = None
+    exit_price: Optional[float] = None
+    exit_date: Optional[str] = None
+    sl: Optional[float] = None
+    t1: Optional[float] = None
+    t2: Optional[float] = None
+    t3: Optional[float] = None
+    notes: Optional[str] = None
+    tags: Optional[list[str]] = None
 
 
 class JobStore:
@@ -164,6 +199,13 @@ def _read_json_if_exists(path: Path) -> dict | list | None:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return None
+
+
+@app.get("/board")
+def trade_board_page() -> FileResponse:
+    if not TRADE_BOARD_UI.exists():
+        raise HTTPException(status_code=404, detail="Trade board UI not found")
+    return FileResponse(TRADE_BOARD_UI)
 
 
 @app.get("/")
@@ -676,3 +718,300 @@ def default_watchlist() -> dict:
             "Macro catalyst visible (earnings, sector tailwind, policy)",
         ],
     }
+
+
+# ── Trade Board Store ──────────────────────────────────────────────────────────
+
+_board_lock = threading.Lock()
+
+def _load_board() -> dict:
+    if not TRADE_BOARD_JSON.exists():
+        return {"version": 1, "positions": [], "created": datetime.now().isoformat()}
+    try:
+        return json.loads(TRADE_BOARD_JSON.read_text(encoding="utf-8"))
+    except Exception:
+        return {"version": 1, "positions": [], "created": datetime.now().isoformat()}
+
+def _save_board(data: dict) -> None:
+    data["lastUpdated"] = datetime.now().isoformat()
+    TRADE_BOARD_JSON.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+
+# ── Price / Chart helpers ──────────────────────────────────────────────────────
+
+def _read_ohlcv(symbol: str, days: int = 90) -> list[dict]:
+    """Read OHLCV from cache. Returns sorted list of dicts with date/open/high/low/close/volume."""
+    base = symbol.upper().replace(".NS", "").replace(".BO", "")
+    ns   = base + ".NS"
+    rows: list[dict] = []
+    for prefix in [ns, base]:
+        for suffix in ["_252", "_504", "_728", "_900", "_3528"]:
+            for fname in [f"{prefix}{suffix}.csv", f"{prefix}.NS{suffix}.csv"]:
+                p = CACHE_DIR / fname
+                if not p.exists():
+                    continue
+                try:
+                    with open(p, newline="", encoding="utf-8") as f:
+                        for row in csv.DictReader(f):
+                            try:
+                                rows.append({
+                                    "date": row.get("date","") or row.get("Date","") or row.get("Datetime",""),
+                                    "open":   float(row.get("open",  row.get("Open",  0)) or 0),
+                                    "high":   float(row.get("high",  row.get("High",  0)) or 0),
+                                    "low":    float(row.get("low",   row.get("Low",   0)) or 0),
+                                    "close":  float(row.get("close", row.get("Close", 0)) or 0),
+                                    "volume": float(row.get("volume",row.get("Volume",0)) or 0),
+                                })
+                            except Exception:
+                                pass
+                    if rows:
+                        break
+                except Exception:
+                    pass
+            if rows:
+                break
+        if rows:
+            break
+    rows = [r for r in rows if r["close"] > 0 and r["date"]]
+    rows.sort(key=lambda r: r["date"])
+    if days and len(rows) > days:
+        rows = rows[-days:]
+    return rows
+
+def _calc_ema(closes: list[float], period: int) -> list[Optional[float]]:
+    result: list[Optional[float]] = [None] * len(closes)
+    if len(closes) < period:
+        return result
+    k = 2.0 / (period + 1)
+    ema = sum(closes[:period]) / period
+    result[period - 1] = round(ema, 2)
+    for i in range(period, len(closes)):
+        ema = closes[i] * k + ema * (1 - k)
+        result[i] = round(ema, 2)
+    return result
+
+def _get_current_price(symbol: str) -> Optional[float]:
+    rows = _read_ohlcv(symbol, days=5)
+    return rows[-1]["close"] if rows else None
+
+def _get_price_info(symbol: str) -> tuple[Optional[float], Optional[float]]:
+    """Returns (cmp, prev_close) from cached OHLCV data."""
+    rows = _read_ohlcv(symbol, days=5)
+    if not rows:
+        return None, None
+    cmp = rows[-1]["close"]
+    prev_close = rows[-2]["close"] if len(rows) >= 2 else None
+    return cmp, prev_close
+
+def _compute_board_stats(positions: list[dict]) -> dict:
+    """Compute aggregate stats from positions list."""
+    open_pos = [p for p in positions if p.get("status") == "OPEN"]
+    closed_pos = [p for p in positions if p.get("status") not in ("OPEN",)]
+
+    total_invested = sum(
+        (p.get("entry", 0) * p.get("quantity", 1)) for p in open_pos
+    )
+    total_pl = 0.0
+    open_risk = 0.0
+    locked_profit = 0.0
+    day_pl = 0.0
+
+    for p in positions:
+        entry = p.get("entry", 0)
+        qty   = p.get("quantity", 1)
+        cmp   = p.get("cmp", entry)
+        exit_price = p.get("exit_price") or cmp
+        sl    = p.get("sl", 0)
+        status = p.get("status", "OPEN")
+
+        if status == "OPEN":
+            pl = (cmp - entry) * qty
+            total_pl += pl
+            if sl and sl < entry:
+                open_risk += (entry - sl) * qty
+            day_pl += p.get("dayChangeAmt", 0) or 0
+        else:
+            pl = (exit_price - entry) * qty
+            total_pl += pl
+            if status.startswith("T"):
+                locked_profit += pl
+
+    return {
+        "total_positions": len(positions),
+        "open_positions": len(open_pos),
+        "closed_positions": len(closed_pos),
+        "total_invested": round(total_invested, 2),
+        "total_pl": round(total_pl, 2),
+        "open_risk": round(open_risk, 2),
+        "locked_profit": round(locked_profit, 2),
+        "day_pl": round(day_pl, 2),
+    }
+
+
+@app.get("/api/trade-board")
+def trade_board_ui() -> FileResponse:
+    if not TRADE_BOARD_UI.exists():
+        raise HTTPException(status_code=404, detail="Trade board UI not found")
+    return FileResponse(TRADE_BOARD_UI)
+
+@app.get("/api/trade-board/summary")
+def trade_board_summary() -> dict:
+    with _board_lock:
+        data = _load_board()
+        positions = data.get("positions", [])
+    # Enrich with CMP and day change for open positions
+    for p in positions:
+        entry = p.get("entry", 0) or 0
+        qty   = p.get("quantity", 1) or 1
+        if p.get("status") == "OPEN":
+            cmp, prev_close = _get_price_info(p.get("symbol", ""))
+            if cmp:
+                p["cmp"] = cmp
+                p["gainPct"] = round((cmp - entry) / entry * 100, 2) if entry else 0
+                p["gainAmt"] = round((cmp - entry) * qty, 2) if entry else 0
+            if cmp and prev_close and prev_close > 0:
+                p["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
+                p["dayChangeAmt"] = round((cmp - prev_close) * qty, 2)
+        elif p.get("exit_price") and entry:
+            ep = float(p["exit_price"])
+            p["gainPct"] = round((ep - entry) / entry * 100, 2)
+            p["gainAmt"] = round((ep - entry) * qty, 2)
+    stats = _compute_board_stats(positions)
+    return {"stats": stats, "lastUpdated": data.get("lastUpdated")}
+
+@app.get("/api/trade-board/positions")
+def trade_board_positions(status: str = "") -> dict:
+    with _board_lock:
+        data = _load_board()
+        positions = list(data.get("positions", []))
+    # Enrich with current price and gain
+    for p in positions:
+        entry = p.get("entry", 0) or 0
+        qty   = p.get("quantity", 1) or 1
+        if p.get("status") == "OPEN":
+            cmp, prev_close = _get_price_info(p.get("symbol", ""))
+            if cmp:
+                p["cmp"] = round(cmp, 2)
+                p["gainPct"] = round((cmp - entry) / entry * 100, 2) if entry else 0
+                p["gainAmt"] = round((cmp - entry) * qty, 2) if entry else 0
+            if cmp and prev_close and prev_close > 0:
+                p["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
+                p["dayChangeAmt"] = round((cmp - prev_close) * qty, 2)
+        elif p.get("exit_price") and entry:
+            # Compute final gain for closed/stopped positions
+            ep = float(p["exit_price"])
+            p["gainPct"] = round((ep - entry) / entry * 100, 2)
+            p["gainAmt"] = round((ep - entry) * qty, 2)
+    if status:
+        positions = [p for p in positions if p.get("status") == status]
+    # Sort: OPEN first, then by gain desc
+    positions.sort(key=lambda p: (p.get("status") != "OPEN", -float(p.get("gainPct", 0) or 0)))
+    stats = _compute_board_stats(positions)
+    return {"positions": positions, "stats": stats, "lastUpdated": data.get("lastUpdated")}
+
+@app.post("/api/trade-board/positions")
+def trade_board_add_position(position: TradeBoardPosition) -> dict:
+    pos_dict = position.model_dump()
+    with _board_lock:
+        data = _load_board()
+        positions = data.get("positions", [])
+        positions.append(pos_dict)
+        data["positions"] = positions
+        _save_board(data)
+    return {"position": pos_dict, "ok": True}
+
+@app.put("/api/trade-board/positions/{position_id}")
+def trade_board_update_position(position_id: str, update: TradeBoardUpdate) -> dict:
+    with _board_lock:
+        data = _load_board()
+        positions = data.get("positions", [])
+        for i, p in enumerate(positions):
+            if p.get("id") == position_id:
+                upd = {k: v for k, v in update.model_dump().items() if v is not None}
+                positions[i].update(upd)
+                data["positions"] = positions
+                _save_board(data)
+                return {"position": positions[i], "ok": True}
+    raise HTTPException(status_code=404, detail=f"Position not found: {position_id}")
+
+@app.delete("/api/trade-board/positions/{position_id}")
+def trade_board_delete_position(position_id: str) -> dict:
+    with _board_lock:
+        data = _load_board()
+        positions = data.get("positions", [])
+        before = len(positions)
+        positions = [p for p in positions if p.get("id") != position_id]
+        if len(positions) == before:
+            raise HTTPException(status_code=404, detail=f"Position not found: {position_id}")
+        data["positions"] = positions
+        _save_board(data)
+    return {"ok": True, "deleted": position_id}
+
+@app.get("/api/trade-board/chart/{symbol}")
+def trade_board_chart(symbol: str, days: int = 90) -> dict:
+    rows = _read_ohlcv(symbol, days=max(days, 30))
+    if not rows:
+        raise HTTPException(status_code=404, detail=f"No price data for {symbol}")
+    closes = [r["close"] for r in rows]
+    ema5   = _calc_ema(closes, 5)
+    ema20  = _calc_ema(closes, 20)
+    ema50  = _calc_ema(closes, 50)
+    avg_vol = sum(r["volume"] for r in rows[-20:]) / 20 if len(rows) >= 20 else 0
+    for i, r in enumerate(rows):
+        r["ema5"]  = ema5[i]
+        r["ema20"] = ema20[i]
+        r["ema50"] = ema50[i]
+        r["volRatio"] = round(r["volume"] / avg_vol, 2) if avg_vol else None
+    return {
+        "symbol": symbol, "days": len(rows), "avgVol20": round(avg_vol, 0),
+        "cmp": closes[-1], "candles": rows
+    }
+
+@app.get("/api/trade-board/equity")
+def trade_board_equity() -> dict:
+    """Compute equity curve from closed+open positions."""
+    with _board_lock:
+        data = _load_board()
+        positions = data.get("positions", [])
+    curve = []
+    total = 0.0
+    for p in sorted(positions, key=lambda x: x.get("exit_date") or x.get("entry_date") or ""):
+        entry = p.get("entry", 0); qty = p.get("quantity", 1)
+        status = p.get("status", "OPEN")
+        if status != "OPEN":
+            exit_p = p.get("exit_price") or entry
+            pl = (exit_p - entry) * qty
+            total += pl
+            curve.append({
+                "date": p.get("exit_date") or p.get("entry_date"),
+                "symbol": p.get("symbol",""),
+                "pl": round(pl, 2),
+                "cumPl": round(total, 2),
+                "status": status
+            })
+    return {"curve": curve, "totalPl": round(total, 2)}
+
+@app.get("/api/trade-board/scan-signals")
+def trade_board_scan_signals(market: str = "india", timeframe: str = "daily") -> dict:
+    """Return top open trade signals from scan output for quick import."""
+    suffix = f"{market}_{timeframe}_full"
+    # Try open_trades first, then vcp_hits as fallback
+    candidates = [
+        OUTPUT_DIR / f"open_trades_{suffix}_LATEST.json",
+        OUTPUT_DIR / f"vcp_hits_{suffix}_LATEST.json",
+    ]
+    for json_path in candidates:
+        if not json_path.exists():
+            continue
+        try:
+            signals = json.loads(json_path.read_text(encoding="utf-8"))
+            if isinstance(signals, list) and signals:
+                # Normalize score field (may be "rankingScore" or "score", as string or float)
+                for s in signals:
+                    if "rankingScore" not in s:
+                        s["rankingScore"] = s.get("score", 0)
+                signals.sort(key=lambda x: -float(x.get("rankingScore") or x.get("score") or 0))
+                return {"signals": signals[:30], "total": len(signals), "source": json_path.name}
+        except Exception:
+            pass
+    return {"signals": [], "total": 0}
+

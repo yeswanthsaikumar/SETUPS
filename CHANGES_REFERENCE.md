@@ -302,5 +302,140 @@ Regime: ✅ Complete metrics
 
 ---
 
+## 3. Trade Board Changes — April 14, 2026
+
+### Backend (`apps/web/api/main.py`)
+
+#### Change #1: Day P&L helper — `_get_price_info()`
+**BEFORE:**
+```python
+def _get_current_price(symbol: str) -> Optional[float]:
+    rows = _read_ohlcv(symbol, days=5)
+    return rows[-1]["close"] if rows else None
+```
+
+**AFTER:**
+```python
+def _get_current_price(symbol: str) -> Optional[float]:
+    rows = _read_ohlcv(symbol, days=5)
+    return rows[-1]["close"] if rows else None
+
+def _get_price_info(symbol: str) -> tuple[Optional[float], Optional[float]]:
+    """Returns (cmp, prev_close) from cached OHLCV data."""
+    rows = _read_ohlcv(symbol, days=5)
+    if not rows:
+        return None, None
+    return rows[-1]["close"], rows[-2]["close"] if len(rows) >= 2 else None
+```
+
+---
+
+#### Change #2: `_compute_board_stats()` — live day_pl
+**BEFORE:** `day_pl = 0.0` (never computed)
+
+**AFTER:**
+```python
+day_pl += p.get("dayChangeAmt", 0) or 0   # summed per open position
+```
+
+---
+
+#### Change #3: `trade_board_positions()` — closed gain + day change
+**BEFORE:**
+```python
+for p in positions:
+    if p.get("status") == "OPEN":
+        cmp = _get_current_price(p.get("symbol",""))
+        if cmp:
+            p["gainPct"] = round((cmp - p["entry"]) / p["entry"] * 100, 2)
+            p["gainAmt"] = round((cmp - p["entry"]) * p.get("quantity", 1), 2)
+```
+
+**AFTER:**
+```python
+for p in positions:
+    entry = p.get("entry", 0) or 0
+    qty   = p.get("quantity", 1) or 1
+    if p.get("status") == "OPEN":
+        cmp, prev_close = _get_price_info(p.get("symbol", ""))
+        if cmp:
+            p["gainPct"] = round((cmp - entry) / entry * 100, 2)
+            p["gainAmt"] = round((cmp - entry) * qty, 2)
+        if cmp and prev_close and prev_close > 0:
+            p["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
+            p["dayChangeAmt"] = round((cmp - prev_close) * qty, 2)
+    elif p.get("exit_price") and entry:          # ✅ NEW: closed position gain
+        ep = float(p["exit_price"])
+        p["gainPct"] = round((ep - entry) / entry * 100, 2)
+        p["gainAmt"] = round((ep - entry) * qty, 2)
+```
+
+---
+
+#### Change #4: `trade_board_scan_signals()` — fallback + score normalisation
+**BEFORE:** Only tried `open_trades_*_LATEST.json`; failed silently if missing.
+
+**AFTER:** Falls back to `vcp_hits_*_LATEST.json`; normalises `score` field to `rankingScore`.
+
+---
+
+### Frontend (`apps/web/ui/trade_board.html`)
+
+#### Change #1: Day change chip on card
+```javascript
+// Added to card-gain div (OPEN positions only)
+const dayChgHtml = (p.status === 'OPEN' && dayChg != null)
+  ? `<div class="card-gain-day ${dayChg>=0?'gain-pos':'gain-neg'}">${dayChg>=0?'▲':'▼'} ${Math.abs(dayChg).toFixed(1)}% today</div>`
+  : '';
+```
+
+#### Change #2: Status-aware card footer
+```javascript
+// BEFORE: always "Holding Xd"
+// AFTER:
+const footerText = p.status === 'OPEN'
+  ? `⏱ Holding ${days}d`
+  : `${statusIcons[p.status]} ${p.status.replace('_',' ')} · ${holdDays}d`;
+```
+
+#### Change #3: EMA badge injected post-chart
+After chart data loads in `renderMiniChart()`:
+```javascript
+const aboveEma5  = cmpNow > last.ema5;
+const aboveEma20 = last.ema20 ? cmpNow > last.ema20 : true;
+let maCls   = aboveEma5 && aboveEma20 ? 'ma-safe' : aboveEma20 ? 'ma-warn' : 'ma-danger';
+let maLabel = aboveEma5 && aboveEma20 ? 'Above MAs' : aboveEma5 ? 'EMA20 ⚠' : 'Below MAs ⚠';
+// Badge appended to #badges-{id} div in the card
+```
+
+#### Change #4: Detail panel — Trade Plan with R:R
+```javascript
+const risk = sl > 0 ? entry - sl : 0;
+const rrT1 = risk > 0 && p.t1 ? ((p.t1 - entry) / risk).toFixed(1) : null;
+// Renders: T2 · 2.4R  |  ₹478  |  +12.3% from entry
+```
+
+#### Change #5: `prefillFromSignal()` — T1/T2/T3 mapping
+```javascript
+// BEFORE: only entry + sl
+// AFTER:
+const t1 = parseFloat(s.T1||s.t1||0) || '';   // scan JSON uses uppercase T1
+const t2 = parseFloat(s.T2||s.t2||0) || '';
+const t3 = parseFloat(s.T3||s.t3||0) || '';
+openAddModal({ symbol, entry, sl, t1, t2, t3, setup, rating, notes });
+```
+
+#### Change #6: Closed trades performance summary
+```javascript
+const winRate    = trades.length ? (wins.length / trades.length * 100) : 0;
+const avgWin     = wins.length ? wins.reduce((s,t)=>s+t.pl,0)/wins.length : 0;
+const avgLoss    = losses.length ? losses.reduce((s,t)=>s+t.pl,0)/losses.length : 0;
+const expectancy = winRate/100 * avgWin + (1-winRate/100) * avgLoss;
+// Rendered as: Win Rate · Avg Win · Avg Loss · Expectancy
+```
+
+---
+
+✅ **All Trade Board changes complete and verified (server live at http://localhost:8000/board)**
 ✅ **All changes complete and verified!**
 

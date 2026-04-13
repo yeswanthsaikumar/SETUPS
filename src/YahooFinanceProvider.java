@@ -50,14 +50,15 @@ public class YahooFinanceProvider implements MarketDataProvider {
             return cachedFresh;
         }
 
-        // 2. Any existing cache file with enough bars (avoids unnecessary network round-trips)
-        //    Prefer the smallest adequate file to keep I/O minimal.
-        List<Candle> existing = readBestExistingCache(symbol, lookbackDays);
-        if (!existing.isEmpty()) {
-            return existing;
+        // 2. Any existing FRESH cache file with enough bars (avoids unnecessary network round-trips)
+        //    Only returns data if the candidate file was modified within cacheTtl — stale files are
+        //    skipped here so they don't suppress the network fetch below.
+        List<Candle> existingFresh = readBestExistingCache(symbol, lookbackDays, true);
+        if (!existingFresh.isEmpty()) {
+            return existingFresh;
         }
 
-        // 3. Network fetch (only when no usable cache exists at all)
+        // 3. Network fetch (exact-size file is stale or missing; no fresh alternative found)
         Exception lastError = null;
         for (int attempt = 1; attempt <= retries; attempt++) {
             try {
@@ -72,8 +73,8 @@ public class YahooFinanceProvider implements MarketDataProvider {
             }
         }
 
-        // 4. Stale exact-size cache as last resort
-        List<Candle> stale = readCache(cacheFile, false);
+        // 4. Stale cache of any size as last resort (graceful degradation when network fails)
+        List<Candle> stale = readBestExistingCache(symbol, lookbackDays, false);
         if (!stale.isEmpty()) {
             return stale;
         }
@@ -83,10 +84,12 @@ public class YahooFinanceProvider implements MarketDataProvider {
 
     /**
      * Scan the cache directory for any file matching {@code SYMBOL_N.csv}.
-     * Return the last {@code lookbackDays} candles from the smallest file that has enough bars,
-     * falling back to the largest available file if none meet the minimum.
+     * When {@code requireFresh=true}, only files modified within cacheTtl are considered —
+     * this prevents stale large cache files from blocking the network refresh path.
+     * When {@code requireFresh=false}, any file is accepted (used as last-resort fallback).
+     * Returns the last {@code lookbackDays} candles from the smallest adequate file.
      */
-    private List<Candle> readBestExistingCache(String symbol, int lookbackDays) {
+    private List<Candle> readBestExistingCache(String symbol, int lookbackDays, boolean requireFresh) {
         String prefix = symbol.toUpperCase() + "_";
         List<Path> candidates = new ArrayList<>();
         try (var stream = Files.list(cacheDir)) {
@@ -99,6 +102,21 @@ public class YahooFinanceProvider implements MarketDataProvider {
         }
         if (candidates.isEmpty()) {
             return List.of();
+        }
+
+        // When freshness is required, discard files older than cacheTtl
+        if (requireFresh) {
+            Instant cutoff = Instant.now().minus(cacheTtl);
+            candidates.removeIf(p -> {
+                try {
+                    return Files.getLastModifiedTime(p).toInstant().isBefore(cutoff);
+                } catch (IOException e) {
+                    return true; // can't read mtime → treat as stale
+                }
+            });
+            if (candidates.isEmpty()) {
+                return List.of();
+            }
         }
 
         // Sort by the numeric suffix ascending (smallest file first = least I/O)
