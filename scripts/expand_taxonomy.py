@@ -98,13 +98,13 @@ NEW_STOCKS = [
     ("PLASTIBLEN","Infra","Pipes & Fittings"),
 
     # ── TELECOM ──────────────────────────────────────────────────────────────
-    ("BHARTIARTL","IT","Telecom Services"),
-    ("IDEA","IT","Telecom Services"),
-    ("RAILTEL","IT","Telecom Infrastructure"),
-    ("TATACOMM","IT","Telecom Services"),
-    ("TTML","IT","Telecom Services"),
-    ("INDUS","IT","Telecom Infrastructure"),
-    ("GTLINFRA","IT","Telecom Infrastructure"),
+    ("BHARTIARTL","Telecom","Telecom Services"),
+    ("IDEA","Telecom","Telecom Services"),
+    ("RAILTEL","Telecom","Telecom Infrastructure"),
+    ("TATACOMM","Telecom","Telecom Services"),
+    ("TTML","Telecom","Telecom Services"),
+    ("INDUS","Telecom","Telecom Infrastructure"),
+    ("GTLINFRA","Telecom","Telecom Infrastructure"),
 
     # ── OIL & GAS ────────────────────────────────────────────────────────────
     ("PETRONET","Energy","Gas Distribution"),
@@ -136,12 +136,12 @@ NEW_STOCKS = [
     ("PVRINOX","Consumer","Multiplex"),
     ("TV18BRDCST","Consumer","Media & Entertainment"),
     ("NETWORK18","Consumer","Media & Entertainment"),
-    ("HATHWAY","Consumer","Cable TV"),
+    ("HATHWAY","Telecom","Cable TV & Broadband"),  # Hathway = cable TV & broadband provider; NOT Consumer sector
     ("SAREGAMA","Consumer","Music & Media"),
     ("TIPSINDLTD","Consumer","Music & Media"),
     ("INOXLEIS","Consumer","Multiplex"),
-    ("NXTDIGITAL","Consumer","Cable TV"),
-    ("GTPL","Consumer","Cable TV"),
+    ("NXTDIGITAL","Telecom","Cable TV"),  # NXTDIGITAL = cable TV distribution; NOT Consumer
+    ("GTPL","Telecom","Cable TV & Broadband"),  # GTPL Hathway = cable & broadband; NOT Consumer
 
     # ── PHARMA / HEALTHCARE ──────────────────────────────────────────────────
     ("ABBOTINDIA","Pharma","Pharma Formulations"),
@@ -253,7 +253,7 @@ NEW_STOCKS = [
     ("HEXAWARE","IT","IT Services"),
     ("BIRLASOFT","IT","IT Services"),
     ("CYIENT","IT","IT Engineering"),
-    ("RAMCOIND","IT","IT Products"),
+    ("RAMCOIND","Infra","Building Materials"),  # Ramco Industries = fiber cement boards; Ramco Systems (RAMCOSYS) is the IT entity
     ("ZENSAR","IT","IT Services"),
     ("NIIT","IT","IT Education"),
     ("NIITTECH","IT","IT Services"),
@@ -272,7 +272,7 @@ NEW_STOCKS = [
 
     # ── ELECTRONICS ───────────────────────────────────────────────────────────
     ("FSL","Electronics","Semiconductors"),
-    ("BOROSIL","Electronics","Electronic Components"),
+    ("BOROSIL","Consumer","Glassware"),  # Borosil Limited = consumer glassware brand; NOT electronic components
     ("TEJAS","Electronics","Optical Networking"),
 
     # ── INFRA / RAILWAY ───────────────────────────────────────────────────────
@@ -474,7 +474,7 @@ NEW_STOCKS = [
     ("FINOLEX","Cables","Cables & Wires"),
     ("STLTECH","Cables","Optical Fiber Cables"),
     ("HFCL","Cables","Optical Fiber Cables"),
-    ("VOLTAMP","Cables","Transformers"),
+    ("VOLTAMP","Cap Goods","Transformers"),  # Voltamp Transformers = capital goods; NOT Cables
     ("NAVINFLUOR","Chemicals","Specialty Chemicals - Fluorine"),
     ("SRF","Chemicals","Specialty Chemicals"),
     ("FLUOROCHEM","Chemicals","Specialty Chemicals - Fluorine"),
@@ -514,7 +514,7 @@ NEW_STOCKS = [
     ("NMDC","Metals","Metal & Mining"),
     ("MSTCLTD","Metals","Metal & Mining"),
     ("L&T","Infra","EPC & Construction"),
-    ("BHEL","Electronics","Heavy Engineering"),
+    ("BHEL","Cap Goods","Heavy Engineering"),  # Bharat Heavy Electricals = capital goods; NOT Electronics sector
     ("THERMAX","Cap Goods","Heat Exchange & Boilers"),
     ("CUMMINSIND","Cap Goods","Engines & Compressors"),
     ("KIRLOSENG","Cap Goods","Pumps & Compressors"),
@@ -705,7 +705,7 @@ NEW_STOCKS = [
     ("COLORMASTER","Chemicals","Specialty Chemicals - Dyes"),
     ("BEPL","Chemicals","Specialty Chemicals"),
     ("BASF","Chemicals","Specialty Chemicals"),
-    ("AEGISLOG","Chemicals","Specialty Chemicals"),
+    ("AEGISLOG","Shipping","Logistics"),  # AEGIS Logistics = LPG/petroleum bulk liquid logistics; NOT chemicals
     ("LINCOLNCAP","Chemicals","Specialty Chemicals"),
     ("ATAM","Chemicals","Industrial Gases"),
     ("HINDUSTAN","Chemicals","Industrial Gases"),
@@ -726,16 +726,16 @@ NEW_STOCKS = [
     ("ELIN","Electronics","Electronic Components"),
     ("PGEL","Electronics","Electronic Components"),
     ("AVALON","Electronics","Electronic Components"),
-    ("INOXINDIA","Electronics","Electronic Components"),
+    ("INOXINDIA","Cap Goods","Industrial Gases Equipment"),  # INOX India = cryogenic tanks/industrial gas storage; NOT electronic components
     ("ELCOMPCORP","Electronics","Electronic Components"),
     ("SGIL","Electronics","Electronic Components"),
-    ("VIMTALABS","Electronics","Electronic Components"),
+    ("VIMTALABS","Pharma","Testing Labs"),  # Vimta Labs = pharma/food/water analytical testing lab; NOT electronic components
     ("MOSCHIP","Electronics","Semiconductors"),
     ("SPEL","Electronics","Semiconductors"),
     ("AXISCADES","Electronics","IT Engineering"),
-    ("TDPOWERSYS","Electronics","Electrical Equipment"),
-    ("POWERINDIA","Electronics","Electrical Equipment"),
-    ("VOLTAMP","Electronics","Transformers"),
+    ("TDPOWERSYS","Cap Goods","Alternators"),  # TD Power Systems = generators & alternators; NOT Electronics
+    ("POWERINDIA","Cap Goods","Electrical Equipment"),  # Hitachi Energy India = capital goods electrical equipment; NOT Electronics
+    ("VOLTAMP","Cap Goods","Transformers"),  # Voltamp Transformers = capital goods; NOT Electronics
     ("BSE","Financials","Capital Markets"),
     ("SAMMAANCAP","Financials","Capital Markets"),
     ("ONELIFECAP","Financials","Capital Markets"),
@@ -799,7 +799,7 @@ NEW_STOCKS = [
     ("TRIGYN","IT","IT Services"),
     ("ZENSARTECH","IT","IT Services"),
     ("INTELLECT","IT","IT Products"),
-    ("RAMCOIND","IT","IT Products"),
+    ("RAMCOIND","Infra","Building Materials"),  # Ramco Industries = fiber cement/asbestos cement products; NOT IT (Ramco Systems/RAMCOSYS is the IT company)
     ("NUCLEUS","IT","IT Products"),
     ("SUBEX","IT","IT Products"),
     ("ONMOBILE","IT","IT Products"),
@@ -809,7 +809,7 @@ NEW_STOCKS = [
     ("AXISCADES","Electronics","IT Engineering"),
     ("ECLERX","IT","BPO / KPO"),
     ("NIIT","IT","IT Education"),
-    ("APARINDS","Auto","Cables & Wires"),
+    ("APARINDS","Cables","Cables & Wires"),  # APAR Industries = electrical conductors, cables & transformer oils; NOT Auto sector
     ("LUMAXTECH","Auto","Auto Ancillaries"),
     ("TIINDIA","Auto","Auto Ancillaries"),
     ("TIMETECHNO","Auto","Auto Ancillaries"),
@@ -835,8 +835,8 @@ NEW_STOCKS = [
     ("JAYAGROGN","Chemicals","Specialty Chemicals - Agri"),
     ("DEEPAKFERT","Chemicals","Agri Chemicals & Fertilisers"),
     ("DBOL","Other","Other"),
-    ("TVSHLTD","Banking","Regional Banks"),
-    ("INDOTHAI","Banking","Regional Banks"),
+    ("TVSHLTD","Financials","Holding Company"),  # TVS Holdings = holding/investment company for TVS Group; NOT a bank
+    ("INDOTHAI","Financials","Stock Broking"),  # Indo Thai Securities = stock brokerage firm; NOT a bank
     ("BIKAJI","FMCG","FMCG - Foods"),
     ("DEVYANI","FMCG","QSR"),
     ("JUBLFOOD","FMCG","QSR"),
@@ -906,7 +906,7 @@ BATCH2 = [
     ("JSFB","Banking","Small Finance Banks"),
     ("CAPITALSFB","Banking","Small Finance Banks"),
     ("NAINITALBNK","Banking","Regional Banks"),
-    ("DBCORP","Banking","Regional Banks"),
+    ("DBCORP","Consumer","Media & Entertainment"),  # DB Corp = Dainik Bhaskar media group; NOT a bank
     ("DCBBANK","Banking","Private Banks"),
     ("RBLBANK","Banking","Private Banks"),
     ("CSBBANK","Banking","Private Banks"),
@@ -1126,7 +1126,7 @@ BATCH2 = [
     # ── CAPITAL GOODS / ENGINEERING ─────────────────────────────────────────
     ("GEPIL","Cap Goods","Industrial Gases"),
     ("INOXAIR","Cap Goods","Industrial Gases"),
-    ("APARINDS","Cap Goods","Electrical Equipment"),
+    ("APARINDS","Cables","Cables & Wires"),  # APAR Industries = conductors, cables, transformer oil; NOT Cap Goods
     ("VOLTAMP","Cap Goods","Transformers"),
     ("HITECHCORP","Cap Goods","Electrical Equipment"),
     ("TDPOWERSYS","Cap Goods","Alternators"),
@@ -1241,8 +1241,8 @@ BATCH2 = [
     ("PURAVANK","RealEstate","Residential RE"),
     ("MAHLIFE","RealEstate","Residential RE"),
     ("KOLTEPATIL","RealEstate","Residential RE"),
-    ("ARVIND","RealEstate","Residential RE"),
-    ("CENTURYTEX","RealEstate","Residential RE"),
+    ("ARVIND","Textiles","Textiles - Apparel"),  # Arvind Limited = textile conglomerate; Arvind SmartSpaces (ARVSMART) is the RE arm, NOT ARVIND itself
+    ("CENTURYTEX","Textiles","Textiles - Apparel"),  # Century Textiles & Industries = textiles/building products; NOT Real Estate (Birla Estates is subsidiary)
     ("SUNTECK","RealEstate","Residential RE"),
     ("ARVSMART","RealEstate","Residential RE"),
     ("GODREJPROP","RealEstate","Residential RE"),
@@ -1271,7 +1271,7 @@ BATCH2 = [
     ("RSWM","Textiles","Textiles - Spinning"),
     ("OWM","Textiles","Woolen Mills"),
     ("BOMBDYING","Textiles","Textiles - Processing"),
-    ("ANUP","Textiles","Textiles"),
+    ("ANUP","Cap Goods","Engineering"),  # ANUP Engineering = pressure vessels & heat exchangers for petrochemicals; NOT Textiles
     ("SUTLEJ","Textiles","Textiles - Spinning"),
     ("DPABHUSHAN","Consumer","Jewellery"),
     ("GOLDIAM","Consumer","Jewellery"),

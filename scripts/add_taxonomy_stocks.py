@@ -74,7 +74,7 @@ NEW_STOCKS = [
     # Energy - missing
     ("INDIGRID",    "Energy",       "Power Transmission",               ""),
     # IT - missing
-    ("VINDHYATEL",  "IT",           "Telecom Infrastructure",           ""),
+    ("VINDHYATEL",  "Cables",       "Optical Fibre",                    ""),  # Vindhya Telelinks = OFC; NOT IT
     # Sugar - missing
     ("SHREERENUKA", "Sugar",        "Sugar",                            ""),
     # Agri - missing

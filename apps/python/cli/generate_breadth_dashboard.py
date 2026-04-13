@@ -294,7 +294,7 @@ CUSTOM_THEMES: dict[str, dict] = {
 
 def _load_prices(ticker: str) -> list[dict]:
     best: list[dict] = []
-    for suffix in ["_900", "_728", "_504", "_252"]:
+    for suffix in ["_3528", "_900", "_728", "_504", "_252", "_60"]:
         for name in (f"{ticker}.NS{suffix}.csv", f"{ticker}{suffix}.csv"):
             p = CACHE_DIR / name
             if not p.exists():
@@ -318,7 +318,7 @@ def _load_prices(ticker: str) -> list[dict]:
 
 
 def _load_nifty() -> list[float]:
-    for suffix in ["_900", "_728", "_504", "_252"]:
+    for suffix in ["_3528", "_900", "_728", "_504", "_252"]:
         p = CACHE_DIR / f"^NSEI{suffix}.csv"
         if not p.exists():
             continue
@@ -439,7 +439,22 @@ def compute_theme_metrics(theme_name: str, cfg: dict, nifty_closes: list[float])
         })
 
     if tracked == 0:
-        return None
+        # Still return something useful with config stocks (for modal)
+        all_modal = [{"ticker": t, "above20": False, "last": None,
+                      "r1m": None, "r3m": None, "rs3m": None, "no_data": True}
+                     for t in stocks]
+        return {
+            "theme": theme_name, "emoji": cfg.get("emoji","📊"),
+            "color": cfg.get("color","#58a6ff"), "description": cfg.get("description",""),
+            "stocks_total": len(stocks), "stocks_tracked": 0,
+            "theme_rets": {p: None for p in PERIODS}, "nifty_rets": {p: None for p in PERIODS},
+            "alphas": {p: None for p in PERIODS},
+            "pct_20ma": 0, "pct_50ma": 0, "pct_200ma": 0, "pct_52wh": 0,
+            "new_52wh": 0, "vol_spike_pct": 0, "avg_rs3m": None, "avg_rs1m": None,
+            "stage": "WEAK", "stage_color": "#475569",
+            "top_performers": [], "bottom_performers": [],
+            "stock_breadth": [], "all_stocks_modal": all_modal,
+        }
 
     def _avg(lst: list) -> float | None:
         return round(sum(lst) / len(lst), 1) if lst else None
@@ -462,6 +477,13 @@ def compute_theme_metrics(theme_name: str, cfg: dict, nifty_closes: list[float])
 
     stock_rets_3m.sort(key=lambda x: -x[1])
 
+    # Build full modal list: tracked stocks first, then untracked (no_data=True)
+    tracked_tickers = {s["ticker"] for s in stock_breadth}
+    untracked = [{"ticker": t, "above20": False, "last": None,
+                  "r1m": None, "r3m": None, "rs3m": None, "no_data": True}
+                 for t in stocks if t not in tracked_tickers]
+    all_stocks_modal = sorted(stock_breadth, key=lambda x: -(x.get("r3m") or -999)) + untracked
+
     return {
         "theme": theme_name,
         "emoji": cfg.get("emoji", "📊"),
@@ -482,6 +504,7 @@ def compute_theme_metrics(theme_name: str, cfg: dict, nifty_closes: list[float])
         "top_performers": stock_rets_3m[:5],
         "bottom_performers": list(reversed(stock_rets_3m[-4:])) if len(stock_rets_3m) >= 4 else [],
         "stock_breadth": sorted(stock_breadth, key=lambda x: -(x.get("r3m") or -999)),
+        "all_stocks_modal": all_stocks_modal,   # full list including untracked stocks
     }
 
 
@@ -501,6 +524,7 @@ def compute_industry_metrics(industry: str, nifty_closes: list[float]) -> dict |
     ret1m_list: list[float] = []
     ret3m_list: list[float] = []
     ret6m_list: list[float] = []
+    stock_list: list[dict] = []        # ← per-stock detail for UI chips
 
     for ticker in peers:
         rows = _load_prices(ticker)
@@ -515,22 +539,29 @@ def compute_industry_metrics(industry: str, nifty_closes: list[float]) -> dict |
         e20  = _ema(closes, 20)
         e50  = _ema(closes, 50)  if len(closes) >= 50  else None
         e200 = _ema(closes, 200) if len(closes) >= 200 else None
-        if e20  and last > e20:   a20  += 1
-        if e50  and last > e50:   a50  += 1
-        if e200 and last > e200:  a200 += 1
+        ab20 = bool(e20  and last > e20)
+        ab50 = bool(e50  and last > e50)
+        ab200= bool(e200 and last > e200)
+        if ab20:  a20  += 1
+        if ab50:  a50  += 1
+        if ab200: a200 += 1
 
         # ── 52W ───────────────────────────────────────────────────────────────
         hi52 = max(closes[-252:]) if len(closes) >= 252 else max(closes)
-        if last >= hi52 * 0.95:   at52 += 1
-        new52 += _new52wh(closes, 5)
+        near52 = last >= hi52 * 0.95
+        if near52:   at52 += 1
+        is_new52 = bool(_new52wh(closes, 5))
+        new52 += int(is_new52)
 
         # ── Volume rank: current 20D avg vs 3M historical avg ─────────────────
+        vol_ratio = None
         if len(volumes) >= 63:
             vol_20d  = sum(volumes[-20:]) / 20
             vol_hist = sum(volumes[-63:-20]) / 43
             if vol_hist > 0:
                 vr = vol_20d / vol_hist
                 vol_rank_list.append(vr)
+                vol_ratio = round(vr, 2)
                 if vr >= 1.5:
                     vol_spike_cnt += 1
 
@@ -541,10 +572,12 @@ def compute_industry_metrics(industry: str, nifty_closes: list[float]) -> dict |
         if r1 is not None: rs1m_list.append(r1)
 
         # ── RS delta: RS now vs RS 4 weeks ago ────────────────────────────────
+        rs_delta = None
         if len(closes) >= 84 and len(nifty_closes) >= 84:
             r3_prev = _rs(closes[:-21], nifty_closes[:-21], 63)
             if r3 is not None and r3_prev is not None:
-                rs_delta_list.append(round(r3 - r3_prev, 1))
+                rs_delta = round(r3 - r3_prev, 1)
+                rs_delta_list.append(rs_delta)
 
         # ── Period returns ────────────────────────────────────────────────────
         r1m = _period_return(closes, 21)
@@ -553,6 +586,24 @@ def compute_industry_metrics(industry: str, nifty_closes: list[float]) -> dict |
         if r1m is not None: ret1m_list.append(r1m)
         if r3m is not None: ret3m_list.append(r3m)
         if r6m is not None: ret6m_list.append(r6m)
+
+        # ── Accumulate per-stock detail for chip display ──────────────────────
+        stock_list.append({
+            "ticker":   ticker,
+            "price":    round(last, 2),
+            "above20":  ab20,
+            "above50":  ab50,
+            "above200": ab200,
+            "near52":   near52,
+            "new52":    is_new52,
+            "r1m":      round(r1m, 1) if r1m is not None else None,
+            "r3m":      round(r3m, 1) if r3m is not None else None,
+            "r6m":      round(r6m, 1) if r6m is not None else None,
+            "rs3m":     round(r3, 1) if r3 is not None else None,
+            "rs1m":     round(r1, 1) if r1 is not None else None,
+            "rs_delta": rs_delta,
+            "vol_ratio":vol_ratio,
+        })
 
     if total == 0:
         return None
@@ -572,6 +623,9 @@ def compute_industry_metrics(industry: str, nifty_closes: list[float]) -> dict |
     ind_ret_1m   = _avg(ret1m_list)
     ind_ret_3m   = _avg(ret3m_list)
     ind_ret_6m   = _avg(ret6m_list)
+
+    # Sort stock list: above20 first, then by 3M RS descending
+    stock_list.sort(key=lambda s: (not s["above20"], -(s["rs3m"] or -999)))
 
     # ── Stage — now uses EMA20 + RS delta for better early detection ──────────
     rs_improving = (avg_rs_delta or 0) > 1.0
@@ -610,6 +664,7 @@ def compute_industry_metrics(industry: str, nifty_closes: list[float]) -> dict |
         "ind_ret_1m": ind_ret_1m, "ind_ret_3m": ind_ret_3m, "ind_ret_6m": ind_ret_6m,
         "stage": stage, "stage_color": sc, "stage_emoji": se,
         "breadth_score": breadth_score, "trend_score": trend_score,
+        "stock_list": stock_list,   # ← per-stock data for chip display
     }
 
 
@@ -745,6 +800,35 @@ def _vol_display(vs: int) -> str:
             f'<svg width="40" height="4" style="vertical-align:middle;margin-left:3px">'
             f'<rect width="40" height="4" rx="2" fill="#21262d"/>'
             f'<rect width="{bw}" height="4" rx="2" fill="{clr}"/></svg>')
+
+
+def _inline_chips(stock_list: list[dict], max_n: int = 20, show_ret: bool = True) -> str:
+    """Render compact stock chips from a stock_list. Green = above 20MA, Red = below."""
+    if not stock_list:
+        return '<span style="color:#475569;font-size:.7em">No data</span>'
+    chips = ""
+    sorted_sl = sorted(stock_list, key=lambda s: (not s.get("above20",False), -(s.get("rs3m") or -999)))
+    for s in sorted_sl[:max_n]:
+        tk  = escape(s["ticker"])
+        ab  = s.get("above20", False)
+        nr  = s.get("near52", False)
+        nw  = s.get("new52", False)
+        r3  = s.get("r3m")
+        rs  = s.get("rs3m")
+        r3t = f" {r3:+.0f}%" if r3 is not None else ""
+        chip_clr = "#3fb950" if ab else "#f85149"
+        chip_bg  = "#071a0c" if ab else "#1a0707"
+        star = "🏔" if nw else ("⭐" if nr else "")
+        tip  = f"{tk}: 3M{r3t} RS:{rs:+.0f}%" if rs is not None else tk
+        chips += (
+            f'<span class="ind-chip" title="{escape(tip)}" '
+            f'style="color:{chip_clr};background:{chip_bg};border:1px solid {chip_clr}44">'
+            f'{star}{tk}'
+            f'{"" if not show_ret or r3t == "" else r3t}</span>'
+        )
+    if len(sorted_sl) > max_n:
+        chips += f'<span style="color:#475569;font-size:.65em"> +{len(sorted_sl)-max_n} more</span>'
+    return chips
 
 
 # ── build_html ─────────────────────────────────────────────────────────────────
@@ -922,9 +1006,13 @@ def build_html(
     if theme_data:
         for tm in theme_data:
             theme_cards_html += _theme_perf_card(tm)
-            # Key = raw theme name (no escaping) — must match what dataset.theme returns
-            drilldown_data[tm["theme"]] = tm.get("stock_breadth", [])
+            # Use all_stocks_modal so the "Full Detail" modal always has stocks to show
+            # (includes untracked stocks marked with no_data=True)
+            drilldown_data[tm["theme"]] = tm.get("all_stocks_modal") or tm.get("stock_breadth", [])
     theme_section_count = len(theme_data) if theme_data else 0
+
+    # ── Industry stock lookup for card rendering ──────────────────────────────
+    ind_stock_lookup: dict[str, list] = {d["industry"]: d.get("stock_list", []) for d in industry_data}
 
     # ── Default empty dicts/lists for new analytics ───────────────────────────
     regime       = regime       or {}
@@ -1103,6 +1191,14 @@ def build_html(
         rsd   = d.get("avg_rs_delta"); vr = d.get("avg_vol_rank"); p20 = d.get("pct_20ma",0)
         rs3m  = d.get("avg_rs3m"); r3m = d.get("ind_ret_3m"); n = d.get("total",0)
         safe  = escape(ind.replace("'",""))
+        sl    = d.get("stock_list") or ind_stock_lookup.get(ind, [])
+        chips = _inline_chips(sl[:12]) if sl else ""
+        above_n = sum(1 for s in sl if s.get("above20")) if sl else 0
+        chips_section = (
+            f'<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px">'
+            f'<span style="font-size:.6em;color:#475569;margin-right:3px">{len(sl)} stocks '
+            f'({above_n}▲):</span>{chips}</div>'
+        ) if sl else ""
         return (
             f'<div class="traj-card" style="border-left:3px solid {color}" onclick="filterIndustry(\'{safe}\')">'
             f'<div class="traj-top">'
@@ -1116,6 +1212,7 @@ def build_html(
             f'<span class="rs-label" style="margin-left:8px">3M</span>{_ret_badge(r3m)}'
             f'</div>'
             f'<div class="traj-insight" style="color:{color}aa">{escape(insight)}</div>'
+            f'{chips_section}'
             f'</div>'
         )
 
@@ -1135,19 +1232,28 @@ def build_html(
         bar_w = round(score / 100 * 100)
         safe  = escape(ind.replace("'",""))
         bar_c = "#22d3ee" if score >= 50 else "#3fb950" if score >= 30 else "#e3b341"
+        sl    = d.get("stock_list") or ind_stock_lookup.get(ind, [])
+        chips = _inline_chips(sl[:12]) if sl else ""
+        above_n = sum(1 for s in sl if s.get("above20")) if sl else 0
+        new52_stocks = [s["ticker"] for s in sl if s.get("new52")] if sl else []
+        new52_txt = f' 🏔 {", ".join(new52_stocks[:4])}{"…" if len(new52_stocks)>4 else ""}' if new52_stocks else ""
+        chips_section = (
+            f'<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">{chips}</div>'
+        ) if sl else ""
         return (
             f'<div class="sm-card" onclick="filterIndustry(\'{safe}\')">'
             f'<div class="sm-top"><div class="sm-name">{escape(ind)}</div>'
             f'<div class="sm-score" style="color:{bar_c}">{score:.0f}/100</div></div>'
-            f'<div class="sm-sec">{escape(sec)} · {stage} · {n} stocks</div>'
+            f'<div class="sm-sec">{escape(sec)} · {stage} · {n} stocks ({above_n}▲20MA)</div>'
             f'<div class="sm-track"><div class="sm-fill" style="width:{bar_w}%;background:{bar_c}"></div></div>'
-            f'<div class="sm-sig">{escape(sig)}</div>'
+            f'<div class="sm-sig">{escape(sig)}{new52_txt}</div>'
             f'<div class="sm-stats">'
             f'<span class="rs-label">RSΔ</span>{_rsd_badge(rsd)}'
             f'<span class="rs-label" style="margin-left:6px">RS</span>{_rs_badge(rs3m)}'
             f'<span class="rs-label" style="margin-left:6px">Vol</span>{_vol_badge(vr)}'
-            f'<span style="color:#4ade80;font-size:.72em;margin-left:8px">🏔{n52}</span>' if n52 else ""
+            f'{"<span style=color:#4ade80;font-size:.72em;margin-left:8px>🏔"+str(n52)+"</span>" if n52 else ""}'
             f'</div>'
+            f'{chips_section}'
             f'</div>'
         )
 
@@ -1306,6 +1412,21 @@ def build_html(
         cycle = sd.get("cycle_phase","Other"); ccls = CYCLE_CLS.get(cycle,"")
         rs_up = (rsd or 0) > 0.5
         rsd_arrow = f'<span style="color:{"#22d3ee" if rs_up else "#f87171"};font-weight:700;font-size:.9em">{"▲" if rs_up else "▼"}</span>'
+        # Top stocks in this sector: aggregate from industry data
+        sec_stocks = []
+        for d in industry_data:
+            if d.get("sector") == sec:
+                sec_stocks.extend(d.get("stock_list", []))
+        sec_stocks_sorted = sorted(sec_stocks, key=lambda s: (not s.get("above20"), -(s.get("rs3m") or -999)))
+        above_n = sum(1 for s in sec_stocks_sorted if s.get("above20"))
+        chips_html = _inline_chips(sec_stocks_sorted[:16]) if sec_stocks_sorted else ""
+        chips_section = (
+            f'<div style="margin-top:8px;padding-top:6px;border-top:1px solid #1a2030">'
+            f'<div style="font-size:.58em;color:#475569;margin-bottom:4px">'
+            f'Top stocks · {above_n}▲ / {len(sec_stocks_sorted)-above_n}▼ 20MA</div>'
+            f'<div style="display:flex;flex-wrap:wrap;gap:3px">{chips_html}</div>'
+            f'</div>'
+        ) if chips_html else ""
         sec_cards += (
             f'<div class="sec-card" style="border-top:3px solid {sc}">'
             f'<div class="sec-top"><div class="sec-name">{escape(sec)}</div>'
@@ -1320,7 +1441,9 @@ def build_html(
             f'<div class="sec-kv"><span class="rs-label">RS</span>{_rs_badge(rs3m)}</div>'
             f'<div class="sec-kv"><span class="rs-label">RSΔ</span>{rsd_arrow} {_rsd_badge(rsd)}</div>'
             f'<div class="sec-kv"><span class="rs-label">Vol</span>{_vol_badge(vr)}</div>'
-            f'</div></div>'
+            f'</div>'
+            f'{chips_section}'
+            f'</div>'
         )
 
     # ── Emerging trend cards ──────────────────────────────────────────────────
@@ -1331,12 +1454,15 @@ def build_html(
         rs3m=d.get("avg_rs3m"); rs1m=d.get("avg_rs1m")
         vs=d.get("vol_spike_pct",0); n52=d.get("new_52wh",0); n=d.get("total",0)
         stage=d["stage"]; sc,sbg,sb,_ = _stage_cfg(stage)
-        ecls = "chip-em" if stage=="EMERGING" else "chip-bl"
-        badge = "⚡ EMERGING" if stage=="EMERGING" else "🟡 BUILDING"
+        ecls = "chip-em" if stage in ("EMERGING","EMERGING★") else "chip-bl"
+        badge = "⚡ EMERGING★" if stage=="EMERGING★" else "⚡ EMERGING" if stage=="EMERGING" else "🟡 BUILDING"
         notes_html = "".join([
             f'<span class="note-vol">🔥 {vs}% vol</span>' if vs>=15 else "",
             f'<span class="note-hi">🏔 {n52} 52W hi</span>' if n52>0 else "",
         ])
+        sl = d.get("stock_list", [])
+        above_n = sum(1 for s in sl if s.get("above20"))
+        chips_html = _inline_chips(sl[:16])
         safe = escape(ind.replace("'",""))
         early_cards += (
             f'<div class="early-card {ecls}" onclick="filterIndustry(\'{safe}\')">'
@@ -1349,7 +1475,13 @@ def build_html(
             f'<div><span class="rs-label">RS 3M</span>{_rs_badge(rs3m)}</div>'
             f'<div><span class="rs-label">RS 1M</span>{_rs_badge(rs1m)}</div>'
             f'{("<div class=\"ec-notes\">" + notes_html + "</div>") if notes_html else ""}'
-            f'</div></div>'
+            f'</div>'
+            f'<div style="margin-top:6px;padding-top:5px;border-top:1px solid #1a2030">'
+            f'<div style="font-size:.6em;color:#475569;margin-bottom:4px">'
+            f'{above_n}▲ / {n - above_n}▼ 20MA</div>'
+            f'<div style="display:flex;flex-wrap:wrap;gap:3px">{chips_html}</div>'
+            f'</div>'
+            f'</div>'
         )
 
     # ── Volume cluster cards ──────────────────────────────────────────────────
@@ -1362,6 +1494,10 @@ def build_html(
         icon = "🔥🔥🔥" if vs>=70 else "🔥🔥" if vs>=40 else "🔥"
         bw   = round(vs/100*100)
         safe = escape(ind.replace("'",""))
+        sl   = d.get("stock_list", [])
+        # Show vol-spiking stocks first
+        vol_sl = sorted(sl, key=lambda s: -(s.get("vol_ratio") or 0))
+        chips_html = _inline_chips(vol_sl[:12], show_ret=True)
         vol_cards += (
             f'<div class="vol-card" onclick="filterIndustry(\'{safe}\')">'
             f'<div class="vc-top"><span class="vc-icon">{icon}</span>{_stage_pill(stage)}</div>'
@@ -1370,6 +1506,7 @@ def build_html(
             f'<div class="vc-track"><div class="vc-fill" style="width:{bw}%;background:{clr}"></div></div>'
             f'<div class="vc-val" style="color:{clr}">{vs}% stocks with vol spike</div>'
             f'<div class="vc-foot"><span class="pct-na">{p20}% &gt;20MA</span>{_rs_badge(rs3m)}</div>'
+            f'<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">{chips_html}</div>'
             f'</div>'
         )
     if not vol_cards:
@@ -1383,6 +1520,10 @@ def build_html(
         stage=d["stage"]; sc,sbg,sb,se = _stage_cfg(stage)
         bw52 = round(p52/100*100)
         safe  = escape(ind.replace("'",""))
+        sl    = d.get("stock_list", [])
+        # Show stocks near 52W high first
+        hi_sl = sorted(sl, key=lambda s: (not s.get("new52",False), not s.get("near52",False)))
+        chips_html = _inline_chips(hi_sl[:12], show_ret=True)
         hi52_cards += (
             f'<div class="hi52-card" onclick="filterIndustry(\'{safe}\')">'
             f'<div class="hc-badge">🏔 {n52} new highs <span class="hc-span">(last 5d)</span></div>'
@@ -1391,6 +1532,7 @@ def build_html(
             f'<div class="hc-track"><div class="hc-fill" style="width:{bw52}%"></div></div>'
             f'<div class="hc-pct">{p52}% near 52W high</div>'
             f'<div class="hc-foot">{_stage_pill(stage)}{_rs_badge(rs3m)}</div>'
+            f'<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px">{chips_html}</div>'
             f'</div>'
         )
     if not hi52_cards:
@@ -1409,11 +1551,37 @@ def build_html(
         ts=d.get("trend_score",0)
         n52_clr = "#3fb950" if n52>=3 else "#e3b341" if n52>=1 else "#475569"
         ind_escaped = escape(ind)
+        uid = ind.replace(" ","_").replace("/","_").replace("&","and")
+
+        # Build inline stock chips for this industry row
+        sl = d.get("stock_list", [])
+        chips_html = ""
+        for s in sl:
+            tk = escape(s["ticker"])
+            ab = s.get("above20", False)
+            nr = s.get("near52", False)
+            nw = s.get("new52", False)
+            rs = s.get("rs3m")
+            r3 = s.get("r3m")
+            rs_txt = f" RS:{rs:+.0f}%" if rs is not None else ""
+            r3_txt = f" {r3:+.0f}%" if r3 is not None else ""
+            chip_color = "#3fb950" if ab else "#f85149"
+            chip_bg    = "#071a0c" if ab else "#1a0707"
+            star = "🏔" if nw else ("⭐" if nr else "")
+            chips_html += (
+                f'<span class="ind-chip" '
+                f'title="{tk}: 3M {r3_txt.strip() or "N/A"} | RS {rs_txt.strip() or "N/A"}" '
+                f'style="color:{chip_color};background:{chip_bg};border:1px solid {chip_color}44">'
+                f'{star}{tk}{r3_txt}</span>'
+            )
+        above_n = sum(1 for s in sl if s.get("above20"))
+        below_n = len(sl) - above_n
+
         ind_rows += (
             f'<tr class="ind-row" data-industry="{ind_escaped}" '
             f'data-stage="{stage}" data-sector="{escape(sec)}" data-score="{ts}" '
-            f'style="border-left:3px solid {sc}33">'
-            f'<td class="ind-name" title="{ind_escaped}">{ind_escaped}</td>'
+            f'style="border-left:3px solid {sc}33" onclick="toggleIndStocks(\'{uid}\')">'
+            f'<td class="ind-name" title="{ind_escaped}">▶ {ind_escaped}</td>'
             f'<td><span class="sec-badge">{escape(sec)}</span></td>'
             f'<td>{_stage_pill(stage)}</td>'
             f'<td class="pct-cell">{_pct_bar(p20, 44)}</td>'
@@ -1428,6 +1596,23 @@ def build_html(
             f'{"🏔" if n52>0 else "—"}{n52 if n52>0 else ""}</td>'
             f'<td class="pct-cell">{_trend_ring(ts)}</td>'
             f'<td class="pct-cell pct-na">{n}</td>'
+            f'</tr>'
+            # ── Expandable stock chips row ─────────────────────────────────────
+            f'<tr class="ind-stocks-row" id="istocks-{uid}" style="display:none">'
+            f'<td colspan="14" style="padding:6px 10px 10px;background:#0a0f16;border-bottom:1px solid #21262d">'
+            f'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">'
+            f'<span style="font-size:.72em;font-weight:700;color:#8b949e">{n} stocks</span>'
+            f'<span style="display:flex;align-items:center;gap:3px;font-size:.68em">'
+            f'<span style="width:7px;height:7px;border-radius:50%;background:#3fb950;display:inline-block"></span>'
+            f'<span style="color:#3fb950">{above_n} above 20MA</span>'
+            f'&nbsp;<span style="width:7px;height:7px;border-radius:50%;background:#f85149;display:inline-block"></span>'
+            f'<span style="color:#f85149">{below_n} below</span>'
+            f'</span>'
+            f'</div>'
+            f'<div style="display:flex;flex-wrap:wrap;gap:4px">'
+            f'{chips_html if chips_html else "<span style=color:#475569;font-size:.75em>No data</span>"}'
+            f'</div>'
+            f'</td>'
             f'</tr>'
         )
 
@@ -1447,13 +1632,15 @@ def build_html(
          "vol_spike_pct": d.get("vol_spike_pct",0), "new_52wh": d.get("new_52wh",0),
          "breadth_score": d.get("breadth_score",0),
          "trend_score": d.get("trend_score",0),
-         "total": d.get("total",0)}
+         "total": d.get("total",0),
+         "stocks": d.get("stock_list", [])}   # ← include per-stock data in JS payload
         for d in industry_data
     ])
 
     drilldown_json = json.dumps({
-        k: [{"ticker": s["ticker"], "above20": s["above20"],
-             "last": s.get("last"), "r1m": s.get("r1m"), "r3m": s.get("r3m"), "rs3m": s.get("rs3m")}
+        k: [{"ticker": s["ticker"], "above20": s.get("above20", False),
+             "last": s.get("last"), "r1m": s.get("r1m"), "r3m": s.get("r3m"),
+             "rs3m": s.get("rs3m"), "no_data": s.get("no_data", False)}
             for s in v]
         for k, v in drilldown_data.items()
     })
@@ -1600,6 +1787,13 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .tbl tbody tr:hover td{background:#0b1018}
 .tbl tbody tr:last-child td{border-bottom:none}
 .ind-row.hidden{display:none}
+.ind-stocks-row.hidden{display:none}
+.ind-row{cursor:pointer}
+.ind-row:hover .ind-name{color:#58a6ff}
+.ind-chip{display:inline-flex;align-items:center;padding:2px 6px;border-radius:4px;
+  font-size:.72em;font-weight:600;cursor:default;font-family:monospace;
+  white-space:nowrap;transition:transform .12s}
+.ind-chip:hover{transform:scale(1.08);z-index:1;position:relative}
 .ind-name{font-weight:600;color:var(--text);max-width:185px;overflow:hidden;text-overflow:ellipsis}
 .sec-badge{background:#141a24;color:var(--muted);padding:1px 6px;border-radius:4px;font-size:.7em;white-space:nowrap}
 .pct-cell{white-space:nowrap}
@@ -1797,6 +1991,8 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .tm-stock-tbl tr.tm-row-above td{background:#060f07}
 .tm-stock-tbl tr.tm-row-above:hover td{background:#0a1a0c}
 .tm-stock-tbl tr.tm-row-below:hover td{background:#140a0a}
+.tm-stock-tbl tr.tm-row-nodata td{background:#0f0f0f;opacity:.55}
+.tm-stock-tbl tr.tm-row-nodata:hover td{background:#141414;opacity:.75}
 .tm-20ma-yes{color:#4ade80;font-weight:700;font-size:.8em}
 .tm-20ma-no{color:#f85149;font-size:.8em}
 .tm-price{color:#c9d1d9;font-size:.8em}
@@ -2146,6 +2342,14 @@ let sortCol='trend_score',sortDir=-1,curFilter='',curStage='',curSector='';
 function applyFilter(){{curFilter=document.getElementById('indSearch').value.toLowerCase();curStage=document.getElementById('stageFilter').value;curSector=document.getElementById('sectorFilter').value;renderTable();}}
 function filterIndustry(ind){{document.getElementById('indSearch').value=ind;curFilter=ind.toLowerCase();curStage='';curSector='';document.getElementById('stageFilter').value='';document.getElementById('sectorFilter').value='';renderTable();document.getElementById('fullmap').scrollIntoView({{behavior:'smooth'}});}}
 function resetFilter(){{document.getElementById('indSearch').value='';document.getElementById('stageFilter').value='';document.getElementById('sectorFilter').value='';curFilter='';curStage='';curSector='';renderTable();}}
+function toggleIndStocks(uid){{
+  const row=document.getElementById('istocks-'+uid);
+  if(!row)return;
+  const open=row.style.display==='none'||row.style.display==='';
+  row.style.display=open?'table-row':'none';
+  const trigger=row.previousElementSibling;
+  if(trigger){{const nm=trigger.querySelector('.ind-name');if(nm)nm.textContent=nm.textContent.replace(/^[▶▼][ ]*/,open?'▼ ':'▶ ');}}
+}}
 function sortTable(col){{sortDir=(sortCol===col)?-sortDir:-1;sortCol=col;document.querySelectorAll('.tbl th[data-col]').forEach(th=>{{th.className=th.dataset.col===col?(sortDir===-1?'thsort-desc':'thsort-asc'):''}});renderTable();}}
 function renderTable(){{
   const filtered=rowData.filter(d=>{{
@@ -2157,7 +2361,16 @@ function renderTable(){{
   filtered.sort((a,b)=>{{const va=a[sortCol],vb=b[sortCol];if(typeof va==='string')return sortDir*va.localeCompare(vb);return sortDir*((vb??-999)-(va??-999));}});
   const ids=new Set(filtered.map(d=>d.industry));
   const tbody=document.getElementById('indTbody');
-  tbody.querySelectorAll('.ind-row').forEach(tr=>{{tr.classList.toggle('hidden',!ids.has(tr.dataset.industry));}});
+  // Toggle main rows and keep their stock-chip expansion rows paired
+  tbody.querySelectorAll('.ind-row').forEach(tr=>{{
+    const show=ids.has(tr.dataset.industry);
+    tr.classList.toggle('hidden',!show);
+    // Also hide the paired expansion row when its parent is hidden
+    const next=tr.nextElementSibling;
+    if(next&&next.classList.contains('ind-stocks-row')&&!show){{
+      next.style.display='none';
+    }}
+  }});
   filtered.forEach(d=>{{const tr=tbody.querySelector('.ind-row[data-industry="'+d.industry.replace(/"/g,'&quot;')+'"]');if(tr)tbody.appendChild(tr);}});
   document.getElementById('rowCount').textContent=filtered.length+' industries shown';
 }}
@@ -2166,13 +2379,18 @@ function renderTable(){{
 let _modalStocks=[], _modalSortCol='r3m', _modalSortDir=-1, _modalName='';
 function showThemeDrilldown(name){{
   const stocks=drilldownData[name];
-  if(!stocks||!stocks.length)return;
+  if(!stocks){{
+    alert('No data available for: '+name);
+    return;
+  }}
   _modalName=name; _modalStocks=stocks; _modalSortCol='r3m'; _modalSortDir=-1;
   document.getElementById('tmTitle').textContent=name+' — '+stocks.length+' Stocks';
-  const above=stocks.filter(s=>s.above20).length;
-  const below=stocks.length-above;
+  const above=stocks.filter(s=>s.above20&&!s.no_data).length;
+  const below=stocks.filter(s=>!s.above20&&!s.no_data).length;
+  const noData=stocks.filter(s=>s.no_data).length;
   document.getElementById('tmAboveCnt').innerHTML='<span class="tm-stat-grn">✓ '+above+' above 20MA</span>';
-  document.getElementById('tmBelowCnt').innerHTML='<span class="tm-stat-red">✗ '+below+' below</span>';
+  document.getElementById('tmBelowCnt').innerHTML='<span class="tm-stat-red">✗ '+below+' below</span>'
+    +(noData?' <span style="color:#475569;font-size:.85em">· '+noData+' no cache data</span>':'');
   document.querySelectorAll('.tm-sort-btn').forEach(b=>b.classList.remove('active'));
   document.querySelector('.tm-sort-btn').classList.add('active');
   renderModalTable();
@@ -2185,6 +2403,9 @@ function renderModalTable(){{
   let sorted=[..._modalStocks].sort((a,b)=>{{
     if(_modalSortCol==='ticker') return _modalSortDir*a.ticker.localeCompare(b.ticker);
     if(_modalSortCol==='above20') return _modalSortDir*(Number(b.above20)-Number(a.above20));
+    // No-data stocks always go to end
+    if(a.no_data && !b.no_data) return 1;
+    if(!a.no_data && b.no_data) return -1;
     const va=a[_modalSortCol]??-9999, vb=b[_modalSortCol]??-9999;
     return _modalSortDir*(vb-va);
   }});
@@ -2196,18 +2417,25 @@ function renderModalTable(){{
     +'<th onclick="clickModalSort(\'r3m\')" title="Sort by 3M return">3M Ret</th>'
     +'<th onclick="clickModalSort(\'rs3m\')" title="Sort by RS vs Nifty">RS 3M</th>'
     +'</tr></thead><tbody>';
-  sorted.forEach(s=>{{
-    const rowCls=s.above20?'tm-row-above':'tm-row-below';
-    const m20=s.above20?'<span class="tm-20ma-yes">✓ Above</span>':'<span class="tm-20ma-no">✗ Below</span>';
-    const priceStr=s.last!=null?'₹'+Number(s.last).toLocaleString('en-IN',{{maximumFractionDigits:1}}):'-';
-    html+=`<tr class="${{rowCls}}">`
-      +`<td>${{s.ticker}}</td>`
-      +`<td class="tm-price">${{priceStr}}</td>`
-      +`<td>${{m20}}</td>`
-      +`<td style="color:${{clr(s.r1m)}};font-weight:${{fw(s.r1m)}}">${{fmt(s.r1m)}}</td>`
-      +`<td style="color:${{clr(s.r3m)}};font-weight:${{fw(s.r3m)}}">${{fmt(s.r3m)}}</td>`
-      +`<td style="color:${{clr(s.rs3m)}}">${{fmt(s.rs3m)}}</td></tr>`;
-  }});
+  if(!sorted.length){{
+    html+='<tr><td colspan="6" style="text-align:center;color:#475569;padding:20px">No stock data available</td></tr>';
+  }} else {{
+    sorted.forEach(s=>{{
+      const rowCls=s.no_data?'tm-row-nodata':(s.above20?'tm-row-above':'tm-row-below');
+      const m20=s.no_data
+        ?'<span style="color:#475569;font-size:.75em">No cache</span>'
+        :(s.above20?'<span class="tm-20ma-yes">✓ Above</span>':'<span class="tm-20ma-no">✗ Below</span>');
+      const priceStr=s.last!=null?'₹'+Number(s.last).toLocaleString('en-IN',{{maximumFractionDigits:1}}):
+        (s.no_data?'<span style="color:#475569">—</span>':'-');
+      html+=`<tr class="${{rowCls}}">`
+        +`<td style="${{s.no_data?'color:#64748b':''}}">${{s.ticker}}</td>`
+        +`<td class="tm-price">${{priceStr}}</td>`
+        +`<td>${{m20}}</td>`
+        +`<td style="color:${{clr(s.r1m)}};font-weight:${{fw(s.r1m)}}">${{fmt(s.r1m)}}</td>`
+        +`<td style="color:${{clr(s.r3m)}};font-weight:${{fw(s.r3m)}}">${{fmt(s.r3m)}}</td>`
+        +`<td style="color:${{clr(s.rs3m)}}">${{fmt(s.rs3m)}}</td></tr>`;
+    }});
+  }}
   html+='</tbody></table>';
   document.getElementById('tmBody').innerHTML=html;
   // Update th sort arrows
