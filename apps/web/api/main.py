@@ -82,12 +82,21 @@ class JobRecord(BaseModel):
     error: str | None = None
 
 
+class PartialExit(BaseModel):
+    """Record of a partial position exit."""
+    date: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
+    quantity: int
+    price: float
+    reason: str = ""  # e.g. "T1_HIT", "TRAIL", "MANUAL"
+
+
 class TradeBoardPosition(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
     symbol: str
     name: str = ""
     entry: float
     quantity: int = 1
+    remaining_quantity: int | None = None  # None = same as quantity (fully open)
     sl: float = 0.0
     t1: float = 0.0
     t2: float = 0.0
@@ -96,10 +105,19 @@ class TradeBoardPosition(BaseModel):
     rating: str = ""
     notes: str = ""
     entry_date: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
-    status: Literal["OPEN","CLOSED","SL_HIT","T1_HIT","T2_HIT","T3_HIT"] = "OPEN"
+    status: Literal["OPEN","PARTIAL","CLOSED","SL_HIT","T1_HIT","T2_HIT","T3_HIT"] = "OPEN"
     exit_price: Optional[float] = None
     exit_date: Optional[str] = None
     tags: list[str] = Field(default_factory=list)
+    partial_exits: list[PartialExit] = Field(default_factory=list)
+
+
+class PartialExitRequest(BaseModel):
+    quantity: int
+    price: float
+    reason: str = "MANUAL"
+    date: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
+
 
 class TradeBoardUpdate(BaseModel):
     status: Optional[str] = None
@@ -886,13 +904,15 @@ def _get_price_info(symbol: str) -> tuple[Optional[float], Optional[float]]:
 
 def _compute_board_stats(positions: list[dict]) -> dict:
     """Compute aggregate stats from positions list."""
-    open_pos = [p for p in positions if p.get("status") == "OPEN"]
-    closed_pos = [p for p in positions if p.get("status") not in ("OPEN",)]
+    open_pos = [p for p in positions if p.get("status") in ("OPEN", "PARTIAL")]
+    closed_pos = [p for p in positions if p.get("status") not in ("OPEN", "PARTIAL")]
 
     total_invested = sum(
-        (p.get("entry", 0) * p.get("quantity", 1)) for p in open_pos
+        (p.get("entry", 0) * (p.get("remaining_quantity") or p.get("quantity", 1)))
+        for p in open_pos
     )
     total_pl = 0.0
+    realized_pl = 0.0
     open_risk = 0.0
     locked_profit = 0.0
     day_pl = 0.0
@@ -900,16 +920,21 @@ def _compute_board_stats(positions: list[dict]) -> dict:
     for p in positions:
         entry = p.get("entry", 0)
         qty   = p.get("quantity", 1)
+        remaining = p.get("remaining_quantity") or qty
         cmp   = p.get("cmp", entry)
         exit_price = p.get("exit_price") or cmp
         sl    = p.get("sl", 0)
         status = p.get("status", "OPEN")
 
-        if status == "OPEN":
-            pl = (cmp - entry) * qty
-            total_pl += pl
+        # Add realized P&L from partial exits
+        pos_realized = p.get("realized_pl", 0) or 0
+        realized_pl += pos_realized
+
+        if status in ("OPEN", "PARTIAL"):
+            unrealized = (cmp - entry) * remaining
+            total_pl += unrealized + pos_realized
             if sl and sl < entry:
-                open_risk += (entry - sl) * qty
+                open_risk += (entry - sl) * remaining
             day_pl += p.get("dayChangeAmt", 0) or 0
         else:
             pl = (exit_price - entry) * qty
@@ -923,6 +948,7 @@ def _compute_board_stats(positions: list[dict]) -> dict:
         "closed_positions": len(closed_pos),
         "total_invested": round(total_invested, 2),
         "total_pl": round(total_pl, 2),
+        "realized_pl": round(realized_pl, 2),
         "open_risk": round(open_risk, 2),
         "locked_profit": round(locked_profit, 2),
         "day_pl": round(day_pl, 2),
@@ -944,15 +970,16 @@ def trade_board_summary() -> dict:
     for p in positions:
         entry = p.get("entry", 0) or 0
         qty   = p.get("quantity", 1) or 1
-        if p.get("status") == "OPEN":
+        remaining = p.get("remaining_quantity") or qty
+        if p.get("status") in ("OPEN", "PARTIAL"):
             cmp, prev_close = _get_price_info(p.get("symbol", ""))
             if cmp:
                 p["cmp"] = cmp
                 p["gainPct"] = round((cmp - entry) / entry * 100, 2) if entry else 0
-                p["gainAmt"] = round((cmp - entry) * qty, 2) if entry else 0
+                p["gainAmt"] = round((cmp - entry) * remaining, 2) if entry else 0
             if cmp and prev_close and prev_close > 0:
                 p["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
-                p["dayChangeAmt"] = round((cmp - prev_close) * qty, 2)
+                p["dayChangeAmt"] = round((cmp - prev_close) * remaining, 2)
         elif p.get("exit_price") and entry:
             ep = float(p["exit_price"])
             p["gainPct"] = round((ep - entry) / entry * 100, 2)
@@ -969,15 +996,16 @@ def trade_board_positions(status: str = "") -> dict:
     for p in positions:
         entry = p.get("entry", 0) or 0
         qty   = p.get("quantity", 1) or 1
-        if p.get("status") == "OPEN":
+        remaining = p.get("remaining_quantity") or qty
+        if p.get("status") in ("OPEN", "PARTIAL"):
             cmp, prev_close = _get_price_info(p.get("symbol", ""))
             if cmp:
                 p["cmp"] = round(cmp, 2)
                 p["gainPct"] = round((cmp - entry) / entry * 100, 2) if entry else 0
-                p["gainAmt"] = round((cmp - entry) * qty, 2) if entry else 0
+                p["gainAmt"] = round((cmp - entry) * remaining, 2) if entry else 0
             if cmp and prev_close and prev_close > 0:
                 p["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
-                p["dayChangeAmt"] = round((cmp - prev_close) * qty, 2)
+                p["dayChangeAmt"] = round((cmp - prev_close) * remaining, 2)
         elif p.get("exit_price") and entry:
             # Compute final gain for closed/stopped positions
             ep = float(p["exit_price"])
@@ -985,8 +1013,10 @@ def trade_board_positions(status: str = "") -> dict:
             p["gainAmt"] = round((ep - entry) * qty, 2)
     if status:
         positions = [p for p in positions if p.get("status") == status]
-    # Sort: OPEN first, then by gain desc
-    positions.sort(key=lambda p: (p.get("status") != "OPEN", -float(p.get("gainPct", 0) or 0)))
+    # Sort: OPEN/PARTIAL first, then by gain desc
+    positions.sort(key=lambda p: (
+        0 if p.get("status") in ("OPEN", "PARTIAL") else 1,
+        -float(p.get("gainPct", 0) or 0)))
     stats = _compute_board_stats(positions)
     return {"positions": positions, "stats": stats, "lastUpdated": data.get("lastUpdated")}
 
@@ -1027,6 +1057,198 @@ def trade_board_delete_position(position_id: str) -> dict:
         data["positions"] = positions
         _save_board(data)
     return {"ok": True, "deleted": position_id}
+
+
+@app.post("/api/trade-board/positions/{position_id}/partial-exit")
+def trade_board_partial_exit(position_id: str, req: PartialExitRequest) -> dict:
+    """Record a partial position exit. Reduces remaining_quantity and logs the exit."""
+    with _board_lock:
+        data = _load_board()
+        positions = data.get("positions", [])
+        for i, p in enumerate(positions):
+            if p.get("id") != position_id:
+                continue
+            total_qty = p.get("quantity", 1)
+            remaining = p.get("remaining_quantity")
+            if remaining is None:
+                remaining = total_qty
+            # Validate
+            if req.quantity <= 0:
+                raise HTTPException(status_code=400, detail="quantity must be > 0")
+            if req.quantity > remaining:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Cannot exit {req.quantity} shares — only {remaining} remaining")
+            # Record partial exit
+            exits = p.get("partial_exits", [])
+            exits.append({
+                "date": req.date,
+                "quantity": req.quantity,
+                "price": req.price,
+                "reason": req.reason,
+            })
+            remaining -= req.quantity
+            positions[i]["partial_exits"] = exits
+            positions[i]["remaining_quantity"] = remaining
+            # Compute realized P&L from all partial exits
+            entry = p.get("entry", 0)
+            realized_pl = sum(
+                (e["price"] - entry) * e["quantity"] for e in exits
+            )
+            positions[i]["realized_pl"] = round(realized_pl, 2)
+            # Auto-update status
+            if remaining <= 0:
+                positions[i]["status"] = "CLOSED"
+                # Compute weighted avg exit price
+                total_exited = sum(e["quantity"] for e in exits)
+                if total_exited > 0:
+                    wavg = sum(e["price"] * e["quantity"] for e in exits) / total_exited
+                    positions[i]["exit_price"] = round(wavg, 2)
+                positions[i]["exit_date"] = req.date
+            elif remaining < total_qty:
+                positions[i]["status"] = "PARTIAL"
+            data["positions"] = positions
+            _save_board(data)
+            return {"position": positions[i], "ok": True,
+                    "remaining": remaining, "realized_pl": round(realized_pl, 2)}
+    raise HTTPException(status_code=404, detail=f"Position not found: {position_id}")
+
+
+def _enrich_position_metrics(p: dict) -> dict:
+    """Enrich an open/watchlist position with 20EMA extension, volume records, ADR, and surfing data."""
+    sym = p.get("symbol", "")
+    if not sym:
+        return p
+    rows = _read_ohlcv(sym, days=300)  # need ~252 for yearly volume analysis
+    if not rows or len(rows) < 25:
+        return p
+
+    closes = [r["close"] for r in rows]
+    highs = [r["high"] for r in rows]
+    lows = [r["low"] for r in rows]
+    volumes = [r["volume"] for r in rows]
+
+    # 20 EMA
+    ema20 = _calc_ema(closes, 20)
+    if ema20[-1] is not None and ema20[-1] > 0:
+        ext = round((closes[-1] - ema20[-1]) / ema20[-1] * 100, 2)
+        dist_abs = round(closes[-1] - ema20[-1], 2)
+        p["ema20"] = round(ema20[-1], 2)
+        p["ema20ext"] = ext  # +ve = above, -ve = below
+        p["ema20dist"] = dist_abs  # absolute distance in ₹
+        # Surfing near 20EMA: price within 3% of 20EMA and above it
+        p["surfing20ema"] = 0 <= ext <= 3.0
+    else:
+        p["ema20"] = None
+        p["ema20ext"] = None
+        p["ema20dist"] = None
+        p["surfing20ema"] = False
+
+    # ADR (Average Daily Range) — last 20 days
+    adr_period = min(20, len(rows))
+    if adr_period > 0:
+        recent = rows[-adr_period:]
+        adr_abs = sum(r["high"] - r["low"] for r in recent) / adr_period
+        adr_pct = round(adr_abs / closes[-1] * 100, 2) if closes[-1] else 0
+        p["adr"] = round(adr_abs, 2)
+        p["adrPct"] = adr_pct
+    else:
+        p["adr"] = None
+        p["adrPct"] = None
+
+    # Volume analysis
+    cmp_vol = volumes[-1] if volumes else 0
+
+    # Quarterly highest (last ~63 trading days)
+    qtr_vols = volumes[-63:] if len(volumes) >= 63 else volumes
+    qtr_max = max(qtr_vols) if qtr_vols else 0
+    p["volHighestQtr"] = round(qtr_max)
+    p["isVolHighestQtr"] = cmp_vol >= qtr_max and qtr_max > 0
+
+    # Yearly highest (last ~252 trading days)
+    yr_vols = volumes[-252:] if len(volumes) >= 252 else volumes
+    yr_max = max(yr_vols) if yr_vols else 0
+    p["volHighestYr"] = round(yr_max)
+    p["isVolHighestYr"] = cmp_vol >= yr_max and yr_max > 0
+
+    # Current volume vs 20-day avg
+    avg20 = sum(volumes[-20:]) / 20 if len(volumes) >= 20 else (
+        sum(volumes) / len(volumes) if volumes else 1)
+    p["volRatio"] = round(cmp_vol / avg20, 2) if avg20 > 0 else 0
+    p["lastVol"] = round(cmp_vol)
+    p["avgVol20"] = round(avg20)
+
+    return p
+
+
+@app.get("/api/trade-board/positions/enriched")
+def trade_board_positions_enriched(status: str = "") -> dict:
+    """Return positions enriched with 20EMA extension + volume records."""
+    with _board_lock:
+        data = _load_board()
+        positions = list(data.get("positions", []))
+    for p in positions:
+        entry = p.get("entry", 0) or 0
+        qty = p.get("quantity", 1) or 1
+        remaining = p.get("remaining_quantity") or qty
+        st = p.get("status", "OPEN")
+        if st in ("OPEN", "PARTIAL"):
+            cmp, prev_close = _get_price_info(p.get("symbol", ""))
+            if cmp:
+                p["cmp"] = round(cmp, 2)
+                p["gainPct"] = round((cmp - entry) / entry * 100, 2) if entry else 0
+                p["gainAmt"] = round((cmp - entry) * remaining, 2) if entry else 0
+            if cmp and prev_close and prev_close > 0:
+                p["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
+                p["dayChangeAmt"] = round((cmp - prev_close) * remaining, 2)
+            # Enrich with 20EMA extension + volume records + ADR
+            _enrich_position_metrics(p)
+        elif p.get("exit_price") and entry:
+            ep = float(p["exit_price"])
+            p["gainPct"] = round((ep - entry) / entry * 100, 2)
+            p["gainAmt"] = round((ep - entry) * qty, 2)
+    if status:
+        positions = [p for p in positions if p.get("status") == status]
+    positions.sort(key=lambda p: (
+        0 if p.get("status") in ("OPEN", "PARTIAL") else 1,
+        -float(p.get("gainPct", 0) or 0)))
+    stats = _compute_board_stats(positions)
+    return {"positions": positions, "stats": stats,
+            "lastUpdated": data.get("lastUpdated")}
+
+
+@app.get("/api/trade-board/watchlist/enriched")
+def trade_board_watchlist_enriched() -> dict:
+    """Return watchlist items enriched with 20EMA extension + volume records."""
+    with _watchlist_lock:
+        items = _load_watchlist()
+    sig_index = _load_scan_signals_index()
+    for item in items:
+        sym = item.get("symbol", "")
+        cmp, prev_close = _get_price_info(sym)
+        if cmp:
+            item["cmp"] = round(cmp, 2)
+        if cmp and prev_close and prev_close > 0:
+            item["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
+        # Enrich with 20EMA extension + volume records + ADR
+        _enrich_position_metrics(item)
+        # Merge scan signal data (all fields from regular watchlist endpoint)
+        sig = sig_index.get(sym) or sig_index.get(sym + ".NS") or sig_index.get(sym.replace(".NS", ""))
+        if sig:
+            item["scanSetup"] = sig.get("setup", "")
+            item["scanRating"] = sig.get("rating", "")
+            item["scanScore"] = sig.get("rankingScore") or sig.get("score")
+            item["scanEntry"] = sig.get("entry")
+            item["scanSl"] = sig.get("sl")
+            item["rsScore"] = sig.get("rsScore")
+            item["regimeState"] = sig.get("regimeState")
+            item["entryInstruction"] = sig.get("entryInstruction")
+            item["fundSummary"] = sig.get("fundSummary")
+            item["inScan"] = True
+        else:
+            item["inScan"] = False
+    return {"items": items, "total": len(items)}
+
 
 def _calc_rsi(closes: list[float], period: int = 14) -> list[Optional[float]]:
     result: list[Optional[float]] = [None] * len(closes)
@@ -1136,26 +1358,53 @@ def trade_board_chart(symbol: str, days: int = 252) -> dict:
 
 @app.get("/api/trade-board/equity")
 def trade_board_equity() -> dict:
-    """Compute equity curve from closed+open positions."""
+    """Compute equity curve from closed+open positions, including partial exits."""
     with _board_lock:
         data = _load_board()
         positions = data.get("positions", [])
     curve = []
     total = 0.0
-    for p in sorted(positions, key=lambda x: x.get("exit_date") or x.get("entry_date") or ""):
-        entry = p.get("entry", 0); qty = p.get("quantity", 1)
+
+    # Collect all exit events (full closes + partial exits)
+    events: list[dict] = []
+    for p in positions:
+        entry = p.get("entry", 0)
+        qty = p.get("quantity", 1)
         status = p.get("status", "OPEN")
-        if status != "OPEN":
-            exit_p = p.get("exit_price") or entry
-            pl = (exit_p - entry) * qty
-            total += pl
-            curve.append({
-                "date": p.get("exit_date") or p.get("entry_date"),
-                "symbol": p.get("symbol",""),
+        sym = p.get("symbol", "")
+
+        # Add partial exit events
+        for pe in p.get("partial_exits", []):
+            pl = (pe["price"] - entry) * pe["quantity"]
+            events.append({
+                "date": pe.get("date", p.get("entry_date", "")),
+                "symbol": sym,
                 "pl": round(pl, 2),
-                "cumPl": round(total, 2),
-                "status": status
+                "status": f"PARTIAL ({pe.get('reason', '')})",
+                "type": "partial",
             })
+
+        # Add full close event (only for fully closed, not already counted via partials)
+        if status not in ("OPEN", "PARTIAL"):
+            partial_qty = sum(pe["quantity"] for pe in p.get("partial_exits", []))
+            if partial_qty == 0:
+                # Full close without partial exits
+                exit_p = p.get("exit_price") or entry
+                pl = (exit_p - entry) * qty
+                events.append({
+                    "date": p.get("exit_date") or p.get("entry_date", ""),
+                    "symbol": sym,
+                    "pl": round(pl, 2),
+                    "status": status,
+                    "type": "close",
+                })
+            # If partials covered full qty, they're already in events
+
+    events.sort(key=lambda e: e.get("date", ""))
+    for ev in events:
+        total += ev["pl"]
+        curve.append({**ev, "cumPl": round(total, 2)})
+
     return {"curve": curve, "totalPl": round(total, 2)}
 
 @app.get("/api/trade-board/scan-signals")

@@ -49,6 +49,11 @@
 - [x] Embedded reports (Trade Plans, Breadth, Sector, Scan) via iframe
 - [x] Export all data as JSON bundle
 - [x] Auto-refresh every 30 seconds
+- [x] Partial exits — book partial position exits with qty/price/reason, auto-compute realized P&L
+- [x] PARTIAL status — positions with partial exits shown with remaining/total qty badge
+- [x] Enriched position endpoint — 20EMA extension, quarterly/yearly volume records
+- [x] Enriched watchlist endpoint — 20EMA extension + volume analysis
+- [x] Equity curve includes partial exit events
 
 ## ✅ Bug Fixes & Hardening
 

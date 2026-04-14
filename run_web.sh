@@ -2,12 +2,14 @@
 # run_web.sh
 # ─────────────────────────────────────────────────────────────────────────────
 # Starts the SETUPS FastAPI web console (apps/web/ui/index.html)
+# Automatically refreshes stale OHLCV cache before starting the server.
 #
 # Usage:
 #   ./run_web.sh              # default: port 8000, auto-opens browser
 #   ./run_web.sh --port 8080  # custom port
 #   ./run_web.sh --no-open    # skip auto-opening browser
 #   ./run_web.sh --reload     # enable hot-reload (dev mode)
+#   ./run_web.sh --skip-refresh  # skip cache refresh on startup
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -18,12 +20,14 @@ cd "$(dirname "$0")"
 PORT=8000
 AUTO_OPEN=true
 RELOAD_FLAG=""
+SKIP_REFRESH=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --port)    PORT="$2";  shift 2 ;;
         --no-open) AUTO_OPEN=false; shift ;;
         --reload)  RELOAD_FLAG="--reload"; shift ;;
+        --skip-refresh) SKIP_REFRESH=true; shift ;;
         *) echo "Unknown option: $1"; shift ;;
     esac
 done
@@ -47,6 +51,24 @@ echo -e "   📊 Performance Tracker with MF Holdings"
 echo -e "   🏦 Institutional / Mutual Fund data (Screener.in + yfinance)"
 echo -e "   📈 Live report links"
 echo -e ""
+
+# ── Auto-refresh stale OHLCV cache ──────────────────────────────────────────
+if [ "$SKIP_REFRESH" = false ] && [ -f "scripts/refresh_cache.py" ]; then
+    echo -e "${BOLD}▶ Refreshing stale OHLCV cache…${RESET}"
+    START_CACHE=$SECONDS
+    set +e
+    python3 scripts/refresh_cache.py --workers 4 --indian-only
+    REFRESH_EXIT=$?
+    set -euo pipefail
+    CACHE_TIME=$((SECONDS - START_CACHE))
+    if [ "$REFRESH_EXIT" -eq 0 ]; then
+        echo -e "${GREEN}   ✅ Cache refresh done in ${CACHE_TIME}s${RESET}"
+    else
+        echo -e "${YELLOW}   ⚠  Cache refresh had issues (non-fatal)${RESET}"
+    fi
+    echo ""
+fi
+
 echo -e "  Press ${YELLOW}Ctrl+C${RESET} to stop"
 echo ""
 

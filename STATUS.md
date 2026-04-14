@@ -89,9 +89,21 @@ Live position tracker with real-time P&L, mini charts, and scan signal import.
 | `POST /api/trade-board/positions` | Add a new position |
 | `PUT /api/trade-board/positions/{id}` | Update status, SL, exit price/date |
 | `DELETE /api/trade-board/positions/{id}` | Delete a position |
+| `POST /api/trade-board/positions/{id}/partial-exit` | Book a partial exit (qty, price, reason) |
+| `GET /api/trade-board/positions/enriched` | Positions + 20EMA extension + volume records |
+| `GET /api/trade-board/watchlist/enriched` | Watchlist + 20EMA extension + volume records |
 | `GET /api/trade-board/chart/{symbol}` | OHLCV + EMA5/20/50 from cache |
-| `GET /api/trade-board/equity` | Equity curve + cumulative P&L |
+| `GET /api/trade-board/equity` | Equity curve + cumulative P&L (incl. partial exits) |
 | `GET /api/trade-board/scan-signals` | Latest scan signals for quick import |
+
+#### Partial Exit Support (April 15, 2026)
+- **Backend**: `PartialExit` model, `PartialExitRequest`, `remaining_quantity` field, `PARTIAL` status
+- **One-click partial booking**: 📤 button on each open/partial position card + detail panel
+- **Auto status**: Position moves to `PARTIAL` after first partial exit, `CLOSED` when remaining = 0
+- **Weighted avg exit price**: Computed from all partial exits when fully closed
+- **Realized P&L tracking**: `realized_pl` summed from all partial exits, shown in detail panel
+- **Equity curve**: Includes individual partial exit events (not just full closes)
+- **Stats**: Sidebar P&L, risk, and invested amounts use `remaining_quantity` (not total qty)
 
 ### Live Trades UI Enhancement
 - Added **Market Breadth ↗** and **Trade Plans ↗** quick links in Performance Tracker panel

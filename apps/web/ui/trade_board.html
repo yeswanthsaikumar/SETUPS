@@ -62,7 +62,7 @@
     /* POSITION CARD */
     .pos-card{background:var(--bg2);border:1px solid var(--border2);border-radius:11px;overflow:hidden;cursor:pointer;transition:all .2s;position:relative}
     .pos-card:hover{border-color:#2a4a6a;box-shadow:0 6px 24px rgba(0,0,0,.5);transform:translateY(-2px)}
-    .pos-card.status-open{border-top:2px solid var(--green)}.pos-card.status-sl{border-top:2px solid var(--red);background:#0c0808}
+    .pos-card.status-open{border-top:2px solid var(--green)}.pos-card.status-partial{border-top:2px solid var(--purple)}.pos-card.status-sl{border-top:2px solid var(--red);background:#0c0808}
     .pos-card.status-t1{border-top:2px solid #4ade80}.pos-card.status-t2{border-top:2px solid var(--cyan)}
     .pos-card.status-t3{border-top:2px solid var(--yellow)}.pos-card.status-closed{border-top:2px solid var(--dim);opacity:.75}
     .card-hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 12px 4px}
@@ -71,9 +71,15 @@
     .badge{padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700;white-space:nowrap}
     .bg-setup{background:#1e293b;color:#7dd3fc}.bg-ap{background:#2a2000;color:#ffd700;border:1px solid #ffd70022}
     .bg-a{background:#1e1b4b;color:#a5b4fc}.bg-b{background:#1a1a2e;color:#94a3b8}
-    .bg-open{background:var(--green-bg);color:#4ade80}.bg-sl{background:var(--red-bg);color:#f87171}
+    .bg-open{background:var(--green-bg);color:#4ade80}.bg-partial{background:#1e1040;color:#a78bfa;border:1px solid #7c3aed33}.bg-sl{background:var(--red-bg);color:#f87171}
     .bg-t1{background:#052e16;color:#4ade80}.bg-t2{background:#083344;color:#67e8f9}
     .bg-t3{background:#2a2000;color:#fde68a}.bg-closed{background:var(--bg3);color:var(--muted)}
+    .pe-hist{margin-top:6px;font-size:10px}.pe-row{display:flex;gap:8px;padding:3px 0;color:var(--muted);border-bottom:1px solid var(--border)}.pe-row b{color:var(--text)}.pe-row .pe-pl{font-weight:700}
+    .ema-chip{display:flex;align-items:center;justify-content:space-between;padding:4px 12px;font-size:10px;border-top:1px solid var(--border);gap:6px}
+    .ema-ext{font-weight:800;font-size:11px}.ema-ext.ext-hot{color:#f87171}.ema-ext.ext-warm{color:#f59e0b}.ema-ext.ext-cool{color:#4ade80}.ema-ext.ext-under{color:#7dd3fc}
+    .vol-rec{padding:1px 5px;border-radius:3px;font-size:8.5px;font-weight:800;letter-spacing:.2px}
+    .vol-yr{background:#3b0764;color:#d8b4fe;border:1px solid #7c3aed33}.vol-qtr{background:#1e1b4b;color:#a5b4fc;border:1px solid #6366f133}
+    .vol-hi{background:#422006;color:#fdba74;border:1px solid #ea580c33}
     .card-gain{text-align:right;flex-shrink:0}
     .card-gain-pct{font-size:1.4em;font-weight:900;letter-spacing:-.5px;line-height:1}
     .card-gain-amt{font-size:10.5px;font-weight:700;margin-top:1px}
@@ -488,6 +494,7 @@
         <div class="fg"><label class="ml">Status</label>
           <select class="mi" id="uStatus">
             <option value="OPEN">OPEN</option>
+            <option value="PARTIAL">PARTIAL (Booked Partial)</option>
             <option value="T1_HIT">T1 Hit ✓</option>
             <option value="T2_HIT">T2 Hit ✓</option>
             <option value="T3_HIT">T3 Hit 🏆</option>
@@ -533,6 +540,41 @@
 </div>
 
 <div class="toast-area" id="toastArea"></div>
+
+<!-- PARTIAL EXIT MODAL -->
+<div class="modal-ov" id="peModal" onclick="if(event.target===this)closePeModal()">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-hdr"><span class="modal-title" id="peTitle">📤 Book Partial Exit</span><button class="modal-close" onclick="closePeModal()">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="peId">
+      <div style="padding:6px 0 10px;font-size:11px;color:var(--muted)">
+        <span id="peSym" style="font-weight:800;color:var(--text)">—</span> ·
+        Entry: <span id="peEntry" style="color:#7dd3fc">—</span> ·
+        Remaining: <span id="peRemaining" style="color:var(--text);font-weight:700">—</span> shares
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="ml">Quantity *</label><input class="mi" id="peQty" type="number" min="1" placeholder="Shares to exit"></div>
+        <div class="fg"><label class="ml">Exit Price *</label><input class="mi" id="pePrice" type="number" step="0.01" placeholder="0.00"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="ml">Reason</label>
+          <select class="mi" id="peReason">
+            <option value="T1_HIT">T1 Hit</option>
+            <option value="T2_HIT">T2 Hit</option>
+            <option value="T3_HIT">T3 Hit</option>
+            <option value="TRAIL">Trail Stop</option>
+            <option value="MANUAL" selected>Manual</option>
+          </select>
+        </div>
+        <div class="fg"><label class="ml">Date</label><input class="mi" id="peDate" type="date"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closePeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitPartialExit()">Book Exit</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const API = '';
@@ -582,16 +624,19 @@ function openEmbed(url, title, tlId) {
 async function refreshData(auto = false) {
   if (!auto) { const b = document.getElementById('refreshBtn'); b.classList.add('spinning'); setTimeout(() => b.classList.remove('spinning'), 800); }
   try {
-    const r = await fetch(API + '/api/trade-board/positions');
+    // Try enriched endpoint first (has 20EMA, ADR, volume data), fallback to regular
+    let r = await fetch(API + '/api/trade-board/positions/enriched');
+    if (!r.ok) r = await fetch(API + '/api/trade-board/positions');
     const d = await r.json();
     positions = d.positions || [];
     updateSbStats(d);
     renderPositions();
     if (currentDetId) { const p = positions.find(x => x.id === currentDetId); if (p) updateDetInfo(p); }
   } catch(e) { if (!auto) toast('Failed to load positions', 'error'); }
-  // Always refresh watchlist live prices (API enriches with CMP/dayChange)
+  // Refresh watchlist (enriched has 20EMA ext + volume records, fallback to regular)
   try {
-    const wr = await fetch(API + '/api/trade-board/watchlist');
+    let wr = await fetch(API + '/api/trade-board/watchlist/enriched');
+    if (!wr.ok) wr = await fetch(API + '/api/trade-board/watchlist');
     const wd = await wr.json();
     watchlistItems = wd.items || [];
     document.getElementById('sbWatch').textContent = watchlistItems.length;
@@ -601,13 +646,15 @@ async function refreshData(auto = false) {
 }
 
 function updateSbStats(d) {
-  const open = (d.positions || []).filter(p => p.status === 'OPEN');
+  const open = (d.positions || []).filter(p => p.status === 'OPEN' || p.status === 'PARTIAL');
   document.getElementById('sbOpen').textContent = open.length;
   let dayPl = 0, totalPl = 0, risk = 0;
   for (const p of d.positions || []) {
-    const e = p.entry || 0, qty = p.quantity || 1, cmp = p.cmp || e, sl = p.sl || e;
-    if (p.status === 'OPEN') { dayPl += p.dayChangeAmt || 0; totalPl += (cmp - e) * qty; risk += Math.max(0, e - sl) * qty; }
-    else if (p.exit_price) totalPl += (p.exit_price - e) * qty;
+    const e = p.entry || 0, qty = p.remaining_quantity || p.quantity || 1, cmp = p.cmp || e, sl = p.sl || e;
+    const realizedPl = p.realized_pl || 0;
+    if (p.status === 'OPEN' || p.status === 'PARTIAL') { dayPl += p.dayChangeAmt || 0; totalPl += (cmp - e) * qty + realizedPl; risk += Math.max(0, e - sl) * qty; }
+    else if (p.exit_price) totalPl += (p.exit_price - e) * (p.quantity || 1);
+    else totalPl += realizedPl; // fully exited via partials
   }
   const fA = v => (v >= 0 ? '+' : '') + '₹' + Math.abs(v).toLocaleString('en-IN', {maximumFractionDigits: 0});
   const cl = v => v >= 0 ? 'pos-color' : 'neg-color';
@@ -627,7 +674,7 @@ function renderPositions() {
   const setup = document.getElementById('setupFilter').value;
   const sort = document.getElementById('sortFilter').value;
   let f = positions.filter(p => {
-    const act = p.status === 'OPEN' || p.status === 'T1_HIT' || p.status === 'T2_HIT';
+    const act = p.status === 'OPEN' || p.status === 'PARTIAL' || p.status === 'T1_HIT' || p.status === 'T2_HIT';
     if (currentTab === 'active' && !act) return false;
     if (currentTab === 'closed' && act) return false;
     if (search && !p.symbol?.toLowerCase().includes(search) && !p.name?.toLowerCase().includes(search)) return false;
@@ -648,17 +695,51 @@ function renderPositions() {
   f.forEach(p => initMini(p));
 }
 
+function buildEnrichRow(p) {
+  // 20EMA extension + ADR + volume records chip
+  const ext = p.ema20ext;
+  const volR = p.volRatio;
+  const isQtr = p.isVolHighestQtr;
+  const isYr = p.isVolHighestYr;
+  const adrPct = p.adrPct;
+  const surfing = p.surfing20ema;
+  if (ext == null && !isQtr && !isYr && (volR == null || volR < 1.5) && adrPct == null) return '';
+  let extHtml = '';
+  if (ext != null) {
+    const absE = Math.abs(ext);
+    const cls = ext > 10 ? 'ext-hot' : ext > 5 ? 'ext-warm' : ext >= 0 ? 'ext-cool' : 'ext-under';
+    const arrow = ext >= 0 ? '↑' : '↓';
+    extHtml = '<span style="color:var(--muted)">20E:</span> <span class="ema-ext ' + cls + '">' + arrow + absE.toFixed(1) + '%</span>';
+  }
+  let adrHtml = '';
+  if (adrPct != null) adrHtml = '<span style="color:var(--muted);margin-left:4px">ADR:</span> <span style="color:var(--cyan);font-weight:700;font-size:10px">' + adrPct.toFixed(1) + '%</span>';
+  let surfBadge = '';
+  if (surfing) surfBadge = '<span class="vol-rec" style="background:#052e16;color:#4ade80;border:1px solid #16a34a33">🎯 NEAR 20E</span>';
+  let volBadges = '';
+  if (isYr) volBadges += '<span class="vol-rec vol-yr">🔥 YR HIGH VOL</span>';
+  else if (isQtr) volBadges += '<span class="vol-rec vol-qtr">⚡ QTR HIGH VOL</span>';
+  if (volR != null && volR >= 2.0 && !isQtr && !isYr) volBadges += '<span class="vol-rec vol-hi">Vol ' + volR.toFixed(1) + 'x</span>';
+  return '<div class="ema-chip">' + extHtml + adrHtml + '<div style="display:flex;gap:3px;align-items:center">' + surfBadge + volBadges + '</div></div>';
+}
+
 function buildCard(p) {
-  const e = p.entry || 0, qty = p.quantity || 1, cmp = p.cmp || e, sl = p.sl || e;
-  const gPct = e > 0 ? (cmp - e) / e * 100 : 0, gAmt = (cmp - e) * qty, dPct = p.dayChangePct || 0;
+  const e = p.entry || 0, totalQty = p.quantity || 1, remaining = p.remaining_quantity != null ? p.remaining_quantity : totalQty;
+  const cmp = p.cmp || e, sl = p.sl || e;
+  const gPct = e > 0 ? (cmp - e) / e * 100 : 0;
+  const unrealizedAmt = (cmp - e) * remaining;
+  const realizedPl = p.realized_pl || 0;
+  const gAmt = unrealizedAmt + realizedPl;
+  const dPct = p.dayChangePct || 0;
   const st = (p.status || 'OPEN').toLowerCase().replace('_hit', '');
   const gc = gPct > 0 ? 'gain-pos' : gPct < 0 ? 'gain-neg' : 'gain-neu';
   const dc = dPct > 0 ? 'gain-pos' : dPct < 0 ? 'gain-neg' : 'gain-neu';
   const ratingCls = p.rating === 'A+' ? 'bg-ap' : p.rating === 'A' ? 'bg-a' : 'bg-b';
+  const partialBadge = p.status === 'PARTIAL' ? '<span class="badge bg-partial">' + remaining + '/' + totalQty + ' left</span>' : '';
   const badges = [
     p.setup ? '<span class="badge bg-setup">' + p.setup + '</span>' : '',
     p.rating ? '<span class="badge ' + ratingCls + '">' + p.rating + '</span>' : '',
-    '<span class="badge bg-' + st + '">' + (p.status || 'OPEN').replace('_HIT', ' ✓') + '</span>'
+    '<span class="badge bg-' + st + '">' + (p.status || 'OPEN').replace('_HIT', ' ✓') + '</span>',
+    partialBadge
   ].filter(Boolean).join('');
   const tgts = [1,2,3].map(i => {
     const v = p['t' + i]; if (!v) return '';
@@ -668,12 +749,15 @@ function buildCard(p) {
   const t1 = p.t1 || 0, prog = t1 > e && cmp > sl ? Math.min(100, Math.max(0, (cmp - e) / (t1 - e) * 100)) : 0;
   const fill = gPct > 0 ? 'var(--green)' : 'var(--red)';
   const days = p.entry_date ? Math.floor((Date.now() - new Date(p.entry_date)) / 86400000) : '—';
-  const statusIcons = {OPEN:'⏱', SL_HIT:'🛑', T1_HIT:'✅', T2_HIT:'✅', T3_HIT:'🏆', CLOSED:'🔒'};
-  const footerText = p.status === 'OPEN'
-    ? '⏱ Holding ' + days + 'd'
+  const statusIcons = {OPEN:'⏱', PARTIAL:'📤', SL_HIT:'🛑', T1_HIT:'✅', T2_HIT:'✅', T3_HIT:'🏆', CLOSED:'🔒'};
+  const footerText = (p.status === 'OPEN' || p.status === 'PARTIAL')
+    ? (statusIcons[p.status] || '⏱') + ' Holding ' + days + 'd'
     : (statusIcons[p.status] || '🔒') + ' ' + (p.status || '').replace('_HIT',' HIT').replace('_',' ') + ' · ' + days + 'd';
-  const dayChipHtml = (p.status === 'OPEN' && dPct !== 0)
+  const dayChipHtml = ((p.status === 'OPEN' || p.status === 'PARTIAL') && dPct !== 0)
     ? '<div class="card-gain-day ' + dc + '">' + (dPct >= 0 ? '▲' : '▼') + Math.abs(dPct).toFixed(1) + '% today</div>'
+    : '';
+  const peBtn = (p.status === 'OPEN' || p.status === 'PARTIAL')
+    ? '<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();openPeModal(\'' + p.id + '\')" title="Book partial exit">📤</button>'
     : '';
   return '<div class="pos-card status-' + st + '" onclick="openDetail(\'' + p.id + '\')">' +
     '<div class="card-hdr"><div><div class="card-sym">' + (p.symbol || '—') + '</div>' +
@@ -688,8 +772,9 @@ function buildCard(p) {
     '<div><div class="pr-l">Stop</div><div class="pr-v pr-sl">₹' + sl.toLocaleString('en-IN') + '</div></div></div>' +
     (tgts ? '<div class="targets">' + tgts + '</div>' : '') +
     '<div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:' + prog.toFixed(0) + '%;background:' + fill + '"></div></div><span class="prog-lbl">' + prog.toFixed(0) + '% to T1</span></div>' +
+    buildEnrichRow(p) +
     '<div class="card-foot"><span class="hold-d">' + footerText + '</span>' +
-    '<div class="card-acts" onclick="event.stopPropagation()"><button class="btn btn-outline btn-xs" onclick="event.stopPropagation();openUpdateModal(\'' + p.id + '\')">Edit</button></div></div></div>';
+    '<div class="card-acts" onclick="event.stopPropagation()">' + peBtn + '<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();openUpdateModal(\'' + p.id + '\')">Edit</button></div></div></div>';
 }
 
 async function initMini(p) {
@@ -709,8 +794,8 @@ async function initMini(p) {
       handleScroll: false, handleScale: false,
     });
     const area = chart.addAreaSeries({
-      lineColor: p.status === 'OPEN' ? '#22c55e' : '#ef4444',
-      topColor: p.status === 'OPEN' ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.1)',
+      lineColor: (p.status === 'OPEN' || p.status === 'PARTIAL') ? '#22c55e' : '#ef4444',
+      topColor: (p.status === 'OPEN' || p.status === 'PARTIAL') ? 'rgba(34,197,94,.15)' : 'rgba(239,68,68,.1)',
       bottomColor: 'transparent', lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false,
     });
     area.setData(d.candles.map(c => ({time: c.date.slice(0, 10), value: c.close})));
@@ -752,10 +837,11 @@ async function openDetail(id) {
   document.getElementById('dtName').textContent = p.name || '';
   document.getElementById('detOverlay').classList.add('open');
   document.getElementById('dtActions').innerHTML =
+    ((p.status === 'OPEN' || p.status === 'PARTIAL') ? '<button class="btn btn-outline btn-sm" onclick="openPeModal(\'' + p.id + '\')">📤 Partial Exit</button>' : '') +
     '<button class="btn btn-outline btn-sm" onclick="openUpdateFromDetail()">✏ Update</button>' +
     '<button class="btn btn-red btn-sm" onclick="deleteFromDetail()">🗑 Delete</button>';
   const st = (p.status || 'OPEN').replace('_HIT', ' ✓');
-  const stCls = {OPEN:'bg-open',SL_HIT:'bg-sl',T1_HIT:'bg-t1',T2_HIT:'bg-t2',T3_HIT:'bg-t3',CLOSED:'bg-closed'}[p.status] || 'bg-closed';
+  const stCls = {OPEN:'bg-open',PARTIAL:'bg-partial',SL_HIT:'bg-sl',T1_HIT:'bg-t1',T2_HIT:'bg-t2',T3_HIT:'bg-t3',CLOSED:'bg-closed'}[p.status] || 'bg-closed';
   const rCls = p.rating === 'A+' ? 'bg-ap' : p.rating === 'A' ? 'bg-a' : 'bg-b';
   document.getElementById('dtBadges').innerHTML = [
     p.setup ? '<span class="badge bg-setup">' + p.setup + '</span>' : '',
@@ -815,8 +901,6 @@ function updateWlDetInfo(item) {
   const scanSl = item.scanSl ? parseFloat(item.scanSl) : 0;
   const risk = scanEntry && scanSl ? scanEntry - scanSl : 0;
   const riskPct = scanEntry && risk > 0 ? (risk / scanEntry * 100).toFixed(1) + '%' : '—';
-  const adrPct = cm.adrPct != null ? cm.adrPct.toFixed(1) + '%' : '—';
-  const adrAbs = cm.adr != null ? '₹' + cm.adr.toLocaleString('en-IN') : '—';
 
   document.getElementById('dtInfo').innerHTML =
     '<div class="di-grp" style="flex:2;min-width:260px"><div class="di-title">Price &amp; Scan Data</div>' +
@@ -830,13 +914,14 @@ function updateWlDetInfo(item) {
     '</div></div>' +
     '<div class="di-grp" style="flex:1;min-width:180px"><div class="di-title">Technicals</div>' +
     '<div class="di-row" style="grid-template-columns:1fr 1fr">' +
+    _buildEmaExtStat(item) +
     '<div class="di-stat"><div class="di-l">RSI(14)</div><div class="di-v ' + rsiCls + '">' + (typeof rsi === 'number' ? rsi.toFixed(1) : rsi) + '</div></div>' +
-    '<div class="di-stat"><div class="di-l">ADR%</div><div class="di-v" style="color:var(--cyan)">' + adrPct + '</div></div>' +
+    _buildAdrStat({adrPct: item.adrPct != null ? item.adrPct : (cm.adrPct || null), adr: item.adr != null ? item.adr : (cm.adr || null)}) +
     '<div class="di-stat"><div class="di-l">52W High</div><div class="di-v" style="font-size:.82em">' + h52 + '</div></div>' +
     '<div class="di-stat"><div class="di-l">52W Low</div><div class="di-v" style="font-size:.82em">' + l52 + '</div></div>' +
     '<div class="di-stat"><div class="di-l">From 52WH</div><div class="di-v" style="font-size:.85em;color:var(--red)">' + pct52 + '</div></div>' +
     '<div class="di-stat"><div class="di-l">Avg Vol 20</div><div class="di-v" style="font-size:.85em">' + avgVol + '</div></div>' +
-    '<div class="di-stat"><div class="di-l">ADR ₹</div><div class="di-v" style="font-size:.82em">' + adrAbs + '</div></div>' +
+    _buildVolRecordStat(item) +
     '<div class="di-stat"><div class="di-l">Accum/Dist</div><div class="di-v" style="font-size:.82em"><span class="pos-color">' + accD + 'A</span>/<span class="neg-color">' + distD + 'D</span></div></div>' +
     '</div>' +
     '<div style="margin-top:5px;font-size:9.5px;color:var(--muted);display:flex;justify-content:space-between">' +
@@ -915,9 +1000,13 @@ async function loadDetChart(p, days) {
 }
 
 function updateDetInfo(p) {
-  const e = p.entry || 0, qty = p.quantity || 1, cmp = p.cmp || e, sl = p.sl || e;
-  const gPct = e > 0 ? (cmp - e) / e * 100 : 0, gAmt = (cmp - e) * qty;
-  const risk = Math.max(0, e - sl), riskT = risk * qty, dPct = p.dayChangePct || 0;
+  const e = p.entry || 0, totalQty = p.quantity || 1, remaining = p.remaining_quantity != null ? p.remaining_quantity : totalQty;
+  const cmp = p.cmp || e, sl = p.sl || e;
+  const gPct = e > 0 ? (cmp - e) / e * 100 : 0;
+  const unrealizedAmt = (cmp - e) * remaining;
+  const realizedPl = p.realized_pl || 0;
+  const gAmt = unrealizedAmt + realizedPl;
+  const risk = Math.max(0, e - sl), riskT = risk * remaining, dPct = p.dayChangePct || 0;
   const fp = v => v >= 0 ? '<span class="pos-color">+' + v.toFixed(2) + '%</span>' : '<span class="neg-color">' + v.toFixed(2) + '%</span>';
   const fa = v => v >= 0 ? '<span class="pos-color">+₹' + Math.abs(v).toLocaleString('en-IN', {maximumFractionDigits: 0}) + '</span>' : '<span class="neg-color">-₹' + Math.abs(v).toLocaleString('en-IN', {maximumFractionDigits: 0}) + '</span>';
   const tgts = [1,2,3].map(i => {
@@ -926,6 +1015,25 @@ function updateDetInfo(p) {
     return '<tr><td><b>T' + i + '</b></td><td>₹' + tv.toLocaleString('en-IN') + '</td><td>' + tp + '%</td><td style="color:var(--cyan)">' + rr + 'R</td></tr>';
   }).join('');
   const days = p.entry_date ? Math.floor((Date.now() - new Date(p.entry_date)) / 86400000) : '—';
+  // Partial exits history
+  const partials = p.partial_exits || [];
+  let peHtml = '';
+  if (partials.length) {
+    peHtml = '<div class="pe-hist"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:3px">Partial Exits</div>';
+    for (const pe of partials) {
+      const pePl = (pe.price - e) * pe.quantity;
+      const peCls = pePl >= 0 ? 'pos-color' : 'neg-color';
+      peHtml += '<div class="pe-row"><span>' + (pe.date || '—').slice(0,10) + '</span><b>' + pe.quantity + ' sh</b>' +
+        '<span>@₹' + pe.price.toLocaleString('en-IN') + '</span>' +
+        '<span class="pe-pl ' + peCls + '">' + (pePl >= 0 ? '+' : '') + '₹' + Math.abs(pePl).toLocaleString('en-IN', {maximumFractionDigits: 0}) + '</span>' +
+        '<span style="color:var(--purple)">' + (pe.reason || '') + '</span></div>';
+    }
+    peHtml += '<div style="margin-top:3px;font-size:10px;color:var(--muted)">Realized: ' + fa(realizedPl) + '</div></div>';
+  }
+  // Qty display: show remaining/total if partial
+  const qtyDisplay = remaining !== totalQty
+    ? '<span style="color:var(--purple)">' + remaining + '</span>/<span style="color:var(--muted)">' + totalQty + '</span>'
+    : '' + totalQty;
   // Chart metadata
   const cm = window._lastChartMeta || {};
   const rsi = cm.rsi != null ? cm.rsi : '—';
@@ -938,41 +1046,70 @@ function updateDetInfo(p) {
   const accD = cm.accumDays50 != null ? cm.accumDays50 : '—';
   const lastDate = cm.lastDate ? cm.lastDate.slice(0, 10) : '—';
   const totalBars = cm.days || '—';
-  const adrPct = cm.adrPct != null ? cm.adrPct.toFixed(1) + '%' : '—';
-  const adrAbs = cm.adr != null ? '₹' + cm.adr.toLocaleString('en-IN') : '—';
   document.getElementById('dtInfo').innerHTML =
     '<div class="di-grp" style="flex:2;min-width:260px"><div class="di-title">P&amp;L Summary</div>' +
     '<div class="di-row">' +
     '<div class="di-stat"><div class="di-l">Gain %</div><div class="di-v">' + fp(gPct) + '</div></div>' +
-    '<div class="di-stat"><div class="di-l">Gain ₹</div><div class="di-v">' + fa(gAmt) + '</div></div>' +
+    '<div class="di-stat"><div class="di-l">Total P&amp;L</div><div class="di-v">' + fa(gAmt) + '</div></div>' +
     '<div class="di-stat"><div class="di-l">Today</div><div class="di-v">' + fp(dPct) + '</div></div>' +
     '<div class="di-stat"><div class="di-l">CMP</div><div class="di-v">₹' + cmp.toLocaleString('en-IN') + '</div></div>' +
     '<div class="di-stat"><div class="di-l">Entry</div><div class="di-v" style="color:#7dd3fc">₹' + e.toLocaleString('en-IN') + '</div></div>' +
     '<div class="di-stat"><div class="di-l">SL</div><div class="di-v" style="color:var(--red)">₹' + sl.toLocaleString('en-IN') + '</div></div>' +
+    (realizedPl ? '<div class="di-stat"><div class="di-l">Realized</div><div class="di-v">' + fa(realizedPl) + '</div></div>' : '') +
+    (remaining !== totalQty ? '<div class="di-stat"><div class="di-l">Unrealized</div><div class="di-v">' + fa(unrealizedAmt) + '</div></div>' : '') +
     '</div></div>' +
     '<div class="di-grp" style="flex:1;min-width:170px"><div class="di-title">Risk / Targets</div>' +
-    '<div style="font-size:11px;color:var(--muted);margin-bottom:5px">Risk: <b style="color:var(--red)">₹' + risk.toFixed(2) + '</b> × ' + qty + ' = <b style="color:var(--red)">₹' + riskT.toLocaleString('en-IN', {maximumFractionDigits: 0}) + '</b></div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-bottom:5px">Risk: <b style="color:var(--red)">₹' + risk.toFixed(2) + '</b> × ' + remaining + ' = <b style="color:var(--red)">₹' + riskT.toLocaleString('en-IN', {maximumFractionDigits: 0}) + '</b></div>' +
     '<table class="plan-tbl" style="font-size:11px"><thead><tr><th>Tgt</th><th>Price</th><th>%</th><th>R:R</th></tr></thead><tbody>' + (tgts || '<tr><td colspan="4" style="color:var(--muted)">No targets set</td></tr>') + '</tbody></table></div>' +
     '<div class="di-grp" style="flex:1;min-width:150px"><div class="di-title">Trade Info</div>' +
     '<div class="di-row" style="grid-template-columns:1fr 1fr">' +
-    '<div class="di-stat"><div class="di-l">Qty</div><div class="di-v">' + qty + '</div></div>' +
+    '<div class="di-stat"><div class="di-l">Qty</div><div class="di-v">' + qtyDisplay + '</div></div>' +
     '<div class="di-stat"><div class="di-l">Hold</div><div class="di-v">' + days + 'd</div></div>' +
     '<div class="di-stat"><div class="di-l">Setup</div><div class="di-v" style="font-size:.82em;color:#7dd3fc">' + (p.setup || '—') + '</div></div>' +
     '<div class="di-stat"><div class="di-l">Rating</div><div class="di-v">' + (p.rating || '—') + '</div></div>' +
-    '</div>' + (p.notes ? '<div style="margin-top:5px;font-size:11px;color:var(--muted);padding:6px 9px;background:var(--bg3);border-radius:5px;border:1px solid var(--border)">"' + p.notes + '"</div>' : '') + '</div>' +
+    '</div>' + (p.notes ? '<div style="margin-top:5px;font-size:11px;color:var(--muted);padding:6px 9px;background:var(--bg3);border-radius:5px;border:1px solid var(--border)">"' + p.notes + '"</div>' : '') + peHtml + '</div>' +
     '<div class="di-grp" style="flex:1;min-width:180px"><div class="di-title">Technicals</div>' +
     '<div class="di-row" style="grid-template-columns:1fr 1fr">' +
+    _buildEmaExtStat(p) +
     '<div class="di-stat"><div class="di-l">RSI(14)</div><div class="di-v ' + rsiCls + '">' + (typeof rsi === 'number' ? rsi.toFixed(1) : rsi) + '</div></div>' +
-    '<div class="di-stat"><div class="di-l">ADR%</div><div class="di-v" style="color:var(--cyan)">' + adrPct + '</div></div>' +
+    _buildAdrStat({adrPct: p.adrPct != null ? p.adrPct : (cm.adrPct || null), adr: p.adr != null ? p.adr : (cm.adr || null)}) +
     '<div class="di-stat"><div class="di-l">52W High</div><div class="di-v" style="font-size:.82em">' + h52 + '</div></div>' +
     '<div class="di-stat"><div class="di-l">52W Low</div><div class="di-v" style="font-size:.82em">' + l52 + '</div></div>' +
     '<div class="di-stat"><div class="di-l">From 52WH</div><div class="di-v" style="font-size:.85em;color:var(--red)">' + pct52 + '</div></div>' +
     '<div class="di-stat"><div class="di-l">Avg Vol 20</div><div class="di-v" style="font-size:.85em">' + avgVol + '</div></div>' +
-    '<div class="di-stat"><div class="di-l">ADR ₹</div><div class="di-v" style="font-size:.82em">' + adrAbs + '</div></div>' +
+    _buildVolRecordStat(p) +
     '<div class="di-stat"><div class="di-l">Accum/Dist</div><div class="di-v" style="font-size:.82em"><span class="pos-color">' + accD + 'A</span>/<span class="neg-color">' + distD + 'D</span></div></div>' +
     '</div>' +
     '<div style="margin-top:5px;font-size:9.5px;color:var(--muted);display:flex;justify-content:space-between">' +
     '<span>Last: ' + lastDate + '</span><span>' + totalBars + ' bars</span></div></div>';
+}
+
+function _buildEmaExtStat(p) {
+  const ext = p.ema20ext;
+  if (ext == null) return '<div class="di-stat"><div class="di-l">20EMA Ext</div><div class="di-v" style="font-size:.85em;color:var(--muted)">—</div></div>';
+  const cls = ext > 10 ? 'neg-color' : ext > 5 ? '' : ext >= 0 ? 'pos-color' : '';
+  const surfing = p.surfing20ema;
+  const label = surfing ? '🎯 Surfing' : ext > 10 ? '🔥 Extended' : ext > 5 ? '⚠ Stretched' : ext >= 0 ? '✅ Healthy' : '↓ Below';
+  const bg = surfing ? ' style="background:#052e16"' : '';
+  return '<div class="di-stat"' + bg + '><div class="di-l">20EMA Ext</div><div class="di-v ' + cls + '" style="font-size:.85em">' + (ext >= 0 ? '+' : '') + ext.toFixed(1) + '%</div><div style="font-size:8px;color:var(--muted)">' + label + (p.ema20dist != null ? ' · ₹' + Math.abs(p.ema20dist).toLocaleString('en-IN') : '') + '</div></div>';
+}
+
+function _buildAdrStat(p) {
+  const adr = p.adrPct;
+  if (adr == null && !p.adr) return '';
+  const label = adr >= 5 ? '🔥 High ADR' : adr >= 3 ? '⚡ Moderate' : '📊 Low';
+  return '<div class="di-stat"><div class="di-l">ADR</div><div class="di-v" style="font-size:.85em;color:var(--cyan)">' + (adr != null ? adr.toFixed(1) + '%' : '—') + '</div>' +
+    '<div style="font-size:8px;color:var(--muted)">' + label + (p.adr ? ' · ₹' + p.adr.toLocaleString('en-IN') : '') + '</div></div>';
+}
+
+function _buildVolRecordStat(p) {
+  const isYr = p.isVolHighestYr;
+  const isQtr = p.isVolHighestQtr;
+  const vr = p.volRatio;
+  if (isYr) return '<div class="di-stat" style="background:#3b0764"><div class="di-l">Volume</div><div class="di-v" style="font-size:.82em;color:#d8b4fe">🔥 YEAR HIGH</div>' + (vr ? '<div style="font-size:8px;color:#c084fc">' + vr.toFixed(1) + 'x avg</div>' : '') + '</div>';
+  if (isQtr) return '<div class="di-stat" style="background:#1e1b4b"><div class="di-l">Volume</div><div class="di-v" style="font-size:.82em;color:#a5b4fc">⚡ QTR HIGH</div>' + (vr ? '<div style="font-size:8px;color:#818cf8">' + vr.toFixed(1) + 'x avg</div>' : '') + '</div>';
+  if (vr != null && vr >= 1.5) return '<div class="di-stat"><div class="di-l">Vol Ratio</div><div class="di-v" style="font-size:.85em;color:#a5b4fc">' + vr.toFixed(1) + 'x</div></div>';
+  return '<div class="di-stat"><div class="di-l">Vol Ratio</div><div class="di-v" style="font-size:.85em">' + (vr != null ? vr.toFixed(1) + 'x' : '—') + '</div></div>';
 }
 
 function setChartDays(days, btn) {
@@ -1122,16 +1259,21 @@ function renderEqChart(curve) {
 }
 
 function renderClosedTable() {
-  const closed = positions.filter(p => p.status !== 'OPEN' && p.status !== 'T1_HIT' && p.status !== 'T2_HIT');
+  const closed = positions.filter(p => p.status !== 'OPEN' && p.status !== 'PARTIAL' && p.status !== 'T1_HIT' && p.status !== 'T2_HIT');
   document.getElementById('closedTbody').innerHTML = closed.map(p => {
-    const e = p.entry || 0, qty = p.quantity || 1, exit = p.exit_price || e;
-    const pl = (exit - e) * qty, pp = e > 0 ? (exit - e) / e * 100 : 0;
+    const e = p.entry || 0, qty = p.quantity || 1;
+    const exit = p.exit_price || e;
+    const realizedPl = p.realized_pl || 0;
+    const pl = realizedPl || (exit - e) * qty;
+    const pp = e > 0 ? (exit - e) / e * 100 : 0;
     const sl = p.sl || p.stop_loss || e, risk = Math.max(.01, e - sl);
     const rr = pl > 0 ? (pl / (risk * qty)).toFixed(1) + 'R' : '—';
     const days = p.entry_date && p.exit_date ? Math.floor((new Date(p.exit_date) - new Date(p.entry_date)) / 86400000) : '—';
     const c = pl >= 0 ? 'pos-color' : 'neg-color';
     const stCls = p.status === 'T3_HIT' ? 'bg-t3' : p.status === 'SL_HIT' ? 'bg-sl' : 'bg-closed';
-    return '<tr><td><b>' + p.symbol + '</b></td><td><span class="badge bg-setup">' + (p.setup || '—') + '</span></td>' +
+    const partialCount = (p.partial_exits || []).length;
+    const partialBadge = partialCount ? ' <span style="font-size:9px;color:var(--purple)">' + partialCount + ' partials</span>' : '';
+    return '<tr><td><b>' + p.symbol + '</b>' + partialBadge + '</td><td><span class="badge bg-setup">' + (p.setup || '—') + '</span></td>' +
       '<td>₹' + e.toLocaleString('en-IN') + '</td><td>₹' + exit.toLocaleString('en-IN') + '</td>' +
       '<td class="' + c + '">' + (pl >= 0 ? '+' : '') + '₹' + Math.abs(pl).toLocaleString('en-IN', {maximumFractionDigits: 0}) + '</td>' +
       '<td class="' + c + '">' + (pp >= 0 ? '+' : '') + pp.toFixed(2) + '%</td>' +
@@ -1273,7 +1415,8 @@ async function saveJournal() {
 
 async function loadWatchlist() {
   try {
-    const r = await fetch(API + '/api/trade-board/watchlist');
+    let r = await fetch(API + '/api/trade-board/watchlist/enriched');
+    if (!r.ok) r = await fetch(API + '/api/trade-board/watchlist');
     const d = await r.json();
     watchlistItems = d.items || [];
     document.getElementById('sbWatch').textContent = watchlistItems.length;
@@ -1299,13 +1442,25 @@ function buildWlCard(item) {
   const scanBadge = item.inScan ? '<span class="badge" style="background:#052e16;color:#4ade80;border:1px solid #16a34a33">In Scan</span>' : '';
   const rsStr = item.rsScore ? '<span class="badge" style="background:#1a1a2e;color:#a5b4fc;border:1px solid #3b82f622">RS ' + parseFloat(item.rsScore).toFixed(0) + '</span>' : '';
   const alertBadge = item.alert_price ? '<span class="badge" style="background:#2a2000;color:#fde68a;border:1px solid #ffd70022">Alert ₹' + item.alert_price.toLocaleString('en-IN') + '</span>' : '';
+  // 20EMA extension badge
+  const ext = item.ema20ext;
+  let emaBadge = '';
+  if (ext != null) {
+    const absE = Math.abs(ext);
+    const cls = ext > 10 ? 'ext-hot' : ext > 5 ? 'ext-warm' : ext >= 0 ? 'ext-cool' : 'ext-under';
+    emaBadge = '<span class="badge" style="background:#0f172a;border:1px solid var(--border2)"><span class="ema-ext ' + cls + '" style="font-size:9px">' + (ext >= 0 ? '↑' : '↓') + absE.toFixed(1) + '%</span> <span style="color:var(--muted);font-size:8px">20E</span></span>';
+  }
+  // Volume record badges (inline)
+  let volBadge = '';
+  if (item.isVolHighestYr) volBadge = '<span class="badge vol-yr">🔥 YR VOL</span>';
+  else if (item.isVolHighestQtr) volBadge = '<span class="badge vol-qtr">⚡ QTR VOL</span>';
   const dayChipHtml = dayPct !== 0
     ? '<div class="card-gain-day ' + dc + '">' + (dayPct >= 0 ? '▲' : '▼') + Math.abs(dayPct).toFixed(1) + '% today</div>'
     : '';
   // Scan entry/sl for price row
   const scanEntry = item.scanEntry ? parseFloat(item.scanEntry) : 0;
   const scanSl = item.scanSl ? parseFloat(item.scanSl) : 0;
-  const badges = [setupBadge, ratingBadge, scanBadge, rsStr, alertBadge].filter(Boolean).join('');
+  const badges = [setupBadge, ratingBadge, scanBadge, rsStr, emaBadge, volBadge, alertBadge].filter(Boolean).join('');
   const inScanCls = item.inScan ? ' wl-in-scan' : '';
 
   return '<div class="wl-card' + inScanCls + '" onclick="openWlDetail(\'' + item.id + '\')">' +
@@ -1325,6 +1480,7 @@ function buildWlCard(item) {
       '<div><div class="pr-l">CMP</div><div class="pr-v pr-cmp">' + (cmp ? '₹' + cmp.toLocaleString('en-IN') : '—') + '</div></div>' +
       '<div><div class="pr-l">Scan SL</div><div class="pr-v pr-sl">' + (scanSl ? '₹' + scanSl.toLocaleString('en-IN') : '—') + '</div></div>' +
     '</div>' : '') +
+    buildEnrichRow(item) +
     (item.notes ? '<div style="padding:4px 12px;font-size:10.5px;color:var(--muted);line-height:1.5">' + item.notes + '</div>' : '') +
     (item.entryInstruction ? '<div style="padding:2px 12px 4px;font-size:9px;color:var(--cyan);line-height:1.4">' + item.entryInstruction + '</div>' : '') +
     '<div class="card-foot">' +
@@ -1445,6 +1601,52 @@ function toast(msg, type) {
   setTimeout(() => t.remove(), 3200);
 }
 
+function openPeModal(id) {
+  const p = positions.find(x => x.id === id); if (!p) return;
+  const remaining = p.remaining_quantity != null ? p.remaining_quantity : (p.quantity || 1);
+  document.getElementById('peId').value = id;
+  document.getElementById('peSym').textContent = p.symbol;
+  document.getElementById('peEntry').textContent = '₹' + (p.entry || 0).toLocaleString('en-IN');
+  document.getElementById('peRemaining').textContent = remaining;
+  document.getElementById('peQty').value = '';
+  document.getElementById('peQty').max = remaining;
+  document.getElementById('peQty').placeholder = 'Max ' + remaining;
+  document.getElementById('pePrice').value = p.cmp || '';
+  document.getElementById('peDate').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('peReason').value = 'MANUAL';
+  document.getElementById('peTitle').textContent = '📤 Book Partial — ' + p.symbol;
+  document.getElementById('peModal').classList.add('open');
+  setTimeout(() => document.getElementById('peQty').focus(), 100);
+}
+
+function closePeModal() { document.getElementById('peModal').classList.remove('open'); }
+
+async function submitPartialExit() {
+  const id = document.getElementById('peId').value;
+  const qty = parseInt(document.getElementById('peQty').value);
+  const price = parseFloat(document.getElementById('pePrice').value);
+  if (!qty || qty <= 0) { toast('Enter a valid quantity', 'error'); return; }
+  if (!price || price <= 0) { toast('Enter a valid exit price', 'error'); return; }
+  const body = {
+    quantity: qty,
+    price: price,
+    reason: document.getElementById('peReason').value || 'MANUAL',
+    date: document.getElementById('peDate').value || new Date().toISOString().slice(0, 10),
+  };
+  try {
+    const r = await fetch(API + '/api/trade-board/positions/' + id + '/partial-exit', {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
+    });
+    if (!r.ok) { const err = await r.json(); throw new Error(err.detail || 'Error'); }
+    const d = await r.json();
+    closePeModal();
+    await refreshData();
+    const p = positions.find(x => x.id === id);
+    if (p && currentDetId === id) updateDetInfo(p);
+    toast('Partial exit booked — ' + qty + ' shares @₹' + price + (d.remaining === 0 ? ' (position closed)' : ' · ' + d.remaining + ' remaining'), 'success');
+  } catch(e) { toast('Failed: ' + e.message, 'error'); }
+}
+
 function startAutoRefresh() {
   setInterval(() => {
     refreshTimer--;
@@ -1461,7 +1663,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeDetail(); closeAddModal(); closeUpdateModal(); closeWLModal(); if (drawerOpen) toggleDrawer(); }
+  if (e.key === 'Escape') { closeDetail(); closeAddModal(); closeUpdateModal(); closeWLModal(); closePeModal(); if (drawerOpen) toggleDrawer(); }
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openAddModal(); }
 });
 </script>
