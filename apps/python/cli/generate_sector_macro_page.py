@@ -79,6 +79,9 @@ MACRO_EVENTS = [
     {"date":"2025-12-10","type":"RBI","label":"RBI Cut 25bps 5.5%","impact":"POSITIVE","desc":"4th rate cut of the cycle. Strong liquidity. Credit growth accelerating. Bull setup brewing."},
     {"date":"2026-02-01","type":"BUDGET","label":"Budget FY27","impact":"POSITIVE","desc":"Continued capex. GST reforms. Agricultural support. Infrastructure supercycle intact."},
     {"date":"2026-02-05","type":"RBI","label":"RBI Cut 25bps 5.25%","impact":"POSITIVE","desc":"5th consecutive cut. Repo at 5.25%. Banking sector re-rating. Real estate revival. Setup environment improves."},
+    {"date":"2026-04-02","type":"GLOBAL","label":"US Reciprocal Tariffs Announced","impact":"NEGATIVE","desc":"US announces sweeping reciprocal tariffs on India exports. IT, Pharma, Textiles, Chemicals face headwinds. Nifty gap-down. Defensive sectors and domestic plays outperform."},
+    {"date":"2026-04-09","type":"MARKET","label":"Nifty Correction — FII Sell-off","impact":"NEGATIVE","desc":"Sustained FII selling on tariff fears. Nifty tests 21,500 support. Small/mid-cap stocks hit hardest. Breakout success rate drops sharply. Wait for stabilisation."},
+    {"date":"2026-04-14","type":"RBI","label":"RBI Policy Watch — April 2026","impact":"NEUTRAL","desc":"Market awaits RBI stance amid tariff-driven inflation uncertainty. Rate cut trajectory may pause. Domestic demand sectors (Consumer, NBFC) hold up better. Banking under pressure from credit growth slowdown fears."},
 ]
 
 SECTOR_ROTATION_INSIGHT = {
@@ -94,6 +97,7 @@ SECTOR_ROTATION_INSIGHT = {
     "2025-Q3": {"leader":"Banking","laggard":"Metals","note":"Rate cuts + FII return → Banking; China slow → Metals"},
     "2025-Q4": {"leader":"Consumer","laggard":"Energy","note":"Lower rates boost consumer; Oil prices weak"},
     "2026-Q1": {"leader":"Banking","laggard":"FMCG","note":"Re-rating underway; FMCG still rangebound"},
+    "2026-Q2": {"leader":"Pharma","laggard":"IT","note":"Tariff fears hit IT exports; Pharma defensive + domestic demand; Banking correction on FII selling"},
 }
 
 def _f(v, d=0.0):
@@ -106,34 +110,43 @@ def get_sector(symbol: str) -> str:
 
 
 def _cache_paths_for(symbol: str) -> list[Path]:
-    return [CACHE_DIR / f"{symbol}_{suffix}.csv" for suffix in (900, 728, 504, 252, 60, 30)]
+    return [CACHE_DIR / f"{symbol}_{suffix}.csv" for suffix in (5096, 3528, 900, 728, 504, 252, 60, 30)]
 
 
 def _load_rows_from_cache(symbol: str) -> list[dict]:
+    """Load price rows preferring the file with the most recent data date."""
+    best_rows: list[dict] = []
+    best_date: str = ""
+
     for path in _cache_paths_for(symbol):
         if not path.exists():
             continue
         rows: list[dict] = []
+        last_date = ""
         try:
             with open(path) as fh:
                 for row in csv.DictReader(fh):
                     d = str(row.get("date", "")).strip()
                     if not d:
                         continue
+                    last_date = d[:10]
                     rows.append({
-                        "date": d[:10],
-                        "open": _f(row.get("open")),
-                        "high": _f(row.get("high")),
-                        "low": _f(row.get("low")),
-                        "close": _f(row.get("close")),
+                        "date":   d[:10],
+                        "open":   _f(row.get("open")),
+                        "high":   _f(row.get("high")),
+                        "low":    _f(row.get("low")),
+                        "close":  _f(row.get("close")),
                         "volume": _f(row.get("volume")),
                     })
         except Exception:
             rows = []
-        if rows:
-            rows.sort(key=lambda r: r.get("date", ""))
-            return rows
-    return []
+        if rows and last_date > best_date:
+            best_rows = rows
+            best_date = last_date
+
+    if best_rows:
+        best_rows.sort(key=lambda r: r.get("date", ""))
+    return best_rows
 
 
 def _write_rows_to_cache(symbol: str, rows: list[dict]):

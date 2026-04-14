@@ -16,7 +16,7 @@
 
 ### Phase 3 — Classification Engine
 - `apps/python/lib/nse_taxonomy.py` — loads from CSV, auto-classify via yfinance
-- `scripts/fix_misclassifications2.py` — fixed 68 misclassifications (VIMTALABS→Pharma/CRO, BHEL→Cap Goods, KRN→Heat Exchangers, BOROSIL→Scientific Glassware, INOXINDIA→Cryogenic Equipment, TEJAS→Telecom, RAJESHEXPO→Jewellery, etc.)
+- `scripts/fix_misclassifications2.py` — fixed 68 misclassifications
 - `scripts/add_missing_stocks.py` — added 123 new stocks (Nifty500, IPOs 2023-26)
 
 ### Phase 4 — Market Breadth Dashboard (generate_breadth_dashboard.py)
@@ -98,26 +98,91 @@ Live position tracker with real-time P&L, mini charts, and scan signal import.
 
 ---
 
+## ✅ Cache & Performance Fixes (April 14, 2026)
+
+### Fix 1 — Best-Cache-File Selection (Python Dashboards)
+- **Root cause**: `_load_prices()` in `generate_breadth_dashboard.py`, `generate_trade_plans_page.py`, `generate_sector_macro_page.py` returned the **first found** cache file instead of the most recently-dated one. Symbols with stale `_3528.csv` (March data) were used even when fresh `_900.csv` (April data) existed.
+- **Fix**: All three dashboard generators now read **ALL candidate cache files** per symbol and return the one with the **most recent last date**. Added `_5096` to the search list.
+- **Result**: Breadth dashboard now shows RECOVERY regime with April 2026 data instead of MIXED with March data.
+
+### Fix 2 — Yahoo Finance Cookie+Crumb Auth (Java)
+- **Root cause**: Yahoo Finance API requires cookie+crumb authentication since ~2024. Without it, requests get HTTP 401 or connection reset.
+- **Fix** (`src/YahooFinanceProvider.java`):
+  - Added `CookieManager` with `ACCEPT_ALL` to `HttpClient` for session cookies
+  - Added `getCrumb()` method: visits Yahoo homepage → fetches crumb from `/v1/test/getcrumb`
+  - Crumb cached for 20 minutes, thread-safe via `ReentrantLock`
+  - Crumb appended as `&crumb=TOKEN` to all chart API requests
+
+### Fix 3 — Circuit Breaker (Java + Python)
+- **Root cause**: When Yahoo Finance is unreachable (IP block), the scan tried 8s × 2 hosts × 3 retries **per symbol** with retry sleep delays (400+800+1200ms = 2.4s each). With 2119 symbols, this caused **~10 minute** scan times.
+- **Fix** (`src/YahooFinanceProvider.java`):
+  - Added `_yahooBlockedUntil` static field — after first network failure, Yahoo is skipped for 30 minutes
+  - `fetchFromYahoo()` returns `List.of()` (empty = "no new data") when circuit is open → retry loop breaks immediately without sleeping
+  - `getCrumb()` trips circuit breaker if homepage/crumb endpoints fail
+  - Request timeout reduced from 20s → 8s for fast failure
+- **Fix** (`scripts/refresh_cache.py`):
+  - Added `_yahoo_blocked_until` + `_is_yahoo_blocked()` + `_trip_circuit_breaker()`
+  - `_fetch_crumb()` trips circuit breaker on connection error
+  - `_get_session_and_crumb()` checks circuit before any retries (eliminates 5+10+15s sleep delays)
+  - `_fetch_bars()` checks circuit at start + before each retry → returns `[]` immediately when blocked
+  - `_do_refresh()` in parallel executor checks circuit → skips all remaining symbols instantly
+  - `_fetch_crumb` and chart request timeouts reduced from 20s → 8s
+- **Result**: India daily scan: **342s for batch 1** → **9s for batch 1**, total scan **~2 minutes** vs **~10 minutes**
+
+### Fix 3b — Variable Name Bug (Java)
+- Fixed `lastDate.plusDays(d)` → `lastValidDate.plusDays(d)` in `isDataCurrentEnough()` (was causing `javac` compile error)
+
+### Fix 4 — Auto Cache Refresh Pipeline
+- Added `scripts/refresh_cache.py` — Python-based incremental Yahoo Finance cache refresher
+  - Uses cookie+crumb auth (same mechanism as Java)
+  - Detects stale symbols by reading last date from each symbol's BEST cache file
+  - Parallel workers (default 8) with rate limiting
+  - Circuit breaker: stops immediately when Yahoo is unreachable instead of trying all 2119 symbols
+- Added **Step 0** to `run_master.sh` — runs `refresh_cache.py` before Java scan
+- Added cache refresh step to `run_analysis_dashboards.sh`
+
+### Fix 5 — `check_cache_freshness.py` Utility
+- New script to quickly check how many NSE symbols have fresh vs stale cache
+- Shows stale symbols with last date and count
+
+---
+
 ## 🔴 Pending (Phase 6)
 - [ ] Quarterly review trigger, IPO auto-flagging, historical breadth tracking
+- [ ] NSE holiday calendar integration for accurate stale detection (currently counts all weekdays, may flag holiday weeks as stale)
+- [ ] Update stale symbols with `&` in name (M&M, ARE&M, GMRP&UI etc.) when Yahoo Finance becomes accessible again
 
 ---
 
 ## 📊 Current Market (April 14, 2026)
-- **Regime**: CORRECTION (Score: 37/100) · **Oscillator**: STRONG BUY (+9.6)
-- **Top Accelerating**: Packaging - Films, Renewable Energy, Defense Electronics, EV Vehicles, Shipbuilding
+- **Regime**: RECOVERY (Score: 67/100) · **Oscillator**: STRONG BUY (+10.3)
+- **Cache**: 2099/2119 NSE symbols fresh to **April 10–13, 2026** · 20 symbols stale (Yahoo blocked)
+- **Daily Scan**: **~49 signals** — scanned 2101 stocks in **~2 minutes**
+- **Top Accelerating**: Renewable Energy, Optical Fiber Cables, Construction, Medical Devices, Power Towers
+- **Custom Themes**: Data Center & AI (3M: +20.5%, α +28.9%), India Manufacturing (+13.0%, α +21.4%), Metals (+7.6%, α +16.0%), Sugar (+11.5%, α +19.9%)
 - **Taxonomy**: 1,360 stocks · 380 industries · 24 sectors
+
+---
 
 ## 🚀 How to Run
 ```bash
+# Daily scan + dashboards (auto-refreshes cache, scans, generates HTML)
+./run_master.sh --markets india --skip-performance-tracker
+
+# Or just the dashboards (trade plans + breadth + sector/macro):
+./run_analysis_dashboards.sh
+
 # Start the full web console (includes Trade Board)
 source .venv/bin/activate && uvicorn apps.web.api.main:app --host 0.0.0.0 --port 8000
 
 # Open Trade Board
 open http://localhost:8000/board
 
-./run_analysis_dashboards.sh                          # Full dashboards (all)
-python3 apps/python/cli/generate_breadth_dashboard.py # Breadth only (fast)
-python3 scripts/add_missing_stocks.py                 # Add new stocks to taxonomy
-python3 scripts/fix_misclassifications2.py            # Fix sector/industry errors
+# Quick utilities
+python3 check_cache_freshness.py          # Check how many symbols have fresh data
+python3 scripts/refresh_cache.py --dry-run  # See what would be refreshed
+python3 scripts/refresh_cache.py            # Force refresh all stale cache files
+python3 apps/python/cli/generate_breadth_dashboard.py  # Breadth only (fast)
+python3 scripts/add_missing_stocks.py       # Add new stocks to taxonomy
+python3 scripts/fix_misclassifications2.py  # Fix sector/industry errors
 ```

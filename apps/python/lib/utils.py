@@ -2,15 +2,12 @@
 utils.py
 ────────
 Shared utility functions used across the Python pipeline.
-Centralises helpers that were previously duplicated across
-run_full_us_scan.py, run_backtest.py, stock_analyzer.py and
-trade_plan_assistant.py.
 """
 
 from __future__ import annotations
 
 import csv
-from datetime import datetime
+from datetime import datetime, date, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -51,6 +48,75 @@ def chunks(lst: list, n: int) -> Iterator[list]:
         yield lst[i:i + n]
 
 
+# ── Data-date freshness helpers ───────────────────────────────────────────────
+
+_MAX_DATA_GAP_DAYS = 5  # >5 calendar days between last candle and today = definitely stale
+
+try:
+    import pytz as _pytz
+    _IST = _pytz.timezone("Asia/Kolkata")
+except ImportError:
+    _IST = None  # fallback: use UTC offset naively
+
+def _ist_now() -> datetime:
+    """Current datetime in IST (UTC+5:30)."""
+    try:
+        if _IST:
+            return datetime.now(_IST)
+    except Exception:
+        pass
+    # Fallback: UTC + 5:30
+    from datetime import timezone as _tz
+    return datetime.now(_tz.utc) + timedelta(hours=5, minutes=30)
+
+
+def _is_data_current_enough(last_date_str: str) -> bool:
+    """
+    Return True if the last candle date is 'current enough' — meaning no closed
+    NSE trading session is missing from the data.
+
+    Mirrors the logic in YahooFinanceProvider.java::isDataCurrentEnough().
+
+    Rules (in IST):
+    - 0–1 calendar days gap → fresh
+    - > _MAX_DATA_GAP_DAYS  → stale
+    - 2–_MAX_DATA_GAP_DAYS:
+        count Mon–Fri days in gap (ignoring holidays — simple heuristic)
+        • 0 biz-days (pure weekend) → fresh
+        • ≥2 biz-days              → stale
+        • 1 biz-day (likely today) → stale only if NSE has closed (≥15:35 IST)
+    """
+    if not last_date_str:
+        return False
+    try:
+        last_date = datetime.fromisoformat(last_date_str).date()
+    except ValueError:
+        return False
+
+    today = _ist_now().date()
+    days_since = (today - last_date).days
+
+    if days_since <= 1:
+        return True
+    if days_since > _MAX_DATA_GAP_DAYS:
+        return False
+
+    biz_days = sum(
+        1 for d in range(1, days_since + 1)
+        if (last_date + timedelta(days=d)).weekday() < 5  # Mon=0 … Fri=4
+    )
+
+    if biz_days == 0:
+        return True   # pure weekend gap
+    if biz_days >= 2:
+        return False  # missed 2+ business days
+
+    # Exactly 1 biz-day missed: stale only after NSE closes (15:35 IST)
+    ist_now = _ist_now()
+    nse_close_today = ist_now.replace(hour=15, minute=35, second=0, microsecond=0)
+    return ist_now < nse_close_today
+
+
 # ── OHLCV bar helpers ─────────────────────────────────────────────────────────
 
 def aggregate_weekly_bars(rows: list[dict]) -> list[dict]:
@@ -74,7 +140,7 @@ def aggregate_weekly_bars(rows: list[dict]) -> list[dict]:
                 weekly.append(current)
             current_key = key
             current = {
-                "date": dt.isoformat(),
+                "date":   dt.isoformat(),
                 "open":   to_float(row.get("open")),
                 "high":   to_float(row.get("high")),
                 "low":    to_float(row.get("low")),
@@ -94,18 +160,59 @@ def aggregate_weekly_bars(rows: list[dict]) -> list[dict]:
 
 
 def _cache_candidates(symbol: str, lookback: int, timeframe: str, cache_dir: str) -> list[Path]:
+    """
+    Return candidate cache file paths in preference order.
+
+    Priority:
+    1. Exact-size fresh file  (SYMBOL_{lookback}.csv)
+    2. Exact-size stale file  (same, if no fresh one)
+    3. Larger files sorted by data freshness first, then by size (smallest adequate)
+    """
     cache = Path(cache_dir)
-    suffixes = {lookback}
+    exact = cache / f"{symbol}_{lookback}.csv"
+
+    # Build superset of candidate sizes
+    suffixes: set[int] = {lookback, 252, 728}
     if timeframe == "weekly":
         suffixes.add(max(lookback * 7, lookback + 60))
-    suffixes.update({252, 728})
-    files = [cache / f"{symbol}_{n}.csv" for n in sorted(suffixes)]
-    existing = [p for p in files if p.exists()]
-    return existing if existing else sorted(cache.glob(f"{symbol}_*.csv"))
+
+    named = [cache / f"{symbol}_{n}.csv" for n in sorted(suffixes)]
+    named_existing = [p for p in named if p.exists()]
+
+    # Fallback glob
+    all_existing = sorted(cache.glob(f"{symbol}_*.csv")) if not named_existing else []
+
+    candidates = named_existing or all_existing
+
+    # Sort: fresh files first (by data date), then by size (smaller = less I/O)
+    def sort_key(p: Path):
+        try:
+            with open(p, newline="") as fh:
+                reader = csv.DictReader(fh)
+                last_date = ""
+                for row in reader:
+                    last_date = str(row.get("date", "")).strip()
+            # Fresh files score 0, stale score 1 (so fresh sort before stale)
+            freshness = 0 if _is_data_current_enough(last_date) else 1
+            # Secondary: file size (smaller = prefer)
+            try:
+                size = p.stat().st_size
+            except OSError:
+                size = 10 ** 9
+            return (freshness, size)
+        except Exception:
+            return (1, 10 ** 9)
+
+    candidates.sort(key=sort_key)
+    return candidates
 
 
 def load_cached_bars(symbol: str, lookback: int, timeframe: str, cache_dir: str) -> list[dict]:
-    """Load OHLCV bars for *symbol* from cache CSVs; returns weekly bars if requested."""
+    """Load OHLCV bars for *symbol* from cache CSVs; returns weekly bars if requested.
+
+    Prefers files whose last candle date is 'current enough' (see _is_data_current_enough).
+    Falls back to stale files if no fresh file exists (graceful degradation).
+    """
     for path in _cache_candidates(symbol, lookback, timeframe, cache_dir):
         try:
             rows: list[dict] = []

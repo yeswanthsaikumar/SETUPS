@@ -292,48 +292,84 @@ CUSTOM_THEMES: dict[str, dict] = {
 
 # ── Price helpers ──────────────────────────────────────────────────────────────
 
+def _read_csv_price_rows(p: Path) -> tuple[list[dict], str]:
+    """Read OHLCV rows from a cache CSV, returns (rows, last_date_str)."""
+    rows: list[dict] = []
+    last_date = ""
+    try:
+        with open(p, newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                c = _f(row.get("close"))
+                if c > 0:
+                    d = str(row.get("date", "")).strip()
+                    if d:
+                        last_date = d
+                    rows.append({"close": c, "volume": _f(row.get("volume", 0))})
+    except Exception:
+        pass
+    return rows, last_date
+
+
 def _load_prices(ticker: str) -> list[dict]:
-    best: list[dict] = []
-    for suffix in ["_3528", "_900", "_728", "_504", "_252", "_60"]:
+    """Load price rows from cache, preferring the file with the most recent data."""
+    candidates: list[tuple[str, Path]] = []   # (last_date, path)
+    for suffix in ["_5096", "_3528", "_900", "_728", "_504", "_252", "_60"]:
         for name in (f"{ticker}.NS{suffix}.csv", f"{ticker}{suffix}.csv"):
             p = CACHE_DIR / name
-            if not p.exists():
-                continue
-            rows: list[dict] = []
-            try:
-                with open(p, newline="", encoding="utf-8") as f:
-                    for row in csv.DictReader(f):
-                        c = _f(row.get("close"))
-                        if c > 0:
-                            rows.append({"close": c, "volume": _f(row.get("volume", 0))})
-            except Exception:
-                pass
-            if len(rows) > len(best):
-                best = rows
-            if best:
-                break
-        if best:
-            break
-    return best
+            if p.exists():
+                candidates.append((suffix, p))
+
+    if not candidates:
+        return []
+
+    # Read all candidate files, collect (last_date, rows)
+    best_rows: list[dict] = []
+    best_date: str = ""
+    best_len: int = 0
+
+    for suffix, p in candidates:
+        rows, last_date = _read_csv_price_rows(p)
+        if not rows:
+            continue
+        # Prefer: most recent date first, then most rows as tiebreaker
+        if last_date > best_date or (last_date == best_date and len(rows) > best_len):
+            best_rows = rows
+            best_date = last_date
+            best_len  = len(rows)
+
+    return best_rows
 
 
 def _load_nifty() -> list[float]:
-    for suffix in ["_3528", "_900", "_728", "_504", "_252"]:
+    """Load Nifty 50 closes from cache, preferring the file with the most recent data."""
+    candidates: list[Path] = []
+    for suffix in ["_5096", "_3528", "_900", "_728", "_504", "_252"]:
         p = CACHE_DIR / f"^NSEI{suffix}.csv"
-        if not p.exists():
-            continue
+        if p.exists():
+            candidates.append(p)
+
+    best_closes: list[float] = []
+    best_date: str = ""
+
+    for p in candidates:
         closes: list[float] = []
+        last_date = ""
         try:
             with open(p, newline="", encoding="utf-8") as f:
                 for row in csv.DictReader(f):
                     c = _f(row.get("close"))
                     if c > 0:
+                        d = str(row.get("date", "")).strip()
+                        if d:
+                            last_date = d
                         closes.append(c)
         except Exception:
             pass
-        if closes:
-            return closes
-    return []
+        if closes and last_date > best_date:
+            best_closes = closes
+            best_date   = last_date
+
+    return best_closes
 
 
 def _rs(stock: list[float], bench: list[float], periods: int = 63) -> float | None:

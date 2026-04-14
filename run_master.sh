@@ -89,6 +89,20 @@ echo -e "  Output dir : ${YELLOW}${OUTPUT_DIR}${RESET}"
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
+# STEP 0 — Auto-refresh stale cache (Python Yahoo Finance with cookie+crumb)
+# ─────────────────────────────────────────────────────────────────────────────
+echo -e "${BOLD}▶ Step 0 — Refreshing stale cache files (Yahoo Finance)…${RESET}"
+START_CACHE=$SECONDS
+if [ -f "scripts/refresh_cache.py" ]; then
+    python3 scripts/refresh_cache.py --workers 8 || echo -e "${YELLOW}  ⚠ Cache refresh had issues (non-fatal — scan continues with existing data)${RESET}"
+    CACHE_TIME=$((SECONDS - START_CACHE))
+    echo -e "${GREEN}   ✅ Cache refresh done in ${CACHE_TIME}s${RESET}"
+else
+    echo -e "${YELLOW}  ⚠ scripts/refresh_cache.py not found — skipping cache refresh${RESET}"
+fi
+echo ""
+
+# ─────────────────────────────────────────────────────────────────────────────
 # STEP 1 — Full scan (India + US, Daily + Weekly, all setups)
 # ─────────────────────────────────────────────────────────────────────────────
 echo -e "${BOLD}▶ Step 1/2 — Running full breakout scan…${RESET}"

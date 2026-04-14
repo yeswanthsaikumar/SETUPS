@@ -23,6 +23,8 @@ CLI_DIR = ROOT / "apps" / "python" / "cli"
 PY_LIB_DIR = ROOT / "apps" / "python" / "lib"
 UI_INDEX = ROOT / "apps" / "web" / "ui" / "index.html"
 TRADE_BOARD_UI = ROOT / "apps" / "web" / "ui" / "trade_board.html"
+SECTOR_MACRO_HTML = OUTPUT_DIR / "sector_macro_analysis.html"
+GENERATE_SECTOR_MACRO = CLI_DIR / "generate_sector_macro_page.py"
 WEB_JOBS_DIR = OUTPUT_DIR / "web_jobs"
 PERF_TRACKER_JSON = OUTPUT_DIR / "performance_tracker.json"
 TRADE_BOARD_JSON = OUTPUT_DIR / "trade_board.json"   # ← new trade board store
@@ -206,6 +208,25 @@ def trade_board_page() -> FileResponse:
     if not TRADE_BOARD_UI.exists():
         raise HTTPException(status_code=404, detail="Trade board UI not found")
     return FileResponse(TRADE_BOARD_UI)
+
+
+@app.get("/sector")
+def sector_macro_page() -> FileResponse:
+    """Serve the pre-built Sector Rotation & Macro Analysis HTML page."""
+    if not SECTOR_MACRO_HTML.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Sector macro analysis page not found. Run generate_sector_macro_page.py first.",
+        )
+    return FileResponse(SECTOR_MACRO_HTML, media_type="text/html")
+
+
+@app.post("/api/jobs/sector-macro")
+def start_sector_macro_job() -> dict:
+    """Trigger async regeneration of the Sector Rotation & Macro Analysis page."""
+    command = [sys.executable, str(GENERATE_SECTOR_MACRO)]
+    job = _submit_job("scan", command)
+    return {"job": job, "message": "Sector macro analysis regeneration started"}
 
 
 @app.get("/")

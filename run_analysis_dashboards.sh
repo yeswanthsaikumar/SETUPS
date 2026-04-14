@@ -41,6 +41,13 @@ if [ "$SKIP_MF" = false ]; then
 fi
 echo ""
 
+# ── 0. Auto-refresh stale cache ─────────────────────────────────────────────
+if [ -f "scripts/refresh_cache.py" ]; then
+  echo "Refreshing stale Yahoo Finance cache files…"
+  python3 scripts/refresh_cache.py --workers 8 || echo "  ⚠ Cache refresh had issues (non-fatal)"
+  echo ""
+fi
+
 # ── 1. Live Trade Plans (with MF holdings) + Sector & Macro + Market Breadth ───────
 if [ "$SKIP_MF" = true ]; then
   echo "[1/1] Generating Trade Plans (MF skipped) + Sector & Macro + Market Breadth..."
@@ -85,5 +92,7 @@ if command -v open &>/dev/null; then
   open output/trade_plans_live.html
   sleep 0.4
   open output/market_breadth.html
+  sleep 0.4
+  open output/sector_macro_analysis.html
 fi
 
