@@ -4,13 +4,20 @@ from pathlib import Path
 import csv, datetime, math, zoneinfo
 
 IST = zoneinfo.ZoneInfo("Asia/Kolkata")
-cache = Path("/Users/yeshwantha/IdeaProjects/SETUPS/cache")
+cache = Path(__file__).resolve().parent / "cache"
 today = datetime.datetime.now(IST).date()
 cutoff = today - datetime.timedelta(days=5)
 
 sym_best: dict[str, str] = {}
-for p in sorted(cache.glob("*.NS_*.csv")):
-    sym = p.name.split("_")[0]
+
+# Discover both legacy (SYMBOL.NS_NNN.csv) and unified (SYMBOL.NS.csv) files
+for p in sorted(list(cache.glob("*.NS_*.csv")) + list(cache.glob("*.NS.csv"))):
+    name = p.name
+    # Extract symbol: "FOO.NS_900.csv" → "FOO.NS", "FOO.NS.csv" → "FOO.NS"
+    if ".NS_" in name:
+        sym = name.split("_")[0]
+    else:
+        sym = name.replace(".csv", "")
     try:
         last = ""
         with open(p) as f:

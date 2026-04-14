@@ -110,11 +110,14 @@ def get_sector(symbol: str) -> str:
 
 
 def _cache_paths_for(symbol: str) -> list[Path]:
-    return [CACHE_DIR / f"{symbol}_{suffix}.csv" for suffix in (5096, 3528, 900, 728, 504, 252, 60, 30)]
+    """Return candidate cache files: unified first, then legacy suffixed files."""
+    unified = CACHE_DIR / f"{symbol}.csv"
+    legacy = [CACHE_DIR / f"{symbol}_{suffix}.csv" for suffix in (5096, 3528, 900, 728, 504, 252, 60, 30)]
+    return [unified] + legacy
 
 
 def _load_rows_from_cache(symbol: str) -> list[dict]:
-    """Load price rows preferring the file with the most recent data date."""
+    """Load price rows preferring unified file, then best legacy file by date."""
     best_rows: list[dict] = []
     best_date: str = ""
 
@@ -143,6 +146,9 @@ def _load_rows_from_cache(symbol: str) -> list[dict]:
         if rows and last_date > best_date:
             best_rows = rows
             best_date = last_date
+            # If we found the unified file and it has data, stop looking
+            if path.name == f"{symbol}.csv":
+                break
 
     if best_rows:
         best_rows.sort(key=lambda r: r.get("date", ""))
@@ -150,7 +156,8 @@ def _load_rows_from_cache(symbol: str) -> list[dict]:
 
 
 def _write_rows_to_cache(symbol: str, rows: list[dict]):
-    path = CACHE_DIR / f"{symbol}_{CACHE_BAR_CAP}.csv"
+    """Write to unified SYMBOL.csv (not legacy _N.csv)."""
+    path = CACHE_DIR / f"{symbol}.csv"
     try:
         with open(path, "w", newline="") as fh:
             w = csv.writer(fh)

@@ -231,12 +231,15 @@ def load_bars(csv_path: Path) -> list[dict]:
     return bars
 
 def load_all_india_bars(max_stocks=None):
-    files = sorted(CACHE_DIR.glob("*.NS_900.csv"))
+    # Prefer unified files, fallback to legacy _900.csv
+    files = sorted(CACHE_DIR.glob("*.NS.csv"))
+    if not files:
+        files = sorted(CACHE_DIR.glob("*.NS_900.csv"))
     if max_stocks:
         files = files[:max_stocks]
     all_bars = {}
     for f in files:
-        sym = f.stem.replace("_900", "")
+        sym = f.stem.replace("_900", "")  # works for both "FOO.NS" and "FOO.NS_900"
         bars = load_bars(f)
         if len(bars) >= MIN_BARS_REQ:
             all_bars[sym] = bars

@@ -164,14 +164,17 @@ def _cache_candidates(symbol: str, lookback: int, timeframe: str, cache_dir: str
     Return candidate cache file paths in preference order.
 
     Priority:
-    1. Exact-size fresh file  (SYMBOL_{lookback}.csv)
-    2. Exact-size stale file  (same, if no fresh one)
-    3. Larger files sorted by data freshness first, then by size (smallest adequate)
+    1. Unified file (SYMBOL.csv) — post-migration single file
+    2. Legacy files (SYMBOL_{N}.csv) sorted by freshness then size
     """
     cache = Path(cache_dir)
-    exact = cache / f"{symbol}_{lookback}.csv"
 
-    # Build superset of candidate sizes
+    # 1) Unified file — always preferred
+    unified = cache / f"{symbol}.csv"
+    if unified.exists():
+        return [unified]
+
+    # 2) Legacy fallback
     suffixes: set[int] = {lookback, 252, 728}
     if timeframe == "weekly":
         suffixes.add(max(lookback * 7, lookback + 60))
@@ -192,9 +195,7 @@ def _cache_candidates(symbol: str, lookback: int, timeframe: str, cache_dir: str
                 last_date = ""
                 for row in reader:
                     last_date = str(row.get("date", "")).strip()
-            # Fresh files score 0, stale score 1 (so fresh sort before stale)
             freshness = 0 if _is_data_current_enough(last_date) else 1
-            # Secondary: file size (smaller = prefer)
             try:
                 size = p.stat().st_size
             except OSError:

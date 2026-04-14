@@ -226,23 +226,29 @@ def _read_last_date(csv_path: Path) -> str:
 
 
 def _find_stale_caches(symbol_filter: list[str] | None = None) -> list[tuple[str, Path, str]]:
-    """Return list of (symbol, best_cache_path, last_date) for stale entries."""
+    """Return list of (symbol, unified_cache_path, last_date) for stale entries.
+    Always returns the unified SYMBOL.csv path (not legacy _N.csv paths)."""
     # Group cache files by base symbol — handle .NS and .BO, including symbols with & in name
     sym_files: dict[str, list[Path]] = {}
+
+    # 1) Discover unified files: SYMBOL.NS.csv
+    for p in CACHE_DIR.glob("*.NS.csv"):
+        sym = p.name.replace(".csv", "")
+        sym_files.setdefault(sym, []).append(p)
+    for p in CACHE_DIR.glob("*.BO.csv"):
+        sym = p.name.replace(".csv", "")
+        sym_files.setdefault(sym, []).append(p)
+
+    # 2) Discover legacy files: SYMBOL.NS_NNN.csv — group under same symbol
     for p in CACHE_DIR.glob("*_*.csv"):
         name = p.name
-        # Identify exchange suffix and numeric size suffix
-        # Pattern: SYMBOL.NS_NNN.csv or SYMBOL.BO_NNN.csv
         for exch in (".NS_", ".BO_"):
             idx = name.find(exch)
             if idx != -1:
-                sym = name[:idx + len(exch) - 1]  # e.g. "TATASTEEL.NS" or "M&M.NS"
-                # Verify the suffix after the exchange marker is numeric
+                sym = name[:idx + len(exch) - 1]  # e.g. "TATASTEEL.NS"
                 rest = name[idx + len(exch):]
                 if rest.replace(".csv", "").isdigit():
-                    if sym not in sym_files:
-                        sym_files[sym] = []
-                    sym_files[sym].append(p)
+                    sym_files.setdefault(sym, []).append(p)
                 break
 
     # Filter by symbol if requested
@@ -255,17 +261,18 @@ def _find_stale_caches(symbol_filter: list[str] | None = None) -> list[tuple[str
 
     stale: list[tuple[str, Path, str]] = []
     for sym, files in sorted(sym_files.items()):
-        # Find the file with the most recent last date
-        best: Path | None = None
+        # Always target the unified file for writing
+        unified_path = CACHE_DIR / f"{sym}.csv"
+
+        # Find the most recent last date across ALL files for this symbol
         best_last = ""
-        for f in sorted(files, key=lambda p: p.stat().st_size if p.exists() else 0, reverse=True):
+        for f in files:
             last = _read_last_date(f)
             if last > best_last:
                 best_last = last
-                best = f
 
-        if best and _is_stale(best_last):
-            stale.append((sym, best, best_last))
+        if _is_stale(best_last):
+            stale.append((sym, unified_path, best_last))
 
     return stale
 
@@ -486,7 +493,7 @@ def _merge_bars(old: list[dict], new: list[dict]) -> list[dict]:
 # ── Per-symbol refresh ───────────────────────────────────────────────────────
 
 def refresh_symbol(sym: str, cache_path: Path, last_date: str, force: bool = False, dry_run: bool = False) -> dict:
-    """Refresh cache for one symbol. Returns result dict."""
+    """Refresh cache for one symbol. Writes to unified SYMBOL.csv, merges legacy files, deletes them."""
     result = {"symbol": sym, "status": "skipped", "bars_added": 0, "last_date": last_date}
 
     if not force and not _is_stale(last_date):
@@ -497,21 +504,41 @@ def refresh_symbol(sym: str, cache_path: Path, last_date: str, force: bool = Fal
         result["status"] = "would_refresh"
         return result
 
-    # Read existing bars
+    # Read existing bars from ALL files: unified + legacy
     existing = _read_cache_bars(cache_path) if cache_path.exists() else []
-    fetch_from = last_date if existing else None
+    legacy_files = _find_legacy_files_for_symbol(sym)
+    for lf in legacy_files:
+        existing.extend(_read_cache_bars(lf))
+    # Deduplicate by date (keep latest row per date)
+    by_date = {}
+    for bar in existing:
+        by_date[bar["date"]] = bar
+    existing = sorted(by_date.values(), key=lambda b: b["date"])
+
+    fetch_from = existing[-1]["date"] if existing else None
 
     # Fetch new bars
     new_bars = _fetch_bars(sym, from_date=fetch_from)
     time.sleep(RATE_LIMIT_DELAY)  # Rate limit protection
 
     if not new_bars:
+        # Even with no new data, consolidate legacy files if they exist
+        if legacy_files and existing:
+            _write_cache(cache_path, existing)
+            for lf in legacy_files:
+                try: lf.unlink()
+                except Exception: pass
         result["status"] = "no_new_data"
         return result
 
-    # Merge and write
+    # Merge and write to unified path
     merged = _merge_bars(existing, new_bars)
     _write_cache(cache_path, merged)
+
+    # Delete legacy files now that unified file is written
+    for lf in legacy_files:
+        try: lf.unlink()
+        except Exception: pass
 
     new_last = merged[-1]["date"] if merged else last_date
     bars_added = len(new_bars)
@@ -521,6 +548,20 @@ def refresh_symbol(sym: str, cache_path: Path, last_date: str, force: bool = Fal
         "last_date":  new_last,
     })
     return result
+
+
+def _find_legacy_files_for_symbol(sym: str) -> list[Path]:
+    """Find all legacy SYMBOL_NNN.csv files for a given symbol."""
+    legacy = []
+    for p in CACHE_DIR.glob(f"{sym}_*.csv"):
+        # Verify the part after the last _ is numeric
+        name = p.name
+        idx = name.rfind("_")
+        if idx > 0:
+            num_part = name[idx + 1:].replace(".csv", "")
+            if num_part.isdigit():
+                legacy.append(p)
+    return sorted(legacy, key=lambda p: p.stat().st_size, reverse=True)
 
 
 # ── All cache files refresh ──────────────────────────────────────────────────
@@ -631,27 +672,44 @@ def refresh_all_stale_caches(
 
 
 def refresh_nifty_index():
-    """Refresh Nifty 50 index (^NSEI) cache."""
-    nifty_files = list(CACHE_DIR.glob("^NSEI_*.csv"))
-    if not nifty_files:
-        # Create a new one
-        nifty_path = CACHE_DIR / "^NSEI_3528.csv"
-    else:
-        nifty_path = sorted(nifty_files, key=lambda p: p.stat().st_size, reverse=True)[0]
+    """Refresh Nifty 50 index (^NSEI) cache into unified ^NSEI.csv."""
+    nifty_path = CACHE_DIR / "^NSEI.csv"
 
-    last_date = _read_last_date(nifty_path)
+    # Merge all legacy ^NSEI_N.csv files
+    existing = _read_cache_bars(nifty_path) if nifty_path.exists() else []
+    legacy_files = sorted(CACHE_DIR.glob("^NSEI_*.csv"), key=lambda p: p.stat().st_size, reverse=True)
+    for lf in legacy_files:
+        existing.extend(_read_cache_bars(lf))
+    by_date = {}
+    for bar in existing:
+        by_date[bar["date"]] = bar
+    existing = sorted(by_date.values(), key=lambda b: b["date"])
+
+    last_date = existing[-1]["date"] if existing else ""
     if not _is_stale(last_date):
         print(f"✅ Nifty cache is fresh (last: {last_date})", flush=True)
+        if legacy_files:
+            _write_cache(nifty_path, existing)
+            for lf in legacy_files:
+                try: lf.unlink()
+                except Exception: pass
         return
 
     print(f"🔄 Refreshing Nifty 50 index (last: {last_date or 'none'})…", flush=True)
-    existing = _read_cache_bars(nifty_path) if nifty_path.exists() else []
-    new_bars = _fetch_bars("^NSEI", from_date=last_date)
+    new_bars = _fetch_bars("^NSEI", from_date=last_date if existing else None)
     if new_bars:
         merged = _merge_bars(existing, new_bars)
         _write_cache(nifty_path, merged)
+        for lf in legacy_files:
+            try: lf.unlink()
+            except Exception: pass
         print(f"✅ Nifty updated: +{len(new_bars)} bars → {merged[-1]['date']}", flush=True)
     else:
+        if legacy_files and existing:
+            _write_cache(nifty_path, existing)
+            for lf in legacy_files:
+                try: lf.unlink()
+                except Exception: pass
         print("⚠ No new Nifty bars fetched (market may be closed / Yahoo unavailable)", flush=True)
 
 

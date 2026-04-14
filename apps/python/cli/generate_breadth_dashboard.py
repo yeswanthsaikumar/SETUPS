@@ -311,8 +311,17 @@ def _read_csv_price_rows(p: Path) -> tuple[list[dict], str]:
 
 
 def _load_prices(ticker: str) -> list[dict]:
-    """Load price rows from cache, preferring the file with the most recent data."""
-    candidates: list[tuple[str, Path]] = []   # (last_date, path)
+    """Load price rows from cache, preferring unified SYMBOL.csv file."""
+    # 1) Try unified file first
+    for name in (f"{ticker}.NS.csv", f"{ticker}.csv"):
+        p = CACHE_DIR / name
+        if p.exists():
+            rows, _ = _read_csv_price_rows(p)
+            if rows:
+                return rows
+
+    # 2) Legacy fallback: try _N.csv files, pick best by most recent date
+    candidates: list[tuple[str, Path]] = []
     for suffix in ["_5096", "_3528", "_900", "_728", "_504", "_252", "_60"]:
         for name in (f"{ticker}.NS{suffix}.csv", f"{ticker}{suffix}.csv"):
             p = CACHE_DIR / name
@@ -322,7 +331,6 @@ def _load_prices(ticker: str) -> list[dict]:
     if not candidates:
         return []
 
-    # Read all candidate files, collect (last_date, rows)
     best_rows: list[dict] = []
     best_date: str = ""
     best_len: int = 0
@@ -331,7 +339,6 @@ def _load_prices(ticker: str) -> list[dict]:
         rows, last_date = _read_csv_price_rows(p)
         if not rows:
             continue
-        # Prefer: most recent date first, then most rows as tiebreaker
         if last_date > best_date or (last_date == best_date and len(rows) > best_len):
             best_rows = rows
             best_date = last_date
@@ -341,30 +348,36 @@ def _load_prices(ticker: str) -> list[dict]:
 
 
 def _load_nifty() -> list[float]:
-    """Load Nifty 50 closes from cache, preferring the file with the most recent data."""
-    candidates: list[Path] = []
-    for suffix in ["_5096", "_3528", "_900", "_728", "_504", "_252"]:
-        p = CACHE_DIR / f"^NSEI{suffix}.csv"
-        if p.exists():
-            candidates.append(p)
-
-    best_closes: list[float] = []
-    best_date: str = ""
-
-    for p in candidates:
-        closes: list[float] = []
-        last_date = ""
+    """Load Nifty 50 closes from cache, preferring unified ^NSEI.csv."""
+    def _read_nifty_closes(p: Path) -> tuple[list[float], str]:
+        closes, last_date = [], ""
         try:
             with open(p, newline="", encoding="utf-8") as f:
                 for row in csv.DictReader(f):
                     c = _f(row.get("close"))
                     if c > 0:
                         d = str(row.get("date", "")).strip()
-                        if d:
-                            last_date = d
+                        if d: last_date = d
                         closes.append(c)
         except Exception:
             pass
+        return closes, last_date
+
+    # 1) Try unified file first
+    unified = CACHE_DIR / "^NSEI.csv"
+    if unified.exists():
+        closes, _ = _read_nifty_closes(unified)
+        if closes:
+            return closes
+
+    # 2) Legacy fallback
+    best_closes: list[float] = []
+    best_date: str = ""
+    for suffix in ["_5096", "_3528", "_900", "_728", "_504", "_252"]:
+        p = CACHE_DIR / f"^NSEI{suffix}.csv"
+        if not p.exists():
+            continue
+        closes, last_date = _read_nifty_closes(p)
         if closes and last_date > best_date:
             best_closes = closes
             best_date   = last_date

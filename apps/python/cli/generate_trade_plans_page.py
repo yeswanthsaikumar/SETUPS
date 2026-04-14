@@ -618,38 +618,41 @@ def compute_industry_breadth_all(
 
 
 def _load_price_rows_uncached(symbol: str) -> list[dict]:
-    """Load price rows preferring the file with the most recent data date."""
-    candidates: list[Path] = []
-    for suffix in ["_5096", "_3528", "_900", "_728", "_504", "_252", "_60"]:
-        p = CACHE_DIR / f"{symbol}{suffix}.csv"
-        if p.exists():
-            candidates.append(p)
-
-    best_rows: list[dict] = []
-    best_date: str = ""
-
-    for p in candidates:
-        rows: list[dict] = []
-        last_date = ""
+    """Load price rows preferring unified SYMBOL.csv, legacy fallback."""
+    def _read(p: Path) -> tuple[list[dict], str]:
+        rows, last_date = [], ""
         try:
             with open(p) as f:
                 for row in csv.DictReader(f):
                     d = row.get("date", "")
-                    if d:
-                        last_date = d
+                    if d: last_date = d
                     rows.append({
-                        "date":   d,
-                        "open":   _f(row.get("open")),
-                        "high":   _f(row.get("high")),
-                        "low":    _f(row.get("low")),
-                        "close":  _f(row.get("close")),
+                        "date": d, "open": _f(row.get("open")), "high": _f(row.get("high")),
+                        "low": _f(row.get("low")), "close": _f(row.get("close")),
                         "volume": _f(row.get("volume")),
                     })
         except Exception:
             rows = []
-        if rows and last_date > best_date:
-            best_rows = rows
-            best_date = last_date
+        return rows, last_date
+
+    # 1) Try unified file
+    for name in [f"{symbol}.csv", f"{symbol}.NS.csv"]:
+        p = CACHE_DIR / name
+        if p.exists():
+            rows, _ = _read(p)
+            if rows:
+                return rows
+
+    # 2) Legacy fallback
+    best_rows: list[dict] = []
+    best_date: str = ""
+    for suffix in ["_5096", "_3528", "_900", "_728", "_504", "_252", "_60"]:
+        p = CACHE_DIR / f"{symbol}{suffix}.csv"
+        if p.exists():
+            rows, last_date = _read(p)
+            if rows and last_date > best_date:
+                best_rows = rows
+                best_date = last_date
 
     return best_rows
 

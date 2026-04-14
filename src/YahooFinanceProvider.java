@@ -185,18 +185,16 @@ public class YahooFinanceProvider implements MarketDataProvider {
     }
 
     /**
-     * Merge newly-fetched bars into a stale baseline, let fresh bars overwrite stale
-     * on the same date, sort chronologically, and trim to the most recent lookbackDays bars.
+     * Merge newly-fetched bars into existing data: fresh bars overwrite same dates,
+     * new dates are appended. Result is sorted chronologically (oldest first, newest last).
+     * No trimming — we keep ALL historical data in the unified cache file.
      */
-    private List<Candle> mergeAndTrim(List<Candle> stale, List<Candle> fresh, int lookbackDays) {
+    private List<Candle> mergeAll(List<Candle> existing, List<Candle> fresh) {
         Map<LocalDate, Candle> byDate = new LinkedHashMap<>();
-        for (Candle c : stale) byDate.put(c.getDate(), c);
-        for (Candle c : fresh)  byDate.put(c.getDate(), c); // fresh overwrites same date
+        for (Candle c : existing) byDate.put(c.getDate(), c);
+        for (Candle c : fresh)    byDate.put(c.getDate(), c); // fresh overwrites same date
         List<Candle> merged = new ArrayList<>(byDate.values());
         merged.sort(Comparator.comparing(Candle::getDate));
-        if (merged.size() > lookbackDays) {
-            merged = new ArrayList<>(merged.subList(merged.size() - lookbackDays, merged.size()));
-        }
         return merged;
     }
 
@@ -206,43 +204,39 @@ public class YahooFinanceProvider implements MarketDataProvider {
             Files.createDirectories(cacheDir);
         } catch (IOException ignored) {}
 
-        Path cacheFile = cacheDir.resolve(symbol.toUpperCase() + "_" + lookbackDays + ".csv");
+        // Single cache file per symbol — all historical data in one file.
+        // New dates are always appended at the end (last row).
+        Path cacheFile = cacheDir.resolve(symbol.toUpperCase() + ".csv");
 
-        // 1. Exact-size cache — primary freshness check is DATA DATE (not file mtime).
-        //    A file written hours ago with March-31 data is stale; a week-old file with
-        //    last Friday's data may still be current (long holiday weekend).
-        List<Candle> exact = readCache(cacheFile, false);
-        if (isDataCurrentEnough(exact)) return exact;
+        // 1. Read the single unified cache file.
+        List<Candle> cached = readCache(cacheFile, false);
+        if (isDataCurrentEnough(cached)) {
+            return trimToLookback(cached, lookbackDays);
+        }
 
-        // 2. Any alternative cache file (larger) that already has current data.
-        //    Avoids a network round-trip when a bigger file is already up-to-date.
-        List<Candle> altFresh = findFreshAlternativeCache(symbol, lookbackDays);
-        if (!altFresh.isEmpty()) {
-            return trimToLookback(altFresh, lookbackDays);
+        // 2. One-time migration: if unified file missing/empty, try to absorb legacy
+        //    SYMBOL_N.csv files (largest first) so we don't lose existing data.
+        if (cached.isEmpty()) {
+            cached = migrateLegacyCacheFiles(symbol);
         }
 
         // 3. Incremental network fetch — only download bars after the last known date.
-        //    We do NOT cache-guard stale checks with file mtime here, because:
-        //    - Yahoo may publish EOD data with a short delay after market close.
-        //    - A "recently checked" cache guard would prevent getting the new data.
-        //    - isDataCurrentEnough() above already handles "cache is up-to-date → skip Yahoo".
-        List<Candle> stale = !exact.isEmpty() ? exact : readBestExistingCache(symbol, lookbackDays, false);
-        LocalDate fetchFrom = stale.isEmpty() ? null : stale.get(stale.size() - 1).getDate();
+        //    New bars are appended at the end of the file (chronological order).
+        LocalDate fetchFrom = cached.isEmpty() ? null : cached.get(cached.size() - 1).getDate();
 
         Exception lastError = null;
         for (int attempt = 1; attempt <= retries; attempt++) {
             try {
                 List<Candle> newBars = fetchFromYahoo(symbol, lookbackDays, fetchFrom);
                 if (!newBars.isEmpty()) {
-                    // Got new bars — merge with stale baseline, persist, and return.
-                    List<Candle> merged = mergeAndTrim(stale, newBars, lookbackDays);
+                    // Merge: existing data + new bars, dedup by date, sort chronologically.
+                    // New dates naturally end up as the last rows.
+                    List<Candle> merged = mergeAll(cached, newBars);
                     writeCache(cacheFile, merged);
-                    return merged;
+                    // Clean up legacy files now that unified file is written
+                    deleteLegacyCacheFiles(symbol);
+                    return trimToLookback(merged, lookbackDays);
                 }
-                // Yahoo returned HTTP 200 but no new bars — market is closed (holiday /
-                // weekend) OR data is not yet published.  Do NOT touch the cache file so
-                // that the next scan run will re-check Yahoo and pick up data as soon as
-                // it becomes available (typically within minutes of market close).
                 break; // no point retrying if HTTP 200 with empty result
             } catch (Exception ex) {
                 lastError = ex;
@@ -251,8 +245,13 @@ public class YahooFinanceProvider implements MarketDataProvider {
         }
 
         // 4. Stale fallback — graceful degradation when network fails or data unavailable.
-        if (!stale.isEmpty()) {
-            return trimToLookback(stale, lookbackDays);
+        if (!cached.isEmpty()) {
+            // Persist the migrated data even without new bars
+            if (!Files.exists(cacheFile)) {
+                writeCache(cacheFile, cached);
+                deleteLegacyCacheFiles(symbol);
+            }
+            return trimToLookback(cached, lookbackDays);
         }
 
         throw new RuntimeException("Failed to fetch Yahoo data for symbol: " + symbol, lastError);
@@ -268,87 +267,62 @@ public class YahooFinanceProvider implements MarketDataProvider {
     }
 
     /**
-     * Scan cache directory for any SYMBOL_N.csv file that passes the data-date freshness
-     * check AND has at least lookbackDays bars.  Returns the best candidate (smallest
-     * adequate file) or an empty list if none qualify.
+     * One-time migration: read ALL legacy SYMBOL_N.csv files, merge their data into a
+     * single unified list sorted chronologically. This preserves the maximum amount of
+     * historical data by combining all lookback variants.
      */
-    private List<Candle> findFreshAlternativeCache(String symbol, int lookbackDays) {
-        String prefix = symbol.toUpperCase() + "_";
-        List<Path> candidates = new ArrayList<>();
-        try (var stream = Files.list(cacheDir)) {
-            stream.filter(p -> {
-                String name = p.getFileName().toString();
-                return name.startsWith(prefix) && name.endsWith(".csv");
-            }).forEach(candidates::add);
-        } catch (IOException ignored) {
-            return List.of();
-        }
-        if (candidates.isEmpty()) return List.of();
+    private List<Candle> migrateLegacyCacheFiles(String symbol) {
+        List<Path> legacyFiles = findLegacyCacheFiles(symbol);
+        if (legacyFiles.isEmpty()) return List.of();
 
-        // Sort ascending by numeric suffix (smallest first → least I/O)
-        candidates.sort(Comparator.comparingInt(p -> {
-            String name = p.getFileName().toString();
-            String num  = name.substring(prefix.length(), name.length() - 4);
-            try { return Integer.parseInt(num); } catch (NumberFormatException e) { return Integer.MAX_VALUE; }
-        }));
-
-        for (Path candidate : candidates) {
-            List<Candle> candles = readCache(candidate, false);
-            if (candles.size() >= lookbackDays && isDataCurrentEnough(candles)) {
-                return candles;
+        Map<LocalDate, Candle> byDate = new LinkedHashMap<>();
+        // Largest files first — they have the most data
+        for (Path legacyFile : legacyFiles) {
+            List<Candle> candles = readCache(legacyFile, false);
+            for (Candle c : candles) {
+                byDate.putIfAbsent(c.getDate(), c);
             }
         }
-        return List.of();
+
+        List<Candle> merged = new ArrayList<>(byDate.values());
+        merged.sort(Comparator.comparing(Candle::getDate));
+        return merged;
     }
 
     /**
-     * Scan the cache directory for any file matching {@code SYMBOL_N.csv}.
-     * When {@code requireFresh=true}, uses mtime TTL as a secondary gate (stale-fallback path).
-     * When {@code requireFresh=false}, any file is accepted (last-resort fallback).
+     * Find all legacy cache files matching SYMBOL_N.csv pattern (N is a number).
+     * Sorted by N descending (largest lookback first = most data).
      */
-    private List<Candle> readBestExistingCache(String symbol, int lookbackDays, boolean requireFresh) {
+    private List<Path> findLegacyCacheFiles(String symbol) {
         String prefix = symbol.toUpperCase() + "_";
         List<Path> candidates = new ArrayList<>();
         try (var stream = Files.list(cacheDir)) {
             stream.filter(p -> {
                 String name = p.getFileName().toString();
-                return name.startsWith(prefix) && name.endsWith(".csv");
+                if (!name.startsWith(prefix) || !name.endsWith(".csv")) return false;
+                String numPart = name.substring(prefix.length(), name.length() - 4);
+                try { Integer.parseInt(numPart); return true; }
+                catch (NumberFormatException e) { return false; }
             }).forEach(candidates::add);
         } catch (IOException ignored) {
             return List.of();
         }
-        if (candidates.isEmpty()) return List.of();
-
-        if (requireFresh) {
-            Instant cutoff = Instant.now().minus(cacheTtl);
-            candidates.removeIf(p -> {
-                try {
-                    return Files.getLastModifiedTime(p).toInstant().isBefore(cutoff);
-                } catch (IOException e) {
-                    return true;
-                }
-            });
-            if (candidates.isEmpty()) return List.of();
-        }
-
-        candidates.sort(Comparator.comparingInt(p -> {
+        candidates.sort(Comparator.<Path, Integer>comparing(p -> {
             String name = p.getFileName().toString();
             String num  = name.substring(prefix.length(), name.length() - 4);
-            try { return Integer.parseInt(num); } catch (NumberFormatException e) { return Integer.MAX_VALUE; }
-        }));
+            try { return Integer.parseInt(num); } catch (NumberFormatException e) { return 0; }
+        }).reversed());
+        return candidates;
+    }
 
-        Path bestLarge = candidates.get(candidates.size() - 1);
-        for (Path candidate : candidates) {
-            List<Candle> candles = readCache(candidate, false);
-            if (candles.size() >= lookbackDays) {
-                if (candles.size() > lookbackDays) {
-                    candles = new ArrayList<>(candles.subList(candles.size() - lookbackDays, candles.size()));
-                }
-                return candles;
-            }
+    /**
+     * Delete all legacy SYMBOL_N.csv files after successful migration to unified SYMBOL.csv.
+     */
+    private void deleteLegacyCacheFiles(String symbol) {
+        List<Path> legacyFiles = findLegacyCacheFiles(symbol);
+        for (Path f : legacyFiles) {
+            try { Files.deleteIfExists(f); } catch (IOException ignored) {}
         }
-
-        return readCache(bestLarge, false);
     }
 
     /**
@@ -421,7 +395,7 @@ public class YahooFinanceProvider implements MarketDataProvider {
                     continue;
                 }
 
-                // Return raw parsed bars — caller's mergeAndTrim handles dedup + trimming
+                // Return raw parsed bars — caller's mergeAll handles dedup + ordering
                 return parseChartResponse(response.body());
             } catch (IOException e) {
                 lastError = e;

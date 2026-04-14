@@ -27,7 +27,12 @@ SECTOR_MACRO_HTML = OUTPUT_DIR / "sector_macro_analysis.html"
 GENERATE_SECTOR_MACRO = CLI_DIR / "generate_sector_macro_page.py"
 WEB_JOBS_DIR = OUTPUT_DIR / "web_jobs"
 PERF_TRACKER_JSON = OUTPUT_DIR / "performance_tracker.json"
-TRADE_BOARD_JSON = OUTPUT_DIR / "trade_board.json"   # ← new trade board store
+# Trade data stored in dedicated folder (not output/) so it survives output/ cleanups
+TRADE_DATA_DIR = ROOT / "trade_data"
+TRADE_BOARD_JSON = TRADE_DATA_DIR / "positions.json"
+TRADE_JOURNAL_JSON = TRADE_DATA_DIR / "journal.json"
+TRADE_WATCHLIST_JSON = TRADE_DATA_DIR / "watchlist.json"
+TRADE_BOARD_JSON_LEGACY = OUTPUT_DIR / "trade_board.json"  # kept for migration only
 CACHE_DIR = ROOT / "cache"
 
 sys.path.insert(0, str(PY_LIB_DIR))
@@ -194,6 +199,12 @@ app.add_middleware(
 
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 WEB_JOBS_DIR.mkdir(parents=True, exist_ok=True)
+TRADE_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+# Migrate legacy trade_board.json from output/ → trade_data/positions.json
+if TRADE_BOARD_JSON_LEGACY.exists() and not TRADE_BOARD_JSON.exists():
+    import shutil
+    shutil.copy(TRADE_BOARD_JSON_LEGACY, TRADE_BOARD_JSON)
 
 if OUTPUT_DIR.exists():
     app.mount("/reports", StaticFiles(directory=str(OUTPUT_DIR)), name="reports")
@@ -794,42 +805,56 @@ def _save_board(data: dict) -> None:
 
 # ── Price / Chart helpers ──────────────────────────────────────────────────────
 
-def _read_ohlcv(symbol: str, days: int = 90) -> list[dict]:
-    """Read OHLCV from cache. Returns sorted list of dicts with date/open/high/low/close/volume."""
+def _read_ohlcv(symbol: str, days: int = 0) -> list[dict]:
+    """Read OHLCV from cache. Returns sorted list of dicts with date/open/high/low/close/volume.
+    days=0 means return ALL available data.
+    Prefers unified SYMBOL.csv; falls back to legacy _N.csv files."""
     base = symbol.upper().replace(".NS", "").replace(".BO", "")
     ns   = base + ".NS"
-    rows: list[dict] = []
+
+    def _read_csv(p: Path) -> dict[str, dict]:
+        dm: dict[str, dict] = {}
+        if not p.exists():
+            return dm
+        try:
+            with open(p, newline="", encoding="utf-8") as f:
+                for row in csv.DictReader(f):
+                    try:
+                        d = row.get("date","") or row.get("Date","") or row.get("Datetime","")
+                        if not d: continue
+                        dt = d[:10]
+                        cl = float(row.get("close", row.get("Close", 0)) or 0)
+                        if cl <= 0: continue
+                        dm[dt] = {
+                            "date": dt,
+                            "open":   float(row.get("open",  row.get("Open",  0)) or 0),
+                            "high":   float(row.get("high",  row.get("High",  0)) or 0),
+                            "low":    float(row.get("low",   row.get("Low",   0)) or 0),
+                            "close":  cl,
+                            "volume": float(row.get("volume",row.get("Volume",0)) or 0),
+                        }
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        return dm
+
+    date_map: dict[str, dict] = {}
     for prefix in [ns, base]:
-        for suffix in ["_252", "_504", "_728", "_900", "_3528"]:
-            for fname in [f"{prefix}{suffix}.csv", f"{prefix}.NS{suffix}.csv"]:
-                p = CACHE_DIR / fname
-                if not p.exists():
-                    continue
-                try:
-                    with open(p, newline="", encoding="utf-8") as f:
-                        for row in csv.DictReader(f):
-                            try:
-                                rows.append({
-                                    "date": row.get("date","") or row.get("Date","") or row.get("Datetime",""),
-                                    "open":   float(row.get("open",  row.get("Open",  0)) or 0),
-                                    "high":   float(row.get("high",  row.get("High",  0)) or 0),
-                                    "low":    float(row.get("low",   row.get("Low",   0)) or 0),
-                                    "close":  float(row.get("close", row.get("Close", 0)) or 0),
-                                    "volume": float(row.get("volume",row.get("Volume",0)) or 0),
-                                })
-                            except Exception:
-                                pass
-                    if rows:
-                        break
-                except Exception:
-                    pass
-            if rows:
-                break
-        if rows:
+        # 1) Try unified single file first
+        for fname in [f"{prefix}.csv", f"{prefix}.NS.csv"]:
+            date_map.update(_read_csv(CACHE_DIR / fname))
+        if date_map:
             break
-    rows = [r for r in rows if r["close"] > 0 and r["date"]]
-    rows.sort(key=lambda r: r["date"])
-    if days and len(rows) > days:
+        # 2) Legacy fallback: try _N.csv files
+        for suffix in ["_5096", "_3528", "_900", "_728", "_504", "_252", "_60"]:
+            for fname in [f"{prefix}{suffix}.csv", f"{prefix}.NS{suffix}.csv"]:
+                date_map.update(_read_csv(CACHE_DIR / fname))
+        if date_map:
+            break
+
+    rows = sorted(date_map.values(), key=lambda r: r["date"])
+    if days and days > 0 and len(rows) > days:
         rows = rows[-days:]
     return rows
 
@@ -1002,24 +1027,110 @@ def trade_board_delete_position(position_id: str) -> dict:
         _save_board(data)
     return {"ok": True, "deleted": position_id}
 
+def _calc_rsi(closes: list[float], period: int = 14) -> list[Optional[float]]:
+    result: list[Optional[float]] = [None] * len(closes)
+    if len(closes) < period + 1:
+        return result
+    gains, losses = [], []
+    for i in range(1, period + 1):
+        delta = closes[i] - closes[i-1]
+        gains.append(max(delta, 0))
+        losses.append(max(-delta, 0))
+    avg_gain = sum(gains) / period
+    avg_loss = sum(losses) / period
+    if avg_loss == 0:
+        result[period] = 100.0
+    else:
+        rs = avg_gain / avg_loss
+        result[period] = round(100 - 100 / (1 + rs), 2)
+    for i in range(period + 1, len(closes)):
+        delta = closes[i] - closes[i-1]
+        avg_gain = (avg_gain * (period - 1) + max(delta, 0)) / period
+        avg_loss = (avg_loss * (period - 1) + max(-delta, 0)) / period
+        if avg_loss == 0:
+            result[i] = 100.0
+        else:
+            rs = avg_gain / avg_loss
+            result[i] = round(100 - 100 / (1 + rs), 2)
+    return result
+
+
+def _calc_sma(closes: list[float], period: int) -> list[Optional[float]]:
+    result: list[Optional[float]] = [None] * len(closes)
+    if len(closes) < period:
+        return result
+    for i in range(period - 1, len(closes)):
+        result[i] = round(sum(closes[i - period + 1: i + 1]) / period, 2)
+    return result
+
+
 @app.get("/api/trade-board/chart/{symbol}")
-def trade_board_chart(symbol: str, days: int = 90) -> dict:
-    rows = _read_ohlcv(symbol, days=max(days, 30))
+def trade_board_chart(symbol: str, days: int = 252) -> dict:
+    rows = _read_ohlcv(symbol, days=max(days, 30) if days > 0 else 0)
     if not rows:
         raise HTTPException(status_code=404, detail=f"No price data for {symbol}")
     closes = [r["close"] for r in rows]
+    volumes = [r["volume"] for r in rows]
     ema5   = _calc_ema(closes, 5)
+    ema10  = _calc_ema(closes, 10)
     ema20  = _calc_ema(closes, 20)
     ema50  = _calc_ema(closes, 50)
-    avg_vol = sum(r["volume"] for r in rows[-20:]) / 20 if len(rows) >= 20 else 0
+    sma150 = _calc_sma(closes, 150)
+    sma200 = _calc_sma(closes, 200)
+    rsi14  = _calc_rsi(closes, 14)
+    avg_vol = sum(volumes[-20:]) / 20 if len(volumes) >= 20 else (sum(volumes) / len(volumes) if volumes else 0)
+    avg_vol_50 = sum(volumes[-50:]) / 50 if len(volumes) >= 50 else avg_vol
+
+    # Distribution/accumulation day count (last 50 days)
+    dist_days = 0
+    accum_days = 0
+    for i in range(max(0, len(rows) - 50), len(rows)):
+        r = rows[i]
+        prev = rows[i-1] if i > 0 else r
+        if r["close"] < prev["close"] and r["volume"] > avg_vol:
+            dist_days += 1
+        elif r["close"] > prev["close"] and r["volume"] > avg_vol:
+            accum_days += 1
+
+    # 52-week high/low
+    yr_data = rows[-252:] if len(rows) >= 252 else rows
+    high_52w = max(r["high"] for r in yr_data) if yr_data else 0
+    low_52w = min(r["low"] for r in yr_data) if yr_data else 0
+    pct_from_52w_high = round((closes[-1] - high_52w) / high_52w * 100, 2) if high_52w else 0
+
+    # ADR (Average Daily Range) — last 20 days
+    adr_period = min(20, len(rows))
+    if adr_period > 0:
+        daily_ranges = [(r["high"] - r["low"]) for r in rows[-adr_period:]]
+        adr_abs = sum(daily_ranges) / adr_period
+        adr_pct = round(adr_abs / closes[-1] * 100, 2) if closes[-1] else 0
+        adr_abs = round(adr_abs, 2)
+    else:
+        adr_abs, adr_pct = 0, 0
+
     for i, r in enumerate(rows):
         r["ema5"]  = ema5[i]
+        r["ema10"] = ema10[i]
         r["ema20"] = ema20[i]
         r["ema50"] = ema50[i]
+        r["sma150"] = sma150[i]
+        r["sma200"] = sma200[i]
+        r["rsi"]   = rsi14[i]
         r["volRatio"] = round(r["volume"] / avg_vol, 2) if avg_vol else None
+
+    last_date = rows[-1]["date"] if rows else None
+
     return {
         "symbol": symbol, "days": len(rows), "avgVol20": round(avg_vol, 0),
-        "cmp": closes[-1], "candles": rows
+        "avgVol50": round(avg_vol_50, 0),
+        "cmp": closes[-1],
+        "lastDate": last_date,
+        "high52w": round(high_52w, 2), "low52w": round(low_52w, 2),
+        "pctFrom52wHigh": pct_from_52w_high,
+        "distDays50": dist_days, "accumDays50": accum_days,
+        "rsi": rsi14[-1] if rsi14 and rsi14[-1] is not None else None,
+        "adr": adr_abs, "adrPct": adr_pct,
+        "candles": rows
     }
 
 @app.get("/api/trade-board/equity")
@@ -1048,7 +1159,7 @@ def trade_board_equity() -> dict:
 
 @app.get("/api/trade-board/scan-signals")
 def trade_board_scan_signals(market: str = "india", timeframe: str = "daily") -> dict:
-    """Return top open trade signals from scan output for quick import."""
+    """Return top open trade signals from scan output for quick import, enriched with vol/RS data."""
     suffix = f"{market}_{timeframe}_full"
     # Try open_trades first, then vcp_hits as fallback
     candidates = [
@@ -1061,13 +1172,253 @@ def trade_board_scan_signals(market: str = "india", timeframe: str = "daily") ->
         try:
             signals = json.loads(json_path.read_text(encoding="utf-8"))
             if isinstance(signals, list) and signals:
-                # Normalize score field (may be "rankingScore" or "score", as string or float)
+                # Normalize and enrich fields
                 for s in signals:
                     if "rankingScore" not in s:
                         s["rankingScore"] = s.get("score", 0)
+                    # Normalize vol% field
+                    vol_raw = s.get("vol%", s.get("vol_pct"))
+                    try:
+                        s["volPct"] = round(float(vol_raw), 1) if vol_raw not in (None, "", "0.0") else None
+                    except (ValueError, TypeError):
+                        s["volPct"] = None
+                    # Normalize dist% field
+                    dist_raw = s.get("distFromPivot%", s.get("dist%", s.get("distance_from_pivot_pct", s.get("distFromPivot%"))))
+                    try:
+                        s["distPct"] = round(float(dist_raw), 1) if dist_raw not in (None, "", "0.0") else None
+                    except (ValueError, TypeError):
+                        s["distPct"] = None
+                    # Avg volume
+                    try:
+                        s["avgVol20"] = round(float(s.get("avgVol20", 0))) if s.get("avgVol20") else None
+                    except (ValueError, TypeError):
+                        s["avgVol20"] = None
+                    try:
+                        s["lastVol"] = round(float(s.get("lastVol", 0))) if s.get("lastVol") else None
+                    except (ValueError, TypeError):
+                        s["lastVol"] = None
+                    # RS data
+                    try:
+                        s["rsScore"] = round(float(s.get("rsScore", 0)), 1) if s.get("rsScore") else None
+                    except (ValueError, TypeError):
+                        s["rsScore"] = None
+                    try:
+                        s["rs3m"] = round(float(s.get("rs3m", 0)), 1) if s.get("rs3m") else None
+                    except (ValueError, TypeError):
+                        s["rs3m"] = None
+                    try:
+                        s["rs6m"] = round(float(s.get("rs6m", 0)), 1) if s.get("rs6m") else None
+                    except (ValueError, TypeError):
+                        s["rs6m"] = None
+
                 signals.sort(key=lambda x: -float(x.get("rankingScore") or x.get("score") or 0))
-                return {"signals": signals[:30], "total": len(signals), "source": json_path.name}
+                return {"signals": signals[:40], "total": len(signals), "source": json_path.name}
         except Exception:
             pass
     return {"signals": [], "total": 0}
+
+
+# ── Trade Journal ──────────────────────────────────────────────────────────────
+_journal_lock = threading.Lock()
+
+def _load_journal() -> list:
+    if not TRADE_JOURNAL_JSON.exists():
+        return []
+    try:
+        return json.loads(TRADE_JOURNAL_JSON.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+def _save_journal(entries: list) -> None:
+    TRADE_JOURNAL_JSON.write_text(json.dumps(entries, indent=2, ensure_ascii=False), encoding="utf-8")
+
+class JournalEntry(BaseModel):
+    symbol: str = ""
+    date: str = ""
+    title: str = ""
+    body: str = ""
+    mood: str = ""   # bullish/bearish/neutral
+    tags: list[str] = Field(default_factory=list)
+
+@app.get("/api/trade-journal")
+def get_journal(symbol: str = "", limit: int = 100) -> dict:
+    with _journal_lock:
+        entries = _load_journal()
+    if symbol:
+        entries = [e for e in entries if e.get("symbol","").upper() == symbol.upper()]
+    entries.sort(key=lambda e: e.get("date",""), reverse=True)
+    return {"entries": entries[:limit], "total": len(entries)}
+
+@app.post("/api/trade-journal")
+def add_journal_entry(entry: JournalEntry) -> dict:
+    with _journal_lock:
+        entries = _load_journal()
+        rec = entry.model_dump()
+        rec["id"] = str(uuid.uuid4())
+        rec["created_at"] = datetime.now().isoformat(timespec="seconds")
+        if not rec.get("date"):
+            rec["date"] = datetime.now().strftime("%Y-%m-%d")
+        entries.append(rec)
+        _save_journal(entries)
+    return {"ok": True, "entry": rec}
+
+@app.delete("/api/trade-journal/{entry_id}")
+def delete_journal_entry(entry_id: str) -> dict:
+    with _journal_lock:
+        entries = _load_journal()
+        before = len(entries)
+        entries = [e for e in entries if e.get("id") != entry_id]
+        if len(entries) == before:
+            raise HTTPException(status_code=404, detail="Journal entry not found")
+        _save_journal(entries)
+    return {"ok": True, "deleted": entry_id}
+
+
+# ── Trade Watchlist ────────────────────────────────────────────────────────────
+_watchlist_lock = threading.Lock()
+
+def _load_watchlist() -> list:
+    if not TRADE_WATCHLIST_JSON.exists():
+        return []
+    try:
+        return json.loads(TRADE_WATCHLIST_JSON.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+def _save_watchlist(items: list) -> None:
+    TRADE_WATCHLIST_JSON.write_text(json.dumps(items, indent=2, ensure_ascii=False), encoding="utf-8")
+
+class WatchlistItem(BaseModel):
+    symbol: str
+    name: str = ""
+    notes: str = ""
+    alert_price: Optional[float] = None
+    setup: str = ""
+
+@app.get("/api/trade-board/watchlist")
+def get_watchlist() -> dict:
+    with _watchlist_lock:
+        items = _load_watchlist()
+    # Enrich with CMP, day change, and scan signal data
+    sig_index = _load_scan_signals_index()
+    for item in items:
+        sym = item.get("symbol", "")
+        cmp, prev_close = _get_price_info(sym)
+        if cmp:
+            item["cmp"] = round(cmp, 2)
+        if cmp and prev_close and prev_close > 0:
+            item["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
+        # Merge scan signal data if available
+        sig = sig_index.get(sym) or sig_index.get(sym + ".NS") or sig_index.get(sym.replace(".NS", ""))
+        if sig:
+            item["scanSetup"] = sig.get("setup", "")
+            item["scanRating"] = sig.get("rating", "")
+            item["scanScore"] = sig.get("rankingScore") or sig.get("score")
+            item["scanEntry"] = sig.get("entry")
+            item["scanSl"] = sig.get("sl")
+            item["rsScore"] = sig.get("rsScore")
+            item["regimeState"] = sig.get("regimeState")
+            item["entryInstruction"] = sig.get("entryInstruction")
+            item["inScan"] = True
+        else:
+            item["inScan"] = False
+    return {"items": items, "total": len(items)}
+
+@app.post("/api/trade-board/watchlist")
+def add_watchlist_item(item: WatchlistItem) -> dict:
+    with _watchlist_lock:
+        items = _load_watchlist()
+        # Check for duplicate
+        if any(i.get("symbol","").upper() == item.symbol.upper() for i in items):
+            raise HTTPException(status_code=409, detail=f"{item.symbol} already in watchlist")
+        rec = item.model_dump()
+        rec["id"] = str(uuid.uuid4())
+        rec["added_at"] = datetime.now().isoformat(timespec="seconds")
+        items.append(rec)
+        _save_watchlist(items)
+    return {"ok": True, "item": rec}
+
+@app.delete("/api/trade-board/watchlist/{item_id}")
+def remove_watchlist_item(item_id: str) -> dict:
+    with _watchlist_lock:
+        items = _load_watchlist()
+        before = len(items)
+        items = [i for i in items if i.get("id") != item_id]
+        if len(items) == before:
+            raise HTTPException(status_code=404, detail="Watchlist item not found")
+        _save_watchlist(items)
+    return {"ok": True, "deleted": item_id}
+
+
+# ── Market Overview ────────────────────────────────────────────────────────────
+
+def _load_scan_signals_index(market: str = "india", timeframe: str = "daily") -> dict[str, dict]:
+    """Load latest scan signals into a symbol → record dict for quick lookup."""
+    suffix = f"{market}_{timeframe}_full"
+    for name in [f"open_trades_{suffix}_LATEST.json", f"vcp_hits_{suffix}_LATEST.json"]:
+        p = OUTPUT_DIR / name
+        if not p.exists():
+            continue
+        try:
+            signals = json.loads(p.read_text(encoding="utf-8"))
+            if isinstance(signals, list) and signals:
+                return {s.get("symbol", ""): s for s in signals}
+        except Exception:
+            pass
+    return {}
+
+
+@app.get("/api/trade-board/market-overview")
+def trade_board_market_overview(market: str = "india", timeframe: str = "daily") -> dict:
+    """Compact market regime + breadth + scan hit counts for the board strip."""
+    result: dict = {"regime": None, "summary": None}
+
+    # Regime from scan bundle
+    bundle_path = OUTPUT_DIR / f"scan_bundle_{market}_{timeframe}_full_LATEST.json"
+    if bundle_path.exists():
+        try:
+            bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+            result["regime"] = bundle.get("meta", {}).get("regime")
+            result["generatedAt"] = bundle.get("generatedAt")
+            result["counts"] = bundle.get("counts")
+        except Exception:
+            pass
+
+    # Hit counts from system summary
+    summary_path = OUTPUT_DIR / "system_latest_summary.json"
+    if summary_path.exists():
+        try:
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            for r in summary.get("results", []):
+                if r.get("market") == market and r.get("timeframe") == timeframe:
+                    result["summary"] = {
+                        "hits": r.get("hits", 0),
+                        "watchlistHits": r.get("watchlistHits", 0),
+                        "portfolioPicks": r.get("portfolioPicks", 0),
+                        "setupBreakdown": r.get("variationBreakdown", {}).get("setup", {}),
+                        "ratingBreakdown": r.get("variationBreakdown", {}).get("rating", {}),
+                    }
+                    break
+        except Exception:
+            pass
+
+    return result
+
+
+# ── Trade Board Export / Backup ────────────────────────────────────────────────
+@app.get("/api/trade-board/export")
+def export_trade_data() -> dict:
+    """Export all trade data (positions + journal + watchlist) as one JSON bundle."""
+    with _board_lock:
+        positions = _load_board()
+    with _journal_lock:
+        journal = _load_journal()
+    with _watchlist_lock:
+        watchlist = _load_watchlist()
+    return {
+        "exported_at": datetime.now().isoformat(),
+        "positions": positions,
+        "journal": journal,
+        "watchlist": watchlist,
+    }
 

@@ -269,40 +269,44 @@ def _build_trade_record(
 # ──────────────────────────────────────────────────────────────────────────────
 
 def _load_price_rows(symbol: str, cache_dir: Path) -> list[dict]:
-    """Load all available OHLCV rows for symbol (longest cache first)."""
-    for suffix in ["_3528", "_900", "_504", "_252", "_728", "_60"]:
-        p = cache_dir / f"{symbol}{suffix}.csv"
+    """Load all available OHLCV rows for symbol. Prefers unified file, legacy fallback."""
+    def _try_read(p: Path) -> list[dict]:
         if not p.exists():
-            continue
+            return []
         rows: list[dict] = []
         try:
             with open(p, newline="") as fh:
                 for row in csv.DictReader(fh):
                     try:
-                        import math
-                        def _safe_float(v, default=0.0):
-                            try:
-                                f = float(v) if v not in (None, "", "nan", "NaN") else default
-                                return default if math.isnan(f) else f
-                            except (TypeError, ValueError):
-                                return default
-                        close = _safe_float(row.get("close"))
-                        if close <= 0:
+                        cl = float(row.get("close", 0) or 0)
+                        if cl <= 0:
                             continue
                         rows.append({
-                            "date":   row.get("date", ""),
-                            "open":   _safe_float(row.get("open")),
-                            "high":   _safe_float(row.get("high")),
-                            "low":    _safe_float(row.get("low")),
-                            "close":  close,
-                            "volume": _safe_float(row.get("volume")),
+                            "date": row.get("date", "").strip(),
+                            "open": float(row.get("open", 0) or 0),
+                            "high": float(row.get("high", 0) or 0),
+                            "low": float(row.get("low", 0) or 0),
+                            "close": cl,
+                            "volume": float(row.get("volume", 0) or 0),
                         })
                     except Exception:
-                        pass
+                        continue
         except Exception:
-            pass
+            return []
+        return rows
+
+    # 1) Try unified file
+    for name in [f"{symbol}.csv", f"{symbol}.NS.csv"]:
+        rows = _try_read(cache_dir / name)
         if rows:
             return rows
+
+    # 2) Legacy fallback (first found with data)
+    for suffix in ["_3528", "_900", "_504", "_252", "_728", "_60"]:
+        rows = _try_read(cache_dir / f"{symbol}{suffix}.csv")
+        if rows:
+            return rows
+
     return []
 
 

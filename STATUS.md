@@ -147,10 +147,44 @@ Live position tracker with real-time P&L, mini charts, and scan signal import.
 
 ---
 
-## 🔴 Pending (Phase 6)
+## ✅ Bug Fixes Applied (April 14, 2026 — Trade Board Field Name Audit)
+
+### Fix H — Frontend Field Name Mismatch (trade_board.html)
+- **Root cause**: JS sent `stop_loss`/`target_1`/`target_2`/`target_3` to the API, but the Pydantic model stores as `sl`/`t1`/`t2`/`t3`. Result: SL and targets were silently dropped (defaulted to 0).
+- **Fixed in `submitAdd()`**: now sends `sl`, `t1`, `t2`, `t3`.
+- **Fixed in `submitUpdate()`**: now sends `sl` (was `stop_loss`).
+- **Fixed in `renderClosedTable()`**: reads `p.sl || p.stop_loss || e` (backward-compatible).
+
+### Fix I — importSig() Missing Fields
+- **Root cause**: `importSig()` didn't pre-fill T3, uppercase scan JSON fields (`T1`/`T2`/`T3`), `rating`, or `notes`.
+- **Fix**: Added `fT3`, `s.T1||s.t1`, `s.T2||s.t2`, `s.T3||s.t3`, `rating`, and `notes` population.
+
+---
 - [ ] Quarterly review trigger, IPO auto-flagging, historical breadth tracking
 - [ ] NSE holiday calendar integration for accurate stale detection (currently counts all weekdays, may flag holiday weeks as stale)
 - [ ] Update stale symbols with `&` in name (M&M, ARE&M, GMRP&UI etc.) when Yahoo Finance becomes accessible again
+
+---
+
+## ✅ Cache Migration & Hardening (April 14, 2026)
+
+### Fix J — Cache File Consolidation (`migrate_cache.sh`)
+- **Problem**: Each symbol had multiple cache files (`SYMBOL_900.csv`, `SYMBOL_3528.csv`, `SYMBOL_5096.csv`) causing slow lookups and disk bloat.
+- **Solution**: `scripts/migrate_cache.sh` merges all legacy `SYMBOL_N.csv` files into a single `SYMBOL.csv` per symbol (deduped by date, sorted chronologically).
+- **Integration**: `run_master.sh` Step 0a auto-detects legacy files and runs migration before cache refresh. One-time operation — once migrated, no legacy files remain.
+
+### Fix K — Unified Cache File Support (All Readers)
+- **Problem**: After migration to `SYMBOL.csv`, all cache readers only looked for `_N.csv` suffixed files.
+- **Fixed in**: `main.py` `_read_ohlcv()`, `generate_trade_plans_page.py`, `generate_breadth_dashboard.py`, `performance_tracker.py`, `refresh_cache.py`, `check_cache_freshness.py`
+- **Change**: Added `""` (no suffix) as first candidate in all `for suffix in [...]` loops, so unified files are found before legacy files.
+
+### Fix L — `.gitignore` Hardening
+- **Added**: `*.class` (root .class files were untracked), `.venv/`, `trade_data/`, `*.log`
+- **Removed**: 58 stale `.class` files from project root
+
+### Fix M — Watchlist → Position Import (`importFromWL`)
+- **Problem**: `importFromWL()` only populated symbol, name, and setup — scan data (entry, SL, targets) was lost.
+- **Fix**: Now pre-fills entry, SL, rating, notes, and alert price as T1 from watchlist scan data.
 
 ---
 
