@@ -154,6 +154,50 @@ Live position tracker with real-time P&L, mini charts, and scan signal import.
 
 ---
 
+## ✅ Bug Fixes Applied (April 14, 2026 — Full Repo Audit)
+
+### Fix A — Duplicate Keys in SECTOR_MAP / INDUSTRY_MAP
+- **Root cause**: `generate_trade_plans_page.py` had 11 SECTOR_MAP + 22 INDUSTRY_MAP duplicate keys. Python silently keeps the LAST value, causing wrong stock classifications.
+- **Fixed entries (SECTOR_MAP)**:
+  - `AAVAS` Pharma → **NBFC** (Aavas Financiers is a housing finance NBFC)
+  - `SUDARSCHEM` Pharma → **Chemicals** (Sudarshan Chemicals is Specialty Chemicals)
+  - `VOLTAMP` Electronics → **Cap Goods** (Voltamp Transformers is electrical equipment)
+  - `TDPOWERSYS` Electronics → **Cap Goods** (TD Power Systems makes AC motors)
+  - `KNRCON` Cap Goods → **Infra** (KNR Constructions is road/infra)
+  - `KALYANKJIL` Metals → **Consumer** (Kalyan Jewellers is jewelry retail)
+  - Removed duplicate entries for `APARINDS`, `AAVAS`, `SUDARSCHEM`, `DCMSHRIRAM`, `BALRAMCHIN`, `KALYANKJIL`, `PKTEA`, `PATANJALI`, `KNRCON`
+- **Fixed entries (INDUSTRY_MAP)**:
+  - `JUBLFOOD/DEVYANI/WESTLIFE` generic "QSR" → specific "QSR - Domino's/KFC/McDonald's"
+  - `KALYANKJIL/SENCO/THANGAMAYL` "Jewellery" → **Gold Jewelry** (more specific)
+  - Removed 22 duplicates from large stale block at bottom of INDUSTRY_MAP
+
+### Fix B — SyntaxWarnings (Invalid Escape Sequences)
+- `generate_trade_plans_page.py:2890` — JS regex `\w\s` inside Python string → `\\w\\s`
+- `generate_performance_tracker.py:1247` — JS regex `\.` inside Python string → `\\.`
+- **Result**: All 40+ Python files now compile cleanly with `-W error`
+
+### Fix C — sortTable() JavaScript Bug (generate_master_report.py)
+- **Root cause**: `sortTable()` only re-appended visible rows to tbody. Hidden rows migrated to the wrong position in DOM after every sort.
+- **Fix**: Sort ALL rows (ROWS array), re-append all to tbody. Hidden rows stay hidden but in correct sorted order.
+
+### Fix D — CORS Bug (apps/web/api/main.py)
+- **Root cause**: `allow_origins=["*"]` with `allow_credentials=True` is invalid per CORS spec (browsers reject it).
+- **Fix**: Changed `allow_credentials=False`. Credentials (cookies) are not needed for this public JSON API.
+
+### Fix E — JobStore Persistence (apps/web/api/main.py)
+- **Root cause**: `JobStore` kept all jobs in memory only — all job history lost on API restart.
+- **Fix**: Added `JOBS_PERSIST_FILE = output/web_jobs/jobs_store.json` that persists job state to disk. On restart, in-flight jobs are marked `failed` with reason "API restarted".
+
+### Fix F — Shell Script set -e Blocking Dashboard Generation
+- **Root cause**: `run_analysis_dashboards.sh` has `set -e`. When `refresh_cache.py` exits with code 2 (Yahoo blocked, non-fatal), the shell exits before generating any dashboards.
+- **Fix**: Wrapped `refresh_cache.py` call in `set +e ... set -e` in both `run_analysis_dashboards.sh` and `run_master.sh`.
+
+### Fix G — NaN Close Propagation in Lib Files
+- **Root cause**: `float(x or 0)` pattern doesn't catch `float('nan')` (NaN is truthy). NaN close values from partially-downloaded Yahoo bars propagated into indicators and caused incorrect signals.
+- **Fixed in**: `apps/python/lib/setup_detector.py` and `apps/python/lib/performance_tracker.py` — now use `math.isnan()` guards on close values.
+
+---
+
 ## 📊 Current Market (April 14, 2026)
 - **Regime**: RECOVERY (Score: 67/100) · **Oscillator**: STRONG BUY (+10.3)
 - **Cache**: 2099/2119 NSE symbols fresh to **April 10–13, 2026** · 20 symbols stale (Yahoo blocked)

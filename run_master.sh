@@ -94,9 +94,24 @@ echo ""
 echo -e "${BOLD}▶ Step 0 — Refreshing stale cache files (Yahoo Finance)…${RESET}"
 START_CACHE=$SECONDS
 if [ -f "scripts/refresh_cache.py" ]; then
-    python3 scripts/refresh_cache.py --workers 8 || echo -e "${YELLOW}  ⚠ Cache refresh had issues (non-fatal — scan continues with existing data)${RESET}"
+    set +e   # Non-zero exit from refresh (exit 2 = Yahoo blocked) is non-fatal
+    python3 scripts/refresh_cache.py --workers 8
+    REFRESH_EXIT=$?
+    set -euo pipefail
     CACHE_TIME=$((SECONDS - START_CACHE))
-    echo -e "${GREEN}   ✅ Cache refresh done in ${CACHE_TIME}s${RESET}"
+    if [ "$REFRESH_EXIT" -eq 2 ]; then
+        echo -e "${YELLOW}  ⚠  Yahoo Finance is BLOCKED on this network — cache NOT updated.${RESET}"
+        echo -e "${YELLOW}     Stock prices may be stale (last data: before today).${RESET}"
+        echo -e "${YELLOW}     💡 Tip: Run from mobile hotspot / VPN to bypass network restriction.${RESET}"
+    elif [ "$REFRESH_EXIT" -ne 0 ]; then
+        echo -e "${YELLOW}  ⚠ Cache refresh had issues (non-fatal — scan continues with existing data)${RESET}"
+    else
+        echo -e "${GREEN}   ✅ Cache refresh done in ${CACHE_TIME}s${RESET}"
+    fi
+    # Always clean up any provisional (NaN-close) bars left from partial fetches
+    if [ -f "scripts/clean_bad_cache_bars.py" ]; then
+        python3 scripts/clean_bad_cache_bars.py 2>/dev/null | grep -E "removed|Done" || true
+    fi
 else
     echo -e "${YELLOW}  ⚠ scripts/refresh_cache.py not found — skipping cache refresh${RESET}"
 fi

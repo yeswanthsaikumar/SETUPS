@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check cache freshness status for all NSE symbols."""
 from pathlib import Path
-import csv, datetime, zoneinfo
+import csv, datetime, math, zoneinfo
 
 IST = zoneinfo.ZoneInfo("Asia/Kolkata")
 cache = Path("/Users/yeshwantha/IdeaProjects/SETUPS/cache")
@@ -16,8 +16,16 @@ for p in sorted(cache.glob("*.NS_*.csv")):
         with open(p) as f:
             for row in csv.DictReader(f):
                 d = row.get("date", "").strip()
-                if d:
-                    last = d
+                if not d:
+                    continue
+                # Skip bars with NaN or zero close (provisional/incomplete data)
+                try:
+                    close_val = float(row.get("close", "nan"))
+                    if math.isnan(close_val) or close_val <= 0:
+                        continue
+                except (ValueError, TypeError):
+                    continue
+                last = d
         if last > sym_best.get(sym, ""):
             sym_best[sym] = last
     except Exception:

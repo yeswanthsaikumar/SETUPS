@@ -44,7 +44,16 @@ echo ""
 # ── 0. Auto-refresh stale cache ─────────────────────────────────────────────
 if [ -f "scripts/refresh_cache.py" ]; then
   echo "Refreshing stale Yahoo Finance cache files…"
-  python3 scripts/refresh_cache.py --workers 8 || echo "  ⚠ Cache refresh had issues (non-fatal)"
+  set +e   # Allow non-zero exit (exit 2 = Yahoo blocked is non-fatal)
+  python3 scripts/refresh_cache.py --workers 8
+  REFRESH_EXIT=$?
+  set -e
+  if [ "$REFRESH_EXIT" -eq 2 ]; then
+    echo "  ⚠  Yahoo Finance is BLOCKED on this network — stock prices may be stale."
+    echo "     💡 Run from mobile hotspot/VPN to fetch latest data."
+  elif [ "$REFRESH_EXIT" -ne 0 ]; then
+    echo "  ⚠ Cache refresh had issues (non-fatal)"
+  fi
   echo ""
 fi
 

@@ -704,15 +704,15 @@ function sortTable(col) {{
   document.querySelectorAll('th').forEach(h => h.classList.remove('sort-asc','sort-desc'));
   document.querySelectorAll('th')[col].classList.add(sortDir === -1 ? 'sort-desc' : 'sort-asc');
   const tbody = document.getElementById('tbody');
-  const visible = ROWS.filter(r => !r.classList.contains('hidden'));
-  visible.sort((a,b) => {{
+  // Sort ALL rows (including hidden) so filter+sort always gives correct order
+  ROWS.sort((a,b) => {{
     const av = a.cells[col]?.textContent.trim().replace(/[₹$,+%R]/g,'') || '';
     const bv = b.cells[col]?.textContent.trim().replace(/[₹$,+%R]/g,'') || '';
     const an = parseFloat(av), bn = parseFloat(bv);
     const cmp = (!isNaN(an)&&!isNaN(bn)) ? an-bn : av.localeCompare(bv);
     return cmp * sortDir;
   }});
-  visible.forEach(r => tbody.appendChild(r));
+  ROWS.forEach(r => tbody.appendChild(r));
 }}
 
 function exportCSV() {{

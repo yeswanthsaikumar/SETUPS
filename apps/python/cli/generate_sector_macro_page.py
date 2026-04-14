@@ -171,6 +171,7 @@ def _write_rows_to_cache(symbol: str, rows: list[dict]):
 def _fetch_ticker_rows(ticker: str, days: int) -> tuple[str, list[dict] | None]:
     """Fetch OHLCV rows for a single ticker using yfinance Ticker.history() — compatible with yfinance ≥1.2.0."""
     try:
+        import math
         import yfinance as yf
         hist = yf.Ticker(ticker).history(period=f"{days}d", interval="1d", auto_adjust=False)
         if hist is None or getattr(hist, "empty", True):
@@ -181,16 +182,28 @@ def _fetch_ticker_rows(ticker: str, days: int) -> tuple[str, list[dict] | None]:
                 d = idx.strftime("%Y-%m-%d")
             except Exception:
                 continue
-            c = float(row.get("Close", 0) or 0)
-            if c <= 0:
+            try:
+                c_raw = row.get("Close", None)
+                # float(nan or 0) evaluates to nan because NaN is truthy — must use isnan()
+                c = float(c_raw) if c_raw is not None else 0.0
+            except (TypeError, ValueError):
+                c = 0.0
+            # Skip bars with invalid (NaN, zero, or negative) close price
+            if c <= 0 or math.isnan(c):
                 continue
+            def _safe_float(val, default):
+                try:
+                    v = float(val) if val is not None else default
+                    return default if math.isnan(v) else v
+                except (TypeError, ValueError):
+                    return default
             rows.append({
                 "date": d,
-                "open": float(row.get("Open", c) or c),
-                "high": float(row.get("High", c) or c),
-                "low":  float(row.get("Low",  c) or c),
-                "close": c,
-                "volume": float(row.get("Volume", 0) or 0),
+                "open":   _safe_float(row.get("Open"),   c),
+                "high":   _safe_float(row.get("High"),   c),
+                "low":    _safe_float(row.get("Low"),    c),
+                "close":  c,
+                "volume": _safe_float(row.get("Volume"), 0),
             })
         return ticker, rows if rows else None
     except Exception:

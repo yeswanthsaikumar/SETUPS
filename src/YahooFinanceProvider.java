@@ -34,7 +34,7 @@ public class YahooFinanceProvider implements MarketDataProvider {
     // NSE market context — used for data-date freshness decisions
     private static final ZoneId IST           = ZoneId.of("Asia/Kolkata");
     private static final LocalTime NSE_CLOSE  = LocalTime.of(15, 35); // 3:35 PM IST (5 min buffer after 3:30 close)
-    private static final int MAX_DATA_GAP_DAYS = 5; // >5 calendar days = always stale
+    private static final int MAX_DATA_GAP_DAYS = 10; // >10 calendar days = always stale (handles long holiday stretches)
 
     // Yahoo Finance cookie+crumb authentication (required since ~2024)
     private static volatile String _crumb = null;
@@ -78,6 +78,11 @@ public class YahooFinanceProvider implements MarketDataProvider {
      * The crumb is cached for 20 minutes. On failure returns null — the caller
      * will attempt the request without a crumb (some regions still work).
      * Uses short timeouts to fail fast when Yahoo is unreachable.
+     *
+     * NOTE: This method intentionally does NOT trip the circuit breaker on failure.
+     * The crumb endpoint failing does not guarantee the v8 chart API is also blocked.
+     * Circuit-breaker tripping is handled exclusively in fetchFromYahoo() where the
+     * actual data endpoint fails.
      */
     private String getCrumb() {
         long now = System.currentTimeMillis();
@@ -99,7 +104,7 @@ public class YahooFinanceProvider implements MarketDataProvider {
                 httpClient.send(homeReq, HttpResponse.BodyHandlers.discarding());
             } catch (Exception ignored) {}
 
-            // Step 2: Fetch crumb (short timeout)
+            // Step 2: Fetch crumb (short timeout) — try both query1 and query2
             for (String crumbUrl : new String[]{
                     "https://query1.finance.yahoo.com/v1/test/getcrumb",
                     "https://query2.finance.yahoo.com/v1/test/getcrumb"
@@ -117,8 +122,9 @@ public class YahooFinanceProvider implements MarketDataProvider {
                     }
                 } catch (Exception ignored) {}
             }
-            // Failed to get crumb — trip circuit breaker so future calls don't waste time
-            tripCircuitBreaker();
+            // Failed to get crumb — return null, caller will try data fetch without crumb.
+            // Do NOT trip the circuit breaker here; only fetchFromYahoo() does that when
+            // a network-level failure occurs on the actual data endpoint.
         } finally {
             _crumbLock.unlock();
         }
@@ -160,7 +166,8 @@ public class YahooFinanceProvider implements MarketDataProvider {
         LocalDate today    = LocalDate.now(IST);
         long daysSince     = ChronoUnit.DAYS.between(lastValidDate, today);
 
-        if (daysSince <= 1) return true;
+        // Same day — data already current
+        if (daysSince <= 0) return true;
         if (daysSince > MAX_DATA_GAP_DAYS) return false;
 
         long bizDays = 0;

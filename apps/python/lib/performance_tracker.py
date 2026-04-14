@@ -279,13 +279,23 @@ def _load_price_rows(symbol: str, cache_dir: Path) -> list[dict]:
             with open(p, newline="") as fh:
                 for row in csv.DictReader(fh):
                     try:
+                        import math
+                        def _safe_float(v, default=0.0):
+                            try:
+                                f = float(v) if v not in (None, "", "nan", "NaN") else default
+                                return default if math.isnan(f) else f
+                            except (TypeError, ValueError):
+                                return default
+                        close = _safe_float(row.get("close"))
+                        if close <= 0:
+                            continue
                         rows.append({
                             "date":   row.get("date", ""),
-                            "open":   float(row.get("open") or 0),
-                            "high":   float(row.get("high") or 0),
-                            "low":    float(row.get("low") or 0),
-                            "close":  float(row.get("close") or 0),
-                            "volume": float(row.get("volume") or 0),
+                            "open":   _safe_float(row.get("open")),
+                            "high":   _safe_float(row.get("high")),
+                            "low":    _safe_float(row.get("low")),
+                            "close":  close,
+                            "volume": _safe_float(row.get("volume")),
                         })
                     except Exception:
                         pass

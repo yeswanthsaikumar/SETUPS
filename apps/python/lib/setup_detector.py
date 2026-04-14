@@ -1181,7 +1181,11 @@ def _load_bars(symbol: str, lookback: int, timeframe: str, cache: Path) -> list[
                     rows = []
                     for row in csv.DictReader(fh):
                         try:
-                            close = float(row.get("close") or 0)
+                            import math
+                            _c = row.get("close")
+                            close = float(_c) if _c not in (None, "", "nan", "NaN") else 0.0
+                            if math.isnan(close):
+                                close = 0.0
                         except (ValueError, TypeError):
                             continue
                         if close <= 0:

@@ -107,11 +107,44 @@ class TradeBoardUpdate(BaseModel):
     tags: Optional[list[str]] = None
 
 
+JOBS_PERSIST_FILE = OUTPUT_DIR / "web_jobs" / "jobs_store.json"
+
+
 class JobStore:
+    """Persistent job store backed by a JSON file so jobs survive API restarts."""
+
     def __init__(self) -> None:
         self._jobs: dict[str, JobRecord] = {}
         self._lock = threading.Lock()
+        self._load()
 
+    # ── persistence helpers ──────────────────────────────────────────────────
+    def _load(self) -> None:
+        try:
+            JOBS_PERSIST_FILE.parent.mkdir(parents=True, exist_ok=True)
+            if JOBS_PERSIST_FILE.exists():
+                raw = json.loads(JOBS_PERSIST_FILE.read_text())
+                for rec in raw:
+                    try:
+                        job = JobRecord(**rec)
+                        # Mark running jobs as failed (process died during restart)
+                        if job.status in ("queued", "running"):
+                            job = JobRecord(**{**rec, "status": "failed",
+                                               "error": "API restarted while job was in-flight"})
+                        self._jobs[job.id] = job
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+    def _save(self) -> None:
+        try:
+            data = [j.model_dump() for j in self._jobs.values()]
+            JOBS_PERSIST_FILE.write_text(json.dumps(data, default=str, indent=2))
+        except Exception:
+            pass
+
+    # ── public API ───────────────────────────────────────────────────────────
     def create(self, kind: Literal["scan", "backtest"], command: list[str], log_file: Path) -> JobRecord:
         job = JobRecord(
             id=str(uuid.uuid4()),
@@ -123,6 +156,7 @@ class JobStore:
         )
         with self._lock:
             self._jobs[job.id] = job
+            self._save()
         return job
 
     def list(self) -> list[JobRecord]:
@@ -145,6 +179,7 @@ class JobStore:
             data = job.model_dump()
             data.update(updates)
             self._jobs[job_id] = JobRecord(**data)
+            self._save()
 
 
 jobs = JobStore()
@@ -152,7 +187,7 @@ app = FastAPI(title="SETUPS Web", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,  # Cannot use credentials=True with allow_origins=["*"] per CORS spec
     allow_methods=["*"],
     allow_headers=["*"],
 )

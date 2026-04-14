@@ -1244,7 +1244,7 @@ document.addEventListener('DOMContentLoaded', () => {{
 
 function filterBySym(sym) {{
   const box = document.getElementById('searchBox');
-  const clean = sym.replace(/\.(NS|BO)$/i,'');
+  const clean = sym.replace(/\\.(NS|BO)$/i,'');
   box.value = clean;
   applyFilters();
   document.getElementById('signalsGrid').scrollIntoView({{behavior:'smooth',block:'start'}});

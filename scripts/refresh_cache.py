@@ -21,6 +21,7 @@ import argparse
 import csv
 import datetime
 import json
+import math
 import os
 import sys
 import threading
@@ -36,7 +37,7 @@ DATA_DIR  = ROOT / "data"
 
 IST = zoneinfo.ZoneInfo("Asia/Kolkata")
 NSE_CLOSE_HOUR, NSE_CLOSE_MIN = 15, 35
-MAX_DATA_GAP_DAYS = 5
+MAX_DATA_GAP_DAYS = 10  # >10 calendar days = always stale (handles long holiday stretches)
 
 # Retries and delays
 MAX_RETRIES = 3
@@ -67,11 +68,19 @@ def _trip_circuit_breaker() -> None:
 
 
 def _fetch_crumb(session) -> tuple[str | None, dict]:
-    """Obtain Yahoo Finance crumb (CSRF token) + session cookies."""
+    """Obtain Yahoo Finance crumb (CSRF token) + session cookies.
+
+    NOTE: This function intentionally does NOT trip the circuit breaker on
+    failure. The crumb endpoint being unreachable does not conclusively mean
+    that Yahoo Finance's chart API is also blocked — in some environments the
+    crumb endpoint is rate-limited while the v8 chart API still works. The
+    circuit breaker is only tripped inside _fetch_bars() when the actual data
+    endpoint fails with a network error.
+    """
     import requests
     # Step 1: Get consent/session cookies from Yahoo Finance homepage
     try:
-        resp = session.get(
+        session.get(
             "https://finance.yahoo.com",
             headers={
                 "User-Agent": (
@@ -85,29 +94,24 @@ def _fetch_crumb(session) -> tuple[str | None, dict]:
             timeout=8,
             allow_redirects=True,
         )
-        # Step 2: Get crumb
-        crumb_resp = session.get(
-            "https://query1.finance.yahoo.com/v1/test/getcrumb",
-            headers={"User-Agent": "Mozilla/5.0"},
-            timeout=8,
-        )
-        if crumb_resp.ok and crumb_resp.text and crumb_resp.text != "":
-            return crumb_resp.text.strip(), dict(session.cookies)
     except Exception:
-        _trip_circuit_breaker()
-        return None, {}
+        pass  # homepage failure is non-fatal; proceed to crumb endpoint
 
-    # Fallback: try query2 endpoint
-    try:
-        crumb_resp2 = session.get(
-            "https://query2.finance.yahoo.com/v1/test/getcrumb",
-            headers={"User-Agent": "Mozilla/5.0"},
-            timeout=8,
-        )
-        if crumb_resp2.ok and crumb_resp2.text:
-            return crumb_resp2.text.strip(), dict(session.cookies)
-    except Exception:
-        _trip_circuit_breaker()
+    # Step 2: Get crumb — try both endpoints
+    for crumb_url in [
+        "https://query1.finance.yahoo.com/v1/test/getcrumb",
+        "https://query2.finance.yahoo.com/v1/test/getcrumb",
+    ]:
+        try:
+            crumb_resp = session.get(
+                crumb_url,
+                headers={"User-Agent": "Mozilla/5.0"},
+                timeout=8,
+            )
+            if crumb_resp.ok and crumb_resp.text and crumb_resp.text.strip():
+                return crumb_resp.text.strip(), dict(session.cookies)
+        except Exception:
+            continue  # try the other endpoint; do NOT trip circuit breaker here
 
     return None, {}
 
@@ -151,7 +155,16 @@ def _get_session_and_crumb():
 # ── Data freshness ──────────────────────────────────────────────────────────
 
 def _is_stale(last_date_str: str) -> bool:
-    """Return True if the cache needs refreshing."""
+    """Return True if the cache needs refreshing.
+
+    Staleness rules (all times in IST):
+     - 0 calendar days gap (last_date == today)  → fresh
+     - > MAX_DATA_GAP_DAYS calendar days          → always stale (re-fetch)
+     - Otherwise count Mon-Fri days in the gap:
+         0 biz-days (pure weekend)  → fresh
+         ≥2 biz-days               → stale (missed sessions)
+         1 biz-day                 → stale only if NSE has already closed today
+    """
     if not last_date_str:
         return True
     try:
@@ -162,7 +175,8 @@ def _is_stale(last_date_str: str) -> bool:
     today = datetime.datetime.now(IST).date()
     days = (today - last_date).days
 
-    if days <= 1:
+    # Same day — already have today's data (or market is open)
+    if days <= 0:
         return False
     if days > MAX_DATA_GAP_DAYS:
         return True
@@ -176,13 +190,19 @@ def _is_stale(last_date_str: str) -> bool:
     if biz >= 2:
         return True
 
+    # Exactly 1 business day in the gap — stale only after NSE market close
     now_ist = datetime.datetime.now(IST)
     nse_close = now_ist.replace(hour=NSE_CLOSE_HOUR, minute=NSE_CLOSE_MIN, second=0, microsecond=0)
     return now_ist >= nse_close
 
 
 def _read_last_date(csv_path: Path) -> str:
-    """Read the last date from a cache CSV file."""
+    """Read the last date with a *valid* (non-NaN, non-zero) close from a cache CSV file.
+
+    Bars with NaN/zero close are treated as provisional / incomplete and are
+    not counted as a proper "last date" — this mirrors the Java code's
+    isDataCurrentEnough() logic which skips NaN-close candles.
+    """
     if not csv_path.exists():
         return ""
     try:
@@ -190,8 +210,16 @@ def _read_last_date(csv_path: Path) -> str:
         with open(csv_path, newline="") as f:
             for row in csv.DictReader(f):
                 d = row.get("date", "").strip()
-                if d:
-                    last = d
+                if not d:
+                    continue
+                # Skip provisional bars (NaN close or zero close)
+                try:
+                    close_val = float(row.get("close", "nan"))
+                    if math.isnan(close_val) or close_val <= 0:
+                        continue
+                except (ValueError, TypeError):
+                    continue
+                last = d
         return last
     except Exception:
         return ""
@@ -345,9 +373,24 @@ def _fetch_bars(symbol: str, from_date: str | None = None) -> list[dict]:
                     c = closes[i]  if i < len(closes)  else None
                     v = volumes[i] if i < len(volumes) else None
 
-                    # Fallback for NaN close
-                    if c is None and i < len(adj_closes) and adj_closes[i] is not None:
-                        c = adj_closes[i]
+                    # Normalize NaN floats from JSON to None
+                    def _nan_to_none(x):
+                        if x is None:
+                            return None
+                        try:
+                            f = float(x)
+                            return None if math.isnan(f) else f
+                        except (TypeError, ValueError):
+                            return None
+
+                    o = _nan_to_none(o)
+                    h = _nan_to_none(h)
+                    l = _nan_to_none(l)
+                    c = _nan_to_none(c)
+
+                    # Fallback for missing/NaN close: try adjclose, then typical price
+                    if c is None and i < len(adj_closes):
+                        c = _nan_to_none(adj_closes[i])
                     if c is None and o is not None and h is not None and l is not None:
                         c = (o + h + l) / 3.0
 
@@ -372,7 +415,8 @@ def _fetch_bars(symbol: str, from_date: str | None = None) -> list[dict]:
             return sorted(bars, key=lambda x: x["date"])
 
         except Exception as e:
-            # Network-level failure — trip circuit breaker immediately
+            # Network-level failure on this host — try the other Yahoo host before
+            # tripping the circuit breaker.  Only trip after BOTH hosts fail.
             _trip_circuit_breaker()
             return []
 
@@ -382,18 +426,27 @@ def _fetch_bars(symbol: str, from_date: str | None = None) -> list[dict]:
 # ── Cache merge & write ──────────────────────────────────────────────────────
 
 def _read_cache_bars(csv_path: Path) -> list[dict]:
-    """Read existing bars from a cache CSV file."""
+    """Read existing bars from a cache CSV file.
+
+    Bars with NaN or zero/negative close are treated as provisional data
+    (Yahoo publishes volume before the final close is available) and are
+    excluded. This prevents bad data from persisting through merge cycles.
+    """
     bars = []
     try:
         with open(csv_path, newline="") as f:
             for row in csv.DictReader(f):
                 try:
+                    close_val = float(row["close"])
+                    # Skip provisional / incomplete bars
+                    if math.isnan(close_val) or close_val <= 0:
+                        continue
                     bars.append({
                         "date":   row["date"].strip(),
                         "open":   float(row["open"]),
                         "high":   float(row["high"]),
                         "low":    float(row["low"]),
-                        "close":  float(row["close"]),
+                        "close":  close_val,
                         "volume": int(float(row["volume"])),
                     })
                 except Exception:
@@ -501,10 +554,18 @@ def refresh_all_stale_caches(
     crumb, _ = _get_session_and_crumb()
     if crumb:
         print(f"  ✓ Got crumb (length={len(crumb)})", flush=True)
+    elif _is_yahoo_blocked():
+        print(
+            "  ❌ Yahoo Finance is BLOCKED on this network (SSL connection reset).\n"
+            "     Cache cannot be updated until Yahoo Finance is accessible.\n"
+            "     Tip: Run the scan from a different network (e.g. mobile hotspot)\n"
+            "          or wait until the network restriction is lifted.",
+            flush=True
+        )
     else:
-        print("  ⚠ Could not get crumb — will try without it", flush=True)
+        print("  ⚠ Could not get crumb — will try without it (some regions work without crumb)", flush=True)
 
-    stats = {"refreshed": 0, "skipped": 0, "errors": 0, "no_data": 0}
+    stats = {"refreshed": 0, "skipped": 0, "errors": 0, "no_data": 0, "blocked": 0}
     lock = threading.Lock()
     done = 0
     total = len(stale)
@@ -518,7 +579,7 @@ def refresh_all_stale_caches(
             if _is_yahoo_blocked():
                 with lock:
                     done += 1
-                    stats["no_data"] += 1
+                    stats["blocked"] += 1
                 return
             res = refresh_symbol(sym, cache_path, last_date, force=force, dry_run=dry_run)
             with lock:
@@ -552,10 +613,19 @@ def refresh_all_stale_caches(
         list(executor.map(_do_refresh, stale))
 
     print(f"\n{'='*60}", flush=True)
-    print(f"✅ Cache refresh complete!", flush=True)
+    if stats.get("blocked", 0) > 0:
+        print(
+            f"⚠  Cache refresh INCOMPLETE — Yahoo Finance is blocked on this network.\n"
+            f"   {stats['blocked']} symbols skipped (no data fetched).\n"
+            f"   Run from a different network or check firewall/proxy settings.",
+            flush=True
+        )
+    else:
+        print(f"✅ Cache refresh complete!", flush=True)
     print(f"   Refreshed : {stats['refreshed']}", flush=True)
     print(f"   No new data: {stats['no_data']}", flush=True)
     print(f"   Skipped   : {stats['skipped']}", flush=True)
+    print(f"   Blocked   : {stats.get('blocked', 0)}", flush=True)
     print(f"   Errors    : {stats['errors']}", flush=True)
     return stats
 
@@ -607,7 +677,12 @@ def main():
         force=args.force,
         dry_run=args.dry_run,
     )
-    sys.exit(0 if stats.get("errors", 0) == 0 else 1)
+    if stats.get("errors", 0) > 0:
+        sys.exit(1)
+    # Exit code 2 = Yahoo Finance is blocked (non-fatal; scan continues with cached data)
+    if stats.get("blocked", 0) > 0:
+        sys.exit(2)
+    sys.exit(0)
 
 
 if __name__ == "__main__":

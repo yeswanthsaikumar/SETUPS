@@ -87,7 +87,7 @@ SECTOR_MAP = {
     "VENUSREM":"Pharma","AKUMS":"Pharma","SENORES":"Pharma","ENTERO":"Pharma",
     "MEDPLUS":"Pharma","ALIVUS":"Pharma","ASTERDM":"Pharma","SAILIFE":"Pharma",
     "PFOCUS":"Pharma","SOLARA":"Pharma","BIOCON":"Pharma","SEQUENT":"Pharma",
-    "AAVAS":"Pharma","LAURUS":"Pharma","STRIDES":"Pharma","SUDARSCHEM":"Pharma",
+    "AAVAS":"NBFC","LAURUS":"Pharma","STRIDES":"Pharma","SUDARSCHEM":"Chemicals",
     "NEULANDLAB":"Pharma","PIRAMALPHA":"Pharma","YATHARTH":"Pharma","RAINBOW":"Pharma",
     # Auto & Auto Ancillaries
     "MARUTI":"Auto","TATAMOTORS":"Auto","HEROMOTOCO":"Auto","EICHERMOT":"Auto",
@@ -106,7 +106,7 @@ SECTOR_MAP = {
     "JINDALSAW":"Metals","NELCAST":"Metals","BHARATFORG":"Metals",
     "GRAPHITE":"Metals","STEELCAS":"Metals","SARDAEN":"Metals","LLOYDSME":"Metals",
     "RATNAMANI":"Metals","TIGL":"Metals","MSTCLTD":"Metals","MOIL":"Metals",
-    "GMDC":"Metals","MGEL":"Metals","NILE":"Metals","KALYANKJIL":"Metals",
+    "GMDC":"Metals","MGEL":"Metals","NILE":"Metals","KALYANKJIL":"Consumer",
     "MANAKSIA":"Metals","JSWHL":"Metals","JSWISPL":"Metals","NSLNISP":"Metals",
     "SSWL":"Metals","SANDUMA":"Metals","SUNFLAG":"Metals",
     # Cables & Wires
@@ -115,8 +115,8 @@ SECTOR_MAP = {
     "RR":"Cables","INDOTECH":"Cables",
     # Electronic Components & Defense Electronics
     "CENTUM":"Electronics","SYRMA":"Electronics","DATAPATTNS":"Electronics",
-    "AXISCADES":"Electronics","AEROFLEX":"Electronics","VOLTAMP":"Electronics",
-    "POWERINDIA":"Electronics","TDPOWERSYS":"Electronics","KRN":"Electronics",
+    "AXISCADES":"Electronics","AEROFLEX":"Electronics","VOLTAMP":"Cap Goods",
+    "POWERINDIA":"Electronics","TDPOWERSYS":"Cap Goods","KRN":"Electronics",
     "ADVAIT":"Electronics","INOXINDIA":"Electronics","KAYNES":"Electronics",
     "AMBER":"Electronics","PGEL":"Electronics","TEJAS":"Electronics",
     "SGIL":"Electronics","AVALON":"Electronics","ELCOMPCORP":"Electronics",
@@ -128,9 +128,9 @@ SECTOR_MAP = {
     "PIXTRANS":"Cap Goods","KMEW":"Cap Goods","AIAENG":"Cap Goods",
     "ELGI":"Cap Goods","GRINDMASTER":"Cap Goods","RITEFIL":"Cap Goods",
     "ISGEC":"Cap Goods","TRIVENIENG":"Cap Goods","TEXRAIL":"Cap Goods",
-    "RIIL":"Cap Goods","PATELENG":"Cap Goods","KNRCON":"Cap Goods",
+    "RIIL":"Cap Goods","PATELENG":"Cap Goods","KNRCON":"Infra",
     "DEEDEV":"Cap Goods","CGPOWER":"Cap Goods","GEPIL":"Cap Goods","INOXAIR":"Cap Goods",
-    "APARINDS":"Cap Goods","VOLTAMP":"Cap Goods","TDPOWERSYS":"Cap Goods","GRSE":"Cap Goods",
+    "GRSE":"Cap Goods",
     "MDL":"Cap Goods","COCHINSHIP":"Cap Goods","BEML":"Cap Goods","MAZDOCK":"Cap Goods",
     "SKIPPER":"Cap Goods","KECL":"Cap Goods","KALPATPOWR":"Cap Goods","SANGHVI":"Cap Goods",
     "ELGIEQUIP":"Cap Goods","KIRLOSBROS":"Cap Goods","POWERMECH":"Cap Goods","NRAIL":"Cap Goods",
@@ -155,16 +155,16 @@ SECTOR_MAP = {
     "LINCOLN":"Chemicals","FINEORG":"Chemicals","DEEPAKFERT":"Chemicals",
     "TATACHEM":"Chemicals","AARTI":"Chemicals","VINATI":"Chemicals",
     "CLEAN":"Chemicals","NEOGEN":"Chemicals","GALAXYSURF":"Chemicals",
-    "PCBL":"Chemicals","SRF":"Chemicals","ATUL":"Chemicals","AAVAS":"Chemicals",
+    "PCBL":"Chemicals","SRF":"Chemicals","ATUL":"Chemicals",
     "FLUOROCHEM":"Chemicals","CAMLIN":"Chemicals","BASF":"Chemicals",
-    "SUDARSCHEM":"Chemicals","ALKYLAMINE":"Chemicals",
+    "ALKYLAMINE":"Chemicals",
     "ROSSARI":"Chemicals","TRANSPEK":"Chemicals","DEEPAKNTR":"Chemicals",
     "EPIGRAL":"Chemicals","CHEMCON":"Chemicals","PAUSHAKLTD":"Chemicals",
     # Sugar
     "RENUKA":"Sugar","TRIVENI":"Sugar","BALRAMCHIN":"Sugar","DALMIASUG":"Sugar",
     "DHAMPURSUG":"Sugar","AVADHSUGAR":"Sugar","MAWANASUG":"Sugar","KMSUGAR":"Sugar",
     "UTTAMSUGAR":"Sugar","UGARSUGAR":"Sugar","DWARKESH":"Sugar",
-    "DHAMPUR":"Sugar","SIMBHAOLI":"Sugar","DCMSHRIRAM":"Sugar",
+    "DHAMPUR":"Sugar","SIMBHAOLI":"Sugar",
     # Textiles & Apparel
     "ARVIND":"Textiles","SANGAMIND":"Textiles","RUBYMILLS":"Textiles",
     "SPORTKING":"Textiles","NITINSPIN":"Textiles","NAHARSPING":"Textiles",
@@ -178,11 +178,11 @@ SECTOR_MAP = {
     "EPL":"Packaging","JINDALPOLY":"Packaging","PREMIERPOL":"Packaging",
     "XPROINDIA":"Packaging","ORICONENT":"Packaging","SESHAPAPER":"Packaging",
     "MKTGCD":"Packaging","UFLEX":"Packaging","HUHTAMAKI":"Packaging",
-    "SMVD":"Packaging","KANSAINER":"Packaging","BALRAMCHIN":"Packaging",
+    "SMVD":"Packaging","KANSAINER":"Packaging",
     # Infrastructure / Construction
     "ADANIENT":"Infra","ADANIPORTS":"Infra","L&T":"Infra","IRB":"Infra",
     "CEIGALL":"Infra","TEXINFRA":"Infra","MANGLMCEM":"Infra","BHAGYANGR":"Infra",
-    "GODAVARIB":"Infra","KNRCON":"Infra","HGINFRA":"Infra","GPPL":"Infra",
+    "GODAVARIB":"Infra","HGINFRA":"Infra","GPPL":"Infra",
     "PNC":"Infra","ASHOKA":"Infra","SADBHAV":"Infra","NBCC":"Infra",
     "RITES":"Infra","IRCON":"Infra","RVNL":"Infra","RAIL":"Infra",
     # Financial Services
@@ -202,7 +202,7 @@ SECTOR_MAP = {
     # Consumer Durables / Retail
     "TITAN":"Consumer","ASIANPAINT":"Consumer","PIDILITIND":"Consumer","HAVELLS":"Consumer",
     "VOLTAS":"Consumer","DIXON":"Consumer","CROMPTON":"Consumer","LENSKART":"Consumer",
-    "THANGAMAYL":"Consumer","KALYANKJIL":"Consumer","SENCO":"Consumer",
+    "THANGAMAYL":"Consumer","SENCO":"Consumer",
     "VSTIND":"Consumer","BAJAJELECTR":"Consumer","WHIRLPOOL":"Consumer",
     "BLUESTAR":"Consumer","SYMPHONY":"Consumer","ORIENTELEC":"Consumer",
     # Internet / Tech Platforms
@@ -222,8 +222,8 @@ SECTOR_MAP = {
     "BDSL":"Defense","PARAS":"Defense","MIDHANI":"Defense","ASTRA":"Defense",
     "IDEAFORGE":"Defense","ZEN":"Defense","ELCIDSIMP":"Defense",
     # Agri / Food Processing
-    "AVANTIFEED":"Agri","TIRUPATIFL":"Agri","PKTEA":"Agri",
-    "KRBL":"Agri","LT":"Agri","LAKSHMI":"Agri","PATANJALI":"Agri",
+    "AVANTIFEED":"Agri","TIRUPATIFL":"Agri",
+    "KRBL":"Agri","LT":"Agri","LAKSHMI":"Agri",
     "VENKYS":"Agri","SUGARIND":"Agri","SRIKALAHASTHI":"Agri",
     # Other
     "STAR":"Other","SGMART":"Other","MWL":"Other","AVL":"Other",
@@ -286,7 +286,7 @@ INDUSTRY_MAP = {
     "PKTEA":"FMCG - Tea","HNDFDS":"FMCG - Foods","TRAVELFOOD":"FMCG - Foods",
     "PRSMJOHNSN":"FMCG - Foods","BIKAJI":"FMCG - Foods","PATANJALI":"FMCG - Foods",
     "VARUN":"FMCG - Beverages",
-    "DEVYANI":"QSR","SAPPHIRE":"QSR","WESTLIFE":"QSR","JUBLFOOD":"QSR",
+    "DEVYANI":"QSR - KFC/Pizza Hut","SAPPHIRE":"QSR","WESTLIFE":"QSR - McDonald's","JUBLFOOD":"QSR - Domino's",
     # Pharma - Formulations
     "SUNPHARMA":"Pharma Formulations","DRREDDY":"Pharma Formulations",
     "CIPLA":"Pharma Formulations","DIVISLAB":"Pharma Formulations",
@@ -407,7 +407,7 @@ INDUSTRY_MAP = {
     "DEEDEV":"Industrial Piping & Pressure Vessels","KNRCON":"Roads & Highways","RITEFIL":"Filtration",
     # Defense
     "DYNAMATECH":"Aerospace & Defense","MTARTECH":"Aerospace & Defense",
-    "DATAPATTNS":"Defense Electronics","HAL":"Aerospace & Defense",
+    "HAL":"Aerospace & Defense",
     "BDSL":"Defense","PARAS":"Defense","MIDHANI":"Aerospace Alloys",
     "ASTRA":"Defense","IDEAFORGE":"Drones","ZEN":"Defense",
     "GRSE":"Shipbuilding Defense","COCHINSHIP":"Shipbuilding","MDL":"Submarine Builder",
@@ -436,7 +436,7 @@ INDUSTRY_MAP = {
     # Consumer - Retail / QSR / Hotels
     "DMART":"Retail - Hypermarket","VMART":"Value Retail","TRENT":"Retail - Fashion",
     "SPENCERS":"Retail","SHOPSTOP":"Retail - Dept Store",
-    "JUBLFOOD":"QSR - Domino's","DEVYANI":"QSR - KFC/Pizza Hut","WESTLIFE":"QSR - McDonald's",
+    
     "BARBEQUE":"Casual Dining","SPECIALITY":"Casual Dining","JUBILANT":"Diversified Consumer",
     "INDHOTELS":"Hotels","EIHOTEL":"Hotels - Oberoi","LEMONTRE":"Budget Hotels",
     "CHALET":"Hotels","TAJGVK":"Hotels","SAMHI":"Hotels","VENTIVE":"Hospitality",
@@ -448,9 +448,9 @@ INDUSTRY_MAP = {
     "BAJAJELEC":"Consumer Electricals","HAVELLS":"Consumer Electricals",
     "LLOYDS":"Air Conditioning","GODREJAP":"Home Appliances",
     # Consumer - Jewellery & Accessories
-    "KALYANKJIL":"Jewellery","DPABHUSHAN":"Jewellery","GOLDIAM":"Jewellery",
-    "VAIBHAVGBL":"Jewellery","SENCO":"Jewellery","PCJEWELLER":"Jewellery",
-    "THANGAMAYL":"Jewellery","SKYGOLD":"Jewellery",
+    "DPABHUSHAN":"Jewellery","GOLDIAM":"Jewellery",
+    "VAIBHAVGBL":"Jewellery","SENCO":"Gold Jewelry","PCJEWELLER":"Jewellery",
+    "THANGAMAYL":"Gold Jewelry","SKYGOLD":"Jewellery",
     # Consumer - Tiles / Sanitaryware / Home
     "CERA":"Sanitaryware","HINDWARE":"Sanitaryware","KAJARIACER":"Tiles",
     "ASIANTILES":"Tiles","SOMANY":"Tiles","ORIENTBELL":"Tiles",
@@ -485,25 +485,25 @@ INDUSTRY_MAP = {
     "ANGELONE":"Stock Broking","DBSTOCKBRO":"Stock Broking",
     "GROWW":"Stock Broking","ICICISEC":"Stock Broking",
     "GEOJITFSL":"Stock Broking","SMIFS":"Stock Broking","CHOICEIN":"Stock Broking",
-    "ABSLAMC":"Asset Management",
+    
     # Insurance
-    "STARHEALTH":"Health Insurance","HDFCLIFE":"Life Insurance",
-    "SBILIFE":"Life Insurance","ICICIPRU":"Life Insurance",
+    
+    "ICICIPRU":"Life Insurance",
     # Consumer
-    "TITAN":"Jewelry & Watches","THANGAMAYL":"Gold Jewelry",
-    "KALYANKJIL":"Gold Jewelry","SENCO":"Gold Jewelry",
+    "TITAN":"Jewelry & Watches",
+    
     "ASIANPAINT":"Paints","PIDILITIND":"Adhesives & Chemicals",
-    "HAVELLS":"Consumer Electricals","VOLTAS":"Air Conditioners",
-    "BLUESTAR":"Air Conditioners","SYMPHONY":"Air Coolers",
-    "ORIENTELEC":"Consumer Electricals","BAJAJELECTR":"Consumer Electricals",
-    "DIXON":"Consumer Electronics","CROMPTON":"Consumer Electricals",
-    "WHIRLPOOL":"Consumer Appliances","VSTIND":"Cigarettes",
+    
+    "BLUESTAR":"Air Conditioners",
+    "BAJAJELECTR":"Consumer Electricals",
+    "DIXON":"Consumer Electronics",
+    "VSTIND":"Cigarettes",
     "LENSKART":"Eyewear Retail",
     # Internet / Platforms
     "NAUKRI":"Online Recruitment","ZOMATO":"Food Delivery","PAYTM":"Fintech",
-    "IRCTC":"Travel & Hospitality","SWIGGY":"Food Delivery",
+    "SWIGGY":"Food Delivery",
     "MAPMYINDIA":"Digital Maps","INDIAMART":"B2B Marketplace",
-    "POLICYBZR":"Insurance Technology","DELHIVERY":"Last Mile Logistics",
+    "POLICYBZR":"Insurance Technology",
     # Real Estate
     "DLF":"Real Estate - Residential","GODREJPROP":"Real Estate - Residential",
     "OBEROIRLTY":"Real Estate - Premium","PRESTIGE":"Real Estate - Residential",
@@ -512,10 +512,10 @@ INDUSTRY_MAP = {
     "SUNTECK":"Real Estate - Residential","KOLTEPATIL":"Real Estate - Residential",
     # Shipping
     "GESHIP":"Shipping","SEAMECLTD":"Shipping Services",
-    "COASTCORP":"Logistics","JETFREIGHT":"Logistics","SCI":"Shipping",
+    "COASTCORP":"Logistics","JETFREIGHT":"Logistics",
     # Agri
     "AVANTIFEED":"Aquaculture / Shrimp Feed","TIRUPATIFL":"Flour Milling",
-    "PKTEA":"Tea Plantations","KRBL":"Rice / Agri","VENKYS":"Poultry & Agri",
+    "KRBL":"Rice / Agri","VENKYS":"Poultry & Agri",
 }
 
 SETUP_META = {
@@ -2887,7 +2887,7 @@ function wplExportCSV() {{
   if (!_wplTable.length) return;
   const h=['Symbol','Price','20d%','60d%','RS','ADR%','Stage','Pattern','Conviction','Action','Entry','Stop','T1','R:R','Setup'];
   const rows=_wplTable.map(r=>[r.symbol,r.price,r.ret_20d,r.ret_60d,r.rs_score,r.adr_pct,r.stage,
-    (r.pattern||'').replace(/[^\w\s]/g,''),r.conviction,r.action,r.entry,r.stop,r.t1,r.rr_t1,r.setup
+    (r.pattern||'').replace(/[^\\w\\s]/g,''),r.conviction,r.action,r.entry,r.stop,r.t1,r.rr_t1,r.setup
   ].map(v=>v==null?'':String(v)).join(','));
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent([h.join(','),...rows].join('\\n'));
