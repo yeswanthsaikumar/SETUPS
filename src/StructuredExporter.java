@@ -223,12 +223,15 @@ public class StructuredExporter {
     }
     
     private static String signalToJson(SignalExport s) {
+        String qualityRating = s.breakoutQualityRating != null ? s.breakoutQualityRating : "";
         return String.format(
             "{\"symbol\":\"%s\",\"signalType\":\"%s\",\"baseScore\":%.1f," +
             "\"alignmentBonus\":%.1f,\"finalScore\":%.1f," +
             "\"qualityRating\":\"%s\",\"qualityScore\":%.1f}",
-            s.symbol, s.signalType, s.baseQualityScore, s.alignmentBonus,
-            s.finalScore, s.breakoutQualityRating, s.breakoutQualityScore
+            s.symbol != null ? s.symbol : "",
+            s.signalType != null ? s.signalType : "",
+            s.baseQualityScore, s.alignmentBonus,
+            s.finalScore, qualityRating, s.breakoutQualityScore
         );
     }
     
@@ -240,8 +243,9 @@ public class StructuredExporter {
             sb.append(String.format(
                 "{\"symbol\":\"%s\",\"baseScore\":%.1f,\"alignmentBonus\":%.1f," +
                 "\"finalScore\":%.1f,\"qualityRating\":\"%s\"}",
-                w.symbol, w.baseQualityScore, w.alignmentBonus,
-                w.finalScore, w.breakoutQualityRating
+                w.symbol != null ? w.symbol : "",
+                w.baseQualityScore, w.alignmentBonus,
+                w.finalScore, w.breakoutQualityRating != null ? w.breakoutQualityRating : ""
             ));
         }
         sb.append("]");
@@ -255,7 +259,9 @@ public class StructuredExporter {
             RejectionExport r = rejections.get(i);
             sb.append(String.format(
                 "{\"symbol\":\"%s\",\"reason\":\"%s\",\"type\":\"%s\"}",
-                r.symbol, escapeJson(r.rejectionReason), r.rejectionType
+                r.symbol != null ? r.symbol : "",
+                escapeJson(r.rejectionReason),
+                r.rejectionType != null ? r.rejectionType : ""
             ));
         }
         sb.append("]");
@@ -345,10 +351,14 @@ public class StructuredExporter {
         Path outPath = Paths.get(outputDir);
         Files.createDirectories(outPath);
         
-        if ("json".equalsIgnoreCase(format)) {
+        boolean writeJson = "json".equalsIgnoreCase(format) || "both".equalsIgnoreCase(format);
+        boolean writeCsv  = "csv".equalsIgnoreCase(format) || "both".equalsIgnoreCase(format);
+
+        if (writeJson) {
             String jsonContent = exportAsJson(data);
             Files.write(outPath.resolve(prefix + "_scan.json"), jsonContent.getBytes());
-        } else if ("csv".equalsIgnoreCase(format)) {
+        }
+        if (writeCsv) {
             Map<String, String> csvFiles = exportAsCsv(data);
             for (Map.Entry<String, String> entry : csvFiles.entrySet()) {
                 Files.write(outPath.resolve(prefix + "_" + entry.getKey()), 
@@ -359,6 +369,7 @@ public class StructuredExporter {
     
     // Helper methods
     private static String escapeJson(String s) {
+        if (s == null) return "";
         return s.replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
@@ -366,6 +377,7 @@ public class StructuredExporter {
     }
     
     private static String escapeQuotes(String s) {
+        if (s == null) return "";
         return s.replace("\"", "\"\"");
     }
 }

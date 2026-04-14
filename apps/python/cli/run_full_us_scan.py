@@ -981,6 +981,10 @@ def scan_batch(batch: list[str], args) -> list[str]:
         with lock:
             print(f"  [WARN] batch timed out after {JAVA_TIMEOUT_SEC}s for {','.join(batch[:5])}", flush=True)
         return []
+    except Exception as exc:
+        with lock:
+            print(f"  [WARN] scan batch error: {exc}", flush=True)
+        return []
 
 
 def scan_watchlist_batch(batch: list[str], args) -> list[str]:
@@ -1020,6 +1024,7 @@ def scan_watchlist_batch(batch: list[str], args) -> list[str]:
     except Exception as exc:
         with lock:
             print(f"  [WARN] watchlist batch error: {exc}", flush=True)
+        return []
 
 
 def scan_combined_batch(batch: list[str], args) -> tuple[list[str], list[str]]:
@@ -1105,11 +1110,11 @@ def parse_hit(line: str) -> dict:
                 "SL": "sl",
             }
             for key, out_key in pairs.items():
-                m = re.search(rf"\\b{key}\\s+([^\\s]+)", line)
+                m = re.search(rf"\b{key}\s+([^\s]+)", line)
                 if m:
                     d[out_key] = m.group(1)
 
-            t = re.search(r"\\bT1\\s+([^\\s]+)\\s+T2\\s+([^\\s]+)\\s+T3\\s+([^\\s]+)", line)
+            t = re.search(r"\bT1\s+([^\s]+)\s+T2\s+([^\s]+)\s+T3\s+([^\s]+)", line)
             if t:
                 d["T1"], d["T2"], d["T3"] = t.group(1), t.group(2), t.group(3)
             return d
@@ -1120,7 +1125,7 @@ def parse_hit(line: str) -> dict:
             if part.startswith("Type"):
                 vals = part.split()
                 d["listType"] = vals[-1] if vals else "BREAKOUT"
-            if "Setup" in part:
+            elif "Setup" in part:
                 d["setup"] = part.split()[-1]
             elif "Window" in part:
                 d["window"] = part.split()[-1]
@@ -1136,7 +1141,7 @@ def parse_hit(line: str) -> dict:
                 d["dist%"] = part.split()[-1]
             elif "Rating" in part:
                 d["rating"] = part.split()[-1]
-            if   "Close"  in part: d["close"]  = part.split()[-1]
+            elif "Close"  in part: d["close"]  = part.split()[-1]
             elif "Pivot"  in part: d["pivot"]  = part.split()[-1]
             elif "Entry"  in part: d["entry"]  = part.split()[-1]
             elif "Score"  in part: d["score"]  = part.split()[-1]

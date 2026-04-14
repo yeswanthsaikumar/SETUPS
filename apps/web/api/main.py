@@ -79,6 +79,7 @@ class JobRecord(BaseModel):
     finished_at: str | None = None
     return_code: int | None = None
     log_file: str
+    error: str | None = None
 
 
 class TradeBoardPosition(BaseModel):
@@ -842,13 +843,13 @@ def _read_ohlcv(symbol: str, days: int = 0) -> list[dict]:
     date_map: dict[str, dict] = {}
     for prefix in [ns, base]:
         # 1) Try unified single file first
-        for fname in [f"{prefix}.csv", f"{prefix}.NS.csv"]:
+        for fname in [f"{prefix}.csv"]:
             date_map.update(_read_csv(CACHE_DIR / fname))
         if date_map:
             break
         # 2) Legacy fallback: try _N.csv files
         for suffix in ["_5096", "_3528", "_900", "_728", "_504", "_252", "_60"]:
-            for fname in [f"{prefix}{suffix}.csv", f"{prefix}.NS{suffix}.csv"]:
+            for fname in [f"{prefix}{suffix}.csv"]:
                 date_map.update(_read_csv(CACHE_DIR / fname))
         if date_map:
             break

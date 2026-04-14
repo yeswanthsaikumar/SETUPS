@@ -8,6 +8,7 @@ public class BacktestEngine {
     private final String timeframe;
     private final AppConfig config;
     private final String benchmarkSymbol;
+    private final int maxHoldBars;
 
     public BacktestEngine(MarketDataProvider marketDataProvider, ScannerEngine scannerEngine,
                           String timeframe, int holdDays, String benchmarkSymbol) {
@@ -19,6 +20,7 @@ public class BacktestEngine {
         this.timeframe = timeframe;
         this.config = new AppConfig(timeframe);
         this.benchmarkSymbol = benchmarkSymbol == null ? "" : benchmarkSymbol.trim();
+        this.maxHoldBars = holdDays;
     }
 
     public BacktestReport run(List<String> symbols, int lookbackDays) {
@@ -378,6 +380,14 @@ public class BacktestEngine {
                 exitIndex = i;
                 exitPrice = activeStop;
                 reason = activeReason;
+                break;
+            }
+
+            // Max hold time exit
+            if ((i - signalIndex) >= maxHoldBars) {
+                exitIndex = i;
+                exitPrice = c.getClose();
+                reason = "MAX_HOLD_EXIT";
                 break;
             }
         }

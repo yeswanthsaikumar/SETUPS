@@ -26,6 +26,7 @@ import os
 import sys
 import threading
 import time
+import urllib.parse
 import zoneinfo
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -40,10 +41,10 @@ NSE_CLOSE_HOUR, NSE_CLOSE_MIN = 15, 35
 MAX_DATA_GAP_DAYS = 10  # >10 calendar days = always stale (handles long holiday stretches)
 
 # Retries and delays
-MAX_RETRIES = 3
-RETRY_DELAY = 1.5  # seconds between retries
+MAX_RETRIES = 5
+RETRY_DELAY = 2.0  # seconds between retries
 CRUMB_RETRY_DELAY = 5.0
-RATE_LIMIT_DELAY = 0.25  # seconds between requests per worker
+RATE_LIMIT_DELAY = 0.5  # seconds between requests per worker
 
 
 # ── Yahoo Finance auth ──────────────────────────────────────────────────────
@@ -51,11 +52,18 @@ _session_lock = threading.Lock()
 _crumb: str | None = None
 _cookies: dict = {}
 _crumb_expiry: float = 0.0
+_crumb_known_bad: bool = False  # Set True when crumb is detected as invalid; prevents re-fetch
 
 # Circuit breaker: after first network failure, skip Yahoo for 30 min
 # to avoid wasting time on 1856+ symbols when Yahoo is unreachable.
 _yahoo_blocked_until: float = 0.0
 _CIRCUIT_BREAKER_S = 30 * 60  # 30 minutes
+
+# Global throttle: ensure minimum gap between concurrent Yahoo API requests
+# to prevent 429 rate limiting when using multiple workers.
+_throttle_lock = threading.Lock()
+_last_request_time: float = 0.0
+_MIN_REQUEST_GAP = 0.4  # seconds between ANY two Yahoo requests across all workers
 
 
 def _is_yahoo_blocked() -> bool:
@@ -65,6 +73,17 @@ def _is_yahoo_blocked() -> bool:
 def _trip_circuit_breaker() -> None:
     global _yahoo_blocked_until
     _yahoo_blocked_until = time.time() + _CIRCUIT_BREAKER_S
+
+
+def _throttle() -> None:
+    """Enforce a minimum gap between Yahoo API requests across all workers."""
+    global _last_request_time
+    with _throttle_lock:
+        now = time.time()
+        elapsed = now - _last_request_time
+        if elapsed < _MIN_REQUEST_GAP:
+            time.sleep(_MIN_REQUEST_GAP - elapsed)
+        _last_request_time = time.time()
 
 
 def _fetch_crumb(session) -> tuple[str | None, dict]:
@@ -124,6 +143,11 @@ def _get_session_and_crumb():
 
     # If circuit breaker is open, skip crumb fetch entirely
     if _is_yahoo_blocked():
+        return None, requests.Session()
+
+    # If crumb was detected as invalid (data endpoint returned empty with crumb
+    # but succeeded without), don't waste time re-fetching it.
+    if _crumb_known_bad:
         return None, requests.Session()
 
     now = time.time()
@@ -227,11 +251,12 @@ def _read_last_date(csv_path: Path) -> str:
 
 def _find_stale_caches(symbol_filter: list[str] | None = None) -> list[tuple[str, Path, str]]:
     """Return list of (symbol, unified_cache_path, last_date) for stale entries.
-    Always returns the unified SYMBOL.csv path (not legacy _N.csv paths)."""
-    # Group cache files by base symbol — handle .NS and .BO, including symbols with & in name
+    Always returns the unified SYMBOL.csv path (not legacy _N.csv paths).
+    Handles NSE (.NS), BSE (.BO), and US (no suffix) symbols."""
+    # Group cache files by base symbol — handle .NS, .BO, and plain US symbols
     sym_files: dict[str, list[Path]] = {}
 
-    # 1) Discover unified files: SYMBOL.NS.csv
+    # 1) Discover unified files: SYMBOL.NS.csv and SYMBOL.BO.csv
     for p in CACHE_DIR.glob("*.NS.csv"):
         sym = p.name.replace(".csv", "")
         sym_files.setdefault(sym, []).append(p)
@@ -239,7 +264,21 @@ def _find_stale_caches(symbol_filter: list[str] | None = None) -> list[tuple[str
         sym = p.name.replace(".csv", "")
         sym_files.setdefault(sym, []).append(p)
 
-    # 2) Discover legacy files: SYMBOL.NS_NNN.csv — group under same symbol
+    # 2) Discover US/other unified files: SYMBOL.csv (no .NS/.BO/._ in name)
+    for p in CACHE_DIR.glob("*.csv"):
+        name = p.name
+        # Skip files that are already captured (.NS.csv, .BO.csv)
+        if ".NS.csv" in name or ".BO.csv" in name:
+            continue
+        # Skip legacy files with _NNN suffix
+        if "_" in name:
+            continue
+        sym = name.replace(".csv", "")
+        if not sym or sym.startswith("."):
+            continue
+        sym_files.setdefault(sym, []).append(p)
+
+    # 3) Discover legacy files: SYMBOL.NS_NNN.csv — group under same symbol
     for p in CACHE_DIR.glob("*_*.csv"):
         name = p.name
         for exch in (".NS_", ".BO_"):
@@ -303,20 +342,40 @@ def _fetch_bars(symbol: str, from_date: str | None = None) -> list[dict]:
     else:
         p1 = int((now_ist - datetime.timedelta(days=730)).timestamp())
 
-    crumb, session = _get_session_and_crumb()
+    import requests as _req
+
+    encoded_symbol = urllib.parse.quote(symbol, safe='')
+    # Prefer query2 — query1 is more aggressively rate-limited
+    hosts = ["query2.finance.yahoo.com", "query1.finance.yahoo.com"]
+
+    # Strategy: try WITHOUT crumb first (clean session, avoids rate-limiting).
+    # Only fall back to crumb-based auth if the no-crumb request returns 401.
+    use_crumb = False
+    crumb: str | None = None
+    session = _req.Session()
+    preferred_host = 0  # index into hosts; shifts on 429
+    _429_hosts = set()  # track which hosts returned 429
 
     for attempt in range(1, MAX_RETRIES + 1):
         # Re-check circuit breaker before each retry
         if _is_yahoo_blocked():
             return []
 
+        # Throttle to prevent overwhelming Yahoo across all workers
+        _throttle()
+
+        host = hosts[preferred_host]
         try:
             url = (
-                f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
+                f"https://{host}/v8/finance/chart/{encoded_symbol}"
                 f"?interval=1d&period1={p1}&period2={p2}&events=history&includeAdjustedClose=true"
             )
-            if crumb:
-                url += f"&crumb={crumb}"
+            if use_crumb and crumb:
+                url += f"&crumb={urllib.parse.quote(crumb, safe='')}"
+
+            _debug = os.environ.get("REFRESH_DEBUG")
+            if _debug:
+                print(f"    [DBG] attempt={attempt} host={host} crumb={'yes' if (use_crumb and crumb) else 'no'}", flush=True)
 
             resp = session.get(
                 url,
@@ -329,21 +388,46 @@ def _fetch_bars(symbol: str, from_date: str | None = None) -> list[dict]:
                     "Accept": "application/json",
                     "Referer": "https://finance.yahoo.com",
                 },
-                timeout=8,
+                timeout=15,
             )
 
+            if _debug:
+                print(f"    [DBG] status={resp.status_code}", flush=True)
+
             if resp.status_code == 401:
-                # Crumb expired — force refresh
-                global _crumb_expiry
-                with _session_lock:
-                    _crumb_expiry = 0
-                crumb, session = _get_session_and_crumb()
+                if not use_crumb:
+                    # No-crumb request got 401 → this region requires auth.
+                    # Switch to crumb mode.
+                    use_crumb = True
+                    crumb, session = _get_session_and_crumb()
+                    if not crumb:
+                        return []  # can't authenticate
+                else:
+                    # Crumb was also rejected — try refreshing
+                    global _crumb_expiry
+                    with _session_lock:
+                        _crumb_expiry = 0
+                    crumb, session = _get_session_and_crumb()
+                    if not crumb:
+                        return []
                 time.sleep(RETRY_DELAY * attempt)
                 continue
 
             if resp.status_code == 429:
-                # Rate limited
-                time.sleep(RETRY_DELAY * attempt * 3)
+                # Rate limited — drop crumb/cookies (they aggravate rate limits),
+                # switch to the other host, and retry with exponential backoff.
+                _429_hosts.add(host)
+                if use_crumb:
+                    use_crumb = False
+                    crumb = None
+                    session = _req.Session()
+                # Switch to the other host
+                preferred_host = (preferred_host + 1) % len(hosts)
+                # If BOTH hosts are rate-limited, use a longer backoff
+                if len(_429_hosts) >= len(hosts):
+                    time.sleep(RETRY_DELAY * (2 ** (attempt + 1)))
+                else:
+                    time.sleep(RETRY_DELAY * attempt)
                 continue
 
             if not resp.ok:
@@ -355,79 +439,79 @@ def _fetch_bars(symbol: str, from_date: str | None = None) -> list[dict]:
             if not result:
                 error = data.get("chart", {}).get("error", {})
                 if error:
-                    return []  # symbol may be invalid
+                    # Explicit API error (e.g. invalid symbol) — no point retrying
+                    return []
+                # Empty result with no error and no crumb — nothing more to try
                 return []
 
-            chart = result[0]
-            timestamps = chart.get("timestamp", [])
-            quote = chart.get("indicators", {}).get("quote", [{}])[0]
-            opens   = quote.get("open",   [])
-            highs   = quote.get("high",   [])
-            lows    = quote.get("low",    [])
-            closes  = quote.get("close",  [])
-            volumes = quote.get("volume", [])
-
-            # Also try adjclose as fallback
-            adj_closes = chart.get("indicators", {}).get("adjclose", [{}])
-            adj_closes = adj_closes[0].get("adjclose", []) if adj_closes else []
-
-            bars = []
-            for i, ts in enumerate(timestamps):
-                try:
-                    o = opens[i]   if i < len(opens)   else None
-                    h = highs[i]   if i < len(highs)   else None
-                    l = lows[i]    if i < len(lows)    else None
-                    c = closes[i]  if i < len(closes)  else None
-                    v = volumes[i] if i < len(volumes) else None
-
-                    # Normalize NaN floats from JSON to None
-                    def _nan_to_none(x):
-                        if x is None:
-                            return None
-                        try:
-                            f = float(x)
-                            return None if math.isnan(f) else f
-                        except (TypeError, ValueError):
-                            return None
-
-                    o = _nan_to_none(o)
-                    h = _nan_to_none(h)
-                    l = _nan_to_none(l)
-                    c = _nan_to_none(c)
-
-                    # Fallback for missing/NaN close: try adjclose, then typical price
-                    if c is None and i < len(adj_closes):
-                        c = _nan_to_none(adj_closes[i])
-                    if c is None and o is not None and h is not None and l is not None:
-                        c = (o + h + l) / 3.0
-
-                    if ts is None or o is None or h is None or l is None or c is None:
-                        continue
-                    if v is None or v <= 0:
-                        continue
-
-                    dt_ist = datetime.datetime.fromtimestamp(ts, IST)
-                    date_str = dt_ist.strftime("%Y-%m-%d")
-                    bars.append({
-                        "date":   date_str,
-                        "open":   round(float(o), 5),
-                        "high":   round(float(h), 5),
-                        "low":    round(float(l), 5),
-                        "close":  round(float(c), 5),
-                        "volume": int(v),
-                    })
-                except Exception:
-                    continue
-
-            return sorted(bars, key=lambda x: x["date"])
+            return _parse_chart_bars(result[0])
 
         except Exception as e:
-            # Network-level failure on this host — try the other Yahoo host before
-            # tripping the circuit breaker.  Only trip after BOTH hosts fail.
+            # Network-level failure — trip circuit breaker
             _trip_circuit_breaker()
             return []
 
     return []
+
+
+def _parse_chart_bars(chart: dict) -> list[dict]:
+    """Parse Yahoo Finance chart result into a list of bar dicts."""
+    timestamps = chart.get("timestamp", [])
+    quote = chart.get("indicators", {}).get("quote", [{}])[0]
+    opens   = quote.get("open",   [])
+    highs   = quote.get("high",   [])
+    lows    = quote.get("low",    [])
+    closes  = quote.get("close",  [])
+    volumes = quote.get("volume", [])
+
+    # Also try adjclose as fallback
+    adj_closes = chart.get("indicators", {}).get("adjclose", [{}])
+    adj_closes = adj_closes[0].get("adjclose", []) if adj_closes else []
+
+    def _nan_to_none(x):
+        if x is None:
+            return None
+        try:
+            f = float(x)
+            return None if math.isnan(f) else f
+        except (TypeError, ValueError):
+            return None
+
+    bars = []
+    for i, ts in enumerate(timestamps):
+        try:
+            o = _nan_to_none(opens[i]   if i < len(opens)   else None)
+            h = _nan_to_none(highs[i]   if i < len(highs)   else None)
+            l = _nan_to_none(lows[i]    if i < len(lows)    else None)
+            c = _nan_to_none(closes[i]  if i < len(closes)  else None)
+            v = volumes[i] if i < len(volumes) else None
+
+            # Fallback for missing/NaN close: try adjclose, then typical price
+            if c is None and i < len(adj_closes):
+                c = _nan_to_none(adj_closes[i])
+            if c is None and o is not None and h is not None and l is not None:
+                c = (o + h + l) / 3.0
+
+            if ts is None or o is None or h is None or l is None or c is None:
+                continue
+            if v is None or v <= 0:
+                continue
+
+            dt_ist = datetime.datetime.fromtimestamp(ts, IST)
+            date_str = dt_ist.strftime("%Y-%m-%d")
+            bars.append({
+                "date":   date_str,
+                "open":   round(float(o), 5),
+                "high":   round(float(h), 5),
+                "low":    round(float(l), 5),
+                "close":  round(float(c), 5),
+                "volume": int(v),
+            })
+        except Exception:
+            continue
+
+    return sorted(bars, key=lambda x: x["date"])
+
 
 
 # ── Cache merge & write ──────────────────────────────────────────────────────
@@ -590,21 +674,17 @@ def refresh_all_stale_caches(
             print(f"    … and {len(stale) - 20} more", flush=True)
         return {"refreshed": 0, "skipped": len(stale), "errors": 0}
 
-    # Warm up crumb BEFORE parallel execution
-    print("  Fetching Yahoo Finance session/crumb…", flush=True)
-    crumb, _ = _get_session_and_crumb()
-    if crumb:
-        print(f"  ✓ Got crumb (length={len(crumb)})", flush=True)
-    elif _is_yahoo_blocked():
+    # Quick connectivity check — try a lightweight request to Yahoo
+    print("  Checking Yahoo Finance connectivity…", flush=True)
+    if _is_yahoo_blocked():
         print(
-            "  ❌ Yahoo Finance is BLOCKED on this network (SSL connection reset).\n"
+            "  ❌ Yahoo Finance is BLOCKED on this network.\n"
             "     Cache cannot be updated until Yahoo Finance is accessible.\n"
-            "     Tip: Run the scan from a different network (e.g. mobile hotspot)\n"
-            "          or wait until the network restriction is lifted.",
+            "     Tip: Run from a different network or wait for the restriction to lift.",
             flush=True
         )
     else:
-        print("  ⚠ Could not get crumb — will try without it (some regions work without crumb)", flush=True)
+        print("  ✓ Ready (will fetch without crumb; falls back to crumb if needed)", flush=True)
 
     stats = {"refreshed": 0, "skipped": 0, "errors": 0, "no_data": 0, "blocked": 0}
     lock = threading.Lock()

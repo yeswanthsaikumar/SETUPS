@@ -112,7 +112,15 @@ public final class FundamentalsEnricher {
         int idx = json.indexOf(pattern);
         if (idx == -1) return null;
         int start = idx + pattern.length();
+        // Skip whitespace
+        while (start < json.length() && json.charAt(start) == ' ') {
+            start++;
+        }
         int end = start;
+        // Handle optional leading minus sign for negative numbers
+        if (end < json.length() && json.charAt(end) == '-') {
+            end++;
+        }
         while (end < json.length() && (Character.isDigit(json.charAt(end)) || json.charAt(end) == '.')) {
             end++;
         }

@@ -1163,7 +1163,7 @@ def run_single_backtest(args, market: str, timeframe: str, enable_advanced: bool
                 done_count += 1
                 print(
                     f"\r  {progress(done_count, len(batches))}  "
-                    f"ETA={timedelta(done_count, len(batches), start)}",
+                    f"ETA={format_eta(done_count, len(batches), start)}",
                     end="",
                     flush=True,
                 )
@@ -1455,7 +1455,7 @@ def main():
     run_single_backtest(args, args.market, args.timeframe)
 
 
-def timedelta(done, total, start):
+def format_eta(done, total, start):
     elapsed = time.time() - start
     if done == 0:
         return "?"
