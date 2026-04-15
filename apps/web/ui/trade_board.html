@@ -104,6 +104,7 @@
     .pr-l{font-size:8.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;font-weight:700}
     .pr-v{font-size:.85em;font-weight:800}
     .pr-entry{color:#7dd3fc}.pr-cmp{color:var(--text)}.pr-sl{color:var(--red)}
+    .pr-cmp.stale-price{color:#f59e0b!important}
     .targets{padding:6px 12px;display:flex;gap:4px}
     .tgt{flex:1;background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:3px 6px;text-align:center}
     .tgt-l{font-size:8px;color:var(--muted);font-weight:700;text-transform:uppercase}
@@ -639,10 +640,46 @@ function openEmbed(url, title, tlId) {
   if (tl) tl.classList.add('active');
 }
 
+// ── Price freshness tracking ─────────────────────────────────────────────────
+let _priceRefreshPending = false;
+
+function _isPriceStale(lastDate) {
+  if (!lastDate) return true;
+  const now = new Date();
+  const istOffset = 5.5 * 60;
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+  const istNow = new Date(utcMs + istOffset * 60000);
+  const today = new Date(istNow.toISOString().slice(0, 10));
+  const ld = new Date(lastDate);
+  const diffDays = Math.round((today - ld) / 86400000);
+  if (diffDays <= 0) return false;
+  if (diffDays > 10) return true;
+  let biz = 0;
+  for (let d = 1; d <= diffDays; d++) {
+    const day = new Date(ld); day.setDate(ld.getDate() + d);
+    if (day.getDay() !== 0 && day.getDay() !== 6) biz++;
+  }
+  if (biz === 0) return false;
+  if (biz >= 2) return true;
+  const nseClose = new Date(istNow.toISOString().slice(0, 10) + 'T15:35:00');
+  return istNow >= nseClose;
+}
+
 async function refreshData(auto = false) {
-  if (!auto) { const b = document.getElementById('refreshBtn'); b.classList.add('spinning'); setTimeout(() => b.classList.remove('spinning'), 800); }
+  const btn = document.getElementById('refreshBtn');
+  if (!auto && btn) { btn.classList.add('spinning'); setTimeout(() => btn.classList.remove('spinning'), 1200); }
+
+  // On manual refresh: flush live price cache first so backend fetches fresh quotes
+  if (!auto && !_priceRefreshPending) {
+    _priceRefreshPending = true;
+    try {
+      await fetch(API + '/api/trade-board/refresh-prices', { method: 'POST' });
+    } catch(e) { /* non-fatal */ }
+    _priceRefreshPending = false;
+  }
+
   try {
-    // Try enriched endpoint first (has 20EMA, ADR, volume data), fallback to regular
+    // Fetch positions (backend returns live prices during market hours)
     let r = await fetch(API + '/api/trade-board/positions/enriched');
     if (!r.ok) r = await fetch(API + '/api/trade-board/positions');
     const d = await r.json();
@@ -650,8 +687,21 @@ async function refreshData(auto = false) {
     updateSbStats(d);
     renderPositions();
     if (currentDetId) { const p = positions.find(x => x.id === currentDetId); if (p) updateDetInfo(p); }
+    // Update live badge to reflect market status
+    const liveBadge = document.querySelector('.live-badge');
+    if (liveBadge && d.marketOpen !== undefined) {
+      const dot = liveBadge.querySelector('.live-dot');
+      if (d.marketOpen) {
+        liveBadge.style.background = 'var(--green-bg)'; liveBadge.style.color = 'var(--green)';
+        if (dot) dot.style.background = 'var(--green)';
+      } else {
+        liveBadge.style.background = 'var(--bg3)'; liveBadge.style.color = 'var(--muted)';
+        if (dot) { dot.style.background = 'var(--muted)'; dot.style.animation = 'none'; }
+      }
+    }
   } catch(e) { if (!auto) toast('Failed to load positions', 'error'); }
-  // Refresh watchlist (enriched has 20EMA ext + volume records, fallback to regular)
+
+  // Refresh watchlist
   try {
     let wr = await fetch(API + '/api/trade-board/watchlist/enriched');
     if (!wr.ok) wr = await fetch(API + '/api/trade-board/watchlist');
@@ -660,8 +710,11 @@ async function refreshData(auto = false) {
     document.getElementById('sbWatch').textContent = watchlistItems.length;
     if (currentPage === 'watchlist') renderWatchlist();
   } catch(e) {}
+
+
   refreshTimer = 30;
 }
+
 
 function updateSbStats(d) {
   const open = (d.positions || []).filter(p => p.status === 'OPEN' || p.status === 'PARTIAL');
@@ -753,11 +806,21 @@ function buildCard(p) {
   const dc = dPct > 0 ? 'gain-pos' : dPct < 0 ? 'gain-neg' : 'gain-neu';
   const ratingCls = p.rating === 'A+' ? 'bg-ap' : p.rating === 'A' ? 'bg-a' : 'bg-b';
   const partialBadge = p.status === 'PARTIAL' ? '<span class="badge bg-partial">' + remaining + '/' + totalQty + ' left</span>' : '';
+
+  // Stale price detection
+  const isOpen = p.status === 'OPEN' || p.status === 'PARTIAL';
+  const priceDate = p.lastPriceDate || null;
+  const priceIsStale = isOpen && priceDate && _isPriceStale(priceDate);
+  const staleBadge = priceIsStale
+    ? '<span class="badge" style="background:#2a1a00;color:#f59e0b;border:1px solid #f59e0b33" title="Price data from ' + priceDate + ' — refreshing…">⚠ ' + priceDate + '</span>'
+    : (priceDate && isOpen ? '<span class="badge" style="background:transparent;color:var(--muted);font-size:8px">' + priceDate + '</span>' : '');
+
   const badges = [
     p.setup ? '<span class="badge bg-setup">' + p.setup + '</span>' : '',
     p.rating ? '<span class="badge ' + ratingCls + '">' + p.rating + '</span>' : '',
     '<span class="badge bg-' + st + '">' + (p.status || 'OPEN').replace('_HIT', ' ✓') + '</span>',
-    partialBadge
+    partialBadge,
+    staleBadge
   ].filter(Boolean).join('');
   const tgts = [1,2,3].map(i => {
     const v = p['t' + i]; if (!v) return '';
@@ -777,6 +840,8 @@ function buildCard(p) {
   const peBtn = (p.status === 'OPEN' || p.status === 'PARTIAL')
     ? '<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();openPeModal(\'' + p.id + '\')" title="Book partial exit">📤</button>'
     : '';
+  // CMP label: show "CMP ⚠" if stale
+  const cmpLabel = priceIsStale ? 'CMP <span style="color:#f59e0b">⚠</span>' : 'CMP';
   return '<div class="pos-card status-' + st + '" onclick="openDetail(\'' + p.id + '\')">' +
     '<div class="card-hdr"><div><div class="card-sym">' + (p.symbol || '—') + '</div>' +
     '<div class="card-name">' + (p.name || '') + '</div>' +
@@ -786,7 +851,7 @@ function buildCard(p) {
     dayChipHtml + '</div></div>' +
     '<div class="card-chart" id="chart-' + p.id + '"></div>' +
     '<div class="price-row"><div><div class="pr-l">Entry</div><div class="pr-v pr-entry">₹' + e.toLocaleString('en-IN') + '</div></div>' +
-    '<div><div class="pr-l">CMP</div><div class="pr-v pr-cmp">₹' + cmp.toLocaleString('en-IN') + '</div></div>' +
+    '<div><div class="pr-l">' + cmpLabel + '</div><div class="pr-v pr-cmp' + (priceIsStale ? ' stale-price' : '') + '">₹' + cmp.toLocaleString('en-IN') + '</div></div>' +
     '<div><div class="pr-l">Stop</div><div class="pr-v pr-sl">₹' + sl.toLocaleString('en-IN') + '</div></div></div>' +
     (tgts ? '<div class="targets">' + tgts + '</div>' : '') +
     '<div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:' + prog.toFixed(0) + '%;background:' + fill + '"></div></div><span class="prog-lbl">' + prog.toFixed(0) + '% to T1</span></div>' +
@@ -1455,11 +1520,16 @@ function buildWlCard(item) {
   const cmp = item.cmp || 0;
   const dayPct = item.dayChangePct || 0;
   const dc = dayPct > 0 ? 'gain-pos' : dayPct < 0 ? 'gain-neg' : 'gain-neu';
+  const priceDate = item.lastPriceDate || null;
+  const priceIsStale = cmp && priceDate && _isPriceStale(priceDate);
   const setupBadge = item.scanSetup || item.setup ? '<span class="badge bg-setup">' + (item.scanSetup || item.setup) + '</span>' : '';
   const ratingBadge = item.scanRating ? '<span class="badge ' + (item.scanRating === 'A+' ? 'bg-ap' : item.scanRating === 'A' ? 'bg-a' : 'bg-b') + '">' + item.scanRating + '</span>' : '';
   const scanBadge = item.inScan ? '<span class="badge" style="background:#052e16;color:#4ade80;border:1px solid #16a34a33">In Scan</span>' : '';
   const rsStr = item.rsScore ? '<span class="badge" style="background:#1a1a2e;color:#a5b4fc;border:1px solid #3b82f622">RS ' + parseFloat(item.rsScore).toFixed(0) + '</span>' : '';
   const alertBadge = item.alert_price ? '<span class="badge" style="background:#2a2000;color:#fde68a;border:1px solid #ffd70022">Alert ₹' + item.alert_price.toLocaleString('en-IN') + '</span>' : '';
+  const staleBadge = priceIsStale
+    ? '<span class="badge" style="background:#2a1a00;color:#f59e0b;border:1px solid #f59e0b33" title="Stale price from ' + priceDate + '">⚠ ' + priceDate + '</span>'
+    : '';
   // 20EMA extension badge
   const ext = item.ema20ext;
   let emaBadge = '';
@@ -1478,8 +1548,12 @@ function buildWlCard(item) {
   // Scan entry/sl for price row
   const scanEntry = item.scanEntry ? parseFloat(item.scanEntry) : 0;
   const scanSl = item.scanSl ? parseFloat(item.scanSl) : 0;
-  const badges = [setupBadge, ratingBadge, scanBadge, rsStr, emaBadge, volBadge, alertBadge].filter(Boolean).join('');
+  const badges = [setupBadge, ratingBadge, scanBadge, rsStr, emaBadge, volBadge, alertBadge, staleBadge].filter(Boolean).join('');
   const inScanCls = item.inScan ? ' wl-in-scan' : '';
+  // CMP display with stale indicator
+  const cmpHtml = cmp
+    ? '<div style="font-size:1.1em;font-weight:900;color:' + (priceIsStale ? '#f59e0b' : 'var(--text)') + '" title="' + (priceDate ? 'Price date: ' + priceDate : '') + '">₹' + cmp.toLocaleString('en-IN') + (priceIsStale ? ' ⚠' : '') + '</div>'
+    : '<div style="font-size:.9em;color:var(--muted)">No price</div>';
 
   return '<div class="wl-card' + inScanCls + '" onclick="openWlDetail(\'' + item.id + '\')">' +
     '<button class="wl-del" onclick="event.stopPropagation();rmWL(\'' + item.id + '\')">✕</button>' +
@@ -1488,14 +1562,11 @@ function buildWlCard(item) {
       (item.name ? '<div class="card-name">' + item.name + '</div>' : '') +
       '<div class="card-badges" id="wl-badges-' + item.id + '">' + badges + '</div>' +
     '</div>' +
-    '<div class="card-gain">' +
-      (cmp ? '<div style="font-size:1.1em;font-weight:900">₹' + cmp.toLocaleString('en-IN') + '</div>' : '<div style="font-size:.9em;color:var(--muted)">No price</div>') +
-      dayChipHtml +
-    '</div></div>' +
+    '<div class="card-gain">' + cmpHtml + dayChipHtml + '</div></div>' +
     '<div class="wl-chart" id="wl-chart-' + item.id + '"></div>' +
     (scanEntry || scanSl ? '<div class="price-row">' +
       '<div><div class="pr-l">Scan Entry</div><div class="pr-v pr-entry">' + (scanEntry ? '₹' + scanEntry.toLocaleString('en-IN') : '—') + '</div></div>' +
-      '<div><div class="pr-l">CMP</div><div class="pr-v pr-cmp">' + (cmp ? '₹' + cmp.toLocaleString('en-IN') : '—') + '</div></div>' +
+      '<div><div class="pr-l">CMP</div><div class="pr-v pr-cmp' + (priceIsStale ? ' stale-price' : '') + '">' + (cmp ? '₹' + cmp.toLocaleString('en-IN') : '—') + '</div></div>' +
       '<div><div class="pr-l">Scan SL</div><div class="pr-v pr-sl">' + (scanSl ? '₹' + scanSl.toLocaleString('en-IN') : '—') + '</div></div>' +
     '</div>' : '') +
     buildEnrichRow(item) +

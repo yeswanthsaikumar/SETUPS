@@ -388,42 +388,93 @@ _cache_refresher = BackgroundCacheRefresher()
 # ═══════════════════════════════════════════════════════════════════════════════
 
 _symbol_refresh_lock = threading.Lock()
-_recently_refreshed: dict[str, float] = {}  # symbol -> timestamp
-_SYMBOL_REFRESH_COOLDOWN = 60  # seconds between re-refreshes of same symbol
+_recently_refreshed: dict[str, float] = {}  # canonical_sym -> timestamp
+_SYMBOL_REFRESH_COOLDOWN = 300  # seconds between re-refreshes of same symbol (5 min)
+
+# Ensure scripts/ is on sys.path once at module load
+_scripts_path = str(ROOT / "scripts")
+if _scripts_path not in sys.path:
+    sys.path.insert(0, _scripts_path)
 
 
-def _refresh_symbol_if_stale(symbol: str) -> bool:
+def _canonical_sym(symbol: str) -> str:
+    """Return the canonical .NS form for cooldown tracking."""
+    base = symbol.upper().replace(".NS", "").replace(".BO", "")
+    return base + ".NS"
+
+
+def _is_price_stale(last_date_str: str) -> bool:
     """
-    Check if a symbol's cache is stale, and if so, fetch latest data.
+    Proper IST-aware staleness check (mirrors refresh_cache._is_stale logic).
+    Returns True if the cache needs refreshing.
+    """
+    import datetime as _dt
+    import zoneinfo as _zi
+    if not last_date_str:
+        return True
+    try:
+        last_date = _dt.date.fromisoformat(last_date_str)
+    except ValueError:
+        return True
+    _ist = _zi.ZoneInfo("Asia/Kolkata")
+    today = _dt.datetime.now(_ist).date()
+    gap = (today - last_date).days
+    if gap <= 0:
+        return False
+    if gap > 10:
+        return True
+    # Count business days in the gap
+    biz = sum(1 for d in range(1, gap + 1)
+              if (last_date + _dt.timedelta(days=d)).weekday() < 5)
+    if biz == 0:
+        return False
+    if biz >= 2:
+        return True
+    # Exactly 1 business day — stale only after NSE closes (3:35 PM IST)
+    now_ist = _dt.datetime.now(_ist)
+    nse_close = now_ist.replace(hour=15, minute=35, second=0, microsecond=0)
+    return now_ist >= nse_close
+
+
+def _refresh_symbol_if_stale(symbol: str, force: bool = False) -> bool:
+    """
+    Check if a symbol's cache is stale; if so, fetch latest data.
     Returns True if data was updated.
-    Thread-safe, with per-symbol cooldown to avoid hammering.
+    Thread-safe with per-symbol cooldown to avoid hammering Yahoo/NSE.
     """
+    canon = _canonical_sym(symbol)
     now = time.time()
     with _symbol_refresh_lock:
-        last = _recently_refreshed.get(symbol, 0)
-        if now - last < _SYMBOL_REFRESH_COOLDOWN:
+        last = _recently_refreshed.get(canon, 0)
+        if not force and now - last < _SYMBOL_REFRESH_COOLDOWN:
             return False
-        _recently_refreshed[symbol] = now
+        _recently_refreshed[canon] = now  # reserve slot immediately
 
     try:
-        sys.path.insert(0, str(ROOT / "scripts"))
         import refresh_cache as _rc
 
         base = symbol.upper().replace(".NS", "").replace(".BO", "")
         ns = base + ".NS"
 
-        # Check unified file first
         for sym in [ns, base]:
             csv_path = CACHE_DIR / f"{sym}.csv"
             last_date = _rc._read_last_date(csv_path)
-            if _rc._is_stale(last_date):
+            if _is_price_stale(last_date):
                 result = _rc.refresh_symbol(sym, csv_path, last_date)
-                return result.get("status") == "updated"
+                status = result.get("status", "")
+                if status == "updated":
+                    return True
+                # If no_new_data, the cache is actually fresh (market hasn't moved)
+                if status == "no_new_data":
+                    return False
             elif last_date:
-                return False  # Fresh
+                return False  # Already fresh
 
         return False
-    except Exception:
+    except Exception as e:
+        # Release cooldown on error so it retries sooner
+        with _symbol_refresh_lock:
+            _recently_refreshed.pop(canon, None)
         return False
 
 
@@ -1187,28 +1238,19 @@ def _read_ohlcv(symbol: str, days: int = 0) -> list[dict]:
     rows = sorted(date_map.values(), key=lambda r: r["date"])
 
     # ── Trigger background refresh if stale ──────────────────────────────
-    # Non-blocking: returns current (possibly stale) data immediately,
-    # then refreshes in background so next read gets fresh data.
+    # Non-blocking: returns current (possibly stale) data immediately;
+    # refreshes in background thread so the NEXT read gets fresh data.
+    # Uses IST-aware business-day logic matching refresh_cache._is_stale().
     if rows:
         last_date = rows[-1]["date"]
-        try:
-            import datetime as _dt
-            import zoneinfo as _zi
-            _ist = _zi.ZoneInfo("Asia/Kolkata")
-            _ld = _dt.date.fromisoformat(last_date)
-            _today = _dt.datetime.now(_ist).date()
-            _gap = (_today - _ld).days
-            # If data is more than 1 business day old, trigger async refresh
-            if _gap >= 2:
-                threading.Thread(
-                    target=_refresh_symbol_if_stale,
-                    args=(symbol,),
-                    daemon=True,
-                ).start()
-        except Exception:
-            pass
+        if _is_price_stale(last_date):
+            threading.Thread(
+                target=_refresh_symbol_if_stale,
+                args=(symbol,),
+                daemon=True,
+            ).start()
     elif not _cache_refresher.is_running:
-        # No data at all — try to fetch in background
+        # No cached data at all — fetch in background
         threading.Thread(
             target=_refresh_symbol_if_stale,
             args=(symbol,),
@@ -1231,18 +1273,155 @@ def _calc_ema(closes: list[float], period: int) -> list[Optional[float]]:
         result[i] = round(ema, 2)
     return result
 
+# ═══════════════════════════════════════════════════════════════════════════════
+#  LIVE PRICE LAYER
+# ═══════════════════════════════════════════════════════════════════════════════
+# During market hours the OHLCV cache only has a stale snapshot (whatever the
+# closing price was when data was last downloaded).  This layer fetches the
+# actual *current* market price via NSE / Yahoo and caches it in-memory with a
+# short TTL so the CMP shown in the UI stays up-to-date.
+
+import zoneinfo as _zi
+_IST = _zi.ZoneInfo("Asia/Kolkata")
+
+_live_cache: dict[str, dict] = {}   # symbol -> {price, prevClose, ts, date}
+_live_cache_lock = threading.Lock()
+_LIVE_TTL = 30  # seconds — how long a live quote is considered fresh
+
+
+def _is_market_open() -> bool:
+    """Check if NSE market is likely open right now (Mon-Fri, 9:15-15:30 IST)."""
+    now = datetime.now(_IST)
+    if now.weekday() >= 5:  # Sat/Sun
+        return False
+    t = now.hour * 60 + now.minute
+    return 555 <= t <= 930  # 9:15 to 15:30
+
+
+def _fetch_live_quote_nse(base_symbol: str) -> Optional[dict]:
+    """Fetch live quote from NSE India equity quote API."""
+    import requests as _req
+    try:
+        # Reuse refresh_cache's NSE session helper
+        import refresh_cache as _rc
+        session = _rc._get_nse_session()
+        import urllib.parse
+        url = (
+            f"https://www.nseindia.com/api/quote-equity"
+            f"?symbol={urllib.parse.quote(base_symbol)}"
+        )
+        resp = session.get(url, headers={
+            "Accept": "application/json",
+            "Referer": f"https://www.nseindia.com/get-quotes/equity?symbol={urllib.parse.quote(base_symbol)}",
+        }, timeout=8)
+        if not resp.ok:
+            return None
+        data = resp.json()
+        pi = data.get("priceInfo", {})
+        ltp = pi.get("lastPrice")
+        prev = pi.get("previousClose") or pi.get("close")
+        if ltp and ltp > 0:
+            return {"price": float(ltp), "prevClose": float(prev) if prev else None, "source": "nse"}
+    except Exception:
+        pass
+    return None
+
+
+def _fetch_live_quote_yahoo(symbol: str) -> Optional[dict]:
+    """Fetch live quote from Yahoo v8 chart meta.regularMarketPrice."""
+    import requests as _req
+    import urllib.parse
+    encoded = urllib.parse.quote(symbol, safe="")
+    hosts = ["query2.finance.yahoo.com", "query1.finance.yahoo.com"]
+    for host in hosts:
+        try:
+            url = f"https://{host}/v8/finance/chart/{encoded}?interval=1d&range=1d"
+            resp = _req.get(url, headers={
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+                "Accept": "application/json",
+                "Referer": "https://finance.yahoo.com",
+            }, timeout=8)
+            if not resp.ok:
+                continue
+            result = resp.json().get("chart", {}).get("result", [])
+            if result:
+                meta = result[0].get("meta", {})
+                rmp = meta.get("regularMarketPrice")
+                pc = meta.get("previousClose", meta.get("chartPreviousClose"))
+                if rmp and rmp > 0:
+                    return {"price": float(rmp), "prevClose": float(pc) if pc else None, "source": "yahoo"}
+        except Exception:
+            continue
+    return None
+
+
+def _get_live_price(symbol: str) -> Optional[dict]:
+    """
+    Get the *current* live price for a symbol.
+    Returns dict: {price, prevClose, source, cached} or None.
+    Uses a 30-second in-memory cache to avoid hammering APIs.
+    """
+    canon = _canonical_sym(symbol)
+    base = symbol.upper().replace(".NS", "").replace(".BO", "")
+    now = time.time()
+
+    # Check in-memory cache first
+    with _live_cache_lock:
+        cached = _live_cache.get(canon)
+        if cached and (now - cached.get("ts", 0)) < _LIVE_TTL:
+            return {**cached, "cached": True}
+
+    # Only fetch live during market hours; outside hours, cached CSV is fine
+    if not _is_market_open():
+        return None
+
+    # Try NSE first (best for Indian stocks)
+    quote = _fetch_live_quote_nse(base)
+
+    # Fallback to Yahoo
+    if not quote:
+        ns_sym = base + ".NS"
+        quote = _fetch_live_quote_yahoo(ns_sym)
+
+    if quote:
+        quote["ts"] = now
+        quote["symbol"] = canon
+        with _live_cache_lock:
+            _live_cache[canon] = quote
+        return {**quote, "cached": False}
+
+    return None
+
+
 def _get_current_price(symbol: str) -> Optional[float]:
+    live = _get_live_price(symbol)
+    if live and live.get("price"):
+        return live["price"]
     rows = _read_ohlcv(symbol, days=5)
     return rows[-1]["close"] if rows else None
 
-def _get_price_info(symbol: str) -> tuple[Optional[float], Optional[float]]:
-    """Returns (cmp, prev_close) from cached OHLCV data."""
+
+def _get_price_info(symbol: str) -> tuple[Optional[float], Optional[float], Optional[str]]:
+    """
+    Returns (cmp, prev_close, last_date) for a symbol.
+
+    During market hours: fetches LIVE price from NSE/Yahoo APIs (30s TTL cache).
+    Outside market hours: reads from OHLCV CSV cache.
+    Always returns the most current price available.
+    """
     rows = _read_ohlcv(symbol, days=5)
-    if not rows:
-        return None, None
-    cmp = rows[-1]["close"]
-    prev_close = rows[-2]["close"] if len(rows) >= 2 else None
-    return cmp, prev_close
+    csv_close = rows[-1]["close"] if rows else None
+    csv_prev = rows[-2]["close"] if len(rows) >= 2 else None
+    csv_date = rows[-1]["date"] if rows else None
+
+    # Try live price during market hours
+    live = _get_live_price(symbol)
+    if live and live.get("price"):
+        cmp = live["price"]
+        prev = live.get("prevClose") or csv_prev
+        return cmp, prev, csv_date
+    else:
+        return csv_close, csv_prev, csv_date
 
 def _compute_board_stats(positions: list[dict]) -> dict:
     """Compute aggregate stats from positions list."""
@@ -1314,11 +1493,12 @@ def trade_board_summary() -> dict:
         qty   = p.get("quantity", 1) or 1
         remaining = p.get("remaining_quantity") or qty
         if p.get("status") in ("OPEN", "PARTIAL"):
-            cmp, prev_close = _get_price_info(p.get("symbol", ""))
+            cmp, prev_close, last_date = _get_price_info(p.get("symbol", ""))
             if cmp:
                 p["cmp"] = cmp
                 p["gainPct"] = round((cmp - entry) / entry * 100, 2) if entry else 0
                 p["gainAmt"] = round((cmp - entry) * remaining, 2) if entry else 0
+                p["lastPriceDate"] = last_date
             if cmp and prev_close and prev_close > 0:
                 p["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
                 p["dayChangeAmt"] = round((cmp - prev_close) * remaining, 2)
@@ -1340,11 +1520,12 @@ def trade_board_positions(status: str = "") -> dict:
         qty   = p.get("quantity", 1) or 1
         remaining = p.get("remaining_quantity") or qty
         if p.get("status") in ("OPEN", "PARTIAL"):
-            cmp, prev_close = _get_price_info(p.get("symbol", ""))
+            cmp, prev_close, last_date = _get_price_info(p.get("symbol", ""))
             if cmp:
                 p["cmp"] = round(cmp, 2)
                 p["gainPct"] = round((cmp - entry) / entry * 100, 2) if entry else 0
                 p["gainAmt"] = round((cmp - entry) * remaining, 2) if entry else 0
+                p["lastPriceDate"] = last_date
             if cmp and prev_close and prev_close > 0:
                 p["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
                 p["dayChangeAmt"] = round((cmp - prev_close) * remaining, 2)
@@ -1541,11 +1722,12 @@ def trade_board_positions_enriched(status: str = "") -> dict:
         remaining = p.get("remaining_quantity") or qty
         st = p.get("status", "OPEN")
         if st in ("OPEN", "PARTIAL"):
-            cmp, prev_close = _get_price_info(p.get("symbol", ""))
+            cmp, prev_close, last_date = _get_price_info(p.get("symbol", ""))
             if cmp:
                 p["cmp"] = round(cmp, 2)
                 p["gainPct"] = round((cmp - entry) / entry * 100, 2) if entry else 0
                 p["gainAmt"] = round((cmp - entry) * remaining, 2) if entry else 0
+                p["lastPriceDate"] = last_date
             if cmp and prev_close and prev_close > 0:
                 p["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
                 p["dayChangeAmt"] = round((cmp - prev_close) * remaining, 2)
@@ -1562,7 +1744,8 @@ def trade_board_positions_enriched(status: str = "") -> dict:
         -float(p.get("gainPct", 0) or 0)))
     stats = _compute_board_stats(positions)
     return {"positions": positions, "stats": stats,
-            "lastUpdated": data.get("lastUpdated")}
+            "lastUpdated": data.get("lastUpdated"),
+            "marketOpen": _is_market_open()}
 
 
 @app.get("/api/trade-board/watchlist/enriched")
@@ -1573,9 +1756,10 @@ def trade_board_watchlist_enriched() -> dict:
     sig_index = _load_scan_signals_index()
     for item in items:
         sym = item.get("symbol", "")
-        cmp, prev_close = _get_price_info(sym)
+        cmp, prev_close, last_date = _get_price_info(sym)
         if cmp:
             item["cmp"] = round(cmp, 2)
+            item["lastPriceDate"] = last_date
         if cmp and prev_close and prev_close > 0:
             item["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
         # Enrich with 20EMA extension + volume records + ADR
@@ -1901,9 +2085,10 @@ def get_watchlist() -> dict:
     sig_index = _load_scan_signals_index()
     for item in items:
         sym = item.get("symbol", "")
-        cmp, prev_close = _get_price_info(sym)
+        cmp, prev_close, last_date = _get_price_info(sym)
         if cmp:
             item["cmp"] = round(cmp, 2)
+            item["lastPriceDate"] = last_date
         if cmp and prev_close and prev_close > 0:
             item["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
         # Merge scan signal data if available
@@ -2019,4 +2204,85 @@ def export_trade_data() -> dict:
         "journal": journal,
         "watchlist": watchlist,
     }
+
+
+# ── Force Price Refresh ────────────────────────────────────────────────────────
+
+@app.post("/api/trade-board/refresh-prices")
+def refresh_prices_now() -> dict:
+    """
+    Force-refresh live prices for all OPEN positions + watchlist symbols.
+
+    • Flushes the in-memory live price cache so next API call fetches fresh quotes.
+    • During market hours: NSE/Yahoo live quotes update within the next request.
+    • Also kicks off background OHLCV cache refresh for stale symbols.
+    """
+    # Collect symbols
+    with _board_lock:
+        board_data = _load_board()
+        positions = board_data.get("positions", [])
+    open_syms = [
+        p["symbol"] for p in positions
+        if p.get("status") in ("OPEN", "PARTIAL") and p.get("symbol")
+    ]
+    with _watchlist_lock:
+        watchlist = _load_watchlist()
+    wl_syms = [w["symbol"] for w in watchlist if w.get("symbol")]
+
+    # Deduplicate (max 30)
+    all_syms = list({s.upper() for s in (open_syms + wl_syms)})[:30]
+
+    if not all_syms:
+        return {"ok": True, "symbols": [], "count": 0, "message": "Nothing to refresh"}
+
+    # 1. Flush the live price cache so next read gets fresh quotes
+    with _live_cache_lock:
+        for sym in all_syms:
+            canon = _canonical_sym(sym)
+            _live_cache.pop(canon, None)
+
+    # 2. Also clear OHLCV refresh cooldown and kick off background CSV update
+    with _symbol_refresh_lock:
+        for sym in all_syms:
+            canon = _canonical_sym(sym)
+            _recently_refreshed.pop(canon, None)
+
+    def _run_bg():
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=min(4, len(all_syms))) as pool:
+            pool.map(lambda s: _refresh_symbol_if_stale(s, force=True), all_syms)
+
+    threading.Thread(target=_run_bg, daemon=True).start()
+
+    return {
+        "ok": True,
+        "symbols": all_syms,
+        "count": len(all_syms),
+        "marketOpen": _is_market_open(),
+        "message": f"Live cache flushed for {len(all_syms)} symbols — prices refresh on next load",
+    }
+
+
+@app.get("/api/trade-board/price-data")
+def get_price_data_for_symbols(symbols: str = "") -> dict:
+    """
+    Get current CMP + day-change for a comma-separated list of symbols.
+    Reads directly from cache — call after refresh-prices completes.
+    """
+    if not symbols:
+        return {"prices": {}}
+    sym_list = [s.strip().upper() for s in symbols.split(",") if s.strip()]
+    prices: dict[str, dict] = {}
+    for sym in sym_list[:30]:
+        cmp, prev, last_date = _get_price_info(sym)
+        if cmp:
+            prices[sym] = {
+                "cmp": round(cmp, 2),
+                "prevClose": round(prev, 2) if prev else None,
+                "dayChangePct": round((cmp - prev) / prev * 100, 2) if prev and prev > 0 else None,
+                "lastDate": last_date,
+                "isStale": _is_price_stale(last_date) if last_date else True,
+            }
+    return {"prices": prices, "count": len(prices)}
+
 
