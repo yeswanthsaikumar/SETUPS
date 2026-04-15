@@ -1,13 +1,14 @@
-FROM python:3.12-slim
+# Multi-stage build to reduce final image size
+FROM python:3.12-slim as builder
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    JAVA_HOME=/opt/jdk
+# Install dependencies for building and downloading
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
+# Build JDK stage
 ARG TARGETARCH
-ENV PATH="${JAVA_HOME}/bin:${PATH}"
-
-WORKDIR /app
+ENV JAVA_HOME=/opt/jdk
 
 RUN set -eux; \
     case "${TARGETARCH}" in \
@@ -37,16 +38,47 @@ if target.exists():
 shutil.move(str(extracted), str(target))
 PY
 
-RUN java -version && javac -version
+# Verify Java installation
+RUN /opt/jdk/bin/java -version && /opt/jdk/bin/javac -version
 
+# Final stage
+FROM python:3.12-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    JAVA_HOME=/opt/jdk \
+    PATH="${JAVA_HOME}/bin:${PATH}"
+
+# Create app user for security
+RUN useradd -m -u 1000 appuser
+
+# Set working directory
+WORKDIR /app
+
+# Copy JDK from builder
+COPY --from=builder /opt/jdk /opt/jdk
+
+# Copy and install Python dependencies
 COPY requirements-web.txt /app/requirements-web.txt
-RUN pip install --no-cache-dir -r /app/requirements-web.txt
+RUN pip install --no-cache-dir --upgrade pip setuptools && \
+    pip install --no-cache-dir -r /app/requirements-web.txt
 
-COPY . /app
+# Copy application code
+COPY --chown=appuser:appuser . /app
 
-RUN mkdir -p /app/output /app/cache
+# Create necessary directories
+RUN mkdir -p /app/output /app/cache /app/trade_data && \
+    chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs', timeout=5)" || exit 1
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "uvicorn apps.web.api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["uvicorn", "apps.web.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
