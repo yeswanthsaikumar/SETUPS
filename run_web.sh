@@ -2,14 +2,14 @@
 # run_web.sh
 # ─────────────────────────────────────────────────────────────────────────────
 # Starts the SETUPS FastAPI web console (apps/web/ui/index.html)
-# Automatically refreshes stale OHLCV cache before starting the server.
+# OHLCV cache refresh runs in the BACKGROUND — server starts immediately.
 #
 # Usage:
 #   ./run_web.sh              # default: port 8000, auto-opens browser
 #   ./run_web.sh --port 8080  # custom port
 #   ./run_web.sh --no-open    # skip auto-opening browser
 #   ./run_web.sh --reload     # enable hot-reload (dev mode)
-#   ./run_web.sh --skip-refresh  # skip cache refresh on startup
+#   ./run_web.sh --skip-refresh  # skip cache refresh entirely
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
@@ -52,20 +52,19 @@ echo -e "   🏦 Institutional / Mutual Fund data (Screener.in + yfinance)"
 echo -e "   📈 Live report links"
 echo -e ""
 
-# ── Auto-refresh stale OHLCV cache ──────────────────────────────────────────
-if [ "$SKIP_REFRESH" = false ] && [ -f "scripts/refresh_cache.py" ]; then
-    echo -e "${BOLD}▶ Refreshing stale OHLCV cache…${RESET}"
-    START_CACHE=$SECONDS
-    set +e
-    python3 scripts/refresh_cache.py --workers 4 --indian-only
-    REFRESH_EXIT=$?
-    set -euo pipefail
-    CACHE_TIME=$((SECONDS - START_CACHE))
-    if [ "$REFRESH_EXIT" -eq 0 ]; then
-        echo -e "${GREEN}   ✅ Cache refresh done in ${CACHE_TIME}s${RESET}"
-    else
-        echo -e "${YELLOW}   ⚠  Cache refresh had issues (non-fatal)${RESET}"
-    fi
+# ── Background OHLCV cache refresh ──────────────────────────────────────────
+# Cache refresh runs INSIDE the FastAPI server process (non-blocking background thread).
+# This means the server starts instantly and refresh progress is visible via:
+#   GET /api/cache/refresh-status
+#   POST /api/cache/refresh  (trigger manually)
+# The UI shows a live cache refresh indicator in the top bar.
+
+if [ "$SKIP_REFRESH" = false ]; then
+    echo -e "${BOLD}▶ OHLCV cache will refresh in-process (background thread)${RESET}"
+    echo -e "   Status: ${YELLOW}http://localhost:${PORT}/api/cache/refresh-status${RESET}"
+    echo ""
+else
+    echo -e "  ${YELLOW}⏭  Cache refresh skipped${RESET}"
     echo ""
 fi
 
@@ -79,7 +78,8 @@ if [ "$AUTO_OPEN" = true ]; then
      echo "Open browser at: http://localhost:${PORT}") &
 fi
 
-# Start the server
+# Start the server — runs immediately, cache refresh happens inside
+SETUPS_SKIP_STARTUP_REFRESH="${SKIP_REFRESH}" \
 PYTHONPATH="$(pwd)/apps/python/lib" \
 uvicorn apps.web.api.main:app \
     --host 0.0.0.0 \

@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import csv
 import json
+import math
 import os
 import subprocess
 import sys
 import threading
+import time
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Literal, Optional
@@ -34,6 +37,8 @@ TRADE_JOURNAL_JSON = TRADE_DATA_DIR / "journal.json"
 TRADE_WATCHLIST_JSON = TRADE_DATA_DIR / "watchlist.json"
 TRADE_BOARD_JSON_LEGACY = OUTPUT_DIR / "trade_board.json"  # kept for migration only
 CACHE_DIR = ROOT / "cache"
+REFRESH_CACHE_SCRIPT = ROOT / "scripts" / "refresh_cache.py"
+REFRESH_LOG = OUTPUT_DIR / "cache_refresh.log"
 
 sys.path.insert(0, str(PY_LIB_DIR))
 from trade_plan_assistant import brief_as_json, build_scan_brief
@@ -207,7 +212,249 @@ class JobStore:
 
 
 jobs = JobStore()
-app = FastAPI(title="SETUPS Web", version="1.0.0")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  BACKGROUND OHLCV CACHE REFRESH MANAGER
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class BackgroundCacheRefresher:
+    """
+    Manages background OHLCV cache refresh.
+    • Runs on server startup (unless SETUPS_SKIP_STARTUP_REFRESH=true)
+    • Can be triggered via API: POST /api/cache/refresh
+    • Status/progress exposed via GET /api/cache/refresh-status
+    • Thread-safe: only one refresh runs at a time
+    """
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._status: str = "idle"  # idle | running | completed | failed
+        self._started_at: Optional[str] = None
+        self._finished_at: Optional[str] = None
+        self._progress: dict = {}  # refreshed, skipped, errors, no_data, total, current
+        self._log_tail: str = ""
+        self._thread: Optional[threading.Thread] = None
+        self._error: Optional[str] = None
+        self._symbols_done: int = 0
+        self._symbols_total: int = 0
+
+    @property
+    def is_running(self) -> bool:
+        return self._status == "running"
+
+    def status_dict(self) -> dict:
+        with self._lock:
+            return {
+                "status": self._status,
+                "startedAt": self._started_at,
+                "finishedAt": self._finished_at,
+                "progress": dict(self._progress),
+                "symbolsDone": self._symbols_done,
+                "symbolsTotal": self._symbols_total,
+                "error": self._error,
+                "logTail": self._log_tail[-2000:] if self._log_tail else "",
+            }
+
+    def start(self, symbols: list[str] | None = None, force: bool = False,
+              indian_only: bool = True, workers: int = 4) -> dict:
+        """Launch a background refresh. Returns immediately."""
+        with self._lock:
+            if self._status == "running":
+                return {"ok": False, "message": "Refresh already running",
+                        "status": self._status}
+            self._status = "running"
+            self._started_at = datetime.now().isoformat(timespec="seconds")
+            self._finished_at = None
+            self._error = None
+            self._progress = {"refreshed": 0, "skipped": 0, "errors": 0,
+                              "no_data": 0}
+            self._symbols_done = 0
+            self._symbols_total = 0
+            self._log_tail = ""
+
+        self._thread = threading.Thread(
+            target=self._run,
+            args=(symbols, force, indian_only, workers),
+            daemon=True,
+        )
+        self._thread.start()
+        return {"ok": True, "message": "Cache refresh started",
+                "status": "running"}
+
+    def _run(self, symbols, force, indian_only, workers):
+        """The actual refresh logic, runs in a background thread."""
+        try:
+            # Import refresh_cache functions
+            sys.path.insert(0, str(ROOT / "scripts"))
+            import importlib
+            # Ensure fresh import
+            if "refresh_cache" in sys.modules:
+                importlib.reload(sys.modules["refresh_cache"])
+            import refresh_cache as _rc
+
+            # 1. Refresh Nifty index first
+            self._append_log("🔄 Refreshing Nifty 50 index…\n")
+            try:
+                _rc.refresh_nifty_index()
+                self._append_log("✅ Nifty index done\n")
+            except Exception as e:
+                self._append_log(f"⚠ Nifty index refresh error: {e}\n")
+
+            # 2. Find stale symbols
+            sym_filter = symbols if symbols else None
+            stale = _rc._find_stale_caches(sym_filter, indian_only=indian_only)
+            with self._lock:
+                self._symbols_total = len(stale)
+
+            if not stale:
+                self._append_log("✅ All cache files are up-to-date!\n")
+                with self._lock:
+                    self._status = "completed"
+                    self._finished_at = datetime.now().isoformat(timespec="seconds")
+                return
+
+            self._append_log(f"  Found {len(stale)} stale symbol(s)\n")
+            self._append_log("  Sources: yfinance → NSE India → raw Yahoo v8\n")
+
+            # 3. Process symbols with thread pool
+            stats_lock = threading.Lock()
+
+            def _do(item):
+                sym, path, ld = item
+                try:
+                    res = _rc.refresh_symbol(sym, path, ld,
+                                             force=force, dry_run=False)
+                    st = res["status"]
+                    with self._lock:
+                        self._symbols_done += 1
+                        done = self._symbols_done
+                    with stats_lock:
+                        if st == "updated":
+                            self._progress["refreshed"] += 1
+                            self._append_log(
+                                f"  [{done:4d}/{len(stale)}] ✅ {sym:<20}  "
+                                f"+{res['bars_added']} bars → {res['last_date']}\n")
+                        elif st in ("fresh", "skipped"):
+                            self._progress["skipped"] += 1
+                        elif st == "no_new_data":
+                            self._progress["no_data"] = self._progress.get("no_data", 0) + 1
+                        else:
+                            self._progress["errors"] += 1
+                            self._append_log(
+                                f"  [{done:4d}/{len(stale)}] ❌ {sym:<20} {st}\n")
+                except Exception as ex:
+                    with self._lock:
+                        self._symbols_done += 1
+                        self._progress["errors"] += 1
+                    self._append_log(f"  ❌ {sym}: {ex}\n")
+
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                list(pool.map(_do, stale))
+
+            self._append_log(
+                f"\n✅ Cache refresh complete!\n"
+                f"   Refreshed  : {self._progress.get('refreshed', 0)}\n"
+                f"   No new data: {self._progress.get('no_data', 0)}\n"
+                f"   Skipped    : {self._progress.get('skipped', 0)}\n"
+                f"   Errors     : {self._progress.get('errors', 0)}\n"
+            )
+            with self._lock:
+                self._status = "completed"
+                self._finished_at = datetime.now().isoformat(timespec="seconds")
+
+        except Exception as e:
+            with self._lock:
+                self._status = "failed"
+                self._error = str(e)
+                self._finished_at = datetime.now().isoformat(timespec="seconds")
+            self._append_log(f"\n❌ Refresh failed: {e}\n")
+
+    def _append_log(self, text: str):
+        with self._lock:
+            self._log_tail += text
+            # Keep log tail under 10KB
+            if len(self._log_tail) > 10000:
+                self._log_tail = self._log_tail[-8000:]
+
+
+# Singleton refresher
+_cache_refresher = BackgroundCacheRefresher()
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  SELECTIVE SYMBOL REFRESH (refresh specific symbols inline, thread-safe)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_symbol_refresh_lock = threading.Lock()
+_recently_refreshed: dict[str, float] = {}  # symbol -> timestamp
+_SYMBOL_REFRESH_COOLDOWN = 60  # seconds between re-refreshes of same symbol
+
+
+def _refresh_symbol_if_stale(symbol: str) -> bool:
+    """
+    Check if a symbol's cache is stale, and if so, fetch latest data.
+    Returns True if data was updated.
+    Thread-safe, with per-symbol cooldown to avoid hammering.
+    """
+    now = time.time()
+    with _symbol_refresh_lock:
+        last = _recently_refreshed.get(symbol, 0)
+        if now - last < _SYMBOL_REFRESH_COOLDOWN:
+            return False
+        _recently_refreshed[symbol] = now
+
+    try:
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import refresh_cache as _rc
+
+        base = symbol.upper().replace(".NS", "").replace(".BO", "")
+        ns = base + ".NS"
+
+        # Check unified file first
+        for sym in [ns, base]:
+            csv_path = CACHE_DIR / f"{sym}.csv"
+            last_date = _rc._read_last_date(csv_path)
+            if _rc._is_stale(last_date):
+                result = _rc.refresh_symbol(sym, csv_path, last_date)
+                return result.get("status") == "updated"
+            elif last_date:
+                return False  # Fresh
+
+        return False
+    except Exception:
+        return False
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  LIFESPAN (startup / shutdown)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    FastAPI lifespan handler.
+    On startup: kick off background OHLCV cache refresh (non-blocking).
+    On shutdown: clean up.
+    """
+    # ── STARTUP ──
+    skip_env = os.environ.get("SETUPS_SKIP_STARTUP_REFRESH", "").lower()
+    if skip_env not in ("true", "1", "yes"):
+        # Only auto-refresh if the script hasn't already started one
+        if not _cache_refresher.is_running:
+            print("🔄 Starting background OHLCV cache refresh…", flush=True)
+            _cache_refresher.start(indian_only=True, workers=4)
+    else:
+        print("⏭  Startup cache refresh skipped (env)", flush=True)
+
+    yield  # App is running
+
+    # ── SHUTDOWN ──
+    print("👋 Shutting down…", flush=True)
+
+
+app = FastAPI(title="SETUPS Web", version="1.0.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -309,7 +556,71 @@ def health() -> dict:
         "root": str(ROOT),
         "python": sys.version.split()[0],
         "javaHome": os.environ.get("JAVA_HOME", ""),
+        "cacheRefresh": _cache_refresher.status_dict().get("status", "idle"),
     }
+
+
+# ── Cache Refresh API ─────────────────────────────────────────────────────────
+
+class CacheRefreshRequest(BaseModel):
+    symbols: list[str] | None = Field(default=None,
+        description="Optional: specific symbols to refresh (e.g. ['TATASTEEL','MTARTECH'])")
+    force: bool = Field(default=False,
+        description="Force refresh even if cache is fresh")
+    indian_only: bool = Field(default=True,
+        description="Only refresh Indian (.NS/.BO) symbols")
+    workers: int = Field(default=4, ge=1, le=12,
+        description="Number of parallel workers")
+
+
+@app.get("/api/cache/refresh-status")
+def cache_refresh_status() -> dict:
+    """
+    Get the current status of the background OHLCV cache refresh.
+    Poll this endpoint to track progress.
+    """
+    return _cache_refresher.status_dict()
+
+
+@app.post("/api/cache/refresh")
+def cache_refresh_trigger(req: CacheRefreshRequest | None = None) -> dict:
+    """
+    Trigger a background OHLCV cache refresh.
+    Returns immediately — poll /api/cache/refresh-status for progress.
+    Only one refresh can run at a time.
+    """
+    if req is None:
+        req = CacheRefreshRequest()
+    result = _cache_refresher.start(
+        symbols=req.symbols,
+        force=req.force,
+        indian_only=req.indian_only,
+        workers=req.workers,
+    )
+    return result
+
+
+@app.post("/api/cache/refresh-symbols")
+def cache_refresh_specific_symbols(symbols: list[str]) -> dict:
+    """
+    Synchronously refresh specific symbols' cache (for small lists like watchlist/positions).
+    Use this when you need fresh data for a few stocks immediately.
+    Max 20 symbols per request.
+    """
+    if not symbols:
+        raise HTTPException(status_code=400, detail="symbols list is empty")
+    if len(symbols) > 20:
+        raise HTTPException(status_code=400, detail="Max 20 symbols per request")
+
+    results = {}
+    for sym in symbols:
+        sym_clean = sym.strip().upper()
+        if not sym_clean:
+            continue
+        updated = _refresh_symbol_if_stale(sym_clean)
+        results[sym_clean] = "updated" if updated else "fresh_or_cooldown"
+
+    return {"results": results, "count": len(results)}
 
 
 @app.post("/api/jobs/scan")
@@ -827,7 +1138,8 @@ def _save_board(data: dict) -> None:
 def _read_ohlcv(symbol: str, days: int = 0) -> list[dict]:
     """Read OHLCV from cache. Returns sorted list of dicts with date/open/high/low/close/volume.
     days=0 means return ALL available data.
-    Prefers unified SYMBOL.csv; falls back to legacy _N.csv files."""
+    Prefers unified SYMBOL.csv; falls back to legacy _N.csv files.
+    Triggers a background refresh if data is stale (non-blocking)."""
     base = symbol.upper().replace(".NS", "").replace(".BO", "")
     ns   = base + ".NS"
 
@@ -873,6 +1185,36 @@ def _read_ohlcv(symbol: str, days: int = 0) -> list[dict]:
             break
 
     rows = sorted(date_map.values(), key=lambda r: r["date"])
+
+    # ── Trigger background refresh if stale ──────────────────────────────
+    # Non-blocking: returns current (possibly stale) data immediately,
+    # then refreshes in background so next read gets fresh data.
+    if rows:
+        last_date = rows[-1]["date"]
+        try:
+            import datetime as _dt
+            import zoneinfo as _zi
+            _ist = _zi.ZoneInfo("Asia/Kolkata")
+            _ld = _dt.date.fromisoformat(last_date)
+            _today = _dt.datetime.now(_ist).date()
+            _gap = (_today - _ld).days
+            # If data is more than 1 business day old, trigger async refresh
+            if _gap >= 2:
+                threading.Thread(
+                    target=_refresh_symbol_if_stale,
+                    args=(symbol,),
+                    daemon=True,
+                ).start()
+        except Exception:
+            pass
+    elif not _cache_refresher.is_running:
+        # No data at all — try to fetch in background
+        threading.Thread(
+            target=_refresh_symbol_if_stale,
+            args=(symbol,),
+            daemon=True,
+        ).start()
+
     if days and days > 0 and len(rows) > days:
         rows = rows[-days:]
     return rows

@@ -22,6 +22,20 @@
     .live-badge{font-size:10.5px;padding:2px 8px;border-radius:99px;background:var(--green-bg);color:var(--green);border:1px solid #16a34a33;font-weight:700;display:flex;align-items:center;gap:4px}
     .live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 1.5s infinite}
     @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    /* CACHE REFRESH INDICATOR */
+    .cache-badge{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:700;display:flex;align-items:center;gap:4px;cursor:pointer;transition:all .2s;border:1px solid}
+    .cache-badge.idle{background:var(--bg3);color:var(--muted);border-color:var(--border2)}
+    .cache-badge.idle:hover{border-color:var(--cyan);color:var(--cyan)}
+    .cache-badge.running{background:#0c2d48;color:#38bdf8;border-color:#0284c733;animation:pulse-cache 2s infinite}
+    .cache-badge.completed{background:var(--green-bg);color:var(--green);border-color:#16a34a33}
+    .cache-badge.failed{background:var(--red-bg);color:var(--red);border-color:#ef444433}
+    .cache-dot{width:5px;height:5px;border-radius:50%}
+    .cache-badge.running .cache-dot{background:#38bdf8;animation:blink .8s infinite}
+    .cache-badge.completed .cache-dot{background:var(--green)}
+    .cache-badge.failed .cache-dot{background:var(--red)}
+    .cache-badge.idle .cache-dot{background:var(--muted)}
+    .cache-progress{font-variant-numeric:tabular-nums}
+    @keyframes pulse-cache{0%,100%{opacity:1}50%{opacity:.7}}
     .btn{padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;border:1px solid;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
     .btn-primary{background:#1d4ed8;border-color:#2563eb;color:#fff}.btn-primary:hover{background:#2563eb}
     .btn-outline{background:transparent;border-color:var(--border2);color:var(--muted)}.btn-outline:hover{border-color:var(--blue);color:var(--blue);background:#0a1628}
@@ -204,6 +218,7 @@
     .toast{padding:8px 13px;border-radius:7px;font-size:12px;font-weight:600;background:var(--bg3);border:1px solid var(--border2);color:var(--text);animation:toastIn .25s ease;max-width:280px}
     .toast.success{background:#052e16;border-color:#16a34a44;color:var(--green)}
     .toast.error{background:#450a0a;border-color:#7f1d1d44;color:var(--red)}
+    .toast.info{background:#0c2d48;border-color:#0284c733;color:#38bdf8}
     @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
     .empty-st{text-align:center;padding:45px 20px;color:var(--muted)}
     .empty-ttl{font-size:.95em;font-weight:700;margin-bottom:6px;color:var(--text)}
@@ -233,6 +248,9 @@
     <button class="tl" id="tl-scan" onclick="openEmbed('/reports/master_report_LATEST.html','Scan Report','scan')">Scan</button>
   </div>
   <div class="topbar-right">
+    <div class="cache-badge idle" id="cacheBadge" onclick="toggleCacheRefresh()" title="Click to refresh OHLCV cache">
+      <span class="cache-dot"></span><span id="cacheLabel">Cache</span> <span class="cache-progress" id="cacheProg"></span>
+    </div>
     <div class="live-badge"><span class="live-dot"></span>Live <span id="refreshCd">30s</span></div>
     <button class="btn btn-green btn-sm" onclick="openAddModal()">+ Position</button>
     <button class="btn btn-outline btn-sm" onclick="toggleDrawer()">📡 Signals</button>
@@ -1656,9 +1674,98 @@ function startAutoRefresh() {
   }, 1000);
 }
 
+// ── Cache Refresh ────────────────────────────────────────────────────────────
+let _cacheStatus = 'idle';
+let _cachePollInterval = null;
+
+async function pollCacheStatus() {
+  try {
+    const r = await fetch(API + '/api/cache/refresh-status');
+    if (!r.ok) return;
+    const d = await r.json();
+    _cacheStatus = d.status || 'idle';
+    const badge = document.getElementById('cacheBadge');
+    const label = document.getElementById('cacheLabel');
+    const prog = document.getElementById('cacheProg');
+    if (!badge) return;
+
+    badge.className = 'cache-badge ' + _cacheStatus;
+
+    if (_cacheStatus === 'running') {
+      const done = d.symbolsDone || 0;
+      const total = d.symbolsTotal || 0;
+      const pct = total > 0 ? Math.round(done / total * 100) : 0;
+      label.textContent = 'Refreshing';
+      prog.textContent = total > 0 ? `${done}/${total} (${pct}%)` : '…';
+      badge.title = `OHLCV refresh in progress: ${done}/${total} symbols\nRefreshed: ${(d.progress||{}).refreshed||0} · Errors: ${(d.progress||{}).errors||0}`;
+    } else if (_cacheStatus === 'completed') {
+      const refreshed = (d.progress||{}).refreshed || 0;
+      label.textContent = 'Cache ✓';
+      prog.textContent = refreshed > 0 ? `${refreshed} updated` : 'fresh';
+      badge.title = `Cache up-to-date\nFinished: ${d.finishedAt || ''}`;
+      // Stop polling after completion (wait a bit then reduce frequency)
+      if (_cachePollInterval) { clearInterval(_cachePollInterval); _cachePollInterval = null; }
+      // Switch to slow polling (every 60s) to detect next refresh
+      setTimeout(() => { if (!_cachePollInterval) _cachePollInterval = setInterval(pollCacheStatus, 60000); }, 5000);
+    } else if (_cacheStatus === 'failed') {
+      label.textContent = 'Cache ✗';
+      prog.textContent = '';
+      badge.title = `Cache refresh failed: ${d.error || 'unknown error'}\nClick to retry`;
+      if (_cachePollInterval) { clearInterval(_cachePollInterval); _cachePollInterval = null; }
+      setTimeout(() => { if (!_cachePollInterval) _cachePollInterval = setInterval(pollCacheStatus, 60000); }, 5000);
+    } else {
+      label.textContent = 'Cache';
+      prog.textContent = '';
+      badge.title = 'Click to refresh OHLCV cache';
+    }
+  } catch(e) { /* ignore poll errors */ }
+}
+
+async function toggleCacheRefresh() {
+  if (_cacheStatus === 'running') {
+    toast('Cache refresh is already running…', 'info');
+    return;
+  }
+  try {
+    const r = await fetch(API + '/api/cache/refresh', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({indian_only: true, workers: 4}),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      toast('🔄 Cache refresh started in background', 'success');
+      _cacheStatus = 'running';
+      // Start fast polling
+      if (_cachePollInterval) clearInterval(_cachePollInterval);
+      _cachePollInterval = setInterval(pollCacheStatus, 3000);
+      pollCacheStatus();
+    } else {
+      toast(d.message || 'Could not start refresh', 'info');
+    }
+  } catch(e) {
+    toast('Failed to start cache refresh', 'error');
+  }
+}
+
+function startCacheStatusPoller() {
+  // Initial poll
+  pollCacheStatus();
+  // Fast poll initially (every 5s) to catch running state, then slow down
+  _cachePollInterval = setInterval(pollCacheStatus, 5000);
+  // After 30s, switch to slower polling if not running
+  setTimeout(() => {
+    if (_cacheStatus !== 'running' && _cachePollInterval) {
+      clearInterval(_cachePollInterval);
+      _cachePollInterval = setInterval(pollCacheStatus, 30000);
+    }
+  }, 30000);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   refreshData();
   startAutoRefresh();
+  startCacheStatusPoller();
   document.getElementById('jDate').value = new Date().toISOString().slice(0, 10);
 });
 
