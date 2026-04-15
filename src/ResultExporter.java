@@ -83,10 +83,10 @@ public final class ResultExporter {
 
     private static void writeScanCsv(List<ScanResult> results, Path path) {
         List<String> lines = new ArrayList<>();
-        lines.add("symbol,signalType,setupType,windowLabel,windowBars,baseRangeHeightPct,contractionDepthPct,rangeContractionCount,volumeContractionCount,contractionPairs,setupRating,date,close,pivot,support,qualityScore,rangeContractionPct,volumeContractionPct,rangeExpansion,entry,stop,shares,target1,target2,target3,entryTimeLabel,entryInstruction,entryTriggerCondition,stopModel,trailingStopPolicy,stopReferencePrice,riskPerShare");
+        lines.add("symbol,signalType,setupType,windowLabel,windowBars,baseRangeHeightPct,contractionDepthPct,rangeContractionCount,volumeContractionCount,contractionPairs,setupRating,date,close,pivot,support,qualityScore,rangeContractionPct,volumeContractionPct,rangeExpansion,entry,stop,shares,target1,target2,target3,entryTimeLabel,entryInstruction,entryTriggerCondition,stopModel,trailingStopPolicy,stopReferencePrice,riskPerShare,ipoFlag,daysSinceListing");
         for (ScanResult r : results) {
             lines.add(String.format(
-                    "%s,%s,%s,%s,%d,%.2f,%.2f,%d,%d,%d,%s,%s,%.5f,%.5f,%.5f,%.2f,%.2f,%.2f,%.2f,%.5f,%.5f,%d,%.5f,%.5f,%.5f,%s,\"%s\",\"%s\",%s,%s,%.5f,%.5f",
+                    "%s,%s,%s,%s,%d,%.2f,%.2f,%d,%d,%d,%s,%s,%.5f,%.5f,%.5f,%.2f,%.2f,%.2f,%.2f,%.5f,%.5f,%d,%.5f,%.5f,%.5f,%s,\"%s\",\"%s\",%s,%s,%.5f,%.5f,%b,%d",
                     r.getSymbol(),
                     r.getSignalType(),
                     r.getSetup().getSetupType(),
@@ -118,7 +118,9 @@ public final class ResultExporter {
                     r.getTradePlan().getStopModel(),
                     r.getTradePlan().getTrailingStopPolicy(),
                     r.getTradePlan().getStopReferencePrice(),
-                    r.getTradePlan().getRiskPerShare()
+                    r.getTradePlan().getRiskPerShare(),
+                    r.isIpoFlag(),
+                    r.getDaysSinceListing()
             ));
         }
         writeLines(path, lines);
@@ -161,7 +163,9 @@ public final class ResultExporter {
             sb.append("    \"stopModel\": \"").append(escape(r.getTradePlan().getStopModel())).append("\",\n");
             sb.append("    \"trailingStopPolicy\": \"").append(escape(r.getTradePlan().getTrailingStopPolicy())).append("\",\n");
             sb.append("    \"stopReferencePrice\": ").append(format(r.getTradePlan().getStopReferencePrice())).append(",\n");
-            sb.append("    \"riskPerShare\": ").append(format(r.getTradePlan().getRiskPerShare())).append("\n");
+            sb.append("    \"riskPerShare\": ").append(format(r.getTradePlan().getRiskPerShare())).append(",\n");
+            sb.append("    \"ipoFlag\": ").append(r.isIpoFlag()).append(",\n");
+            sb.append("    \"daysSinceListing\": ").append(r.getDaysSinceListing()).append("\n");
             sb.append("  }");
             if (i < results.size() - 1) {
                 sb.append(",");
@@ -284,10 +288,10 @@ public final class ResultExporter {
 
     private static void writeWatchlistCsv(List<WatchlistResult> results, Path path) {
         List<String> lines = new ArrayList<>();
-        lines.add("symbol,setupType,windowLabel,windowBars,distanceToPivotPct,baseRangeHeightPct,contractionDepthPct,rangeContractionCount,volumeContractionCount,contractionPairs,setupRating,date,close,pivot,support,qualityScore,rangeContractionPct,volumeContractionPct,rangeExpansion,entry,stop,shares,target1,target2,target3,entryTimeLabel,entryInstruction,entryTriggerCondition,stopModel,trailingStopPolicy,stopReferencePrice,riskPerShare");
+        lines.add("symbol,setupType,windowLabel,windowBars,distanceToPivotPct,baseRangeHeightPct,contractionDepthPct,rangeContractionCount,volumeContractionCount,contractionPairs,setupRating,date,close,pivot,support,qualityScore,rangeContractionPct,volumeContractionPct,rangeExpansion,entry,stop,shares,target1,target2,target3,entryTimeLabel,entryInstruction,entryTriggerCondition,stopModel,trailingStopPolicy,stopReferencePrice,riskPerShare,ipoFlag,daysSinceListing");
         for (WatchlistResult r : results) {
             lines.add(String.format(
-                    "%s,%s,%s,%d,%.2f,%.2f,%.2f,%d,%d,%d,%s,%s,%.5f,%.5f,%.5f,%.2f,%.2f,%.2f,%.2f,%.5f,%.5f,%d,%.5f,%.5f,%.5f,%s,\"%s\",\"%s\",%s,%s,%.5f,%.5f",
+                    "%s,%s,%s,%d,%.2f,%.2f,%.2f,%d,%d,%d,%s,%s,%.5f,%.5f,%.5f,%.2f,%.2f,%.2f,%.2f,%.5f,%.5f,%d,%.5f,%.5f,%.5f,%s,\"%s\",\"%s\",%s,%s,%.5f,%.5f,%b,%d",
                     r.getSymbol(),
                     r.getSetup().getSetupType(),
                     r.getSetup().getBaseWindowLabel(),
@@ -319,7 +323,9 @@ public final class ResultExporter {
                     r.getTradePlan().getStopModel(),
                     r.getTradePlan().getTrailingStopPolicy(),
                     r.getTradePlan().getStopReferencePrice(),
-                    r.getTradePlan().getRiskPerShare()
+                    r.getTradePlan().getRiskPerShare(),
+                    r.isIpoFlag(),
+                    r.getDaysSinceListing()
             ));
         }
         writeLines(path, lines);
@@ -359,7 +365,9 @@ public final class ResultExporter {
             sb.append("    \"stopModel\": \"").append(escape(r.getTradePlan().getStopModel())).append("\",\n");
             sb.append("    \"trailingStopPolicy\": \"").append(escape(r.getTradePlan().getTrailingStopPolicy())).append("\",\n");
             sb.append("    \"stopReferencePrice\": ").append(format(r.getTradePlan().getStopReferencePrice())).append(",\n");
-            sb.append("    \"riskPerShare\": ").append(format(r.getTradePlan().getRiskPerShare())).append("\n");
+            sb.append("    \"riskPerShare\": ").append(format(r.getTradePlan().getRiskPerShare())).append(",\n");
+            sb.append("    \"ipoFlag\": ").append(r.isIpoFlag()).append(",\n");
+            sb.append("    \"daysSinceListing\": ").append(r.getDaysSinceListing()).append("\n");
             sb.append("  }");
             if (i < results.size() - 1) {
                 sb.append(",");
@@ -372,10 +380,10 @@ public final class ResultExporter {
 
     private static void writeAlreadyBreakoutCsv(List<AlreadyBreakoutResult> results, Path path) {
         List<String> lines = new ArrayList<>();
-        lines.add("symbol,setupType,windowLabel,setupRating,qualityScore,breakoutDate,barsSinceBreakout,breakoutPrice,latestDate,latestClose,returnSinceBreakoutPct,maxGainPct,maxDrawdownPct,pivotHoldRatePct");
+        lines.add("symbol,setupType,windowLabel,setupRating,qualityScore,breakoutDate,barsSinceBreakout,breakoutPrice,latestDate,latestClose,returnSinceBreakoutPct,maxGainPct,maxDrawdownPct,pivotHoldRatePct,ipoFlag,daysSinceListing");
         for (AlreadyBreakoutResult r : results) {
             lines.add(String.format(
-                    "%s,%s,%s,%s,%.2f,%s,%d,%.5f,%s,%.5f,%.2f,%.2f,%.2f,%.2f",
+                    "%s,%s,%s,%s,%.2f,%s,%d,%.5f,%s,%.5f,%.2f,%.2f,%.2f,%.2f,%b,%d",
                     r.getSymbol(),
                     r.getSetup().getSetupType(),
                     r.getSetup().getBaseWindowLabel(),
@@ -389,7 +397,9 @@ public final class ResultExporter {
                     r.getReturnSinceBreakoutPct(),
                     r.getMaxGainPct(),
                     r.getMaxDrawdownPct(),
-                    r.getPivotHoldRatePct()
+                    r.getPivotHoldRatePct(),
+                    r.isIpoFlag(),
+                    r.getDaysSinceListing()
             ));
         }
         writeLines(path, lines);
@@ -414,7 +424,9 @@ public final class ResultExporter {
             sb.append("    \"returnSinceBreakoutPct\": ").append(format(r.getReturnSinceBreakoutPct())).append(",\n");
             sb.append("    \"maxGainPct\": ").append(format(r.getMaxGainPct())).append(",\n");
             sb.append("    \"maxDrawdownPct\": ").append(format(r.getMaxDrawdownPct())).append(",\n");
-            sb.append("    \"pivotHoldRatePct\": ").append(format(r.getPivotHoldRatePct())).append("\n");
+            sb.append("    \"pivotHoldRatePct\": ").append(format(r.getPivotHoldRatePct())).append(",\n");
+            sb.append("    \"ipoFlag\": ").append(r.isIpoFlag()).append(",\n");
+            sb.append("    \"daysSinceListing\": ").append(r.getDaysSinceListing()).append("\n");
             sb.append("  }");
             if (i < results.size() - 1) {
                 sb.append(",");

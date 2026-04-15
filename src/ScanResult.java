@@ -8,6 +8,8 @@ public class ScanResult {
     private String alignmentReason;             // Why alignment bonus was applied
     private boolean weeklyAligned;              // Whether weekly structure supports daily signal
     private BreakoutQualityAnalyzer.BreakoutQualityContext breakoutQuality;  // Enhanced quality metrics
+    private boolean ipoFlag;                    // True if stock is recently listed (limited history)
+    private int daysSinceListing;               // Number of available trading bars (proxy for listing age)
 
     public ScanResult(String symbol, VcpSetup setup, Candle signalCandle, TradePlan tradePlan) {
         this(symbol, setup, signalCandle, tradePlan, "BREAKOUT");
@@ -23,6 +25,8 @@ public class ScanResult {
         this.alignmentReason = "NO_ALIGNMENT";
         this.weeklyAligned = false;
         this.breakoutQuality = null;
+        this.ipoFlag = false;
+        this.daysSinceListing = 0;
     }
 
     public String getSymbol() {
@@ -76,8 +80,23 @@ public class ScanResult {
         this.breakoutQuality = quality;
     }
 
+    // ── IPO flag ────────────────────────────────────────────────────────────────
+    public boolean isIpoFlag() {
+        return ipoFlag;
+    }
+
+    public int getDaysSinceListing() {
+        return daysSinceListing;
+    }
+
+    public void setIpoFlag(boolean flag, int days) {
+        this.ipoFlag = flag;
+        this.daysSinceListing = days;
+    }
+
     public String toConsoleLine() {
         String alignmentTag = alignmentBonus > 0.0 ? String.format(" [MTF: %s (+%.1f)]", alignmentReason, alignmentBonus) : "";
+        String ipoTag = ipoFlag ? String.format(" [IPO %dd]", daysSinceListing) : "";
         return String.format(
                 "%s | Type %s | Setup %s | Window %s(%d) | Height %.1f%% | Depth %.1f%% | Len %d | Ctr %d/%d | Rating %s | Close %.2f | Pivot %.2f | Entry %.2f | Score %.1f | Range %.1f%% | Vol %.1f%% | RExp %.2fx | Shares %d | SL %.2f | T1 %.2f T2 %.2f T3 %.2f%s",
                 symbol,
@@ -104,6 +123,6 @@ public class ScanResult {
                 tradePlan.getTarget2(),
                 tradePlan.getTarget3(),
                 alignmentTag
-        );
+        ) + ipoTag;
     }
 }

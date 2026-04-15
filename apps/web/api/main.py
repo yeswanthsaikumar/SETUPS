@@ -1178,6 +1178,12 @@ def _enrich_position_metrics(p: dict) -> dict:
     p["lastVol"] = round(cmp_vol)
     p["avgVol20"] = round(avg20)
 
+    # IPO flag — stock with fewer than ~126 trading days of data
+    ipo_threshold = 126
+    if "ipoFlag" not in p or p.get("ipoFlag") is None:
+        p["ipoFlag"] = len(rows) < ipo_threshold
+        p["daysSinceListing"] = len(rows)
+
     return p
 
 

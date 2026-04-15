@@ -77,6 +77,9 @@ public class StructuredExporter {
         public String breakoutQualityRating; // EXCELLENT/STRONG/GOOD/FAIR/WEAK
         public double breakoutQualityScore;  // 0-40 pts
         
+        public boolean ipoFlag;
+        public int daysSinceListing;
+
         public SetupDetails setup;
         public BreakoutDetails breakout;
         public TradePlanDetails tradePlan;
@@ -135,6 +138,9 @@ public class StructuredExporter {
         public String breakoutQualityRating;
         public double breakoutQualityScore;
         
+        public boolean ipoFlag;
+        public int daysSinceListing;
+
         public SetupDetails setup;
         public WatchlistDetails watchlist;
         public TradePlanDetails tradePlan;
@@ -227,11 +233,13 @@ public class StructuredExporter {
         return String.format(
             "{\"symbol\":\"%s\",\"signalType\":\"%s\",\"baseScore\":%.1f," +
             "\"alignmentBonus\":%.1f,\"finalScore\":%.1f," +
-            "\"qualityRating\":\"%s\",\"qualityScore\":%.1f}",
+            "\"qualityRating\":\"%s\",\"qualityScore\":%.1f," +
+            "\"ipoFlag\":%b,\"daysSinceListing\":%d}",
             s.symbol != null ? s.symbol : "",
             s.signalType != null ? s.signalType : "",
             s.baseQualityScore, s.alignmentBonus,
-            s.finalScore, qualityRating, s.breakoutQualityScore
+            s.finalScore, qualityRating, s.breakoutQualityScore,
+            s.ipoFlag, s.daysSinceListing
         );
     }
     
@@ -242,10 +250,12 @@ public class StructuredExporter {
             WatchlistExport w = items.get(i);
             sb.append(String.format(
                 "{\"symbol\":\"%s\",\"baseScore\":%.1f,\"alignmentBonus\":%.1f," +
-                "\"finalScore\":%.1f,\"qualityRating\":\"%s\"}",
+                "\"finalScore\":%.1f,\"qualityRating\":\"%s\"," +
+                "\"ipoFlag\":%b,\"daysSinceListing\":%d}",
                 w.symbol != null ? w.symbol : "",
                 w.baseQualityScore, w.alignmentBonus,
-                w.finalScore, w.breakoutQualityRating != null ? w.breakoutQualityRating : ""
+                w.finalScore, w.breakoutQualityRating != null ? w.breakoutQualityRating : "",
+                w.ipoFlag, w.daysSinceListing
             ));
         }
         sb.append("]");
@@ -291,12 +301,13 @@ public class StructuredExporter {
     
     private static String exportHitsAsCsv(List<SignalExport> signals) {
         StringBuilder sb = new StringBuilder();
-        sb.append("symbol,signalType,baseScore,alignmentBonus,finalScore,qualityRating,qualityScore\n");
-        
+        sb.append("symbol,signalType,baseScore,alignmentBonus,finalScore,qualityRating,qualityScore,ipoFlag,daysSinceListing\n");
+
         for (SignalExport s : signals) {
-            sb.append(String.format("%s,%s,%.2f,%.2f,%.2f,%s,%.1f\n",
+            sb.append(String.format("%s,%s,%.2f,%.2f,%.2f,%s,%.1f,%b,%d\n",
                 s.symbol, s.signalType, s.baseQualityScore, s.alignmentBonus,
-                s.finalScore, s.breakoutQualityRating, s.breakoutQualityScore
+                s.finalScore, s.breakoutQualityRating, s.breakoutQualityScore,
+                s.ipoFlag, s.daysSinceListing
             ));
         }
         
@@ -305,12 +316,13 @@ public class StructuredExporter {
     
     private static String exportWatchlistAsCsv(List<WatchlistExport> items) {
         StringBuilder sb = new StringBuilder();
-        sb.append("symbol,baseScore,alignmentBonus,finalScore,qualityRating,qualityScore\n");
-        
+        sb.append("symbol,baseScore,alignmentBonus,finalScore,qualityRating,qualityScore,ipoFlag,daysSinceListing\n");
+
         for (WatchlistExport w : items) {
-            sb.append(String.format("%s,%.2f,%.2f,%.2f,%s,%.1f\n",
+            sb.append(String.format("%s,%.2f,%.2f,%.2f,%s,%.1f,%b,%d\n",
                 w.symbol, w.baseQualityScore, w.alignmentBonus,
-                w.finalScore, w.breakoutQualityRating, w.breakoutQualityScore
+                w.finalScore, w.breakoutQualityRating, w.breakoutQualityScore,
+                w.ipoFlag, w.daysSinceListing
             ));
         }
         
