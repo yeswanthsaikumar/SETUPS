@@ -50,8 +50,19 @@ from stock_analyzer import analyze_stock
 import performance_tracker as _pt
 from mutual_funds_provider import MutualFundsProvider, swing_context as _mf_swing_context
 import watchlist_pattern_engine as _wpe
+from breakout_alert_engine import (
+    BreakoutScanner, AlertConfig, AlertState,
+    scan_stock_for_breakouts, backtest_breakout_detection,
+    send_alert, send_telegram_text,
+)
 
 _mf_provider = MutualFundsProvider(cache_dir=str(ROOT / "cache"), cache_ttl_hours=6)
+
+# ── Breakout Alert Scanner (singleton) ──────────────────────────────────────
+_breakout_scanner = BreakoutScanner(
+    data_dir=TRADE_DATA_DIR,
+    cache_dir=CACHE_DIR,
+)
 
 RUN_VCP_SYSTEM = CLI_DIR / "run_vcp_system.py"
 RUN_BACKTEST = CLI_DIR / "run_backtest.py"
@@ -2662,5 +2673,163 @@ def get_price_data_for_symbols(symbols: str = "") -> dict:
                 "isStale": _is_price_stale(last_date) if last_date else True,
             }
     return {"prices": prices, "count": len(prices)}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  BREAKOUT CANDLE ALERT SYSTEM
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class BreakoutAlertConfigUpdate(BaseModel):
+    enabled: Optional[bool] = None
+    scan_interval_seconds: Optional[int] = None
+    volume_threshold: Optional[float] = None
+    body_ratio_min: Optional[float] = None
+    close_near_high_pct: Optional[float] = None
+    consolidation_days: Optional[int] = None
+    consolidation_max_range_pct: Optional[float] = None
+    atr_breakout_multiple: Optional[float] = None
+    # Telegram (free)
+    telegram_enabled: Optional[bool] = None
+    telegram_bot_token: Optional[str] = None
+    telegram_chat_id: Optional[str] = None
+    # Gmail (free)
+    email_enabled: Optional[bool] = None
+    gmail_address: Optional[str] = None
+    gmail_app_password: Optional[str] = None
+    email_to: Optional[str] = None
+
+
+@app.get("/api/breakout-alerts/status")
+def breakout_alert_status() -> dict:
+    """Get breakout alert scanner status and configuration."""
+    config = _breakout_scanner.state.load_config()
+    from dataclasses import asdict as _asdict
+    return {
+        "scanner": _breakout_scanner.status(),
+        "config": {k: v for k, v in _asdict(config).items()
+                   if k not in ("gmail_app_password",)},  # hide secret
+        "marketOpen": _is_market_open(),
+    }
+
+
+@app.post("/api/breakout-alerts/config")
+def update_breakout_alert_config(update: BreakoutAlertConfigUpdate) -> dict:
+    """Update breakout alert configuration."""
+    config = _breakout_scanner.state.load_config()
+    from dataclasses import asdict as _asdict
+    data = _asdict(config)
+    for k, v in update.model_dump(exclude_unset=True).items():
+        if k in data:
+            data[k] = v
+    new_config = AlertConfig(**data)
+    _breakout_scanner.state.save_config(new_config)
+    return {"ok": True, "config": {k: v for k, v in _asdict(new_config).items()
+                                    if k not in ("gmail_app_password",)}}
+
+
+@app.post("/api/breakout-alerts/scan-now")
+def breakout_scan_now(symbols: list[str] | None = None) -> dict:
+    """Run an immediate breakout scan on watchlist (or specified symbols)."""
+    # Wire up the _read_ohlcv function if not done
+    if _breakout_scanner._read_ohlcv is None:
+        _breakout_scanner._read_ohlcv = _read_ohlcv
+    results = _breakout_scanner.scan_now(symbols=symbols)
+    return {
+        "signals": results,
+        "count": len(results),
+        "scannedAt": datetime.now().isoformat(timespec="seconds"),
+    }
+
+
+@app.post("/api/breakout-alerts/start")
+def breakout_scanner_start() -> dict:
+    """Start the background breakout scanner."""
+    if _breakout_scanner._read_ohlcv is None:
+        _breakout_scanner._read_ohlcv = _read_ohlcv
+    _breakout_scanner.start()
+    return {"ok": True, "message": "Breakout scanner started"}
+
+
+@app.post("/api/breakout-alerts/stop")
+def breakout_scanner_stop() -> dict:
+    """Stop the background breakout scanner."""
+    _breakout_scanner.stop()
+    return {"ok": True, "message": "Breakout scanner stopped"}
+
+
+@app.get("/api/breakout-alerts/signals")
+def breakout_alert_signals(limit: int = 50) -> dict:
+    """Get recent breakout signals (persisted history)."""
+    signals = _breakout_scanner.state.load_signals()
+    signals.sort(key=lambda s: s.get("detected_at", ""), reverse=True)
+    return {"signals": signals[:limit], "total": len(signals)}
+
+
+@app.post("/api/breakout-alerts/backtest")
+def breakout_backtest(
+    symbols: list[str] | None = None,
+    hold_days: int = 20,
+) -> dict:
+    """
+    Backtest breakout detection on watchlist stocks.
+    Validates that the detection criteria work on historical data.
+    Returns win rate, expectancy, profit factor, and individual trades.
+    """
+    if _breakout_scanner._read_ohlcv is None:
+        _breakout_scanner._read_ohlcv = _read_ohlcv
+    result = _breakout_scanner.backtest_watchlist(symbols=symbols, hold_days=hold_days)
+    return result
+
+
+@app.get("/api/breakout-alerts/backtest-results")
+def breakout_backtest_results() -> dict:
+    """Get cached backtest results."""
+    return _breakout_scanner.state.load_backtest()
+
+
+@app.post("/api/breakout-alerts/test-alert")
+def test_alert_channels() -> dict:
+    """Send a test alert via all enabled channels (Telegram / Gmail)."""
+    config = _breakout_scanner.state.load_config()
+    results = {}
+
+    if config.telegram_enabled:
+        ok = send_telegram_text(
+            "🧪 *SETUPS Breakout Alert System — TEST*\n\n"
+            "✅ Telegram alerts are working!\n"
+            "You'll receive breakout candle alerts here when detected on your watchlist.",
+            config,
+        )
+        results["telegram"] = "sent" if ok else "failed"
+    else:
+        results["telegram"] = "disabled"
+
+    if config.email_enabled:
+        from breakout_alert_engine import BreakoutSignal, send_email_alert
+        test_signal = BreakoutSignal(
+            symbol="TEST", signal_type="BREAKOUT",
+            date=datetime.now().strftime("%Y-%m-%d"),
+            price=100.0, close=100.0, high=102.0, low=95.0, open_price=96.0,
+            volume=1000000, avg_volume_20=500000, volume_ratio=2.0,
+            body_ratio=0.71, close_position=0.85,
+            breakout_level=98.0, breakout_level_type="52W_HIGH",
+            atr_14=3.5, atr_multiple=2.0,
+            consolidation_days=25, consolidation_range_pct=8.5,
+            strength_score=82, entry_price=100.0, stop_loss=95.0,
+            target_1=110.0, target_2=117.5, risk_reward=5.0,
+            notes="🧪 TEST ALERT — Breakout Alert System working!",
+        )
+        ok = send_email_alert(test_signal, config)
+        results["email"] = "sent" if ok else "failed"
+    else:
+        results["email"] = "disabled"
+
+    any_sent = any(v == "sent" for v in results.values())
+    return {
+        "ok": any_sent,
+        "results": results,
+        "message": "Test alert sent!" if any_sent else "No channels enabled or all failed. Configure Telegram or Gmail first.",
+    }
+
 
 

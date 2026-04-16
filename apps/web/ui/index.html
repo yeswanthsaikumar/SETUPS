@@ -622,6 +622,65 @@
     </section>
 
     <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <!-- ── 🔔 Breakout Candle Alert System ────────────────────────────────── -->
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
+    <section class="card" id="breakoutAlertSection" style="margin-bottom:20px;">
+      <h2 style="margin:0 0 8px;">🔔 Breakout Candle Alerts</h2>
+      <p class="muted" style="margin:0 0 12px;">Detect breakout candle formations on your watchlist: price breaking major levels with volume surge. WhatsApp alerts + backtested.</p>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <button class="btn-sm btn-teal" onclick="boScanNow()">⚡ Scan Now</button>
+        <button class="btn-sm" onclick="boToggleScanner()" id="boToggleScannerBtn">▶ Start Auto-Scanner</button>
+        <button class="btn-sm" onclick="boRunBacktest()">📊 Backtest</button>
+        <button class="btn-sm" onclick="boLoadSignals()">📋 History</button>
+        <button class="btn-sm" onclick="boToggleConfig()" style="background:#334155;">⚙ Config</button>
+        <button class="btn-sm" onclick="boTestAlert()" style="background:#0ea5e9;">📱 Test Alert</button>
+        <span id="boStatusBadge" class="muted" style="align-self:center;"></span>
+      </div>
+
+      <!-- Config panel (hidden by default) -->
+      <div id="boConfigPanel" style="display:none;background:#0b1220;border:1px solid #334155;border-radius:8px;padding:12px;margin-bottom:12px;">
+        <h3 style="margin:0 0 8px;font-size:14px;color:#93c5fd;">Alert Configuration</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;font-size:13px;">
+          <div><label>Volume Threshold (x avg)</label><input id="boCfgVolThreshold" type="number" step="0.1" value="1.5"></div>
+          <div><label>Body Ratio Min</label><input id="boCfgBodyRatio" type="number" step="0.05" value="0.55"></div>
+          <div><label>Close Near High %</label><input id="boCfgCloseNearHigh" type="number" step="0.05" value="0.75"></div>
+          <div><label>ATR Multiple Min</label><input id="boCfgAtrMultiple" type="number" step="0.1" value="1.5"></div>
+          <div><label>Min Consolidation Days</label><input id="boCfgConsDays" type="number" value="15"></div>
+          <div><label>Max Consolidation Range %</label><input id="boCfgConsRange" type="number" value="15"></div>
+          <div><label>Scan Interval (sec)</label><input id="boCfgInterval" type="number" value="120"></div>
+        </div>
+        <h3 style="margin:12px 0 8px;font-size:14px;color:#0ea5e9;">📲 Telegram (FREE — recommended)</h3>
+        <p class="muted" style="margin:0 0 8px;font-size:11px;">1) Message @BotFather on Telegram → /newbot → get bot token. 2) Message @userinfobot → get your chat ID.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;font-size:13px;">
+          <div><label>Bot Token</label><input id="boCfgTelegramToken" type="text" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"></div>
+          <div><label>Chat ID</label><input id="boCfgTelegramChatId" type="text" placeholder="123456789"></div>
+          <div style="display:flex;align-items:end;gap:8px;">
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+              <input type="checkbox" id="boCfgTelegramEnabled"> Enable Telegram Alerts
+            </label>
+          </div>
+        </div>
+        <h3 style="margin:12px 0 8px;font-size:14px;color:#ef4444;">📧 Gmail SMTP (FREE)</h3>
+        <p class="muted" style="margin:0 0 8px;font-size:11px;">Go to myaccount.google.com → Security → App passwords → generate a 16-char app password.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;font-size:13px;">
+          <div><label>Gmail Address</label><input id="boCfgGmailAddr" type="email" placeholder="you@gmail.com"></div>
+          <div><label>App Password</label><input id="boCfgGmailPass" type="password" placeholder="xxxx xxxx xxxx xxxx"></div>
+          <div><label>Send To</label><input id="boCfgEmailTo" type="email" placeholder="you@gmail.com"></div>
+          <div style="display:flex;align-items:end;gap:8px;">
+            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+              <input type="checkbox" id="boCfgEmailEnabled"> Enable Email Alerts
+            </label>
+          </div>
+        </div>
+        <button class="btn-sm btn-teal" onclick="boSaveConfig()" style="margin-top:10px;">💾 Save Config</button>
+      </div>
+
+      <!-- Results area -->
+      <div id="boResults"></div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════ -->
     <!-- ── 🔬 Watchlist Pattern Lab ──────────────────────────────────────── -->
     <!-- ══════════════════════════════════════════════════════════════════════ -->
     <section class="card analyzer-full wl-section" id="patternLabSection">
@@ -3062,6 +3121,245 @@
     // ── Auto-load market phases on page load ──────────────────────────────────
     // (Lazy — only loads when user first opens the section)
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ── BREAKOUT CANDLE ALERT SYSTEM ──────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    let _boScannerRunning = false;
+
+    async function boScanNow() {
+      const el = document.getElementById('boResults');
+      el.innerHTML = '<div class="muted pulse">⚡ Scanning watchlist for breakout candles…</div>';
+      try {
+        const res = await fetch('/api/breakout-alerts/scan-now', {method:'POST',headers:{'Content-Type':'application/json'},body:'null'});
+        const data = await res.json();
+        if (!data.signals || !data.signals.length) {
+          el.innerHTML = '<div class="muted">No breakout signals detected on current watchlist. Add stocks to watchlist first.</div>';
+          return;
+        }
+        el.innerHTML = boRenderSignals(data.signals, data.scannedAt);
+      } catch(e) { el.innerHTML = `<div class="status-failed">Error: ${e.message}</div>`; }
+    }
+
+    function boRenderSignals(signals, ts) {
+      let html = `<div style="margin-bottom:8px;font-size:12px;color:#64748b;">Found ${signals.length} signal(s) — ${ts || ''}</div>`;
+      html += '<div style="overflow-x:auto;"><table><thead><tr>';
+      html += '<th>Symbol</th><th>Type</th><th>Date</th><th>Price</th><th>Level</th><th>Vol</th><th>Body</th><th>ATR</th><th>Base</th><th>Score</th><th>Entry</th><th>SL</th><th>T1</th><th>T2</th><th>Notes</th>';
+      html += '</tr></thead><tbody>';
+      for (const s of signals) {
+        const typeColor = s.signal_type === 'BREAKOUT' ? '#4ade80' : '#60a5fa';
+        const scoreColor = s.strength_score >= 70 ? '#ffd700' : s.strength_score >= 50 ? '#4ade80' : '#94a3b8';
+        html += `<tr>
+          <td style="font-weight:700;color:#e2e8f0;">${s.symbol}</td>
+          <td style="color:${typeColor};font-size:11px;font-weight:600;">${s.signal_type}</td>
+          <td class="muted">${s.date}</td>
+          <td>₹${(s.close||0).toFixed(1)}</td>
+          <td style="font-size:11px;">₹${(s.breakout_level||0).toFixed(1)}<br><span class="muted">${s.breakout_level_type||''}</span></td>
+          <td style="color:${s.volume_ratio>=2.5?'#fbbf24':'#4ade80'};">${(s.volume_ratio||0).toFixed(1)}x</td>
+          <td>${((s.body_ratio||0)*100).toFixed(0)}%</td>
+          <td>${(s.atr_multiple||0).toFixed(1)}x</td>
+          <td>${s.consolidation_days||0}d<br><span class="muted">${(s.consolidation_range_pct||0).toFixed(1)}%</span></td>
+          <td style="color:${scoreColor};font-weight:700;">${(s.strength_score||0).toFixed(0)}</td>
+          <td style="color:#4ade80;">₹${(s.entry_price||0).toFixed(1)}</td>
+          <td style="color:#f87171;">₹${(s.stop_loss||0).toFixed(1)}</td>
+          <td>₹${(s.target_1||0).toFixed(1)}</td>
+          <td>₹${(s.target_2||0).toFixed(1)}</td>
+          <td style="font-size:11px;">${s.notes||''}</td>
+        </tr>`;
+      }
+      html += '</tbody></table></div>';
+      return html;
+    }
+
+    async function boToggleScanner() {
+      const btn = document.getElementById('boToggleScannerBtn');
+      if (_boScannerRunning) {
+        await fetch('/api/breakout-alerts/stop', {method:'POST'});
+        _boScannerRunning = false;
+        btn.textContent = '▶ Start Auto-Scanner';
+        btn.style.background = '#1d4ed8';
+      } else {
+        await fetch('/api/breakout-alerts/start', {method:'POST'});
+        _boScannerRunning = true;
+        btn.textContent = '⏹ Stop Scanner';
+        btn.style.background = '#7f1d1d';
+      }
+      boLoadStatus();
+    }
+
+    async function boLoadStatus() {
+      try {
+        const res = await fetch('/api/breakout-alerts/status');
+        const d = await res.json();
+        const badge = document.getElementById('boStatusBadge');
+        _boScannerRunning = d.scanner?.running;
+        const btn = document.getElementById('boToggleScannerBtn');
+        if (_boScannerRunning) {
+          btn.textContent = '⏹ Stop Scanner';
+          btn.style.background = '#7f1d1d';
+          badge.innerHTML = `<span class="spinner"></span> Scanner active — last: ${d.scanner.lastScanTime||'never'} — ${d.scanner.lastSignalCount||0} signals`;
+        } else {
+          btn.textContent = '▶ Start Auto-Scanner';
+          btn.style.background = '#1d4ed8';
+          badge.textContent = `Scanner idle — ${d.scanner.alertedCount||0} alerts sent`;
+        }
+        // Populate config fields
+        if (d.config) {
+          const c = d.config;
+          const s = (id, v) => { const e=document.getElementById(id); if(e && v!=null) e.value=v; };
+          s('boCfgVolThreshold', c.volume_threshold);
+          s('boCfgBodyRatio', c.body_ratio_min);
+          s('boCfgCloseNearHigh', c.close_near_high_pct);
+          s('boCfgAtrMultiple', c.atr_breakout_multiple);
+          s('boCfgConsDays', c.consolidation_days);
+          s('boCfgConsRange', c.consolidation_max_range_pct);
+          s('boCfgInterval', c.scan_interval_seconds);
+          s('boCfgTelegramToken', c.telegram_bot_token);
+          s('boCfgTelegramChatId', c.telegram_chat_id);
+          s('boCfgGmailAddr', c.gmail_address);
+          s('boCfgEmailTo', c.email_to);
+          document.getElementById('boCfgTelegramEnabled').checked = c.telegram_enabled;
+          document.getElementById('boCfgEmailEnabled').checked = c.email_enabled;
+        }
+      } catch(e) {}
+    }
+
+    async function boSaveConfig() {
+      const cfg = {
+        volume_threshold: parseFloat(document.getElementById('boCfgVolThreshold').value),
+        body_ratio_min: parseFloat(document.getElementById('boCfgBodyRatio').value),
+        close_near_high_pct: parseFloat(document.getElementById('boCfgCloseNearHigh').value),
+        atr_breakout_multiple: parseFloat(document.getElementById('boCfgAtrMultiple').value),
+        consolidation_days: parseInt(document.getElementById('boCfgConsDays').value),
+        consolidation_max_range_pct: parseInt(document.getElementById('boCfgConsRange').value),
+        scan_interval_seconds: parseInt(document.getElementById('boCfgInterval').value),
+        telegram_enabled: document.getElementById('boCfgTelegramEnabled').checked,
+        telegram_bot_token: document.getElementById('boCfgTelegramToken').value,
+        telegram_chat_id: document.getElementById('boCfgTelegramChatId').value,
+        email_enabled: document.getElementById('boCfgEmailEnabled').checked,
+        gmail_address: document.getElementById('boCfgGmailAddr').value,
+        email_to: document.getElementById('boCfgEmailTo').value,
+      };
+      const pass = document.getElementById('boCfgGmailPass').value;
+      if (pass) cfg.gmail_app_password = pass;
+      try {
+        await fetch('/api/breakout-alerts/config', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});
+        alert('Config saved!');
+      } catch(e) { alert('Error: '+e.message); }
+    }
+
+    function boToggleConfig() {
+      const p = document.getElementById('boConfigPanel');
+      p.style.display = p.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function boLoadSignals() {
+      const el = document.getElementById('boResults');
+      el.innerHTML = '<div class="muted pulse">Loading signal history…</div>';
+      try {
+        const res = await fetch('/api/breakout-alerts/signals?limit=100');
+        const data = await res.json();
+        if (!data.signals || !data.signals.length) {
+          el.innerHTML = '<div class="muted">No breakout signals in history yet. Run a scan first.</div>';
+          return;
+        }
+        el.innerHTML = `<div style="margin-bottom:8px;font-size:12px;color:#64748b;">${data.total} total signals in history</div>` + boRenderSignals(data.signals, 'history');
+      } catch(e) { el.innerHTML = `<div class="status-failed">Error: ${e.message}</div>`; }
+    }
+
+    async function boRunBacktest() {
+      const el = document.getElementById('boResults');
+      el.innerHTML = '<div class="muted pulse">📊 Running backtest on watchlist stocks (this may take a minute)…</div>';
+      try {
+        const res = await fetch('/api/breakout-alerts/backtest', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hold_days:20})});
+        const data = await res.json();
+        if (data.error) { el.innerHTML = `<div class="status-failed">${data.error}</div>`; return; }
+        el.innerHTML = boRenderBacktest(data);
+      } catch(e) { el.innerHTML = `<div class="status-failed">Error: ${e.message}</div>`; }
+    }
+
+    function boRenderBacktest(data) {
+      const a = data.aggregate || {};
+      let html = '<h3 style="margin:0 0 8px;font-size:15px;">📊 Backtest Results</h3>';
+      html += `<div class="muted" style="margin-bottom:8px;">${data.symbolCount||0} symbols tested — hold ${data.holdDays||20} days — ${data.generatedAt||''}</div>`;
+
+      // Aggregate stats
+      const wr = a.win_rate||0;
+      const wrColor = wr >= 55 ? '#4ade80' : wr >= 45 ? '#fbbf24' : '#f87171';
+      const pf = a.profit_factor||0;
+      const pfColor = pf >= 1.5 ? '#4ade80' : pf >= 1.0 ? '#fbbf24' : '#f87171';
+      const exp = a.expectancy||0;
+      const expColor = exp > 0 ? '#4ade80' : '#f87171';
+
+      html += `<div class="pt-summary-bar">
+        <div class="pt-stat"><div class="pt-v">${a.total_signals||0}</div><div class="pt-l">Signals</div></div>
+        <div class="pt-stat"><div class="pt-v" style="color:${wrColor}">${wr.toFixed(1)}%</div><div class="pt-l">Win Rate</div></div>
+        <div class="pt-stat"><div class="pt-v" style="color:#4ade80">+${(a.avg_gain_pct||0).toFixed(1)}%</div><div class="pt-l">Avg Win</div></div>
+        <div class="pt-stat"><div class="pt-v" style="color:#f87171">${(a.avg_loss_pct||0).toFixed(1)}%</div><div class="pt-l">Avg Loss</div></div>
+        <div class="pt-stat"><div class="pt-v" style="color:${pfColor}">${pf.toFixed(2)}</div><div class="pt-l">Profit Factor</div></div>
+        <div class="pt-stat"><div class="pt-v" style="color:${expColor}">${exp.toFixed(2)}</div><div class="pt-l">Expectancy</div></div>
+        <div class="pt-stat"><div class="pt-v">${(a.avg_hold_days||0).toFixed(1)}</div><div class="pt-l">Avg Hold Days</div></div>
+        <div class="pt-stat"><div class="pt-v" style="color:#4ade80">+${(a.max_gain_pct||0).toFixed(1)}%</div><div class="pt-l">Best Trade</div></div>
+        <div class="pt-stat"><div class="pt-v" style="color:#f87171">${(a.max_loss_pct||0).toFixed(1)}%</div><div class="pt-l">Worst Trade</div></div>
+      </div>`;
+
+      // Per-symbol breakdown
+      const bySymbol = data.bySymbol || {};
+      const syms = Object.keys(bySymbol).filter(s => !bySymbol[s].error && bySymbol[s].total_signals > 0);
+      if (syms.length) {
+        html += '<h4 style="margin:12px 0 6px;font-size:13px;color:#93c5fd;">Per-Symbol Breakdown</h4>';
+        html += '<table><thead><tr><th>Symbol</th><th>Signals</th><th>Win%</th><th>Avg Win</th><th>Avg Loss</th><th>PF</th><th>Exp</th></tr></thead><tbody>';
+        for (const s of syms.sort((a,b) => (bySymbol[b].win_rate||0) - (bySymbol[a].win_rate||0))) {
+          const r = bySymbol[s];
+          html += `<tr>
+            <td style="font-weight:700;">${s}</td>
+            <td>${r.total_signals||0}</td>
+            <td style="color:${(r.win_rate||0)>=50?'#4ade80':'#f87171'};">${(r.win_rate||0).toFixed(1)}%</td>
+            <td style="color:#4ade80;">+${(r.avg_gain_pct||0).toFixed(1)}%</td>
+            <td style="color:#f87171;">${(r.avg_loss_pct||0).toFixed(1)}%</td>
+            <td>${(r.profit_factor||0).toFixed(2)}</td>
+            <td style="color:${(r.expectancy||0)>0?'#4ade80':'#f87171'};">${(r.expectancy||0).toFixed(2)}</td>
+          </tr>`;
+        }
+        html += '</tbody></table>';
+      }
+
+      // Recent trades
+      const trades = a.trades || [];
+      if (trades.length) {
+        html += '<h4 style="margin:12px 0 6px;font-size:13px;color:#93c5fd;">Recent Simulated Trades (newest first)</h4>';
+        html += '<div style="overflow-x:auto;max-height:300px;overflow-y:auto;"><table><thead><tr><th>Symbol</th><th>Entry</th><th>Exit</th><th>Gain%</th><th>Reason</th><th>Days</th><th>Vol</th><th>Score</th><th>Level</th></tr></thead><tbody>';
+        for (const t of trades.slice(0, 30)) {
+          const gc = t.gain_pct > 0 ? '#4ade80' : '#f87171';
+          html += `<tr>
+            <td style="font-weight:600;">${t.symbol}</td>
+            <td class="muted">${t.entry_date} ₹${t.entry}</td>
+            <td class="muted">${t.exit_date} ₹${t.exit}</td>
+            <td style="color:${gc};font-weight:700;">${t.gain_pct>0?'+':''}${t.gain_pct}%</td>
+            <td style="font-size:11px;">${t.exit_reason}</td>
+            <td>${t.hold_days}</td>
+            <td>${(t.volume_ratio||0).toFixed(1)}x</td>
+            <td>${(t.strength_score||0).toFixed(0)}</td>
+            <td class="muted">${t.level_type||''}</td>
+          </tr>`;
+        }
+        html += '</tbody></table></div>';
+      }
+
+      return html;
+    }
+
+    async function boTestAlert() {
+      try {
+        const res = await fetch('/api/breakout-alerts/test-alert', {method:'POST'});
+        const data = await res.json();
+        const details = Object.entries(data.results||{}).map(([k,v])=>`${k}: ${v}`).join(', ');
+        alert(data.message + '\n\n' + details);
+      } catch(e) { alert('Error: '+e.message); }
+    }
+
+    // Auto-load status on page load
+    boLoadStatus();
   </script>
 </body>
 </html>
