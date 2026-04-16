@@ -28,6 +28,10 @@ UI_INDEX = ROOT / "apps" / "web" / "ui" / "index.html"
 TRADE_BOARD_UI = ROOT / "apps" / "web" / "ui" / "trade_board.html"
 SECTOR_MACRO_HTML = OUTPUT_DIR / "sector_macro_analysis.html"
 GENERATE_SECTOR_MACRO = CLI_DIR / "generate_sector_macro_page.py"
+BREADTH_HTML = OUTPUT_DIR / "market_breadth.html"
+GENERATE_BREADTH = CLI_DIR / "generate_breadth_dashboard.py"
+TRADE_PLANS_HTML = OUTPUT_DIR / "trade_plans_live.html"
+GENERATE_TRADE_PLANS = CLI_DIR / "generate_trade_plans_page.py"
 WEB_JOBS_DIR = OUTPUT_DIR / "web_jobs"
 PERF_TRACKER_JSON = OUTPUT_DIR / "performance_tracker.json"
 # Trade data stored in dedicated folder (not output/) so it survives output/ cleanups
@@ -366,12 +370,49 @@ class BackgroundCacheRefresher:
                 self._status = "completed"
                 self._finished_at = datetime.now().isoformat(timespec="seconds")
 
+            # Auto-regenerate analysis dashboards after cache refresh
+            self._auto_regenerate_dashboards()
+
         except Exception as e:
             with self._lock:
                 self._status = "failed"
                 self._error = str(e)
                 self._finished_at = datetime.now().isoformat(timespec="seconds")
             self._append_log(f"\n❌ Refresh failed: {e}\n")
+
+    def _auto_regenerate_dashboards(self):
+        """
+        After cache refresh completes, auto-regenerate Market Breadth and
+        Sector Macro analysis pages so they are always fresh on app start.
+        Runs sequentially in the same background thread (non-blocking to server).
+        """
+        scripts = [
+            ("Trade Plans",    GENERATE_TRADE_PLANS, TRADE_PLANS_HTML),
+            ("Market Breadth", GENERATE_BREADTH, BREADTH_HTML),
+            ("Sector Macro",   GENERATE_SECTOR_MACRO, SECTOR_MACRO_HTML),
+        ]
+        for name, script, output_path in scripts:
+            if not script.exists():
+                self._append_log(f"⚠ {name} script not found: {script}\n")
+                continue
+            self._append_log(f"\n📊 Auto-regenerating {name} dashboard…\n")
+            try:
+                result = subprocess.run(
+                    [sys.executable, str(script)],
+                    cwd=str(ROOT),
+                    capture_output=True, text=True, timeout=300,
+                )
+                if result.returncode == 0:
+                    size = output_path.stat().st_size / 1024 if output_path.exists() else 0
+                    self._append_log(f"✅ {name} dashboard generated ({size:.0f} KB)\n")
+                else:
+                    # Log last few lines of stderr for debugging
+                    err_tail = (result.stderr or result.stdout or "unknown error")[-500:]
+                    self._append_log(f"❌ {name} generation failed:\n{err_tail}\n")
+            except subprocess.TimeoutExpired:
+                self._append_log(f"⏰ {name} generation timed out (>300s)\n")
+            except Exception as e:
+                self._append_log(f"❌ {name} generation error: {e}\n")
 
     def _append_log(self, text: str):
         with self._lock:
@@ -592,6 +633,59 @@ def start_sector_macro_job() -> dict:
     command = [sys.executable, str(GENERATE_SECTOR_MACRO)]
     job = _submit_job("scan", command)
     return {"job": job, "message": "Sector macro analysis regeneration started"}
+
+
+@app.get("/breadth")
+def breadth_dashboard_page() -> FileResponse:
+    """Serve the pre-built Market Breadth & Trend Detection HTML page."""
+    if not BREADTH_HTML.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Market breadth dashboard not found. It will be auto-generated after cache refresh completes, or trigger manually via POST /api/jobs/breadth.",
+        )
+    return FileResponse(BREADTH_HTML, media_type="text/html")
+
+
+@app.post("/api/jobs/breadth")
+def start_breadth_job() -> dict:
+    """Trigger async regeneration of the Market Breadth dashboard."""
+    command = [sys.executable, str(GENERATE_BREADTH)]
+    job = _submit_job("scan", command)
+    return {"job": job, "message": "Market breadth dashboard regeneration started"}
+
+
+@app.get("/trades")
+def trade_plans_page() -> FileResponse:
+    """Serve the pre-built Live Breakout Trade Plans HTML page."""
+    if not TRADE_PLANS_HTML.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Trade plans page not found. It will be auto-generated after cache refresh completes, or trigger manually via POST /api/jobs/trade-plans. A scan must have run at least once.",
+        )
+    return FileResponse(TRADE_PLANS_HTML, media_type="text/html")
+
+
+@app.post("/api/jobs/trade-plans")
+def start_trade_plans_job() -> dict:
+    """Trigger async regeneration of the Live Breakout Trade Plans page."""
+    command = [sys.executable, str(GENERATE_TRADE_PLANS)]
+    job = _submit_job("scan", command)
+    return {"job": job, "message": "Trade plans page regeneration started"}
+
+
+@app.post("/api/jobs/regenerate-all-dashboards")
+def regenerate_all_dashboards() -> dict:
+    """Trigger regeneration of ALL analysis dashboards (trade plans + breadth + sector macro)."""
+    results = []
+    for name, script in [
+        ("trade-plans", GENERATE_TRADE_PLANS),
+        ("breadth", GENERATE_BREADTH),
+        ("sector-macro", GENERATE_SECTOR_MACRO),
+    ]:
+        command = [sys.executable, str(script)]
+        job = _submit_job("scan", command)
+        results.append({"name": name, "job_id": job.id})
+    return {"ok": True, "jobs": results, "message": "All dashboards regeneration started"}
 
 
 @app.get("/")

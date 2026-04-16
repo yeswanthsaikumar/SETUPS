@@ -12,6 +12,11 @@ Provides:
   - Smart Money Footprint    (Volume + RS + New-High institutional signatures)
   - Sector Rotation Signals  (Which sectors rotating IN vs OUT)
   - Breadth Oscillator       (Industry-level McClellan equivalent)
+  - Industry Relative Strength Ranking  (multi-timeframe RS with returns)
+  - Volume Profile Analysis  (accumulation/distribution patterns by industry)
+  - Sub-Industry Leadership  (which sub-industries lead within each sector)
+  - Sector Rotation Velocity (rate-of-change of rotation, momentum of momentum)
+  - Position Pattern Screener (composite actionable setups from all signals)
 
 Usage:
     from market_breadth import (
@@ -19,6 +24,9 @@ Usage:
         detect_divergences, compute_trajectories,
         compute_smart_money_footprint, compute_rotation_signals,
         compute_breadth_oscillator,
+        rank_industry_relative_strength, compute_volume_profile,
+        detect_sub_industry_leaders, compute_rotation_velocity,
+        screen_position_patterns,
     )
 
 Input format (industry_data dict keys expected from generate_breadth_dashboard.py):
@@ -690,4 +698,507 @@ def screen_best_opportunities(
         })
 
     return sorted(setups, key=lambda x: -x["opportunity_score"])[:20]
+
+
+# ── 10. Industry Relative Strength Ranking ────────────────────────────────────────
+
+def rank_industry_relative_strength(industry_data: list[dict]) -> list[dict]:
+    """
+    Multi-timeframe relative strength ranking of all industries.
+
+    Composite RS Score (0-100):
+      RS 1M vs Nifty    (20%)  — short-term momentum
+      RS 3M vs Nifty    (30%)  — medium-term trend
+      RS 6M vs Nifty    (20%)  — longer-term persistence
+      RS Delta 4W       (20%)  — momentum-of-momentum (acceleration)
+      Return consistency (10%) — reward industries that gain steadily
+
+    Also computes:
+      - RS percentile rank (vs all industries)
+      - RS regime (DOMINANT / STRONG / NEUTRAL / WEAK / LAGGING)
+      - Momentum direction (ACCELERATING / STEADY / DECELERATING)
+    """
+    if not industry_data:
+        return []
+
+    scored: list[dict] = []
+    for d in industry_data:
+        rs1m  = _safe(d, "avg_rs1m")
+        rs3m  = _safe(d, "avg_rs3m")
+        rs6m  = _safe(d, "ind_ret_6m")  # use 6M return as proxy if no rs6m
+        rsd   = _safe(d, "avg_rs_delta")
+        ret1m = _safe(d, "ind_ret_1m")
+        ret3m = _safe(d, "ind_ret_3m")
+
+        # Normalize each to 0-100 scale
+        rs1m_s = _clamp((rs1m + 20) / 40 * 100)
+        rs3m_s = _clamp((rs3m + 20) / 40 * 100)
+        rs6m_s = _clamp((rs6m + 30) / 60 * 100)
+        rsd_s  = _clamp((rsd + 8) / 16 * 100)
+
+        # Return consistency: penalize industries with big 1M-3M divergence
+        consistency = _clamp(100 - abs(ret1m * 3 - ret3m) * 2, 0, 100) if ret3m != 0 else 50
+
+        composite = round(
+            rs1m_s * 0.20 + rs3m_s * 0.30 + rs6m_s * 0.20 +
+            rsd_s  * 0.20 + consistency * 0.10,
+            1
+        )
+
+        # Momentum direction
+        if rsd > 2.0:
+            mom_dir, mom_emoji = "ACCELERATING", "🚀"
+        elif rsd > 0.5:
+            mom_dir, mom_emoji = "GAINING", "📈"
+        elif rsd > -0.5:
+            mom_dir, mom_emoji = "STEADY", "➡️"
+        elif rsd > -2.0:
+            mom_dir, mom_emoji = "FADING", "📉"
+        else:
+            mom_dir, mom_emoji = "DECELERATING", "💥"
+
+        scored.append({
+            "industry":       d.get("industry"),
+            "sector":         d.get("sector"),
+            "stage":          d.get("stage"),
+            "total":          d.get("total", 0),
+            "rs_composite":   composite,
+            "rs1m":           round(rs1m, 2),
+            "rs3m":           round(rs3m, 2),
+            "rs6m":           round(rs6m, 2),
+            "rs_delta":       round(rsd, 2),
+            "ret_1m":         round(ret1m, 2),
+            "ret_3m":         round(ret3m, 2),
+            "consistency":    round(consistency, 1),
+            "momentum_dir":   mom_dir,
+            "momentum_emoji": mom_emoji,
+            "pct_20ma":       _safe(d, "pct_20ma"),
+            "pct_50ma":       _safe(d, "pct_50ma"),
+            "avg_vol_rank":   _safe(d, "avg_vol_rank", 1.0),
+        })
+
+    # Sort and assign percentile ranks
+    scored.sort(key=lambda x: -x["rs_composite"])
+    n = len(scored)
+    for i, s in enumerate(scored):
+        pctile = round((1 - i / max(n - 1, 1)) * 100, 1) if n > 1 else 50.0
+        s["rs_percentile"] = pctile
+        s["rs_rank"] = i + 1
+
+        # RS regime label
+        if pctile >= 80:
+            s["rs_regime"], s["rs_color"] = "DOMINANT", "#3fb950"
+        elif pctile >= 60:
+            s["rs_regime"], s["rs_color"] = "STRONG", "#22d3ee"
+        elif pctile >= 40:
+            s["rs_regime"], s["rs_color"] = "NEUTRAL", "#e3b341"
+        elif pctile >= 20:
+            s["rs_regime"], s["rs_color"] = "WEAK", "#f87171"
+        else:
+            s["rs_regime"], s["rs_color"] = "LAGGING", "#f85149"
+
+    return scored
+
+
+# ── 11. Volume Profile Analysis ──────────────────────────────────────────────────
+
+def compute_volume_profile(industry_data: list[dict]) -> list[dict]:
+    """
+    Analyze volume patterns across industries to detect accumulation/distribution.
+
+    Volume Conviction Score (0-100):
+      Vol expansion rank     (30%) — current vol vs historical avg
+      Vol spike %            (25%) — % stocks with vol > 2x avg
+      Vol trend direction    (25%) — is vol increasing or drying up
+      Vol + RS alignment     (20%) — vol expanding WITH positive RS = accumulation
+
+    Classifications:
+      HEAVY ACCUMULATION : Vol >> avg + RS positive + breadth expanding
+      ACCUMULATION       : Vol > avg + RS neutral/positive
+      NEUTRAL            : Normal vol range
+      DISTRIBUTION       : Vol > avg + RS negative + breadth contracting
+      DRY / NO INTEREST  : Vol << avg — institutions not participating
+    """
+    if not industry_data:
+        return []
+
+    results: list[dict] = []
+    for d in industry_data:
+        vr    = _safe(d, "avg_vol_rank", 1.0)
+        vs    = _safe(d, "vol_spike_pct")
+        rsd   = _safe(d, "avg_rs_delta")
+        rs3m  = _safe(d, "avg_rs3m")
+        p20   = _safe(d, "pct_20ma")
+        p50   = _safe(d, "pct_50ma")
+        n52   = d.get("new_52wh", 0)
+        total = d.get("total", 1)
+
+        # Volume expansion score (0-30)
+        vol_exp_s = _clamp((vr - 0.6) / 1.4 * 30, 0, 30)
+        # Vol spike score (0-25)
+        vol_spk_s = _clamp(vs / 60 * 25, 0, 25)
+        # Vol trend proxy: vol_rank > 1 means expanding (0-25)
+        vol_trend_s = _clamp((vr - 0.8) / 1.2 * 25, 0, 25)
+        # Vol + RS alignment (0-20)
+        rs_aligned = (vr > 1.1 and rsd > 0) or (vr > 1.3 and rs3m > 0)
+        alignment_s = 20.0 if rs_aligned else (10.0 if vr > 1.0 else 0.0)
+
+        vol_score = round(vol_exp_s + vol_spk_s + vol_trend_s + alignment_s, 1)
+
+        # Classification
+        if vr >= 1.5 and rsd > 1.0 and p20 > 50:
+            vtype, vc, ve = "HEAVY ACCUMULATION", "#3fb950", "🔥🔥"
+        elif vr >= 1.2 and rsd >= 0:
+            vtype, vc, ve = "ACCUMULATION", "#22d3ee", "🔥"
+        elif vr >= 1.2 and rsd < -1.0:
+            vtype, vc, ve = "DISTRIBUTION", "#f85149", "⚠️"
+        elif vr < 0.8:
+            vtype, vc, ve = "DRY", "#475569", "💧"
+        else:
+            vtype, vc, ve = "NEUTRAL", "#e3b341", "➡️"
+
+        # Money flow direction estimate
+        breadth_trend = (p20 - 50) * 0.3 + (p50 - 50) * 0.4 + rsd * 3
+        if breadth_trend > 10:
+            flow, fc = "INFLOW", "#3fb950"
+        elif breadth_trend > -10:
+            flow, fc = "BALANCED", "#e3b341"
+        else:
+            flow, fc = "OUTFLOW", "#f85149"
+
+        results.append({
+            "industry":       d.get("industry"),
+            "sector":         d.get("sector"),
+            "stage":          d.get("stage"),
+            "total":          total,
+            "vol_score":      vol_score,
+            "vol_rank":       round(vr, 2),
+            "vol_spike_pct":  round(vs, 1),
+            "vol_type":       vtype,
+            "vol_color":      vc,
+            "vol_emoji":      ve,
+            "money_flow":     flow,
+            "flow_color":     fc,
+            "breadth_trend":  round(breadth_trend, 1),
+            "new_52wh":       n52,
+            "pct_20ma":       round(p20, 1),
+            "rs_delta":       round(rsd, 2),
+            "rs3m":           round(rs3m, 2),
+        })
+
+    return sorted(results, key=lambda x: -x["vol_score"])
+
+
+# ── 12. Sub-Industry Leadership Detection ────────────────────────────────────────
+
+def detect_sub_industry_leaders(
+    industry_data: list[dict],
+    top_n: int = 5,
+) -> dict[str, list[dict]]:
+    """
+    Within each sector, rank sub-industries by leadership strength to find
+    which pockets are actually driving sector performance.
+
+    Leadership Score (0-100):
+      RS composite    (35%)
+      Breadth (>20MA) (20%)
+      Volume signal   (20%)
+      New highs ratio (15%)
+      RS acceleration (10%)
+
+    Returns: {sector: [ranked sub-industries]} — sorted by leadership score.
+    Each sub-industry tagged as LEADING / PARTICIPATING / LAGGING.
+    """
+    from collections import defaultdict
+
+    sector_groups: dict[str, list[dict]] = defaultdict(list)
+    for d in industry_data:
+        sector_groups[d.get("sector", "Other")].append(d)
+
+    result: dict[str, list[dict]] = {}
+    for sector, industries in sorted(sector_groups.items()):
+        ranked: list[dict] = []
+        for d in industries:
+            rs3m  = _safe(d, "avg_rs3m")
+            rsd   = _safe(d, "avg_rs_delta")
+            vr    = _safe(d, "avg_vol_rank", 1.0)
+            p20   = _safe(d, "pct_20ma")
+            n52   = d.get("new_52wh", 0)
+            total = d.get("total", 1)
+
+            rs_s      = _clamp((rs3m + 15) / 30 * 35, 0, 35)
+            breadth_s = p20 / 100 * 20
+            vol_s     = _clamp((vr - 0.7) / 1.3 * 20, 0, 20)
+            hi_s      = _clamp(n52 / max(total, 1) * 100, 0, 15)
+            rsd_s     = _clamp((rsd + 5) / 10 * 10, 0, 10)
+
+            leadership = round(rs_s + breadth_s + vol_s + hi_s + rsd_s, 1)
+
+            if leadership >= 60:
+                tag, tc = "LEADING", "#3fb950"
+            elif leadership >= 35:
+                tag, tc = "PARTICIPATING", "#22d3ee"
+            else:
+                tag, tc = "LAGGING", "#f85149"
+
+            ranked.append({
+                "industry":        d.get("industry"),
+                "sector":          sector,
+                "stage":           d.get("stage"),
+                "total":           total,
+                "leadership_score": leadership,
+                "leadership_tag":  tag,
+                "leadership_color": tc,
+                "rs3m":            round(rs3m, 2),
+                "rs_delta":        round(rsd, 2),
+                "vol_rank":        round(vr, 2),
+                "pct_20ma":        round(p20, 1),
+                "pct_50ma":        _safe(d, "pct_50ma"),
+                "new_52wh":        n52,
+                "ret_1m":          _safe(d, "ind_ret_1m"),
+                "ret_3m":          _safe(d, "ind_ret_3m"),
+                "trend_score":     _safe(d, "trend_score"),
+            })
+
+        ranked.sort(key=lambda x: -x["leadership_score"])
+        # Tag relative position within sector
+        for i, r in enumerate(ranked):
+            r["sector_rank"] = i + 1
+            r["sector_total"] = len(ranked)
+
+        result[sector] = ranked[:top_n] if top_n else ranked
+
+    return result
+
+
+# ── 13. Sector Rotation Velocity ─────────────────────────────────────────────────
+
+def compute_rotation_velocity(sector_data: list[dict]) -> list[dict]:
+    """
+    Measure the SPEED of sector rotation — momentum-of-momentum.
+
+    Uses RS 1M vs RS 3M differential to gauge whether a sector's rotation
+    is accelerating, peaking, or reversing.
+
+    Rotation Velocity Score (-100 to +100):
+      RS acceleration  (RS1M - RS3M)   × 4    — primary velocity signal
+      Vol trend        (vol_rank - 1)  × 15   — fuel behind the move
+      Breadth momentum (p20 - p50)     × 0.5  — short vs medium breadth gap
+
+    Velocity Phases:
+      SURGING     (vel > +25)  — Rapid rotation INTO sector. Momentum trade.
+      ACCELERATING(vel > +10)  — Gaining speed. Build positions.
+      CRUISING    (vel 0..+10) — Steady leadership. Hold.
+      PEAKING     (vel -10..0) — Momentum stalling. Tighten stops.
+      REVERSING   (vel < -10)  — Rotating OUT. Reduce/exit.
+      CRASHING    (vel < -25)  — Rapid exodus. Avoid completely.
+    """
+    results: list[dict] = []
+    for sd in sector_data:
+        rs1m  = _safe(sd, "avg_rs1m")
+        rs3m  = _safe(sd, "avg_rs3m")
+        rsd   = _safe(sd, "avg_rs_delta")
+        vr    = _safe(sd, "avg_vol_rank", 1.0)
+        p20   = _safe(sd, "pct_20ma")
+        p50   = _safe(sd, "pct_50ma")
+
+        rs_accel = rs1m - rs3m   # positive = short-term outpacing long-term
+        vol_fuel = (vr - 1.0)
+        breadth_gap = (p20 - p50) if p20 and p50 else 0
+
+        velocity = _clamp(
+            rs_accel * 4 + vol_fuel * 15 + breadth_gap * 0.5,
+            -100, 100
+        )
+        velocity = round(velocity, 1)
+
+        if velocity > 25:
+            phase, pc, pe = "SURGING", "#3fb950", "🚀🚀"
+            advice = "Rapid inflow. Momentum trade — ride with tight trailing stop."
+        elif velocity > 10:
+            phase, pc, pe = "ACCELERATING", "#22d3ee", "🚀"
+            advice = "Building speed. Initiate/add positions. Best risk-reward window."
+        elif velocity > 0:
+            phase, pc, pe = "CRUISING", "#4ade80", "✅"
+            advice = "Steady leadership. Hold existing positions."
+        elif velocity > -10:
+            phase, pc, pe = "PEAKING", "#e3b341", "⚠️"
+            advice = "Momentum stalling. Tighten stops. No new entries."
+        elif velocity > -25:
+            phase, pc, pe = "REVERSING", "#f87171", "📉"
+            advice = "Rotating out. Reduce exposure. Book partial profits."
+        else:
+            phase, pc, pe = "CRASHING", "#f85149", "💥"
+            advice = "Rapid exodus. Exit all positions. Do not catch falling knife."
+
+        results.append({
+            **sd,
+            "rotation_velocity": velocity,
+            "velocity_phase":    phase,
+            "velocity_color":    pc,
+            "velocity_emoji":    pe,
+            "velocity_advice":   advice,
+            "rs_acceleration":   round(rs_accel, 2),
+            "vol_fuel":          round(vol_fuel, 2),
+            "breadth_gap":       round(breadth_gap, 1),
+        })
+
+    return sorted(results, key=lambda x: -x["rotation_velocity"])
+
+
+# ── 14. Position Pattern Screener ─────────────────────────────────────────────────
+
+def screen_position_patterns(
+    industry_data: list[dict],
+    sector_data: list[dict],
+    regime: dict,
+) -> list[dict]:
+    """
+    Combine ALL signals into actionable position-taking patterns.
+    Each pattern has a name, conviction level, and specific entry criteria.
+
+    Patterns detected:
+      1. SECTOR BREAKOUT     — Sector rotating in + sub-industries leading + vol surge
+      2. STEALTH ACCUMULATION — Low RS but vol expanding + RS delta turning positive
+      3. MOMENTUM CONTINUATION — High RS + high breadth + vol steady/expanding
+      4. BREADTH THRUST ENTRY — Post-correction, breadth expanding rapidly
+      5. ROTATION CATCH       — Sector velocity accelerating + early-stage industries
+      6. DISTRIBUTION WARNING — High RS but vol + breadth deteriorating (short/avoid)
+
+    Returns list of detected patterns sorted by conviction score.
+    """
+    regime_score = regime.get("regime_score", 50)
+    patterns: list[dict] = []
+
+    # Build sector velocity lookup
+    vel_data = compute_rotation_velocity(sector_data)
+    vel_lookup = {v.get("sector", ""): v for v in vel_data}
+
+    # Build sub-industry leaders
+    leaders = detect_sub_industry_leaders(industry_data, top_n=0)
+
+    for d in industry_data:
+        ind   = d.get("industry", "")
+        sec   = d.get("sector", "")
+        stage = d.get("stage", "")
+        rsd   = _safe(d, "avg_rs_delta")
+        rs3m  = _safe(d, "avg_rs3m")
+        rs1m  = _safe(d, "avg_rs1m")
+        vr    = _safe(d, "avg_vol_rank", 1.0)
+        vs    = _safe(d, "vol_spike_pct")
+        p20   = _safe(d, "pct_20ma")
+        p50   = _safe(d, "pct_50ma")
+        p200  = _safe(d, "pct_200ma")
+        n52   = d.get("new_52wh", 0)
+        total = d.get("total", 1)
+        ret1m = _safe(d, "ind_ret_1m")
+        ret3m = _safe(d, "ind_ret_3m")
+
+        sec_vel = vel_lookup.get(sec, {})
+        sv      = sec_vel.get("rotation_velocity", 0)
+
+        detected: list[dict] = []
+
+        # 1. SECTOR BREAKOUT
+        if (sv > 15 and rsd > 2.0 and vr > 1.3 and p20 > 60
+                and stage in ("EMERGING", "EMERGING★", "BUILDING")):
+            conv = _clamp(sv * 0.3 + rsd * 5 + (vr - 1) * 20 + p20 * 0.2, 0, 100)
+            detected.append({
+                "pattern": "SECTOR BREAKOUT",
+                "emoji": "🔥",
+                "conviction": round(conv, 1),
+                "action": "BUY",
+                "entry": f"Buy leaders in {ind}. Sector velocity {sv:+.0f}, RS accelerating.",
+                "stop": "Below 20-day MA of the weakest stock in group.",
+                "target": "Trail with 10-day high. Hold while sector velocity > 0.",
+            })
+
+        # 2. STEALTH ACCUMULATION
+        if (rs3m < 0 and rsd > 1.5 and vr > 1.2
+                and stage in ("WEAK", "EMERGING", "EMERGING★")):
+            conv = _clamp(rsd * 8 + (vr - 1) * 25 + vs * 0.3, 0, 100)
+            detected.append({
+                "pattern": "STEALTH ACCUMULATION",
+                "emoji": "🕵️",
+                "conviction": round(conv, 1),
+                "action": "ACCUMULATE",
+                "entry": f"Quietly accumulate {ind}. RS turning + vol expanding while still under radar.",
+                "stop": "Below recent swing low. Wider stop — early stage.",
+                "target": "Hold for RS to flip positive. 3-6 week horizon.",
+            })
+
+        # 3. MOMENTUM CONTINUATION
+        if (rs3m > 5 and rsd > 0 and p50 > 60 and vr > 0.9
+                and stage in ("BUILDING", "SURGING")):
+            conv = _clamp(rs3m * 1.5 + p50 * 0.3 + rsd * 3 + (vr - 0.8) * 15, 0, 100)
+            detected.append({
+                "pattern": "MOMENTUM CONTINUATION",
+                "emoji": "🏃",
+                "conviction": round(conv, 1),
+                "action": "ADD",
+                "entry": f"Add to {ind} on pullbacks to 20MA. Strong trend + breadth confirms.",
+                "stop": "Below 50-day MA.",
+                "target": "Trail with 20-day MA. Exit on 2 consecutive closes below.",
+            })
+
+        # 4. BREADTH THRUST ENTRY
+        if (regime_score < 45 and rsd > 3.0 and p20 > 40 and vr > 1.2
+                and (p20 - p50) > 15):
+            conv = _clamp(rsd * 6 + (p20 - p50) * 1.5 + (vr - 1) * 20, 0, 100)
+            detected.append({
+                "pattern": "BREADTH THRUST ENTRY",
+                "emoji": "⚡",
+                "conviction": round(conv, 1),
+                "action": "BUY",
+                "entry": f"Breadth thrust in {ind} — short-term breadth surging past medium-term. Early recovery signal.",
+                "stop": "Below the breadth thrust start level.",
+                "target": "Hold until breadth normalizes (p20 ≈ p50).",
+            })
+
+        # 5. ROTATION CATCH
+        if (sv > 10 and stage in ("EMERGING", "EMERGING★")
+                and rsd > 1.0 and vr > 1.0):
+            conv = _clamp(sv * 0.4 + rsd * 5 + (vr - 0.8) * 15, 0, 100)
+            detected.append({
+                "pattern": "ROTATION CATCH",
+                "emoji": "🔄",
+                "conviction": round(conv, 1),
+                "action": "BUY",
+                "entry": f"Catch rotation into {ind}. Sector accelerating, sub-industry emerging.",
+                "stop": "Below sector's recent support. Tight stop — momentum play.",
+                "target": "Ride until sector velocity peaks (< +5).",
+            })
+
+        # 6. DISTRIBUTION WARNING
+        if (rs3m > 3 and rsd < -2.0 and vr < 0.9
+                and stage in ("EXTENDED", "SURGING")):
+            conv = _clamp(abs(rsd) * 5 + (1 - vr) * 20 + rs3m * 1.5, 0, 100)
+            detected.append({
+                "pattern": "DISTRIBUTION WARNING",
+                "emoji": "🚨",
+                "conviction": round(conv, 1),
+                "action": "REDUCE",
+                "entry": f"Distribution in {ind} — RS crumbling despite high price. Smart money exiting.",
+                "stop": "N/A — reduce/exit signal.",
+                "target": "Book profits. Re-enter only when RS delta turns positive.",
+            })
+
+        for pat in detected:
+            patterns.append({
+                "industry":  ind,
+                "sector":    sec,
+                "stage":     stage,
+                "total":     total,
+                "rs3m":      round(rs3m, 2),
+                "rs_delta":  round(rsd, 2),
+                "vol_rank":  round(vr, 2),
+                "pct_20ma":  round(p20, 1),
+                "pct_50ma":  round(p50, 1),
+                "ret_1m":    round(ret1m, 2),
+                "ret_3m":    round(ret3m, 2),
+                "sector_velocity": round(sv, 1),
+                **pat,
+            })
+
+    return sorted(patterns, key=lambda x: -x.get("conviction", 0))[:30]
 

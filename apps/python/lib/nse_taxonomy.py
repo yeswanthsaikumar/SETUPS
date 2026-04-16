@@ -159,6 +159,17 @@ def _clean(symbol: str) -> str:
     return symbol.replace(".NS", "").replace(".BO", "").strip().upper()
 
 
+def all_tickers() -> list[str]:
+    """Return all NSE tickers in the taxonomy."""
+    return sorted(_SECTOR_MAP.keys())
+
+
+def load_taxonomy() -> dict[str, tuple[str, str]]:
+    """Return dict of ticker -> (sector, industry) for all classified stocks."""
+    return {t: (_SECTOR_MAP.get(t, "Other"), _INDUSTRY_MAP.get(t, "Other"))
+            for t in _SECTOR_MAP}
+
+
 def get_sector(symbol: str) -> str:
     """Return the broad sector for an NSE ticker. Falls back to 'Other'."""
     return _SECTOR_MAP.get(_clean(symbol), "Other")
@@ -258,7 +269,8 @@ def compute_industry_breadth(
     ma_periods: tuple[int, int, int] = (20, 50, 200),
 ) -> dict:
     """
-    Compute % of stocks in an industry above various moving averages.
+    Compute % of stocks in an industry above various moving averages,
+    plus volume profile, relative returns, and pattern signals.
 
     Args:
         industry:   Industry name
@@ -274,6 +286,19 @@ def compute_industry_breadth(
           "pct_above_200ma": float,
           "pct_at_52wh": float,       # % within 5% of 52W high
           "breadth_score": float,     # composite 0–100
+          # Volume profile
+          "avg_vol_ratio": float,     # avg recent vol / 50d avg vol
+          "vol_expanding_pct": float, # % stocks with vol > 1.2x avg
+          "vol_surge_pct": float,     # % stocks with vol > 2x avg
+          "vol_pattern": str,         # ACCUMULATION / DISTRIBUTION / DRY / NEUTRAL
+          # Returns
+          "avg_ret_5d": float,        # avg 5-day return
+          "avg_ret_20d": float,       # avg 20-day return
+          "avg_ret_60d": float,       # avg 60-day (3M) return
+          "ret_dispersion": float,    # std dev of 20d returns (uniformity)
+          # Pattern flags
+          "breadth_thrust": bool,     # p20 jumped >25pts in recent period
+          "new_highs_expanding": bool,# multiple stocks at 52W highs
         }
     """
     peers = get_breadth_peers(industry)
@@ -285,10 +310,18 @@ def compute_industry_breadth(
 
     above: dict[int, int] = {p: 0 for p in ma_periods}
     at_52wh = 0
+    vol_ratios: list[float] = []
+    vol_expanding = 0
+    vol_surging = 0
+    ret_5d: list[float] = []
+    ret_20d: list[float] = []
+    ret_60d: list[float] = []
+    rs_positive_count = 0
 
     for sym in peers_with_data:
         rows  = price_data[sym]
         closes = [float(r.get("close", 0)) for r in rows if r.get("close")]
+        volumes = [float(r.get("volume", 0)) for r in rows if r.get("volume")]
         if not closes:
             continue
         last = closes[-1]
@@ -301,13 +334,56 @@ def compute_industry_breadth(
 
         # 52W high = max of last 252 sessions
         high_52w = max(closes[-252:]) if len(closes) >= 252 else max(closes)
-        if last >= high_52w * 0.95:   # within 5% of 52W high
+        if last >= high_52w * 0.95:
             at_52wh += 1
 
+        # Volume analysis
+        if len(volumes) >= 50:
+            avg_vol_50 = sum(volumes[-50:]) / 50
+            recent_vol = sum(volumes[-5:]) / 5 if len(volumes) >= 5 else volumes[-1]
+            if avg_vol_50 > 0:
+                vr = recent_vol / avg_vol_50
+                vol_ratios.append(vr)
+                if vr > 1.2:
+                    vol_expanding += 1
+                if vr > 2.0:
+                    vol_surging += 1
+
+        # Returns
+        if len(closes) >= 6:
+            ret_5d.append((last / closes[-6] - 1) * 100)
+        if len(closes) >= 21:
+            ret_20d.append((last / closes[-21] - 1) * 100)
+        if len(closes) >= 61:
+            ret_60d.append((last / closes[-61] - 1) * 100)
+
     pct = {p: round(above[p] / n * 100, 1) for p in ma_periods}
-    # Composite breadth score: weighted average
     short_p, mid_p, long_p = ma_periods
     score = (pct[short_p] * 0.3 + pct[mid_p] * 0.4 + pct[long_p] * 0.3)
+
+    # Volume profile
+    avg_vr = round(sum(vol_ratios) / len(vol_ratios), 2) if vol_ratios else 1.0
+    vol_exp_pct = round(vol_expanding / n * 100, 1)
+    vol_surge_pct = round(vol_surging / n * 100, 1)
+
+    # Determine volume pattern
+    avg_ret20 = sum(ret_20d) / len(ret_20d) if ret_20d else 0
+    if avg_vr >= 1.3 and avg_ret20 > 0:
+        vol_pattern = "ACCUMULATION"
+    elif avg_vr >= 1.3 and avg_ret20 < -2:
+        vol_pattern = "DISTRIBUTION"
+    elif avg_vr < 0.8:
+        vol_pattern = "DRY"
+    else:
+        vol_pattern = "NEUTRAL"
+
+    # Return dispersion (uniformity of moves)
+    import statistics as _stats
+    ret_disp = round(_stats.stdev(ret_20d), 2) if len(ret_20d) >= 3 else 0.0
+
+    # Pattern flags
+    breadth_thrust = pct[short_p] > 60 and pct[mid_p] < 40  # short-term surge
+    new_highs_expanding = at_52wh >= max(3, n * 0.15)
 
     return {
         "industry":        industry,
@@ -317,6 +393,19 @@ def compute_industry_breadth(
         f"pct_above_{long_p}ma": pct[long_p],
         "pct_at_52wh":     round(at_52wh / n * 100, 1),
         "breadth_score":   round(score, 1),
+        # Volume profile
+        "avg_vol_ratio":       avg_vr,
+        "vol_expanding_pct":   vol_exp_pct,
+        "vol_surge_pct":       vol_surge_pct,
+        "vol_pattern":         vol_pattern,
+        # Returns
+        "avg_ret_5d":      round(sum(ret_5d) / len(ret_5d), 2) if ret_5d else 0.0,
+        "avg_ret_20d":     round(avg_ret20, 2),
+        "avg_ret_60d":     round(sum(ret_60d) / len(ret_60d), 2) if ret_60d else 0.0,
+        "ret_dispersion":  ret_disp,
+        # Pattern flags
+        "breadth_thrust":       breadth_thrust,
+        "new_highs_expanding":  new_highs_expanding,
     }
 
 
@@ -402,4 +491,3 @@ def industry_smart_money(
         "signal":            signal,
         "conviction":        conviction,
     }
-
