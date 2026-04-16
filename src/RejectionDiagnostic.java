@@ -13,7 +13,11 @@ public class RejectionDiagnostic {
         INSUFFICIENT_VOLUME,
         INSUFFICIENT_DATA,
         DATA_ERROR,
-        ALREADY_BROKEN_OUT
+        ALREADY_BROKEN_OUT,
+        LOW_RS_RANK,
+        WEAK_SECTOR,
+        MARKET_HEADWIND,
+        LOW_LIQUIDITY
     }
 
     private static final DateTimeFormatter TS_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");

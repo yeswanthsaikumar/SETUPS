@@ -55,6 +55,11 @@ try:
         compute_breadth_oscillator,
         compute_sector_momentum_matrix,
         screen_best_opportunities,
+        rank_industry_relative_strength,
+        compute_volume_profile,
+        detect_sub_industry_leaders,
+        compute_rotation_velocity,
+        screen_position_patterns,
     )
     _MB_AVAILABLE = True
 except Exception as _mb_err:
@@ -2559,6 +2564,11 @@ def main():
     rotation    = compute_rotation_signals(sector_data)
     mom_matrix  = compute_sector_momentum_matrix(sector_data)
     opps        = screen_best_opportunities(industry_data, regime_score=regime["regime_score"])
+    rs_ranking  = rank_industry_relative_strength(industry_data)
+    vol_profile = compute_volume_profile(industry_data)
+    sub_leaders = detect_sub_industry_leaders(industry_data)
+    rot_velocity= compute_rotation_velocity(sector_data)
+    pos_patterns= screen_position_patterns(industry_data, sector_data, regime)
 
     print(f"  Regime: {regime['regime']} (score={regime['regime_score']})", flush=True)
     print(f"  Oscillator: {oscillator.get('signal','—')} ({oscillator.get('oscillator',0):+.1f})", flush=True)
@@ -2566,6 +2576,11 @@ def main():
     print(f"  Trajectories: {len(trajectories['accelerating'])} accel · {len(trajectories['improving'])} improving", flush=True)
     print(f"  SM Footprint: {len(sm_footprint)} candidates", flush=True)
     print(f"  Opportunities: {len(opps)} setups", flush=True)
+    print(f"  RS Ranking: {len(rs_ranking)} industries ranked", flush=True)
+    print(f"  Volume Profile: {sum(1 for v in vol_profile if v['vol_type'] in ('HEAVY ACCUMULATION','ACCUMULATION'))} accumulating", flush=True)
+    print(f"  Sub-Industry Leaders: {sum(len(v) for v in sub_leaders.values())} across {len(sub_leaders)} sectors", flush=True)
+    print(f"  Rotation Velocity: {sum(1 for v in rot_velocity if v.get('rotation_velocity',0) > 10)} accelerating sectors", flush=True)
+    print(f"  Position Patterns: {len(pos_patterns)} actionable setups", flush=True)
 
     # ── Custom themes ─────────────────────────────────────────────────────────
     print(f"  Computing {len(CUSTOM_THEMES)} custom themes…", flush=True)

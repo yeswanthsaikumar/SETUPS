@@ -39,7 +39,14 @@ public class BacktestEngine {
             if (candles.size() < 60) continue;
 
             int i = 40;
+            int positionExitIndex = -1;  // Track when current position exits (avoid overlapping)
             while (i < candles.size() - 2) {
+                // NEW: Skip if we're still in a previous position for this symbol
+                if (i <= positionExitIndex) {
+                    i++;
+                    continue;
+                }
+
                 ScanResult signal = scannerEngine.evaluateAtIndex(symbol, candles, i);
                 if (signal == null) { i++; continue; }
 
@@ -120,6 +127,9 @@ public class BacktestEngine {
                         plan.getStopReferencePrice(),
                         riskPerShare
                 ));
+
+                // NEW: Track position exit to prevent overlapping entries
+                positionExitIndex = sim.exitIndex;
 
                 // Walk every bar so backtest includes all system-signaled entries.
                 i++;

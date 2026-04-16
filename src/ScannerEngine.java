@@ -1,6 +1,8 @@
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 public class ScannerEngine {
     private final MarketDataProvider marketDataProvider;
@@ -11,6 +13,14 @@ public class ScannerEngine {
     private final String setupFilter;
     private final MultiTimeframeAlignmentAnalyzer alignmentAnalyzer;
     private final List<RejectionDiagnostic> lastRejections;
+
+    // ── NEW: Market context components ────────────────────────────────────────
+    private final MarketRegimeDetector regimeDetector;
+    private final RelativeStrengthCalculator rsCalculator;
+    private final SectorStrengthAnalyzer sectorAnalyzer;
+    private MarketRegimeDetector.RegimeContext lastRegimeContext;
+    private Map<String, RelativeStrengthCalculator.RSProfile> lastRsRankings;
+    private Map<String, Double> lastSectorStrength;
 
     public ScannerEngine(
             MarketDataProvider marketDataProvider,
@@ -30,10 +40,66 @@ public class ScannerEngine {
                 marketDataProvider, vcpDetector, breakoutEvaluator, config
         );
         this.lastRejections = new ArrayList<>();
+
+        // NEW: Initialize market context components
+        this.regimeDetector = new MarketRegimeDetector(marketDataProvider);
+        this.rsCalculator = new RelativeStrengthCalculator(marketDataProvider);
+        this.sectorAnalyzer = new SectorStrengthAnalyzer();
+        this.lastRegimeContext = null;
+        this.lastRsRankings = new HashMap<>();
+        this.lastSectorStrength = new HashMap<>();
+
+        // Load taxonomy if available
+        try {
+            sectorAnalyzer.loadTaxonomy(config.taxonomyPath);
+        } catch (Exception ex) {
+            // Taxonomy loading is optional; continue without it
+        }
     }
 
     public List<RejectionDiagnostic> getLastRejections() {
         return new ArrayList<>(lastRejections);
+    }
+
+    public MarketRegimeDetector.RegimeContext getLastRegimeContext() {
+        return lastRegimeContext;
+    }
+
+    public Map<String, RelativeStrengthCalculator.RSProfile> getLastRsRankings() {
+        return lastRsRankings;
+    }
+
+    public Map<String, Double> getLastSectorStrength() {
+        return lastSectorStrength;
+    }
+
+    // ── Pre-compute market context before scanning ──────────────────────────
+    private void computeMarketContext(List<String> symbols, String timeframe) {
+        // 1. Market regime
+        try {
+            lastRegimeContext = regimeDetector.detectRegime(symbols, timeframe, config);
+            System.out.println("Market Regime: " + lastRegimeContext);
+        } catch (Exception ex) {
+            lastRegimeContext = new MarketRegimeDetector.RegimeContext(
+                    MarketRegimeDetector.Regime.NEUTRAL, 0, 0, true, true, 0, "N/A");
+        }
+
+        // 2. RS rankings for all symbols
+        try {
+            lastRsRankings = rsCalculator.computeRankings(symbols, timeframe);
+            System.out.println("RS Rankings computed for " + lastRsRankings.size() + " symbols");
+        } catch (Exception ex) {
+            lastRsRankings = new HashMap<>();
+        }
+
+        // 3. Sector strength (if taxonomy loaded)
+        if (sectorAnalyzer.hasTaxonomy() && !lastRsRankings.isEmpty()) {
+            try {
+                lastSectorStrength = sectorAnalyzer.computeSectorStrength(lastRsRankings);
+            } catch (Exception ex) {
+                lastSectorStrength = new HashMap<>();
+            }
+        }
     }
 
     public List<ScanResult> scan(List<String> symbols) {
@@ -48,11 +114,45 @@ public class ScannerEngine {
         List<ScanResult> results = new ArrayList<>();
         lastRejections.clear();
 
+        // NEW: Pre-compute market context
+        computeMarketContext(symbols, timeframe);
+
         for (String symbol : symbols) {
             try {
+                // NEW: Liquidity pre-check
+                if (isLowLiquidity(symbol, lookbackBars, timeframe)) {
+                    lastRejections.add(new RejectionDiagnostic(
+                            symbol, "scan", timeframe,
+                            RejectionDiagnostic.Reason.LOW_LIQUIDITY,
+                            "Below minimum average volume threshold"));
+                    continue;
+                }
+
+                // NEW: RS rank pre-check
+                if (config.minRsPercentile > 0 && isLowRsRank(symbol)) {
+                    lastRejections.add(new RejectionDiagnostic(
+                            symbol, "scan", timeframe,
+                            RejectionDiagnostic.Reason.LOW_RS_RANK,
+                            String.format("RS rank=%.0f < min=%.0f",
+                                    getRsPercentile(symbol), config.minRsPercentile)));
+                    continue;
+                }
+
                 List<Candle> candles = loadCandles(symbol, lookbackBars, timeframe);
                 ScanResult result = evaluateAtIndex(symbol, candles, candles.size() - 1);
                 if (result != null) {
+                    // NEW: Market regime filter
+                    if (lastRegimeContext != null && regimeDetector.shouldFilterSignal(
+                            lastRegimeContext, result.getSetup(), getRsPercentile(symbol))) {
+                        lastRejections.add(new RejectionDiagnostic(
+                                symbol, "scan", timeframe,
+                                RejectionDiagnostic.Reason.MARKET_HEADWIND,
+                                "Filtered in HEADWIND regime (not A/A+ or low RS)"));
+                        continue;
+                    }
+
+                    // NEW: Enrich result with RS/sector metadata
+                    enrichResultWithContext(result, symbol);
                     results.add(result);
                 } else {
                     RejectionDiagnostic rejection = diagnoseScanRejection(symbol, candles, candles.size() - 1, timeframe);
@@ -63,12 +163,8 @@ public class ScannerEngine {
             } catch (RuntimeException ex) {
                 System.err.println("Skipping symbol due to data error: " + symbol + " | " + ex.getMessage());
                 lastRejections.add(new RejectionDiagnostic(
-                        symbol,
-                        "scan",
-                        timeframe,
-                        RejectionDiagnostic.Reason.DATA_ERROR,
-                        ex.getMessage()
-                ));
+                        symbol, "scan", timeframe,
+                        RejectionDiagnostic.Reason.DATA_ERROR, ex.getMessage()));
             }
         }
 
@@ -80,11 +176,37 @@ public class ScannerEngine {
         List<WatchlistResult> results = new ArrayList<>();
         lastRejections.clear();
 
+        // NEW: Pre-compute market context (if not already done)
+        if (lastRegimeContext == null) {
+            computeMarketContext(symbols, timeframe);
+        }
+
         for (String symbol : symbols) {
             try {
+                // NEW: Liquidity pre-check
+                if (isLowLiquidity(symbol, lookbackBars, timeframe)) {
+                    lastRejections.add(new RejectionDiagnostic(
+                            symbol, "watchlist", timeframe,
+                            RejectionDiagnostic.Reason.LOW_LIQUIDITY,
+                            "Below minimum average volume threshold"));
+                    continue;
+                }
+
+                // NEW: RS rank pre-check
+                if (config.minRsPercentile > 0 && isLowRsRank(symbol)) {
+                    lastRejections.add(new RejectionDiagnostic(
+                            symbol, "watchlist", timeframe,
+                            RejectionDiagnostic.Reason.LOW_RS_RANK,
+                            String.format("RS rank=%.0f < min=%.0f",
+                                    getRsPercentile(symbol), config.minRsPercentile)));
+                    continue;
+                }
+
                 List<Candle> candles = loadCandles(symbol, lookbackBars, timeframe);
                 WatchlistResult result = evaluateWatchlistAtIndex(symbol, candles, candles.size() - 1);
                 if (result != null) {
+                    // NEW: Enrich with context
+                    enrichWatchlistWithContext(result, symbol);
                     results.add(result);
                 } else {
                     RejectionDiagnostic rejection = diagnoseWatchlistRejection(symbol, candles, candles.size() - 1, timeframe);
@@ -95,12 +217,8 @@ public class ScannerEngine {
             } catch (RuntimeException ex) {
                 System.err.println("Skipping symbol due to data error: " + symbol + " | " + ex.getMessage());
                 lastRejections.add(new RejectionDiagnostic(
-                        symbol,
-                        "watchlist",
-                        timeframe,
-                        RejectionDiagnostic.Reason.DATA_ERROR,
-                        ex.getMessage()
-                ));
+                        symbol, "watchlist", timeframe,
+                        RejectionDiagnostic.Reason.DATA_ERROR, ex.getMessage()));
             }
         }
 
@@ -128,30 +246,87 @@ public class ScannerEngine {
             try {
                 List<Candle> candles = loadCandles(symbol, lookbackBars, timeframe);
                 AlreadyBreakoutResult result = evaluateAlreadyBreakoutAtIndex(
-                        symbol,
-                        candles,
-                        candles.size() - 1,
-                        minBars,
-                        maxBars
-                );
+                        symbol, candles, candles.size() - 1, minBars, maxBars);
                 if (result != null) {
                     results.add(result);
                 }
             } catch (RuntimeException ex) {
                 System.err.println("Skipping symbol due to data error: " + symbol + " | " + ex.getMessage());
                 lastRejections.add(new RejectionDiagnostic(
-                        symbol,
-                        "already_breakout",
-                        timeframe,
-                        RejectionDiagnostic.Reason.DATA_ERROR,
-                        ex.getMessage()
-                ));
+                        symbol, "already_breakout", timeframe,
+                        RejectionDiagnostic.Reason.DATA_ERROR, ex.getMessage()));
             }
         }
 
         results.sort(Comparator.comparingDouble(AlreadyBreakoutResult::getReturnSinceBreakoutPct).reversed());
         return results;
     }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // NEW: Context enrichment helpers
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private boolean isLowLiquidity(String symbol, int lookbackBars, String timeframe) {
+        if (config.minAvgVolume <= 0) return false;
+        try {
+            List<Candle> candles = loadCandles(symbol, Math.min(lookbackBars, 60), timeframe);
+            if (candles == null || candles.size() < 20) return false;
+            double avgVol = Indicators.averageVolume(candles, candles.size() - 20, candles.size() - 1);
+            return avgVol < config.minAvgVolume;
+        } catch (Exception ex) {
+            return false; // Don't reject on data errors; let main scan handle it
+        }
+    }
+
+    private boolean isLowRsRank(String symbol) {
+        double rs = getRsPercentile(symbol);
+        return rs < config.minRsPercentile;
+    }
+
+    private double getRsPercentile(String symbol) {
+        RelativeStrengthCalculator.RSProfile profile = lastRsRankings.get(symbol);
+        return profile != null ? profile.percentileRank : 50.0; // Default to median if unknown
+    }
+
+    private void enrichResultWithContext(ScanResult result, String symbol) {
+        // RS rank
+        double rsRank = getRsPercentile(symbol);
+        result.setRsPercentile(rsRank);
+
+        // Sector info
+        String sector = sectorAnalyzer.getSector(symbol);
+        String industry = sectorAnalyzer.getIndustry(symbol);
+        result.setSectorInfo(sector, industry);
+
+        // Sector score adjustment
+        double sectorBonus = sectorAnalyzer.sectorScoreAdjustment(symbol, lastSectorStrength);
+        result.setSectorBonus(sectorBonus);
+
+        // Market regime
+        if (lastRegimeContext != null) {
+            result.setMarketRegime(lastRegimeContext.regime.toString());
+        }
+    }
+
+    private void enrichWatchlistWithContext(WatchlistResult result, String symbol) {
+        double rsRank = getRsPercentile(symbol);
+        result.setRsPercentile(rsRank);
+
+        String sector = sectorAnalyzer.getSector(symbol);
+        String industry = sectorAnalyzer.getIndustry(symbol);
+        result.setSectorInfo(sector, industry);
+
+        double sectorBonus = sectorAnalyzer.sectorScoreAdjustment(symbol, lastSectorStrength);
+        result.setSectorBonus(sectorBonus);
+
+        if (lastRegimeContext != null) {
+            result.setMarketRegime(lastRegimeContext.regime.toString());
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Existing evaluate/diagnose methods (unchanged logic)
+    // ══════════════════════════════════════════════════════════════════════════
 
     private List<Candle> loadCandles(String symbol, int lookbackBars, String timeframe) {
         if ("weekly".equalsIgnoreCase(timeframe)) {
@@ -181,38 +356,26 @@ public class ScannerEngine {
         if (breakout && isBreakoutEntryTooExtended(signalCandle, setup)) {
             return null;
         }
-        String signalType = nearBreakout ? "NEAR_BREAKOUT" : "BREAKOUT";
+        String signalType = nearBreakout ? "NEAR_BREAKOUT" : (setup.isGapBreakout() ? "GAP_BREAKOUT" : "BREAKOUT");
         TradePlan plan = tradePlanner.buildPlan(
-                signalCandle.getClose(),
-                setup,
-                slice,
-                slice.size() - 1,
-                signalCandle,
-                breakout,
-                signalType,
-                config
-        );
+                signalCandle.getClose(), setup, slice, slice.size() - 1,
+                signalCandle, breakout, signalType, config);
         if (plan == null) {
             return null;
         }
 
         ScanResult result = new ScanResult(symbol, setup, signalCandle, plan, signalType);
-
-        // IPO flag: stock has limited trading history
         result.setIpoFlag(slice.size() < config.ipoMaxBarsSinceListing, slice.size());
 
-        // Apply multi-timeframe alignment analysis
-        // Only for daily scans; skip for weekly scans
         if (!"weekly".equalsIgnoreCase(config.timeframe)) {
             try {
-                MultiTimeframeAlignmentAnalyzer.MultiTimeframeContext alignment = 
+                MultiTimeframeAlignmentAnalyzer.MultiTimeframeContext alignment =
                         alignmentAnalyzer.analyzeAlignmentForDaily(symbol, setup, slice);
                 if (alignment.alignmentBonus > 0.0) {
                     result.setAlignmentBonus(alignment.alignmentBonus, alignment.alignmentReason, true);
                 }
             } catch (Exception ex) {
                 // Alignment analysis failed; continue without bonus
-                // This is safe—weekly data might be unavailable or have issues
             }
         }
 
@@ -231,7 +394,7 @@ public class ScannerEngine {
         }
 
         if (breakoutEvaluator.isBullishBreakout(slice, setup, config)) {
-            return null; // breakout already triggered; this belongs in open trades, not watchlist
+            return null;
         }
 
         Candle signalCandle = slice.get(slice.size() - 1);
@@ -247,36 +410,24 @@ public class ScannerEngine {
 
         double plannedEntry = pivot * (1.0 + config.breakoutBufferPct);
         TradePlan plan = tradePlanner.buildPlan(
-                plannedEntry,
-                setup,
-                slice,
-                slice.size() - 1,
-                signalCandle,
-                false,
-                "WATCHLIST",
-                config
-        );
+                plannedEntry, setup, slice, slice.size() - 1,
+                signalCandle, false, "WATCHLIST", config);
         if (plan == null) {
             return null;
         }
 
         WatchlistResult result = new WatchlistResult(symbol, setup, signalCandle, plan, distanceToPivotPct);
-
-        // IPO flag: stock has limited trading history
         result.setIpoFlag(slice.size() < config.ipoMaxBarsSinceListing, slice.size());
 
-        // Apply multi-timeframe alignment analysis
-        // Only for daily scans; skip for weekly scans
         if (!"weekly".equalsIgnoreCase(config.timeframe)) {
             try {
-                MultiTimeframeAlignmentAnalyzer.MultiTimeframeContext alignment = 
+                MultiTimeframeAlignmentAnalyzer.MultiTimeframeContext alignment =
                         alignmentAnalyzer.analyzeAlignmentForWatchlist(symbol, setup, slice);
                 if (alignment.alignmentBonus > 0.0) {
                     result.setAlignmentBonus(alignment.alignmentBonus, alignment.alignmentReason, true);
                 }
             } catch (Exception ex) {
                 // Alignment analysis failed; continue without bonus
-                // This is safe—weekly data might be unavailable or have issues
             }
         }
 
@@ -284,11 +435,8 @@ public class ScannerEngine {
     }
 
     public AlreadyBreakoutResult evaluateAlreadyBreakoutAtIndex(
-            String symbol,
-            List<Candle> candles,
-            int endIndexInclusive,
-            int minBarsSinceBreakout,
-            int maxBarsSinceBreakout
+            String symbol, List<Candle> candles, int endIndexInclusive,
+            int minBarsSinceBreakout, int maxBarsSinceBreakout
     ) {
         if (candles == null || candles.isEmpty() || endIndexInclusive < 0 || endIndexInclusive >= candles.size()) {
             return null;
@@ -330,36 +478,18 @@ public class ScannerEngine {
                 double drawdownPct = ((c.getLow() / breakoutPrice) - 1.0) * 100.0;
                 maxGainPct = Math.max(maxGainPct, gainPct);
                 maxDrawdownPct = Math.min(maxDrawdownPct, drawdownPct);
-                if (c.getLow() >= pivotFloor) {
-                    pivotHoldBars++;
-                }
+                if (c.getLow() >= pivotFloor) pivotHoldBars++;
                 observedBars++;
             }
 
-            if (maxGainPct == Double.NEGATIVE_INFINITY) {
-                maxGainPct = returnSinceBreakoutPct;
-            }
-            if (maxDrawdownPct == Double.POSITIVE_INFINITY) {
-                maxDrawdownPct = returnSinceBreakoutPct;
-            }
+            if (maxGainPct == Double.NEGATIVE_INFINITY) maxGainPct = returnSinceBreakoutPct;
+            if (maxDrawdownPct == Double.POSITIVE_INFINITY) maxDrawdownPct = returnSinceBreakoutPct;
             double pivotHoldRatePct = observedBars == 0 ? 100.0 : (pivotHoldBars * 100.0) / observedBars;
 
             AlreadyBreakoutResult abResult = new AlreadyBreakoutResult(
-                    symbol,
-                    setup,
-                    breakoutCandle.getDate(),
-                    breakoutPrice,
-                    latestCandle,
-                    barsSinceBreakout,
-                    returnSinceBreakoutPct,
-                    maxGainPct,
-                    maxDrawdownPct,
-                    pivotHoldRatePct
-            );
-
-            // IPO flag: stock has limited trading history
+                    symbol, setup, breakoutCandle.getDate(), breakoutPrice, latestCandle,
+                    barsSinceBreakout, returnSinceBreakoutPct, maxGainPct, maxDrawdownPct, pivotHoldRatePct);
             abResult.setIpoFlag(candles.size() < config.ipoMaxBarsSinceListing, candles.size());
-
             return abResult;
         }
 
@@ -395,27 +525,16 @@ public class ScannerEngine {
 
         Candle signalCandle = slice.get(slice.size() - 1);
         if (breakout && isBreakoutEntryTooExtended(signalCandle, setup)) {
-            return new RejectionDiagnostic(
-                    symbol,
-                    "scan",
-                    timeframe,
+            return new RejectionDiagnostic(symbol, "scan", timeframe,
                     RejectionDiagnostic.Reason.TOO_FAR_FROM_PIVOT,
                     String.format("breakoutDistancePct=%.4f max=%.4f",
                             ((signalCandle.getClose() - setup.getPivotPrice()) / Math.max(1e-9, setup.getPivotPrice())),
-                            config.maxBreakoutEntryDistancePct)
-            );
+                            config.maxBreakoutEntryDistancePct));
         }
         String signalType = nearBreakout ? "NEAR_BREAKOUT" : "BREAKOUT";
         TradePlan plan = tradePlanner.buildPlan(
-                signalCandle.getClose(),
-                setup,
-                slice,
-                slice.size() - 1,
-                signalCandle,
-                breakout,
-                signalType,
-                config
-        );
+                signalCandle.getClose(), setup, slice, slice.size() - 1,
+                signalCandle, breakout, signalType, config);
         if (plan == null) {
             return new RejectionDiagnostic(symbol, "scan", timeframe, RejectionDiagnostic.Reason.LOW_QUALITY, "Trade plan could not be built");
         }
@@ -444,8 +563,7 @@ public class ScannerEngine {
         }
 
         if (breakoutEvaluator.isBullishBreakout(slice, setup, config)) {
-            return new RejectionDiagnostic(symbol, "watchlist", timeframe, RejectionDiagnostic.Reason.ALREADY_BROKEN_OUT,
-                    "Already in breakout state");
+            return new RejectionDiagnostic(symbol, "watchlist", timeframe, RejectionDiagnostic.Reason.ALREADY_BROKEN_OUT, "Already in breakout state");
         }
 
         Candle signalCandle = slice.get(slice.size() - 1);
@@ -462,15 +580,8 @@ public class ScannerEngine {
 
         double plannedEntry = pivot * (1.0 + config.breakoutBufferPct);
         TradePlan plan = tradePlanner.buildPlan(
-                plannedEntry,
-                setup,
-                slice,
-                slice.size() - 1,
-                signalCandle,
-                false,
-                "WATCHLIST",
-                config
-        );
+                plannedEntry, setup, slice, slice.size() - 1,
+                signalCandle, false, "WATCHLIST", config);
         if (plan == null) {
             return new RejectionDiagnostic(symbol, "watchlist", timeframe, RejectionDiagnostic.Reason.LOW_QUALITY, "Trade plan could not be built");
         }

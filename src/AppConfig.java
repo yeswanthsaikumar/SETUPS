@@ -54,6 +54,36 @@ public class AppConfig {
     // Minimum stock price to scan (filter penny stocks)
     public final double minPrice;
 
+    // ── Relative Strength & Sector ──────────────────────────────────────────
+    // Minimum RS percentile rank to pass live scan (0-100). 0 = disabled.
+    public final double minRsPercentile;
+    // Minimum average daily volume (shares) to filter illiquid names
+    public final double minAvgVolume;
+    // Taxonomy file path for sector/industry lookup
+    public final String taxonomyPath;
+
+    // ── Volume dry-up: pre-breakout quietness ───────────────────────────────
+    // Last N bars before breakout should have volume ≤ this ratio of 50-day avg
+    public final int volumeDryUpLookbackBars;
+    public final double volumeDryUpMaxRatio;
+    public final double volumeDryUpScoreBonus;
+
+    // ── Accumulation/Distribution in base ───────────────────────────────────
+    // Minimum ratio of accumulation days to distribution days in the base
+    public final double minAccumDistRatio;
+    public final double accumDistScoreBonus;
+
+    // ── Gap-up breakout ─────────────────────────────────────────────────────
+    // If open > pivot and volume >= this multiple, classify as GAP_BREAKOUT
+    public final double gapBreakoutVolumeMultiplier;
+    public final double gapBreakoutScoreBonus;
+
+    // ── Tight-close count ───────────────────────────────────────────────────
+    // Count bars in last N where closes cluster within this % of each other
+    public final int tightCloseLookbackBars;
+    public final double tightCloseMaxSpreadPct;
+    public final double tightCloseScoreBonus;
+
     // ── Breakout confirmation ────────────────────────────────────────────────
     // Close must be above pivot by at least this fraction
     public final double breakoutBufferPct;
@@ -171,6 +201,29 @@ public class AppConfig {
         this.maPeriod                  = weekly ? 30 : 50;        // was 10/50 — weekly uses 30-bar MA
         this.annualHighLookbackBars    = weekly ? 52 : 252;
         this.minPrice                  = 5.0;
+
+        // ── NEW: RS, Liquidity, Sector ────────────────────────────────────────
+        this.minRsPercentile           = 0.0;   // 0 = disabled; set to 50-70 for strict filtering
+        this.minAvgVolume              = weekly ? 50_000.0 : 100_000.0;  // Minimum avg daily volume
+        this.taxonomyPath              = "data/nse_stock_taxonomy.csv";
+
+        // ── NEW: Volume dry-up before breakout ────────────────────────────────
+        this.volumeDryUpLookbackBars   = weekly ? 3 : 5;
+        this.volumeDryUpMaxRatio       = 0.70;   // Last 5 bars vol should be ≤ 70% of 50-day avg
+        this.volumeDryUpScoreBonus     = 6.0;    // Score bonus for dry-up detected
+
+        // ── NEW: Accumulation/Distribution ────────────────────────────────────
+        this.minAccumDistRatio         = 1.0;    // At least equal accum vs dist days
+        this.accumDistScoreBonus       = 5.0;    // Bonus when ratio ≥ 1.5
+
+        // ── NEW: Gap-up breakout ──────────────────────────────────────────────
+        this.gapBreakoutVolumeMultiplier = 2.0;  // Open > pivot + vol ≥ 2x avg = gap breakout
+        this.gapBreakoutScoreBonus     = 8.0;
+
+        // ── NEW: Tight-close clustering ───────────────────────────────────────
+        this.tightCloseLookbackBars    = weekly ? 4 : 7;
+        this.tightCloseMaxSpreadPct    = 1.5;    // Closes within 1.5% of each other
+        this.tightCloseScoreBonus      = 5.0;
 
         // Breakout confirmation: more volume + closer-to-pivot entries only
         this.breakoutBufferPct         = weekly ? 0.006 : 0.004; // was 0.005/0.003

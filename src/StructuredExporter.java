@@ -80,6 +80,18 @@ public class StructuredExporter {
         public boolean ipoFlag;
         public int daysSinceListing;
 
+        // V2 enrichment fields
+        public double rsPercentile;           // RS rank 0-100
+        public String sectorName;             // Sector from taxonomy
+        public String industryName;           // Industry from taxonomy
+        public String marketRegime;           // TAILWIND / NEUTRAL / HEADWIND
+        public double sectorScoreBonus;       // Sector strength adjustment
+        public double volumeDryUpRatio;       // Pre-breakout volume quietness
+        public double accumDistRatio;         // Accumulation/distribution ratio
+        public int tightCloseCount;           // Tight-close bars before breakout
+        public boolean emaFanAligned;         // 10 > 21 > 50 EMA alignment
+        public boolean gapBreakout;           // Gap-up breakout detected
+
         public SetupDetails setup;
         public BreakoutDetails breakout;
         public TradePlanDetails tradePlan;
@@ -140,6 +152,18 @@ public class StructuredExporter {
         
         public boolean ipoFlag;
         public int daysSinceListing;
+
+        // V2 enrichment fields
+        public double rsPercentile;
+        public String sectorName;
+        public String industryName;
+        public String marketRegime;
+        public double sectorScoreBonus;
+        public double volumeDryUpRatio;
+        public double accumDistRatio;
+        public int tightCloseCount;
+        public boolean emaFanAligned;
+        public boolean gapBreakout;
 
         public SetupDetails setup;
         public WatchlistDetails watchlist;
@@ -234,12 +258,23 @@ public class StructuredExporter {
             "{\"symbol\":\"%s\",\"signalType\":\"%s\",\"baseScore\":%.1f," +
             "\"alignmentBonus\":%.1f,\"finalScore\":%.1f," +
             "\"qualityRating\":\"%s\",\"qualityScore\":%.1f," +
-            "\"ipoFlag\":%b,\"daysSinceListing\":%d}",
+            "\"ipoFlag\":%b,\"daysSinceListing\":%d," +
+            "\"rsPercentile\":%.1f,\"sector\":\"%s\",\"industry\":\"%s\"," +
+            "\"marketRegime\":\"%s\",\"sectorBonus\":%.1f," +
+            "\"volumeDryUpRatio\":%.2f,\"accumDistRatio\":%.2f," +
+            "\"tightCloseCount\":%d,\"emaFanAligned\":%b,\"gapBreakout\":%b}",
             s.symbol != null ? s.symbol : "",
             s.signalType != null ? s.signalType : "",
             s.baseQualityScore, s.alignmentBonus,
             s.finalScore, qualityRating, s.breakoutQualityScore,
-            s.ipoFlag, s.daysSinceListing
+            s.ipoFlag, s.daysSinceListing,
+            s.rsPercentile,
+            s.sectorName != null ? escapeJson(s.sectorName) : "",
+            s.industryName != null ? escapeJson(s.industryName) : "",
+            s.marketRegime != null ? s.marketRegime : "NEUTRAL",
+            s.sectorScoreBonus,
+            s.volumeDryUpRatio, s.accumDistRatio,
+            s.tightCloseCount, s.emaFanAligned, s.gapBreakout
         );
     }
     
@@ -251,11 +286,22 @@ public class StructuredExporter {
             sb.append(String.format(
                 "{\"symbol\":\"%s\",\"baseScore\":%.1f,\"alignmentBonus\":%.1f," +
                 "\"finalScore\":%.1f,\"qualityRating\":\"%s\"," +
-                "\"ipoFlag\":%b,\"daysSinceListing\":%d}",
+                "\"ipoFlag\":%b,\"daysSinceListing\":%d," +
+                "\"rsPercentile\":%.1f,\"sector\":\"%s\",\"industry\":\"%s\"," +
+                "\"marketRegime\":\"%s\",\"sectorBonus\":%.1f," +
+                "\"volumeDryUpRatio\":%.2f,\"accumDistRatio\":%.2f," +
+                "\"tightCloseCount\":%d,\"emaFanAligned\":%b,\"gapBreakout\":%b}",
                 w.symbol != null ? w.symbol : "",
                 w.baseQualityScore, w.alignmentBonus,
                 w.finalScore, w.breakoutQualityRating != null ? w.breakoutQualityRating : "",
-                w.ipoFlag, w.daysSinceListing
+                w.ipoFlag, w.daysSinceListing,
+                w.rsPercentile,
+                w.sectorName != null ? escapeJson(w.sectorName) : "",
+                w.industryName != null ? escapeJson(w.industryName) : "",
+                w.marketRegime != null ? w.marketRegime : "NEUTRAL",
+                w.sectorScoreBonus,
+                w.volumeDryUpRatio, w.accumDistRatio,
+                w.tightCloseCount, w.emaFanAligned, w.gapBreakout
             ));
         }
         sb.append("]");
@@ -301,13 +347,20 @@ public class StructuredExporter {
     
     private static String exportHitsAsCsv(List<SignalExport> signals) {
         StringBuilder sb = new StringBuilder();
-        sb.append("symbol,signalType,baseScore,alignmentBonus,finalScore,qualityRating,qualityScore,ipoFlag,daysSinceListing\n");
+        sb.append("symbol,signalType,baseScore,alignmentBonus,finalScore,qualityRating,qualityScore,ipoFlag,daysSinceListing,rsPercentile,sector,industry,marketRegime,sectorBonus,volumeDryUpRatio,accumDistRatio,tightCloseCount,emaFanAligned,gapBreakout\n");
 
         for (SignalExport s : signals) {
-            sb.append(String.format("%s,%s,%.2f,%.2f,%.2f,%s,%.1f,%b,%d\n",
+            sb.append(String.format("%s,%s,%.2f,%.2f,%.2f,%s,%.1f,%b,%d,%.1f,%s,%s,%s,%.1f,%.2f,%.2f,%d,%b,%b\n",
                 s.symbol, s.signalType, s.baseQualityScore, s.alignmentBonus,
                 s.finalScore, s.breakoutQualityRating, s.breakoutQualityScore,
-                s.ipoFlag, s.daysSinceListing
+                s.ipoFlag, s.daysSinceListing,
+                s.rsPercentile,
+                s.sectorName != null ? s.sectorName : "",
+                s.industryName != null ? s.industryName : "",
+                s.marketRegime != null ? s.marketRegime : "NEUTRAL",
+                s.sectorScoreBonus,
+                s.volumeDryUpRatio, s.accumDistRatio,
+                s.tightCloseCount, s.emaFanAligned, s.gapBreakout
             ));
         }
         
@@ -316,13 +369,20 @@ public class StructuredExporter {
     
     private static String exportWatchlistAsCsv(List<WatchlistExport> items) {
         StringBuilder sb = new StringBuilder();
-        sb.append("symbol,baseScore,alignmentBonus,finalScore,qualityRating,qualityScore,ipoFlag,daysSinceListing\n");
+        sb.append("symbol,baseScore,alignmentBonus,finalScore,qualityRating,qualityScore,ipoFlag,daysSinceListing,rsPercentile,sector,industry,marketRegime,sectorBonus,volumeDryUpRatio,accumDistRatio,tightCloseCount,emaFanAligned,gapBreakout\n");
 
         for (WatchlistExport w : items) {
-            sb.append(String.format("%s,%.2f,%.2f,%.2f,%s,%.1f,%b,%d\n",
+            sb.append(String.format("%s,%.2f,%.2f,%.2f,%s,%.1f,%b,%d,%.1f,%s,%s,%s,%.1f,%.2f,%.2f,%d,%b,%b\n",
                 w.symbol, w.baseQualityScore, w.alignmentBonus,
                 w.finalScore, w.breakoutQualityRating, w.breakoutQualityScore,
-                w.ipoFlag, w.daysSinceListing
+                w.ipoFlag, w.daysSinceListing,
+                w.rsPercentile,
+                w.sectorName != null ? w.sectorName : "",
+                w.industryName != null ? w.industryName : "",
+                w.marketRegime != null ? w.marketRegime : "NEUTRAL",
+                w.sectorScoreBonus,
+                w.volumeDryUpRatio, w.accumDistRatio,
+                w.tightCloseCount, w.emaFanAligned, w.gapBreakout
             ));
         }
         

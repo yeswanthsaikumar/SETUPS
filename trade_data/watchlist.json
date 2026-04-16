@@ -1,14 +1,5 @@
 [
   {
-    "symbol": "CENTUM",
-    "name": "",
-    "notes": "",
-    "alert_price": null,
-    "setup": "Base Building",
-    "id": "7c51bf2f-ef44-4787-b52b-3a29b05cef8e",
-    "added_at": "2026-04-15T08:41:36"
-  },
-  {
     "symbol": "PFOCUS",
     "name": "pfocus",
     "notes": "",
@@ -18,12 +9,102 @@
     "added_at": "2026-04-16T22:16:57"
   },
   {
-    "symbol": "GMDCLTD",
+    "symbol": "GANECOS",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "Base Building",
+    "id": "c02f5283-03dc-4571-9def-d685d8762a67",
+    "added_at": "2026-04-16T22:49:22"
+  },
+  {
+    "symbol": "AETHER",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "Base Building",
+    "id": "9a10b7ba-3cac-42b7-a45d-ad0b91cd9bbc",
+    "added_at": "2026-04-16T22:49:36"
+  },
+  {
+    "symbol": "DALMIASUG",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "Bull Flag",
+    "id": "a38b692f-ae6e-450f-a4ae-1bd0c5cc6dbe",
+    "added_at": "2026-04-16T22:50:24"
+  },
+  {
+    "symbol": "DATAPATTNS",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "Watching",
+    "id": "6e346554-6e9c-4701-a6ff-497800de5bbb",
+    "added_at": "2026-04-16T22:59:18"
+  },
+  {
+    "symbol": "AXISCADES",
     "name": "",
     "notes": "",
     "alert_price": null,
     "setup": "",
-    "id": "ae09bd0a-bdc9-4008-85d9-98e9c0aaf690",
-    "added_at": "2026-04-16T22:24:49"
+    "id": "4c8ea445-b5a6-450d-96aa-9b2a7704c6a2",
+    "added_at": "2026-04-16T23:30:20"
+  },
+  {
+    "symbol": "DMART",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "",
+    "id": "9fbb1356-8b87-4d1b-aa4b-e1e933584036",
+    "added_at": "2026-04-16T23:40:06"
+  },
+  {
+    "symbol": "AVANTIFEED",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "",
+    "id": "f7067527-4533-4f2d-bcf8-aee2cd7de8bf",
+    "added_at": "2026-04-17T02:27:09"
+  },
+  {
+    "symbol": "SANSERA",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "",
+    "id": "2030afe4-cc60-4c07-b319-212e2f2bd8fc",
+    "added_at": "2026-04-17T02:27:40"
+  },
+  {
+    "symbol": "MTARTECH",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "",
+    "id": "6be9cd92-8658-442d-b2ee-4a10f6f310ab",
+    "added_at": "2026-04-17T02:27:57"
+  },
+  {
+    "symbol": "SPORTKING",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "",
+    "id": "69492ecd-93a1-43b3-9a77-05197e669a0c",
+    "added_at": "2026-04-17T02:28:43"
+  },
+  {
+    "symbol": "GRANULES",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "",
+    "id": "2fbf93da-acd4-4aaf-8dd0-e7ede3cddd74",
+    "added_at": "2026-04-17T02:29:25"
   }
 ]

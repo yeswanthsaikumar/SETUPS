@@ -221,6 +221,20 @@
     .toast.error{background:#450a0a;border-color:#7f1d1d44;color:var(--red)}
     .toast.info{background:#0c2d48;border-color:#0284c733;color:#38bdf8}
     @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    /* Alert page tabs */
+    .alert-tab{background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;padding:8px 14px;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;letter-spacing:.2px}
+    .alert-tab:hover{color:var(--text);background:var(--bg3);border-radius:6px 6px 0 0}
+    .alert-tab.active{color:#7dd3fc;border-bottom-color:#0ea5e9}
+    .alert-tab-content{animation:tabFadeIn .2s ease}
+    @keyframes tabFadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+    /* Signal cards */
+    .sig-card{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;transition:border-color .15s,box-shadow .15s}
+    .sig-card:hover{border-color:var(--border);box-shadow:0 2px 12px #00000033}
+    .sig-card .sig-sym{font-weight:800;font-size:14px;letter-spacing:-.2px}
+    .sig-card .sig-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;text-transform:uppercase;letter-spacing:.3px}
+    .sig-card .sig-metric{font-size:11px;color:var(--muted);line-height:1.7}
+    .sig-card .sig-metric b{color:var(--text);font-weight:700}
+    .sig-card .sig-score{font-size:22px;font-weight:900;line-height:1}
     .empty-st{text-align:center;padding:45px 20px;color:var(--muted)}
     .empty-ttl{font-size:.95em;font-weight:700;margin-bottom:6px;color:var(--text)}
     .empty-sub{font-size:11.5px;line-height:1.6}
@@ -241,7 +255,6 @@
     SETUPS<span class="logo-badge">PRO</span>
   </div>
   <div class="topbar-links">
-    <button class="tl" onclick="window.location='/'">Console</button>
     <button class="tl active" id="tl-board" onclick="showPage('board')">Board</button>
     <button class="tl" id="tl-plans" onclick="openEmbed('/reports/trade_plans_live.html','Trade Plans','plans')">Trade Plans</button>
     <button class="tl" id="tl-breadth" onclick="openEmbed('/reports/market_breadth.html','Market Breadth','breadth')">Breadth</button>
@@ -280,6 +293,10 @@
     <button class="sb-item" id="nav-watchlist" onclick="showPage('watchlist')">
       <svg class="sb-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1.5L9.9 6.2H15L10.9 9L12.4 13.7L8 11L3.6 13.7L5.1 9L1 6.2H6.1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
       Watchlist<span class="sb-badge" id="sbWatch">0</span>
+    </button>
+    <button class="sb-item" id="nav-alerts" onclick="showPage('alerts')">
+      <svg class="sb-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1C5.2 1 3 3.5 3 6.5V10L1.5 12H14.5L13 10V6.5C13 3.5 10.8 1 8 1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 12C6 13.1 6.9 14 8 14S10 13.1 10 12" stroke="currentColor" stroke-width="1.4"/></svg>
+      Alerts
     </button>
     </div>
     <div class="sb-div"></div>
@@ -399,6 +416,116 @@
           <button class="btn btn-primary btn-sm" onclick="openWLModal()">+ Add</button>
         </div>
         <div class="wl-grid" id="wlGrid"></div>
+      </div>
+    </div>
+
+    <!-- BREAKOUT ALERTS PAGE -->
+    <div class="page" id="page-alerts">
+      <div style="padding:16px 20px;max-width:1400px;overflow-y:auto;height:100%;">
+
+        <!-- Header row with status -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:18px;font-weight:800;letter-spacing:-.3px;">🔔 Alert Center</span>
+            <span id="boStatusBadge2" style="font-size:11px;color:var(--muted);"></span>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" onclick="boToggleScanner2()" id="boToggleScannerBtn2" style="border-color:var(--green)44;color:var(--green);">▶ Start Scanner</button>
+            <button class="btn btn-ghost btn-sm" onclick="boToggleConfig2()" style="font-size:11px;">⚙ Config</button>
+            <button class="btn btn-ghost btn-sm" onclick="boTestAlert2()" style="font-size:11px;color:#0ea5e9;">📱 Test</button>
+          </div>
+        </div>
+
+        <!-- Tab bar -->
+        <div id="alertTabs" style="display:flex;gap:2px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0;">
+          <button class="alert-tab active" onclick="switchAlertTab('breakout',this)">🚀 Breakout Signals</button>
+          <button class="alert-tab" onclick="switchAlertTab('ema5',this)">📉 Position 5 EMA</button>
+          <button class="alert-tab" onclick="switchAlertTab('history',this)">📋 History</button>
+          <button class="alert-tab" onclick="switchAlertTab('backtest',this)">📊 Backtest</button>
+        </div>
+
+        <!-- Config panel (shared) -->
+        <div id="boConfigPanel2" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:16px;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <span style="font-size:14px;font-weight:700;color:#93c5fd;">⚙ Scanner Configuration</span>
+            <button class="btn btn-ghost btn-sm" onclick="boToggleConfig2()" style="font-size:11px;">✕ Close</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;font-size:12px;">
+            <div><label style="color:var(--muted);display:block;margin-bottom:3px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;">Vol Threshold</label><input id="boCfg2Vol" type="number" step="0.1" value="2.5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;"></div>
+            <div><label style="color:var(--muted);display:block;margin-bottom:3px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;">Vol Avg Bars</label><input id="boCfg2VolBars" type="number" value="5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;"></div>
+            <div><label style="color:var(--muted);display:block;margin-bottom:3px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;">Body Ratio Min</label><input id="boCfg2Body" type="number" step="0.05" value="0.30" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;"></div>
+            <div><label style="color:var(--muted);display:block;margin-bottom:3px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;">Min Base Bars</label><input id="boCfg2Cons" type="number" value="5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;"></div>
+            <div><label style="color:var(--muted);display:block;margin-bottom:3px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;">Max Base Range %</label><input id="boCfg2Range" type="number" value="20" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;"></div>
+            <div><label style="color:var(--muted);display:block;margin-bottom:3px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;">Scan Interval (sec)</label><input id="boCfg2Interval" type="number" value="120" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;"></div>
+          </div>
+          <!-- Telegram -->
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <span style="font-size:13px;font-weight:700;color:#0ea5e9;">📲 Telegram</span>
+              <span style="font-size:10px;background:#0ea5e922;color:#0ea5e9;padding:1px 6px;border-radius:4px;">FREE</span>
+            </div>
+            <p style="color:var(--muted);font-size:10px;margin-bottom:8px;">1) @BotFather → /newbot → get token &nbsp;2) @userinfobot → get chat ID</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;font-size:12px;">
+              <div><label style="color:var(--muted);display:block;margin-bottom:3px;font-size:10px;text-transform:uppercase;">Bot Token</label><input id="boCfg2TgToken" type="text" placeholder="123456:ABC-DEF..." style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;"></div>
+              <div><label style="color:var(--muted);display:block;margin-bottom:3px;font-size:10px;text-transform:uppercase;">Chat ID</label><input id="boCfg2TgChat" type="text" placeholder="123456789" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;"></div>
+              <div style="display:flex;align-items:end;"><label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;white-space:nowrap;"><input type="checkbox" id="boCfg2TgEnabled"> Enable</label></div>
+            </div>
+          </div>
+          <!-- Gmail -->
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <span style="font-size:13px;font-weight:700;color:#ef4444;">📧 Gmail SMTP</span>
+              <span style="font-size:10px;background:#ef444422;color:#ef4444;padding:1px 6px;border-radius:4px;">FREE</span>
+            </div>
+            <p style="color:var(--muted);font-size:10px;margin-bottom:8px;">myaccount.google.com → Security → App passwords → generate 16-char password</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;font-size:12px;">
+              <div><label style="color:var(--muted);display:block;margin-bottom:3px;font-size:10px;text-transform:uppercase;">Gmail</label><input id="boCfg2Gmail" type="email" placeholder="you@gmail.com" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;"></div>
+              <div><label style="color:var(--muted);display:block;margin-bottom:3px;font-size:10px;text-transform:uppercase;">App Password</label><input id="boCfg2GmailPass" type="password" placeholder="xxxx xxxx xxxx xxxx" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;"></div>
+              <div><label style="color:var(--muted);display:block;margin-bottom:3px;font-size:10px;text-transform:uppercase;">Send To</label><input id="boCfg2EmailTo" type="email" placeholder="you@gmail.com" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;"></div>
+              <div style="display:flex;align-items:end;"><label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;white-space:nowrap;"><input type="checkbox" id="boCfg2EmailEnabled"> Enable</label></div>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="boSaveConfig2()" style="margin-top:14px;">💾 Save Config</button>
+        </div>
+
+        <!-- TAB: Breakout Signals -->
+        <div class="alert-tab-content" id="alertTab-breakout">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" onclick="boScanNow2(true)" style="font-weight:700;">⚡ Scan 30m Live</button>
+            <button class="btn btn-outline btn-sm" onclick="boScanNow2(false)">📅 Scan Daily</button>
+            <span style="font-size:11px;color:var(--muted);margin-left:4px;">Detects breakout candles with volume surge + resistance level break on your watchlist.</span>
+          </div>
+          <div id="boResults2"></div>
+        </div>
+
+        <!-- TAB: Position 5 EMA -->
+        <div class="alert-tab-content" id="alertTab-ema5" style="display:none;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" onclick="ema5CheckNow()" style="border-color:#f59e0b55;color:#f59e0b;font-weight:700;">📉 Check Positions</button>
+            <button class="btn btn-outline btn-sm" onclick="ema5ScanSend()" style="border-color:#ef444455;color:#ef4444;">🔔 Check & Send Alert</button>
+          </div>
+          <p style="color:var(--muted);font-size:11px;margin-bottom:14px;">Monitors open positions for price approaching, touching, or breaking below the 5 EMA trailing stop. Auto-runs with background scanner.</p>
+          <div id="ema5Results"></div>
+        </div>
+
+        <!-- TAB: History -->
+        <div class="alert-tab-content" id="alertTab-history" style="display:none;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+            <button class="btn btn-outline btn-sm" onclick="boLoadSignals2()">🔄 Refresh History</button>
+            <span style="font-size:11px;color:var(--muted);">Past breakout signals detected by the scanner.</span>
+          </div>
+          <div id="boHistoryResults"></div>
+        </div>
+
+        <!-- TAB: Backtest -->
+        <div class="alert-tab-content" id="alertTab-backtest" style="display:none;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+            <button class="btn btn-primary btn-sm" onclick="boRunBacktest2()">📊 Run Backtest</button>
+            <span style="font-size:11px;color:var(--muted);">Backtest breakout detection on your watchlist's historical data.</span>
+          </div>
+          <div id="boBacktestResults"></div>
+        </div>
+
       </div>
     </div>
 
@@ -618,12 +745,13 @@ function showPage(n) {
   if (nav) nav.classList.add('active');
   // Highlight topbar link
   const tlBoard = document.getElementById('tl-board');
-  if (n === 'board' || n === 'analytics' || n === 'journal' || n === 'watchlist') {
+  if (n === 'board' || n === 'analytics' || n === 'journal' || n === 'watchlist' || n === 'alerts') {
     if (tlBoard) tlBoard.classList.add('active');
   }
   if (n === 'analytics') loadEquity();
   if (n === 'journal') loadJournal();
   if (n === 'watchlist') loadWatchlist();
+  if (n === 'alerts') boLoadStatus2();
 }
 
 function openEmbed(url, title, tlId) {
@@ -769,7 +897,8 @@ function renderPositions() {
   // Destroy old mini chart instances before re-rendering DOM
   Object.keys(miniInst).forEach(k => { try { miniInst[k].remove(); } catch(e) {} delete miniInst[k]; });
   g.innerHTML = f.map(buildCard).join('');
-  f.forEach(p => initMini(p));
+  // Defer chart init to next frame so browser has laid out the DOM and elements have non-zero dimensions
+  requestAnimationFrame(() => { requestAnimationFrame(() => { f.forEach(p => initMini(p)); }); });
 }
 
 function buildEnrichRow(p) {
@@ -869,6 +998,11 @@ function buildCard(p) {
 async function initMini(p) {
   const el = document.getElementById('chart-' + p.id);
   if (!el || miniInst[p.id]) return;
+  // If element has no width yet, retry after a short delay (layout not ready)
+  if (el.offsetWidth < 10) {
+    setTimeout(() => initMini(p), 150);
+    return;
+  }
   try {
     const r = await fetch(API + '/api/trade-board/chart/' + p.symbol + '?days=120');
     const d = await r.json();
@@ -1547,7 +1681,7 @@ function renderWatchlist() {
   Object.keys(wlMiniInst).forEach(k => { try { wlMiniInst[k].remove(); } catch(e) {} delete wlMiniInst[k]; });
   if (!watchlistItems.length) { g.innerHTML = '<div class="empty-st"><div class="empty-ttl">Watchlist empty</div><div class="empty-sub">Add stocks to monitor before entering a position.</div></div>'; return; }
   g.innerHTML = watchlistItems.map(buildWlCard).join('');
-  watchlistItems.forEach(item => initWlMini(item));
+  requestAnimationFrame(() => { requestAnimationFrame(() => { watchlistItems.forEach(item => initWlMini(item)); }); });
 }
 
 function buildWlCard(item) {
@@ -1615,6 +1749,10 @@ function buildWlCard(item) {
 async function initWlMini(item) {
   const el = document.getElementById('wl-chart-' + item.id);
   if (!el || wlMiniInst[item.id]) return;
+  if (el.offsetWidth < 10) {
+    setTimeout(() => initWlMini(item), 150);
+    return;
+  }
   try {
     const r = await fetch(API + '/api/trade-board/chart/' + item.symbol + '?days=120');
     const d = await r.json();
@@ -1878,6 +2016,321 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeDetail(); closeAddModal(); closeUpdateModal(); closeWLModal(); closePeModal(); if (drawerOpen) toggleDrawer(); }
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openAddModal(); }
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ── BREAKOUT CANDLE ALERTS (Board page) ──────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let _boRunning2 = false;
+
+function switchAlertTab(tab, btn) {
+  document.querySelectorAll('.alert-tab-content').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.alert-tab').forEach(el => el.classList.remove('active'));
+  const target = document.getElementById('alertTab-' + tab);
+  if (target) target.style.display = 'block';
+  if (btn) btn.classList.add('active');
+  // Auto-load content for certain tabs
+  if (tab === 'history') {
+    const el = document.getElementById('boHistoryResults');
+    if (el && !el.innerHTML.trim()) boLoadSignals2();
+  }
+}
+
+async function boScanNow2(intraday=true) {
+  const el = document.getElementById('boResults2');
+  const mode = intraday ? '30-min intraday' : 'daily';
+  el.innerHTML = '<div style="color:var(--muted);animation:blink 1.2s infinite;padding:20px 0;text-align:center;">⚡ Scanning watchlist (' + mode + ' candles)…</div>';
+  try {
+    const res = await fetch(API + '/api/breakout-alerts/scan-now?intraday='+(intraday?'true':'false'), {method:'POST', headers:{'Content-Type':'application/json'}, body:'null'});
+    const data = await res.json();
+    if (!data.signals || !data.signals.length) {
+      el.innerHTML = '<div style="text-align:center;padding:30px 0;"><div style="font-size:28px;margin-bottom:8px;">🔍</div><div style="color:var(--muted);font-size:13px;">No breakout signals detected</div><div style="color:var(--dim);font-size:11px;margin-top:4px;">'+mode+' candles • '+data.scannedAt+'</div></div>';
+      return;
+    }
+    el.innerHTML = '<div style="font-size:11px;color:var(--cyan);margin-bottom:10px;">'+data.signals.length+' signal(s) • Mode: '+data.mode+' • '+data.scannedAt+'</div>' + boRenderSignalCards(data.signals);
+  } catch(e) { el.innerHTML = '<div style="color:var(--red);padding:16px;">Error: '+e.message+'</div>'; }
+}
+
+function boRenderSignalCards(signals) {
+  let h = '<div style="display:grid;gap:10px;">';
+  for (const s of signals) {
+    const isBo = s.signal_type === 'BREAKOUT';
+    const isVol = s.signal_type === 'VOLUME_SURGE';
+    const badgeBg = isBo ? '#052e16' : isVol ? '#2a1a00' : '#1e1b4b';
+    const badgeClr = isBo ? '#4ade80' : isVol ? '#fde68a' : '#a5b4fc';
+    const borderClr = isBo ? '#16a34a33' : isVol ? '#f59e0b33' : '#6366f133';
+    const sc = s.strength_score || 0;
+    const scClr = sc >= 80 ? '#fde68a' : sc >= 60 ? '#4ade80' : '#94a3b8';
+    const volClr = (s.volume_ratio||0) >= 4 ? '#f87171' : (s.volume_ratio||0) >= 2.5 ? '#fde68a' : '#4ade80';
+
+    h += '<div class="sig-card" style="border-left:3px solid '+badgeClr+';border-color:'+borderClr+';">';
+    // Row 1: Symbol + Type + Score
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
+    h += '<div style="display:flex;align-items:center;gap:8px;">';
+    h += '<span class="sig-sym">' + s.symbol + '</span>';
+    h += '<span class="sig-badge" style="background:'+badgeBg+';color:'+badgeClr+';border:1px solid '+badgeClr+'33;">' + s.signal_type + '</span>';
+    if (s.breakout_level_type && s.breakout_level_type !== 'NONE') {
+      let ltIcon = '📈';
+      if (s.breakout_level_type.includes('52W')) ltIcon = '🚀';
+      else if (s.breakout_level_type.includes('FLAG')) ltIcon = '🏁';
+      else if (s.breakout_level_type.includes('RANGE')) ltIcon = '📦';
+      else if (s.breakout_level_type.includes('SWING')) ltIcon = '📈';
+      h += '<span style="font-size:10px;color:var(--muted);">' + ltIcon + ' ' + s.breakout_level_type.replace(/_/g,' ') + '</span>';
+    }
+    h += '</div>';
+    h += '<div style="text-align:right;">';
+    h += '<div class="sig-score" style="color:'+scClr+';">' + sc.toFixed(0) + '</div>';
+    h += '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;">Score</div>';
+    h += '</div></div>';
+    // Row 2: Key metrics grid
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:3px 14px;" class="sig-metric">';
+    h += '<div>💰 Price <b>₹' + (s.close||0).toFixed(1) + '</b></div>';
+    if (s.breakout_level && s.breakout_level > 0) h += '<div>📍 Level <b>₹' + s.breakout_level.toFixed(1) + '</b></div>';
+    h += '<div>📊 Vol <b style="color:'+volClr+';">' + (s.volume_ratio||0).toFixed(1) + 'x</b></div>';
+    h += '<div>🕯 Body <b>' + ((s.body_ratio||0)*100).toFixed(0) + '%</b></div>';
+    h += '<div>📏 ATR <b>' + (s.atr_multiple||0).toFixed(1) + 'x</b></div>';
+    if ((s.consolidation_days||0) > 0) h += '<div>📦 Base <b>' + s.consolidation_days + 'd</b></div>';
+    h += '</div>';
+    // Row 3: Trade plan
+    h += '<div style="display:flex;gap:12px;margin-top:8px;padding-top:7px;border-top:1px solid var(--border);font-size:11px;">';
+    h += '<span>🎯 <span style="color:var(--green);font-weight:700;">₹'+(s.entry_price||0).toFixed(1)+'</span></span>';
+    h += '<span>🛑 <span style="color:var(--red);font-weight:700;">₹'+(s.stop_loss||0).toFixed(1)+'</span></span>';
+    h += '<span>T1 <b>₹'+(s.target_1||0).toFixed(1)+'</b></span>';
+    h += '<span>T2 <b>₹'+(s.target_2||0).toFixed(1)+'</b></span>';
+    h += '<span style="margin-left:auto;color:var(--dim);font-size:10px;">' + (s.date||'') + '</span>';
+    h += '</div>';
+    // Row 4: Notes
+    if (s.notes) h += '<div style="font-size:10px;color:var(--muted);margin-top:5px;">💡 ' + s.notes + '</div>';
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+// Legacy table renderer (kept for history)
+function boRenderSignals2(signals, ts) {
+  let h = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">'+signals.length+' signal(s) — '+(ts||'')+'</div>';
+  h += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid var(--border);">';
+  h += '<th style="text-align:left;padding:6px 8px;">Symbol</th><th>Type</th><th>Date</th><th>Price</th><th>Level</th><th>Vol</th><th>Score</th><th>Entry</th><th>SL</th>';
+  h += '</tr></thead><tbody>';
+  for (const s of signals) {
+    const tc = s.signal_type==='BREAKOUT'?'var(--green)':'var(--blue)';
+    const sc = s.strength_score>=70?'var(--yellow)':s.strength_score>=50?'var(--green)':'var(--muted)';
+    h += '<tr style="border-bottom:1px solid var(--border);">'
+      + '<td style="padding:6px 8px;font-weight:700;">'+s.symbol+'</td>'
+      + '<td style="color:'+tc+';font-size:10px;font-weight:600;">'+s.signal_type+'</td>'
+      + '<td style="color:var(--muted);font-size:11px;">'+s.date+'</td>'
+      + '<td>₹'+(s.close||0).toFixed(1)+'</td>'
+      + '<td style="font-size:11px;">₹'+(s.breakout_level||0).toFixed(1)+'</td>'
+      + '<td style="color:'+(s.volume_ratio>=2.5?'var(--yellow)':'var(--green)')+';">'+(s.volume_ratio||0).toFixed(1)+'x</td>'
+      + '<td style="color:'+sc+';font-weight:700;">'+(s.strength_score||0).toFixed(0)+'</td>'
+      + '<td style="color:var(--green);">₹'+(s.entry_price||0).toFixed(1)+'</td>'
+      + '<td style="color:var(--red);">₹'+(s.stop_loss||0).toFixed(1)+'</td></tr>';
+  }
+  h += '</tbody></table></div>';
+  return h;
+}
+
+async function boToggleScanner2() {
+  const btn = document.getElementById('boToggleScannerBtn2');
+  if (_boRunning2) {
+    await fetch(API+'/api/breakout-alerts/stop',{method:'POST'});
+    _boRunning2=false; btn.textContent='▶ Start Scanner';
+  } else {
+    await fetch(API+'/api/breakout-alerts/start',{method:'POST'});
+    _boRunning2=true; btn.textContent='⏹ Stop Scanner';
+  }
+  boLoadStatus2();
+}
+
+async function boLoadStatus2() {
+  try {
+    const res = await fetch(API+'/api/breakout-alerts/status');
+    const d = await res.json();
+    _boRunning2 = d.scanner?.running;
+    const btn = document.getElementById('boToggleScannerBtn2');
+    const badge = document.getElementById('boStatusBadge2');
+    if (_boRunning2) {
+      btn.textContent='⏹ Stop Scanner';
+      badge.innerHTML='<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.5s infinite;margin-right:4px;"></span>Active — last: '+(d.scanner.lastScanTime||'never');
+    } else {
+      btn.textContent='▶ Start Scanner';
+      badge.textContent='Idle — '+(d.scanner.alertedCount||0)+' alerts sent';
+    }
+    if (d.config) {
+      const c=d.config, s=(id,v)=>{const e=document.getElementById(id);if(e&&v!=null)e.value=v;};
+      s('boCfg2Vol',c.volume_threshold); s('boCfg2VolBars',c.volume_avg_bars); s('boCfg2Body',c.body_ratio_min);
+      s('boCfg2Cons',c.min_base_bars||c.consolidation_days);
+      s('boCfg2Range',c.max_base_range_pct||c.consolidation_max_range_pct); s('boCfg2Interval',c.scan_interval_seconds);
+      s('boCfg2TgToken',c.telegram_bot_token); s('boCfg2TgChat',c.telegram_chat_id);
+      s('boCfg2Gmail',c.gmail_address); s('boCfg2EmailTo',c.email_to);
+      const tge=document.getElementById('boCfg2TgEnabled'); if(tge)tge.checked=c.telegram_enabled;
+      const ee=document.getElementById('boCfg2EmailEnabled'); if(ee)ee.checked=c.email_enabled;
+    }
+  } catch(e){}
+}
+
+async function boSaveConfig2() {
+  const cfg = {
+    volume_threshold: parseFloat(document.getElementById('boCfg2Vol').value),
+    volume_avg_bars: parseInt(document.getElementById('boCfg2VolBars').value),
+    body_ratio_min: parseFloat(document.getElementById('boCfg2Body').value),
+    min_base_bars: parseInt(document.getElementById('boCfg2Cons').value),
+    consolidation_days: parseInt(document.getElementById('boCfg2Cons').value),
+    max_base_range_pct: parseInt(document.getElementById('boCfg2Range').value),
+    consolidation_max_range_pct: parseInt(document.getElementById('boCfg2Range').value),
+    scan_interval_seconds: parseInt(document.getElementById('boCfg2Interval').value),
+    telegram_enabled: document.getElementById('boCfg2TgEnabled').checked,
+    telegram_bot_token: document.getElementById('boCfg2TgToken').value,
+    telegram_chat_id: document.getElementById('boCfg2TgChat').value,
+    email_enabled: document.getElementById('boCfg2EmailEnabled').checked,
+    gmail_address: document.getElementById('boCfg2Gmail').value,
+    email_to: document.getElementById('boCfg2EmailTo').value,
+  };
+  const p=document.getElementById('boCfg2GmailPass').value;
+  if(p) cfg.gmail_app_password=p;
+  try {
+    await fetch(API+'/api/breakout-alerts/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)});
+    toast('Config saved ✓','success');
+  } catch(e){toast('Error: '+e.message,'error');}
+}
+
+function boToggleConfig2(){const p=document.getElementById('boConfigPanel2');p.style.display=p.style.display==='none'?'block':'none';}
+
+async function boLoadSignals2() {
+  const el=document.getElementById('boHistoryResults');
+  el.innerHTML='<div style="color:var(--muted);animation:blink 1.2s infinite;padding:16px 0;text-align:center;">Loading history…</div>';
+  try {
+    const res=await fetch(API+'/api/breakout-alerts/signals?limit=100');
+    const d=await res.json();
+    if(!d.signals||!d.signals.length){el.innerHTML='<div style="text-align:center;padding:30px 0;"><div style="font-size:28px;margin-bottom:8px;">📋</div><div style="color:var(--muted);">No signals in history yet.</div></div>';return;}
+    el.innerHTML='<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">'+d.total+' total signals in history</div>'+boRenderSignals2(d.signals,'history');
+  } catch(e){el.innerHTML='<div style="color:var(--red);">'+e.message+'</div>';}
+}
+
+async function boRunBacktest2() {
+  const el=document.getElementById('boBacktestResults');
+  el.innerHTML='<div style="color:var(--muted);animation:blink 1.2s infinite;padding:16px 0;text-align:center;">📊 Running backtest on watchlist (may take a minute)…</div>';
+  try {
+    const res=await fetch(API+'/api/breakout-alerts/backtest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hold_days:20})});
+    const data=await res.json();
+    if(data.error){el.innerHTML='<div style="color:var(--red);">'+data.error+'</div>';return;}
+    const a=data.aggregate||{};
+    const wr=a.win_rate||0, pf=a.profit_factor||0, exp=a.expectancy||0;
+    let h='<div style="font-size:15px;font-weight:800;margin-bottom:4px;">📊 Backtest Results</div>';
+    h+='<div style="font-size:11px;color:var(--muted);margin-bottom:14px;">'+(data.symbolCount||0)+' symbols • hold '+(data.holdDays||20)+'d • generated '+(data.generatedAt||'').slice(0,16)+'</div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-bottom:16px;">';
+    const stat=(l,v,c)=>'<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;text-align:center;"><div style="font-size:1.3em;font-weight:800;color:'+(c||'var(--text)')+';">'+v+'</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">'+l+'</div></div>';
+    h+=stat('Signals',a.total_signals||0);
+    h+=stat('Win%',wr.toFixed(1)+'%',wr>=50?'var(--green)':'var(--red)');
+    h+=stat('Avg Win','+'+(a.avg_gain_pct||0).toFixed(1)+'%','var(--green)');
+    h+=stat('Avg Loss',(a.avg_loss_pct||0).toFixed(1)+'%','var(--red)');
+    h+=stat('PF',pf.toFixed(2),pf>=1.5?'var(--green)':pf>=1?'var(--yellow)':'var(--red)');
+    h+=stat('Exp',exp.toFixed(2),exp>0?'var(--green)':'var(--red)');
+    h+='</div>';
+    // trades
+    const trades=a.trades||[];
+    if(trades.length){
+      h+='<div style="font-size:12px;font-weight:700;margin:8px 0 4px;">Recent trades</div>';
+      h+='<div style="overflow-x:auto;max-height:250px;overflow-y:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr style="border-bottom:1px solid var(--border);"><th style="text-align:left;padding:4px 6px;">Symbol</th><th>Entry</th><th>Exit</th><th>Gain</th><th>Reason</th><th>Days</th><th>Vol</th></tr></thead><tbody>';
+      for(const t of trades.slice(0,20)){
+        const gc=t.gain_pct>0?'var(--green)':'var(--red)';
+        h+='<tr style="border-bottom:1px solid var(--border);"><td style="padding:4px 6px;font-weight:600;">'+t.symbol+'</td><td style="color:var(--muted);">'+t.entry_date+'</td><td style="color:var(--muted);">'+t.exit_date+'</td><td style="color:'+gc+';font-weight:700;">'+(t.gain_pct>0?'+':'')+t.gain_pct+'%</td><td>'+t.exit_reason+'</td><td>'+t.hold_days+'</td><td>'+(t.volume_ratio||0).toFixed(1)+'x</td></tr>';
+      }
+      h+='</tbody></table></div>';
+    }
+    el.innerHTML=h;
+  } catch(e){el.innerHTML='<div style="color:var(--red);">'+e.message+'</div>';}
+}
+
+async function boTestAlert2() {
+  try {
+    const res=await fetch(API+'/api/breakout-alerts/test-alert',{method:'POST'});
+    const d=await res.json();
+    const details=Object.entries(d.results||{}).map(([k,v])=>k+': '+v).join(', ');
+    toast(d.message+' ('+details+')', d.ok?'success':'error');
+  } catch(e){toast('Error: '+e.message,'error');}
+}
+
+// Load alert status when navigating to alerts page
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ── Position 5 EMA Proximity Alerts ─────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function ema5CheckNow() {
+  const el = document.getElementById('ema5Results');
+  el.innerHTML = '<div style="color:var(--muted);animation:blink 1.2s infinite;">📉 Checking open positions against 5 EMA…</div>';
+  try {
+    const res = await fetch(API + '/api/position-alerts/ema5-check');
+    const data = await res.json();
+    el.innerHTML = ema5RenderAlerts(data);
+  } catch(e) { el.innerHTML = '<div style="color:var(--red);">Error: ' + e.message + '</div>'; }
+}
+
+async function ema5ScanSend() {
+  const el = document.getElementById('ema5Results');
+  el.innerHTML = '<div style="color:var(--muted);animation:blink 1.2s infinite;">🔔 Checking positions & sending Telegram alerts…</div>';
+  try {
+    const res = await fetch(API + '/api/position-alerts/ema5-scan-send', {method:'POST'});
+    const data = await res.json();
+    let msg = '';
+    if (data.telegramSent > 0) msg = data.telegramSent + ' alert(s) sent via Telegram!';
+    else if (data.newAlerts > 0) msg = data.newAlerts + ' new alert(s) (Telegram not configured)';
+    else msg = 'No new alerts (already sent or no positions approaching 5 EMA)';
+    toast(msg, data.telegramSent > 0 ? 'success' : 'info');
+    el.innerHTML = ema5RenderAlerts(data);
+  } catch(e) { el.innerHTML = '<div style="color:var(--red);">Error: ' + e.message + '</div>'; }
+}
+
+function ema5RenderAlerts(data) {
+  const alerts = data.alerts || [];
+  if (!alerts.length) {
+    return '<div style="text-align:center;padding:30px 0;"><div style="font-size:32px;margin-bottom:8px;">✅</div><div style="color:var(--green);font-size:14px;font-weight:700;">All Clear</div><div style="color:var(--muted);font-size:12px;margin-top:4px;">All ' + (data.totalOpen||0) + ' open position(s) safely above 5 EMA</div><div style="color:var(--dim);font-size:10px;margin-top:6px;">Checked at ' + (data.checkedAt||'') + '</div></div>';
+  }
+  let h = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">';
+  h += '<span style="font-size:12px;color:var(--muted);">Checked ' + (data.totalOpen||0) + ' positions</span>';
+  h += '<span style="font-size:11px;font-weight:700;background:#ef444422;color:#ef4444;padding:2px 8px;border-radius:5px;">' + alerts.length + ' alert(s)</span>';
+  h += '<span style="font-size:10px;color:var(--dim);margin-left:auto;">' + (data.checkedAt||'') + '</span>';
+  h += '</div>';
+  h += '<div style="display:grid;gap:10px;">';
+  for (const a of alerts) {
+    const typeColors = {
+      'EMA5_BROKEN': { bg: '#ef44440d', border: '#ef4444', accent: '#fca5a5', icon: '🔴', label: '5 EMA BROKEN', urgency: 'HIGH' },
+      'EMA5_TOUCHED': { bg: '#f59e0b0d', border: '#f59e0b', accent: '#fde68a', icon: '🟡', label: '5 EMA TOUCHED', urgency: 'MED' },
+      'EMA5_APPROACHING': { bg: '#3b82f60d', border: '#3b82f6', accent: '#93c5fd', icon: '📉', label: 'APPROACHING 5 EMA', urgency: 'LOW' },
+    };
+    const t = typeColors[a.alert_type] || typeColors['EMA5_APPROACHING'];
+    const gainCls = a.gain_pct >= 0 ? 'var(--green)' : 'var(--red)';
+    h += '<div class="sig-card" style="border-left:3px solid ' + t.border + ';background:' + t.bg + ';">';
+    // Header
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
+    h += '<div style="display:flex;align-items:center;gap:8px;">';
+    h += '<span style="font-size:18px;">' + t.icon + '</span>';
+    h += '<span class="sig-sym" style="color:' + t.accent + ';">' + a.symbol + '</span>';
+    h += '<span class="sig-badge" style="background:' + t.border + '22;color:' + t.border + ';border:1px solid ' + t.border + '33;">' + t.label + '</span>';
+    h += '</div>';
+    h += '<div style="text-align:right;">';
+    h += '<div style="font-size:18px;font-weight:800;color:' + gainCls + ';">' + (a.gain_pct >= 0 ? '+' : '') + a.gain_pct.toFixed(1) + '%</div>';
+    h += '<div style="font-size:9px;color:var(--muted);">P&L from entry</div>';
+    h += '</div></div>';
+    // Metrics
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:4px 16px;" class="sig-metric">';
+    h += '<div>💰 CMP <b>₹' + a.price.toFixed(2) + '</b></div>';
+    h += '<div>📊 5 EMA <b>₹' + a.ema5.toFixed(2) + '</b> <span style="color:' + (a.ema5_dist_pct >= 0 ? 'var(--green)' : 'var(--red)') + ';">(' + (a.ema5_dist_pct >= 0 ? '+' : '') + a.ema5_dist_pct.toFixed(2) + '%)</span></div>';
+    h += '<div>📈 20 EMA <b>₹' + a.ema20.toFixed(2) + '</b> <span style="color:' + (a.ema20_dist_pct >= 0 ? 'var(--green)' : 'var(--red)') + ';">(' + (a.ema20_dist_pct >= 0 ? '+' : '') + a.ema20_dist_pct.toFixed(2) + '%)</span></div>';
+    h += '<div>🎯 Entry <b>₹' + a.entry_price.toFixed(2) + '</b></div>';
+    h += '<div>📏 ADR <b>' + a.adr_pct.toFixed(1) + '%</b></div>';
+    if (a.sl) h += '<div>🛑 SL <b style="color:var(--red);">₹' + a.sl.toFixed(2) + '</b></div>';
+    h += '</div>';
+    // Notes
+    if (a.notes) h += '<div style="font-size:10px;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px solid var(--border);">💡 ' + a.notes + '</div>';
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
 </script>
 </body>
 </html>

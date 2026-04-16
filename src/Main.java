@@ -43,6 +43,14 @@ public class Main {
 
         System.out.println(("weekly".equals(options.timeframe) ? "Weekly" : "Daily") + " VCP + Range Expansion + Mean Reversion Scan Results");
         System.out.println("Setup filter: " + options.setups.toUpperCase());
+
+        // NEW: Display market regime context
+        MarketRegimeDetector.RegimeContext regime = scannerEngine.getLastRegimeContext();
+        if (regime != null) {
+            System.out.println("Market Regime: " + regime.regime + " (score=" + String.format("%.1f", regime.marketScore) + " bench=" + regime.benchmarkSymbol + ")");
+        }
+        System.out.println("RS Rankings: " + scannerEngine.getLastRsRankings().size() + " symbols ranked");
+
         System.out.println("================================");
 
         if (results.isEmpty()) {
@@ -102,7 +110,25 @@ public class Main {
                 signal.breakoutQualityRating = result.getBreakoutQuality().qualityRating;
                 signal.breakoutQualityScore = result.getBreakoutQuality().totalQualityScore;
             }
-            
+
+            // V2 enrichment fields
+            signal.rsPercentile = result.getRsPercentile();
+            signal.sectorName = result.getSector();
+            signal.industryName = result.getIndustry();
+            signal.marketRegime = result.getMarketRegime();
+            signal.sectorScoreBonus = result.getSectorBonus();
+            signal.ipoFlag = result.isIpoFlag();
+            signal.daysSinceListing = result.getDaysSinceListing();
+
+            VcpSetup setup = result.getSetup();
+            if (setup != null) {
+                signal.volumeDryUpRatio = setup.getVolumeDryUpRatio();
+                signal.accumDistRatio = setup.getAccumDistRatio();
+                signal.tightCloseCount = setup.getTightCloseCount();
+                signal.emaFanAligned = setup.isEmaFanAligned();
+                signal.gapBreakout = setup.isGapBreakout();
+            }
+
             data.hits.add(signal);
         }
         
@@ -257,8 +283,12 @@ public class Main {
     }
 
     private static void runFollowThrough() {
-        // Implement follow-through analysis logic here
-        System.out.println("Follow-through analysis is not yet implemented.");
+        // TODO: Wire up FollowThroughDetector with CLI options.
+        // FollowThroughDetector requires a BreakoutEvaluator and VcpDetector to scan for
+        // past breakouts + pullback recovery patterns. This mode is ready for integration—
+        // it just needs CLI plumbing for symbol list and data provider.
+        System.out.println("Follow-through mode: Use 'combined' mode which includes follow-through scanning.");
+        System.out.println("Or integrate FollowThroughDetector directly into your scan workflow.");
     }
 
     /**

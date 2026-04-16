@@ -28,6 +28,10 @@ UI_INDEX = ROOT / "apps" / "web" / "ui" / "index.html"
 TRADE_BOARD_UI = ROOT / "apps" / "web" / "ui" / "trade_board.html"
 SECTOR_MACRO_HTML = OUTPUT_DIR / "sector_macro_analysis.html"
 GENERATE_SECTOR_MACRO = CLI_DIR / "generate_sector_macro_page.py"
+BREADTH_HTML = OUTPUT_DIR / "market_breadth.html"
+GENERATE_BREADTH = CLI_DIR / "generate_breadth_dashboard.py"
+TRADE_PLANS_HTML = OUTPUT_DIR / "trade_plans_live.html"
+GENERATE_TRADE_PLANS = CLI_DIR / "generate_trade_plans_page.py"
 WEB_JOBS_DIR = OUTPUT_DIR / "web_jobs"
 PERF_TRACKER_JSON = OUTPUT_DIR / "performance_tracker.json"
 # Trade data stored in dedicated folder (not output/) so it survives output/ cleanups
@@ -46,8 +50,21 @@ from stock_analyzer import analyze_stock
 import performance_tracker as _pt
 from mutual_funds_provider import MutualFundsProvider, swing_context as _mf_swing_context
 import watchlist_pattern_engine as _wpe
+from breakout_alert_engine import (
+    BreakoutScanner, AlertConfig, AlertState,
+    scan_stock_for_breakouts, backtest_breakout_detection,
+    send_alert, send_telegram_text,
+    check_position_ema5_proximity, EmaProximityAlert,
+    send_ema5_telegram_alert, _format_ema5_alert_message,
+)
 
 _mf_provider = MutualFundsProvider(cache_dir=str(ROOT / "cache"), cache_ttl_hours=6)
+
+# ── Breakout Alert Scanner (singleton) ──────────────────────────────────────
+_breakout_scanner = BreakoutScanner(
+    data_dir=TRADE_DATA_DIR,
+    cache_dir=CACHE_DIR,
+)
 
 RUN_VCP_SYSTEM = CLI_DIR / "run_vcp_system.py"
 RUN_BACKTEST = CLI_DIR / "run_backtest.py"
@@ -366,12 +383,49 @@ class BackgroundCacheRefresher:
                 self._status = "completed"
                 self._finished_at = datetime.now().isoformat(timespec="seconds")
 
+            # Auto-regenerate analysis dashboards after cache refresh
+            self._auto_regenerate_dashboards()
+
         except Exception as e:
             with self._lock:
                 self._status = "failed"
                 self._error = str(e)
                 self._finished_at = datetime.now().isoformat(timespec="seconds")
             self._append_log(f"\n❌ Refresh failed: {e}\n")
+
+    def _auto_regenerate_dashboards(self):
+        """
+        After cache refresh completes, auto-regenerate Market Breadth and
+        Sector Macro analysis pages so they are always fresh on app start.
+        Runs sequentially in the same background thread (non-blocking to server).
+        """
+        scripts = [
+            ("Trade Plans",    GENERATE_TRADE_PLANS, TRADE_PLANS_HTML),
+            ("Market Breadth", GENERATE_BREADTH, BREADTH_HTML),
+            ("Sector Macro",   GENERATE_SECTOR_MACRO, SECTOR_MACRO_HTML),
+        ]
+        for name, script, output_path in scripts:
+            if not script.exists():
+                self._append_log(f"⚠ {name} script not found: {script}\n")
+                continue
+            self._append_log(f"\n📊 Auto-regenerating {name} dashboard…\n")
+            try:
+                result = subprocess.run(
+                    [sys.executable, str(script)],
+                    cwd=str(ROOT),
+                    capture_output=True, text=True, timeout=300,
+                )
+                if result.returncode == 0:
+                    size = output_path.stat().st_size / 1024 if output_path.exists() else 0
+                    self._append_log(f"✅ {name} dashboard generated ({size:.0f} KB)\n")
+                else:
+                    # Log last few lines of stderr for debugging
+                    err_tail = (result.stderr or result.stdout or "unknown error")[-500:]
+                    self._append_log(f"❌ {name} generation failed:\n{err_tail}\n")
+            except subprocess.TimeoutExpired:
+                self._append_log(f"⏰ {name} generation timed out (>300s)\n")
+            except Exception as e:
+                self._append_log(f"❌ {name} generation error: {e}\n")
 
     def _append_log(self, text: str):
         with self._lock:
@@ -594,11 +648,68 @@ def start_sector_macro_job() -> dict:
     return {"job": job, "message": "Sector macro analysis regeneration started"}
 
 
+@app.get("/breadth")
+def breadth_dashboard_page() -> FileResponse:
+    """Serve the pre-built Market Breadth & Trend Detection HTML page."""
+    if not BREADTH_HTML.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Market breadth dashboard not found. It will be auto-generated after cache refresh completes, or trigger manually via POST /api/jobs/breadth.",
+        )
+    return FileResponse(BREADTH_HTML, media_type="text/html")
+
+
+@app.post("/api/jobs/breadth")
+def start_breadth_job() -> dict:
+    """Trigger async regeneration of the Market Breadth dashboard."""
+    command = [sys.executable, str(GENERATE_BREADTH)]
+    job = _submit_job("scan", command)
+    return {"job": job, "message": "Market breadth dashboard regeneration started"}
+
+
+@app.get("/trades")
+def trade_plans_page() -> FileResponse:
+    """Serve the pre-built Live Breakout Trade Plans HTML page."""
+    if not TRADE_PLANS_HTML.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Trade plans page not found. It will be auto-generated after cache refresh completes, or trigger manually via POST /api/jobs/trade-plans. A scan must have run at least once.",
+        )
+    return FileResponse(TRADE_PLANS_HTML, media_type="text/html")
+
+
+@app.post("/api/jobs/trade-plans")
+def start_trade_plans_job() -> dict:
+    """Trigger async regeneration of the Live Breakout Trade Plans page."""
+    command = [sys.executable, str(GENERATE_TRADE_PLANS)]
+    job = _submit_job("scan", command)
+    return {"job": job, "message": "Trade plans page regeneration started"}
+
+
+@app.post("/api/jobs/regenerate-all-dashboards")
+def regenerate_all_dashboards() -> dict:
+    """Trigger regeneration of ALL analysis dashboards (trade plans + breadth + sector macro)."""
+    results = []
+    for name, script in [
+        ("trade-plans", GENERATE_TRADE_PLANS),
+        ("breadth", GENERATE_BREADTH),
+        ("sector-macro", GENERATE_SECTOR_MACRO),
+    ]:
+        command = [sys.executable, str(script)]
+        job = _submit_job("scan", command)
+        results.append({"name": name, "job_id": job.id})
+    return {"ok": True, "jobs": results, "message": "All dashboards regeneration started"}
+
+
 @app.get("/")
 def ui_index() -> FileResponse:
-    if not UI_INDEX.exists():
-        raise HTTPException(status_code=404, detail="UI file not found")
-    return FileResponse(UI_INDEX)
+    """Root page serves the Trade Board directly."""
+    if not TRADE_BOARD_UI.exists():
+        raise HTTPException(status_code=404, detail="Trade board UI not found")
+    return FileResponse(TRADE_BOARD_UI)
+
+
+
 
 
 @app.get("/api/health")
@@ -2570,3 +2681,263 @@ def get_price_data_for_symbols(symbols: str = "") -> dict:
     return {"prices": prices, "count": len(prices)}
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+#  BREAKOUT CANDLE ALERT SYSTEM
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class BreakoutAlertConfigUpdate(BaseModel):
+    enabled: Optional[bool] = None
+    scan_interval_seconds: Optional[int] = None
+    volume_threshold: Optional[float] = None
+    volume_avg_bars: Optional[int] = None
+    volume_strong_threshold: Optional[float] = None
+    body_ratio_min: Optional[float] = None
+    close_near_high_pct: Optional[float] = None
+    min_base_bars: Optional[int] = None
+    max_base_range_pct: Optional[float] = None
+    consolidation_days: Optional[int] = None
+    consolidation_max_range_pct: Optional[float] = None
+    atr_breakout_multiple: Optional[float] = None
+    # Telegram (free)
+    telegram_enabled: Optional[bool] = None
+    telegram_bot_token: Optional[str] = None
+    telegram_chat_id: Optional[str] = None
+    # Gmail (free)
+    email_enabled: Optional[bool] = None
+    gmail_address: Optional[str] = None
+    gmail_app_password: Optional[str] = None
+    email_to: Optional[str] = None
+
+
+@app.get("/api/breakout-alerts/status")
+def breakout_alert_status() -> dict:
+    """Get breakout alert scanner status and configuration."""
+    config = _breakout_scanner.state.load_config()
+    from dataclasses import asdict as _asdict
+    return {
+        "scanner": _breakout_scanner.status(),
+        "config": {k: v for k, v in _asdict(config).items()
+                   if k not in ("gmail_app_password",)},  # hide secret
+        "marketOpen": _is_market_open(),
+    }
+
+
+@app.post("/api/breakout-alerts/config")
+def update_breakout_alert_config(update: BreakoutAlertConfigUpdate) -> dict:
+    """Update breakout alert configuration."""
+    config = _breakout_scanner.state.load_config()
+    from dataclasses import asdict as _asdict
+    data = _asdict(config)
+    for k, v in update.model_dump(exclude_unset=True).items():
+        if k in data:
+            data[k] = v
+    new_config = AlertConfig(**data)
+    _breakout_scanner.state.save_config(new_config)
+    return {"ok": True, "config": {k: v for k, v in _asdict(new_config).items()
+                                    if k not in ("gmail_app_password",)}}
+
+
+@app.post("/api/breakout-alerts/scan-now")
+def breakout_scan_now(symbols: list[str] | None = None, intraday: bool = True) -> dict:
+    """Run an immediate breakout scan. intraday=True uses live 30-min candles."""
+    if _breakout_scanner._read_ohlcv is None:
+        _breakout_scanner._read_ohlcv = _read_ohlcv
+    results = _breakout_scanner.scan_now(symbols=symbols, intraday=intraday)
+    return {
+        "signals": results,
+        "count": len(results),
+        "mode": "intraday_30m" if intraday else "daily",
+        "scannedAt": datetime.now().isoformat(timespec="seconds"),
+    }
+
+
+@app.post("/api/breakout-alerts/start")
+def breakout_scanner_start() -> dict:
+    """Start the background breakout scanner."""
+    if _breakout_scanner._read_ohlcv is None:
+        _breakout_scanner._read_ohlcv = _read_ohlcv
+    if _breakout_scanner._load_positions_fn is None:
+        def _load_open_positions():
+            with _board_lock:
+                data = _load_board()
+                return data.get("positions", [])
+        _breakout_scanner._load_positions_fn = _load_open_positions
+    _breakout_scanner.start()
+    return {"ok": True, "message": "Breakout scanner started"}
+
+
+@app.post("/api/breakout-alerts/stop")
+def breakout_scanner_stop() -> dict:
+    """Stop the background breakout scanner."""
+    _breakout_scanner.stop()
+    return {"ok": True, "message": "Breakout scanner stopped"}
+
+
+@app.get("/api/breakout-alerts/signals")
+def breakout_alert_signals(limit: int = 50) -> dict:
+    """Get recent breakout signals (persisted history)."""
+    signals = _breakout_scanner.state.load_signals()
+    signals.sort(key=lambda s: s.get("detected_at", ""), reverse=True)
+    return {"signals": signals[:limit], "total": len(signals)}
+
+
+@app.post("/api/breakout-alerts/backtest")
+def breakout_backtest(
+    symbols: list[str] | None = None,
+    hold_days: int = 20,
+) -> dict:
+    """
+    Backtest breakout detection on watchlist stocks.
+    Validates that the detection criteria work on historical data.
+    Returns win rate, expectancy, profit factor, and individual trades.
+    """
+    if _breakout_scanner._read_ohlcv is None:
+        _breakout_scanner._read_ohlcv = _read_ohlcv
+    result = _breakout_scanner.backtest_watchlist(symbols=symbols, hold_days=hold_days)
+    return result
+
+
+@app.get("/api/breakout-alerts/backtest-results")
+def breakout_backtest_results() -> dict:
+    """Get cached backtest results."""
+    return _breakout_scanner.state.load_backtest()
+
+
+@app.post("/api/breakout-alerts/test-alert")
+def test_alert_channels() -> dict:
+    """Send a test alert via all enabled channels (Telegram / Gmail)."""
+    config = _breakout_scanner.state.load_config()
+    results = {}
+
+    if config.telegram_enabled:
+        ok = send_telegram_text(
+            "🧪 *SETUPS Breakout Alert System — TEST*\n\n"
+            "✅ Telegram alerts are working!\n"
+            "You'll receive breakout candle alerts here when detected on your watchlist.",
+            config,
+        )
+        results["telegram"] = "sent" if ok else "failed"
+    else:
+        results["telegram"] = "disabled"
+
+    if config.email_enabled:
+        from breakout_alert_engine import BreakoutSignal, send_email_alert
+        test_signal = BreakoutSignal(
+            symbol="TEST", signal_type="BREAKOUT",
+            date=datetime.now().strftime("%Y-%m-%d"),
+            price=100.0, close=100.0, high=102.0, low=95.0, open_price=96.0,
+            volume=1000000, avg_volume_20=500000, volume_ratio=2.0,
+            body_ratio=0.71, close_position=0.85,
+            breakout_level=98.0, breakout_level_type="52W_HIGH",
+            atr_14=3.5, atr_multiple=2.0,
+            consolidation_days=25, consolidation_range_pct=8.5,
+            strength_score=82, entry_price=100.0, stop_loss=95.0,
+            target_1=110.0, target_2=117.5, risk_reward=5.0,
+            notes="🧪 TEST ALERT — Breakout Alert System working!",
+        )
+        ok = send_email_alert(test_signal, config)
+        results["email"] = "sent" if ok else "failed"
+    else:
+        results["email"] = "disabled"
+
+    any_sent = any(v == "sent" for v in results.values())
+    return {
+        "ok": any_sent,
+        "results": results,
+        "message": "Test alert sent!" if any_sent else "No channels enabled or all failed. Configure Telegram or Gmail first.",
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ── Position 5 EMA Proximity Alerts ──────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Track alerted position EMA keys to avoid duplicate alerts
+_ema5_alerted_keys: set = set()
+
+
+@app.get("/api/position-alerts/ema5-check")
+def position_ema5_check(threshold: float = 1.5) -> dict:
+    """
+    Check all open positions for 5 EMA proximity.
+    Returns alerts for positions where price is approaching/touching/below 5 EMA.
+    """
+    with _board_lock:
+        data = _load_board()
+        positions = data.get("positions", [])
+
+    open_positions = [p for p in positions if p.get("status") in ("OPEN", "PARTIAL")]
+    if not open_positions:
+        return {"alerts": [], "message": "No open positions", "checkedAt": datetime.now().isoformat(timespec="seconds")}
+
+    alerts = []
+    for p in open_positions:
+        sym = p.get("symbol", "")
+        entry = p.get("entry", 0)
+        if not sym or not entry:
+            continue
+        try:
+            rows = _read_ohlcv(sym, days=60)
+            if not rows or len(rows) < 10:
+                continue
+            alert = check_position_ema5_proximity(rows, sym, entry, threshold_pct=threshold)
+            if alert:
+                from dataclasses import asdict as _ad
+                d = _ad(alert)
+                d["position_id"] = p.get("id", "")
+                d["sl"] = p.get("sl", 0)
+                d["remaining_qty"] = p.get("remaining_quantity") or p.get("quantity", 1)
+                alerts.append(d)
+        except Exception as e:
+            print(f"  ⚠ EMA5 check {sym}: {e}", flush=True)
+
+    # Sort: broken > touched > approaching
+    priority = {"EMA5_BROKEN": 0, "EMA5_TOUCHED": 1, "EMA5_APPROACHING": 2}
+    alerts.sort(key=lambda a: priority.get(a.get("alert_type", ""), 9))
+
+    return {
+        "alerts": alerts,
+        "count": len(alerts),
+        "totalOpen": len(open_positions),
+        "checkedAt": datetime.now().isoformat(timespec="seconds"),
+    }
+
+
+@app.post("/api/position-alerts/ema5-scan-send")
+def position_ema5_scan_and_alert(threshold: float = 1.5) -> dict:
+    """
+    Scan open positions for 5 EMA proximity AND send Telegram alerts for new ones.
+    Deduplicates: won't re-alert the same symbol+type+date combo.
+    """
+    global _ema5_alerted_keys
+    check_result = position_ema5_check(threshold)
+    alerts = check_result.get("alerts", [])
+    config = _breakout_scanner.state.load_config()
+
+    new_alerts = []
+    for a in alerts:
+        key = f"{a['symbol']}:{a['date']}:{a['alert_type']}"
+        if key not in _ema5_alerted_keys:
+            _ema5_alerted_keys.add(key)
+            new_alerts.append(a)
+
+    sent_count = 0
+    for a in new_alerts:
+        alert_obj = EmaProximityAlert(
+            symbol=a["symbol"], alert_type=a["alert_type"],
+            price=a["price"], ema5=a["ema5"], ema5_dist_pct=a["ema5_dist_pct"],
+            ema20=a["ema20"], ema20_dist_pct=a["ema20_dist_pct"],
+            entry_price=a["entry_price"], gain_pct=a["gain_pct"],
+            adr_pct=a["adr_pct"], date=a["date"], notes=a["notes"],
+        )
+        ok = send_ema5_telegram_alert(alert_obj, config)
+        if ok:
+            sent_count += 1
+            print(f"  📉 EMA5 alert sent: {a['symbol']} {a['alert_type']} ₹{a['price']}", flush=True)
+
+    return {
+        "alerts": alerts,
+        "newAlerts": len(new_alerts),
+        "telegramSent": sent_count,
+        "checkedAt": datetime.now().isoformat(timespec="seconds"),
+    }
