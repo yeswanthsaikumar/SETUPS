@@ -176,6 +176,12 @@ public class VcpDetector {
                 bestSetup = candidate;
             }
         }
+
+        // ── NEW: Enrich with base quality metrics (volume dry-up, accum/dist, tight-close, EMA fan) ──
+        if (bestSetup != null) {
+            enrichSetupWithBaseQuality(bestSetup, candles, consolidationStart, consolidationEnd, config);
+        }
+
         return bestSetup;
     }
 
@@ -554,6 +560,36 @@ public class VcpDetector {
         double adjustment = normalizedBias * config.maxWickBodyScoreAdjustment;
         double maxAbs = Math.max(0.0, config.maxWickBodyScoreAdjustment);
         return Math.max(-maxAbs, Math.min(maxAbs, adjustment));
+    }
+
+    /**
+     * Enrich a detected setup with additional base quality metrics:
+     * - Volume dry-up (pre-breakout quietness)
+     * - Accumulation/distribution ratio
+     * - Tight-close count
+     * - EMA fan alignment
+     */
+    private void enrichSetupWithBaseQuality(VcpSetup setup, List<Candle> candles,
+                                             int consolidationStart, int consolidationEnd, AppConfig config) {
+        // Volume dry-up: last N bars before breakout vs 50-bar baseline
+        double dryUpRatio = Indicators.volumeDryUpRatio(candles, consolidationEnd,
+                config.volumeDryUpLookbackBars, 50);
+        double dryUpBonus = dryUpRatio <= config.volumeDryUpMaxRatio ? config.volumeDryUpScoreBonus : 0.0;
+
+        // Accumulation/Distribution ratio in the consolidation range
+        double adRatio = Indicators.accumDistRatio(candles, consolidationStart, consolidationEnd);
+        double adBonus = adRatio >= 1.5 ? config.accumDistScoreBonus : (adRatio >= 1.0 ? config.accumDistScoreBonus * 0.5 : 0.0);
+
+        // Tight-close count
+        int tightCount = Indicators.tightCloseCount(candles, consolidationEnd,
+                config.tightCloseLookbackBars, config.tightCloseMaxSpreadPct);
+        double tightBonus = tightCount >= config.tightCloseLookbackBars - 1 ? config.tightCloseScoreBonus
+                : (tightCount >= config.tightCloseLookbackBars / 2 ? config.tightCloseScoreBonus * 0.5 : 0.0);
+
+        // EMA fan alignment
+        boolean emaFan = Indicators.isEmaFanAligned(candles, consolidationEnd);
+
+        setup.enrichWithBaseQuality(dryUpRatio, adRatio, tightCount, emaFan, dryUpBonus, adBonus, tightBonus);
     }
 
     private int minBarsForAnyWindow(AppConfig config) {

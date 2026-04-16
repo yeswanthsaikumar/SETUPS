@@ -11,6 +11,13 @@ public class ScanResult {
     private boolean ipoFlag;                    // True if stock is recently listed (limited history)
     private int daysSinceListing;               // Number of available trading bars (proxy for listing age)
 
+    // ── NEW: Market context metadata ──────────────────────────────────────────
+    private double rsPercentile;          // RS rank within universe (0-100)
+    private String sector;                // Stock's sector
+    private String industry;              // Stock's industry group
+    private double sectorBonus;           // Score adjustment from sector strength
+    private String marketRegime;          // TAILWIND / NEUTRAL / HEADWIND
+
     public ScanResult(String symbol, VcpSetup setup, Candle signalCandle, TradePlan tradePlan) {
         this(symbol, setup, signalCandle, tradePlan, "BREAKOUT");
     }
@@ -27,6 +34,11 @@ public class ScanResult {
         this.breakoutQuality = null;
         this.ipoFlag = false;
         this.daysSinceListing = 0;
+        this.rsPercentile = 0.0;
+        this.sector = null;
+        this.industry = null;
+        this.sectorBonus = 0.0;
+        this.marketRegime = "NEUTRAL";
     }
 
     public String getSymbol() {
@@ -46,7 +58,7 @@ public class ScanResult {
     }
 
     public double getQualityScore() {
-        return setup.getQualityScore() + alignmentBonus;
+        return setup.getQualityScore() + alignmentBonus + sectorBonus;
     }
 
     public String getSignalType() {
@@ -94,35 +106,65 @@ public class ScanResult {
         this.daysSinceListing = days;
     }
 
+    // ── NEW: Context getters/setters ─────────────────────────────────────────
+    public double getRsPercentile() {
+        return rsPercentile;
+    }
+
+    public void setRsPercentile(double rs) {
+        this.rsPercentile = rs;
+    }
+
+    public String getSector() {
+        return sector;
+    }
+
+    public String getIndustry() {
+        return industry;
+    }
+
+    public void setSectorInfo(String sector, String industry) {
+        this.sector = sector;
+        this.industry = industry;
+    }
+
+    public double getSectorBonus() {
+        return sectorBonus;
+    }
+
+    public void setSectorBonus(double bonus) {
+        this.sectorBonus = bonus;
+    }
+
+    public String getMarketRegime() {
+        return marketRegime;
+    }
+
+    public void setMarketRegime(String regime) {
+        this.marketRegime = regime;
+    }
+
     public String toConsoleLine() {
         String alignmentTag = alignmentBonus > 0.0 ? String.format(" [MTF: %s (+%.1f)]", alignmentReason, alignmentBonus) : "";
         String ipoTag = ipoFlag ? String.format(" [IPO %dd]", daysSinceListing) : "";
+        String rsTag = rsPercentile > 0 ? String.format(" [RS:%.0f]", rsPercentile) : "";
+        String sectorTag = sector != null ? String.format(" [%s]", sector) : "";
+        String regimeTag = !"NEUTRAL".equals(marketRegime) ? String.format(" [%s]", marketRegime) : "";
+        String dryUpTag = setup.getVolumeDryUpRatio() <= 0.70 ? " [VOL_DRY]" : "";
+        String gapTag = setup.isGapBreakout() ? " [GAP]" : "";
+        String emaFanTag = setup.isEmaFanAligned() ? " [EMA_FAN]" : "";
         return String.format(
                 "%s | Type %s | Setup %s | Window %s(%d) | Height %.1f%% | Depth %.1f%% | Len %d | Ctr %d/%d | Rating %s | Close %.2f | Pivot %.2f | Entry %.2f | Score %.1f | Range %.1f%% | Vol %.1f%% | RExp %.2fx | Shares %d | SL %.2f | T1 %.2f T2 %.2f T3 %.2f%s",
-                symbol,
-                signalType,
-                setup.getSetupType(),
-                setup.getBaseWindowLabel(),
-                setup.getBaseWindowBars(),
-                setup.getBaseRangeHeightPct(),
-                setup.getContractionDepthPct(),
-                setup.getBaseWindowBars(),
-                setup.getRangeContractionCount(),
-                setup.getContractionPairs(),
-                setup.getSetupRating(),
-                signalCandle.getClose(),
-                setup.getPivotPrice(),
-                tradePlan.getEntry(),
-                getQualityScore(),
-                setup.getRangeContraction() * 100.0,
-                setup.getVolumeContraction() * 100.0,
-                setup.getRangeExpansion(),
-                tradePlan.getShares(),
-                tradePlan.getStopLoss(),
-                tradePlan.getTarget1(),
-                tradePlan.getTarget2(),
-                tradePlan.getTarget3(),
+                symbol, signalType, setup.getSetupType(),
+                setup.getBaseWindowLabel(), setup.getBaseWindowBars(),
+                setup.getBaseRangeHeightPct(), setup.getContractionDepthPct(),
+                setup.getBaseWindowBars(), setup.getRangeContractionCount(), setup.getContractionPairs(),
+                setup.getSetupRating(), signalCandle.getClose(), setup.getPivotPrice(),
+                tradePlan.getEntry(), getQualityScore(),
+                setup.getRangeContraction() * 100.0, setup.getVolumeContraction() * 100.0,
+                setup.getRangeExpansion(), tradePlan.getShares(), tradePlan.getStopLoss(),
+                tradePlan.getTarget1(), tradePlan.getTarget2(), tradePlan.getTarget3(),
                 alignmentTag
-        ) + ipoTag;
+        ) + rsTag + sectorTag + regimeTag + dryUpTag + gapTag + emaFanTag + ipoTag;
     }
 }

@@ -165,7 +165,18 @@ public final class ResultExporter {
             sb.append("    \"stopReferencePrice\": ").append(format(r.getTradePlan().getStopReferencePrice())).append(",\n");
             sb.append("    \"riskPerShare\": ").append(format(r.getTradePlan().getRiskPerShare())).append(",\n");
             sb.append("    \"ipoFlag\": ").append(r.isIpoFlag()).append(",\n");
-            sb.append("    \"daysSinceListing\": ").append(r.getDaysSinceListing()).append("\n");
+            sb.append("    \"daysSinceListing\": ").append(r.getDaysSinceListing()).append(",\n");
+            // V2 enrichment fields
+            sb.append("    \"rsPercentile\": ").append(format(r.getRsPercentile())).append(",\n");
+            sb.append("    \"sector\": \"").append(escape(r.getSector() != null ? r.getSector() : "")).append("\",\n");
+            sb.append("    \"industry\": \"").append(escape(r.getIndustry() != null ? r.getIndustry() : "")).append("\",\n");
+            sb.append("    \"marketRegime\": \"").append(escape(r.getMarketRegime() != null ? r.getMarketRegime() : "NEUTRAL")).append("\",\n");
+            sb.append("    \"sectorBonus\": ").append(format(r.getSectorBonus())).append(",\n");
+            sb.append("    \"volumeDryUpRatio\": ").append(format(r.getSetup().getVolumeDryUpRatio())).append(",\n");
+            sb.append("    \"accumDistRatio\": ").append(format(r.getSetup().getAccumDistRatio())).append(",\n");
+            sb.append("    \"tightCloseCount\": ").append(r.getSetup().getTightCloseCount()).append(",\n");
+            sb.append("    \"emaFanAligned\": ").append(r.getSetup().isEmaFanAligned()).append(",\n");
+            sb.append("    \"gapBreakout\": ").append(r.getSetup().isGapBreakout()).append("\n");
             sb.append("  }");
             if (i < results.size() - 1) {
                 sb.append(",");
@@ -367,7 +378,18 @@ public final class ResultExporter {
             sb.append("    \"stopReferencePrice\": ").append(format(r.getTradePlan().getStopReferencePrice())).append(",\n");
             sb.append("    \"riskPerShare\": ").append(format(r.getTradePlan().getRiskPerShare())).append(",\n");
             sb.append("    \"ipoFlag\": ").append(r.isIpoFlag()).append(",\n");
-            sb.append("    \"daysSinceListing\": ").append(r.getDaysSinceListing()).append("\n");
+            sb.append("    \"daysSinceListing\": ").append(r.getDaysSinceListing()).append(",\n");
+            // V2 enrichment fields
+            sb.append("    \"rsPercentile\": ").append(format(r.getRsPercentile())).append(",\n");
+            sb.append("    \"sector\": \"").append(escape(r.getSector() != null ? r.getSector() : "")).append("\",\n");
+            sb.append("    \"industry\": \"").append(escape(r.getIndustry() != null ? r.getIndustry() : "")).append("\",\n");
+            sb.append("    \"marketRegime\": \"").append(escape(r.getMarketRegime() != null ? r.getMarketRegime() : "NEUTRAL")).append("\",\n");
+            sb.append("    \"sectorBonus\": ").append(format(r.getSectorBonus())).append(",\n");
+            sb.append("    \"volumeDryUpRatio\": ").append(format(r.getSetup().getVolumeDryUpRatio())).append(",\n");
+            sb.append("    \"accumDistRatio\": ").append(format(r.getSetup().getAccumDistRatio())).append(",\n");
+            sb.append("    \"tightCloseCount\": ").append(r.getSetup().getTightCloseCount()).append(",\n");
+            sb.append("    \"emaFanAligned\": ").append(r.getSetup().isEmaFanAligned()).append(",\n");
+            sb.append("    \"gapBreakout\": ").append(r.getSetup().isGapBreakout()).append("\n");
             sb.append("  }");
             if (i < results.size() - 1) {
                 sb.append(",");

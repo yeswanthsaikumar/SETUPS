@@ -108,6 +108,11 @@ public class BreakoutEvaluator {
             return expandedRange;
         }
 
+        // ── NEW: Detect gap-up breakout and mark on setup ──
+        if (latest.getOpen() > pivot && latest.getVolume() >= volume20 * config.gapBreakoutVolumeMultiplier) {
+            setup.setGapBreakout(true);
+        }
+
         return true;
     }
 

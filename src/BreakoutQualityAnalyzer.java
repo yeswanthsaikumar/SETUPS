@@ -128,9 +128,10 @@ public class BreakoutQualityAnalyzer {
         
         ctx.pivotTestCount = testCount;
         
-        if (testCount <= 1) ctx.pivotFreshnessScore = 10.0;
-        else if (testCount == 2) ctx.pivotFreshnessScore = 9.0;
-        else if (testCount <= 4) ctx.pivotFreshnessScore = 7.5;
+        // 2-3 tests = sweet spot (proven resistance). 0-1 = untested. 6+ = exhausted.
+        if (testCount == 2 || testCount == 3) ctx.pivotFreshnessScore = 10.0;
+        else if (testCount == 4) ctx.pivotFreshnessScore = 9.0;
+        else if (testCount <= 1) ctx.pivotFreshnessScore = 7.0;  // Untested pivot
         else if (testCount <= 6) ctx.pivotFreshnessScore = 5.0;
         else if (testCount <= 9) ctx.pivotFreshnessScore = 3.0;
         else ctx.pivotFreshnessScore = 1.0;
