@@ -132,6 +132,8 @@ class TradeBoardUpdate(BaseModel):
     t1: Optional[float] = None
     t2: Optional[float] = None
     t3: Optional[float] = None
+    entry: Optional[float] = None
+    quantity: Optional[int] = None
     notes: Optional[str] = None
     tags: Optional[list[str]] = None
 
@@ -608,6 +610,7 @@ def health() -> dict:
         "python": sys.version.split()[0],
         "javaHome": os.environ.get("JAVA_HOME", ""),
         "cacheRefresh": _cache_refresher.status_dict().get("status", "idle"),
+        "growwEnabled": bool(_GROWW_API_KEY),
     }
 
 
@@ -1286,7 +1289,134 @@ _IST = _zi.ZoneInfo("Asia/Kolkata")
 
 _live_cache: dict[str, dict] = {}   # symbol -> {price, prevClose, ts, date}
 _live_cache_lock = threading.Lock()
-_LIVE_TTL = 30  # seconds — how long a live quote is considered fresh
+_LIVE_TTL_MARKET = 30    # seconds — during market hours
+_LIVE_TTL_OFF = 300      # seconds — outside market hours (5 min, just to get today's close)
+
+# ── Groww API integration ─────────────────────────────────────────────────
+# Uses shared groww_client module for singleton initialization.
+# Env vars: GROWW_API_KEY, GROWW_API_SECRET, GROWW_ACCESS_TOKEN
+_GROWW_API_KEY = os.environ.get("GROWW_API_KEY", "")
+_GROWW_API_SECRET = os.environ.get("GROWW_API_SECRET", "")
+_GROWW_ACCESS_TOKEN = os.environ.get("GROWW_ACCESS_TOKEN", "")
+_groww_client = None
+_groww_init_lock = threading.Lock()
+_groww_init_failed = False
+
+
+def _get_groww_client():
+    """Lazy-init singleton Groww API client — delegates to shared module."""
+    global _groww_client, _groww_init_failed
+    if _groww_client is not None:
+        return _groww_client
+    if _groww_init_failed:
+        return None
+    try:
+        from groww_client import get_groww_client as _shared_get
+        client = _shared_get()
+        if client:
+            _groww_client = client
+            print("✅ Groww API client initialized (shared)", flush=True)
+        else:
+            _groww_init_failed = True
+        return _groww_client
+    except ImportError:
+        # Fallback to inline init if shared module not found
+        if not _GROWW_ACCESS_TOKEN and not _GROWW_API_KEY:
+            return None
+        with _groww_init_lock:
+            if _groww_client is not None:
+                return _groww_client
+            if _groww_init_failed:
+                return None
+            try:
+                from growwapi import GrowwAPI
+                token = _GROWW_ACCESS_TOKEN
+                if not token and _GROWW_API_KEY and _GROWW_API_SECRET:
+                    result = GrowwAPI.get_access_token(
+                        api_key=_GROWW_API_KEY, secret=_GROWW_API_SECRET)
+                    if isinstance(result, str) and result:
+                        token = result
+                    elif isinstance(result, dict):
+                        token = (result.get("accessToken")
+                                 or result.get("access_token")
+                                 or result.get("token", ""))
+                    if not token:
+                        _groww_init_failed = True
+                        return None
+                elif not token and _GROWW_API_KEY:
+                    token = _GROWW_API_KEY
+                _groww_client = GrowwAPI(token=token)
+                print("✅ Groww API client initialized", flush=True)
+                return _groww_client
+            except Exception as e:
+                print(f"⚠ Groww API init failed: {e}", flush=True)
+                _groww_init_failed = True
+                return None
+
+
+def _fetch_live_quote_groww(base_symbol: str) -> Optional[dict]:
+    """Fetch live LTP + previous close from Groww API."""
+    client = _get_groww_client()
+    if not client:
+        return None
+    try:
+        from growwapi import GrowwAPI
+        exchange_sym = f"NSE_{base_symbol}"
+        ltp_data = client.get_ltp(
+            exchange_trading_symbols=(exchange_sym,),
+            segment=GrowwAPI.SEGMENT_CASH,
+            timeout=8,
+        )
+        # Groww returns flat dict: {'NSE_SYMBOL': 866.1}
+        ltp = None
+        if isinstance(ltp_data, dict):
+            raw = ltp_data.get(exchange_sym)
+            if isinstance(raw, (int, float)) and raw > 0:
+                ltp = float(raw)
+            elif isinstance(raw, dict):
+                ltp = raw.get("ltp") or raw.get("lastPrice")
+
+        if ltp and ltp > 0:
+            # Get prev close from OHLC call
+            prev = None
+            try:
+                ohlc_data = client.get_ohlc(
+                    exchange_trading_symbols=(exchange_sym,),
+                    segment=GrowwAPI.SEGMENT_CASH,
+                    timeout=8,
+                )
+                ohlc = ohlc_data.get(exchange_sym, {}) if isinstance(ohlc_data, dict) else {}
+                prev = ohlc.get("close") or ohlc.get("previousClose")
+            except Exception:
+                pass
+            return {"price": ltp, "prevClose": float(prev) if prev else None, "source": "groww"}
+    except Exception:
+        pass
+    return None
+
+
+def _fetch_groww_quote(base_symbol: str) -> Optional[dict]:
+    """Fetch full OHLC quote from Groww API (used as fallback after get_ltp)."""
+    client = _get_groww_client()
+    if not client:
+        return None
+    try:
+        from growwapi import GrowwAPI
+        exchange_sym = f"NSE_{base_symbol}"
+        ohlc_data = client.get_ohlc(
+            exchange_trading_symbols=(exchange_sym,),
+            segment=GrowwAPI.SEGMENT_CASH,
+            timeout=8,
+        )
+        # Groww returns: {'NSE_SYMBOL': {'open':..,'high':..,'low':..,'close':..}}
+        if isinstance(ohlc_data, dict):
+            ohlc = ohlc_data.get(exchange_sym, {})
+            close = ohlc.get("close")
+            if close and float(close) > 0:
+                return {"price": float(close), "prevClose": None, "source": "groww-ohlc"}
+    except Exception:
+        pass
+    return None
 
 
 def _is_market_open() -> bool:
@@ -1302,7 +1432,6 @@ def _fetch_live_quote_nse(base_symbol: str) -> Optional[dict]:
     """Fetch live quote from NSE India equity quote API."""
     import requests as _req
     try:
-        # Reuse refresh_cache's NSE session helper
         import refresh_cache as _rc
         session = _rc._get_nse_session()
         import urllib.parse
@@ -1355,33 +1484,77 @@ def _fetch_live_quote_yahoo(symbol: str) -> Optional[dict]:
     return None
 
 
+def _fetch_live_quote_yfinance(symbol: str) -> Optional[dict]:
+    """Fetch live/latest quote via yfinance — tries fast_info then history() fallback."""
+    try:
+        import yfinance as yf
+        tk = yf.Ticker(symbol)
+        # Try fast_info first (uses v8 API internally)
+        try:
+            info = tk.fast_info
+            ltp = getattr(info, "last_price", None)
+            prev = getattr(info, "previous_close", None) or getattr(info, "regular_market_previous_close", None)
+            if ltp and ltp > 0:
+                return {"price": float(ltp), "prevClose": float(prev) if prev else None, "source": "yfinance"}
+        except Exception:
+            pass
+        # Fallback: download last 5 days of history
+        try:
+            df = tk.history(period="5d")
+            if df is not None and not df.empty:
+                last_close = float(df["Close"].iloc[-1])
+                prev_close = float(df["Close"].iloc[-2]) if len(df) >= 2 else None
+                if last_close > 0:
+                    return {"price": last_close, "prevClose": prev_close, "source": "yfinance-hist"}
+        except Exception:
+            pass
+    except Exception:
+        pass
+    return None
+
+
 def _get_live_price(symbol: str) -> Optional[dict]:
     """
     Get the *current* live price for a symbol.
     Returns dict: {price, prevClose, source, cached} or None.
-    Uses a 30-second in-memory cache to avoid hammering APIs.
+
+    Priority: Groww → NSE (market hours) → Yahoo v8 → yfinance → CSV cache.
+    During market hours: 30s TTL cache.
+    Outside market hours: 5min TTL cache.
     """
     canon = _canonical_sym(symbol)
     base = symbol.upper().replace(".NS", "").replace(".BO", "")
     now = time.time()
+    market_open = _is_market_open()
+    ttl = _LIVE_TTL_MARKET if market_open else _LIVE_TTL_OFF
 
     # Check in-memory cache first
     with _live_cache_lock:
         cached = _live_cache.get(canon)
-        if cached and (now - cached.get("ts", 0)) < _LIVE_TTL:
+        if cached and (now - cached.get("ts", 0)) < ttl:
             return {**cached, "cached": True}
 
-    # Only fetch live during market hours; outside hours, cached CSV is fine
-    if not _is_market_open():
-        return None
+    quote = None
 
-    # Try NSE first (best for Indian stocks)
-    quote = _fetch_live_quote_nse(base)
+    # 1. Groww API — most reliable when API key is configured
+    if not quote:
+        quote = _fetch_live_quote_groww(base)
+    if not quote:
+        quote = _fetch_groww_quote(base)
 
-    # Fallback to Yahoo
+    # 2. During market hours: try NSE (fast for live intraday)
+    if not quote and market_open:
+        quote = _fetch_live_quote_nse(base)
+
+    # 3. Yahoo v8
     if not quote:
         ns_sym = base + ".NS"
         quote = _fetch_live_quote_yahoo(ns_sym)
+
+    # 4. yfinance fallback
+    if not quote:
+        ns_sym = base + ".NS"
+        quote = _fetch_live_quote_yfinance(ns_sym)
 
     if quote:
         quote["ts"] = now
@@ -1405,8 +1578,9 @@ def _get_price_info(symbol: str) -> tuple[Optional[float], Optional[float], Opti
     """
     Returns (cmp, prev_close, last_date) for a symbol.
 
-    During market hours: fetches LIVE price from NSE/Yahoo APIs (30s TTL cache).
-    Outside market hours: reads from OHLCV CSV cache.
+    During market hours: fetches LIVE price from NSE/Yahoo/yfinance APIs (30s TTL).
+    Outside market hours: fetches latest close from Yahoo/yfinance (5min TTL),
+      falling back to CSV cache if APIs fail.
     Always returns the most current price available.
     """
     rows = _read_ohlcv(symbol, days=5)
@@ -1414,7 +1588,7 @@ def _get_price_info(symbol: str) -> tuple[Optional[float], Optional[float], Opti
     csv_prev = rows[-2]["close"] if len(rows) >= 2 else None
     csv_date = rows[-1]["date"] if rows else None
 
-    # Try live price during market hours
+    # Try live/latest price (works both during and outside market hours now)
     live = _get_live_price(symbol)
     if live and live.get("price"):
         cmp = live["price"]
@@ -1458,7 +1632,9 @@ def _compute_board_stats(positions: list[dict]) -> dict:
                 open_risk += (entry - sl) * remaining
             day_pl += p.get("dayChangeAmt", 0) or 0
         else:
-            pl = (exit_price - entry) * qty
+            partial_qty_exited = sum(e.get("quantity", 0) for e in p.get("partial_exits", []))
+            exit_qty = qty - partial_qty_exited
+            pl = pos_realized + (exit_price - entry) * exit_qty
             total_pl += pl
             if status.startswith("T"):
                 locked_profit += pl
@@ -1505,7 +1681,10 @@ def trade_board_summary() -> dict:
         elif p.get("exit_price") and entry:
             ep = float(p["exit_price"])
             p["gainPct"] = round((ep - entry) / entry * 100, 2)
-            p["gainAmt"] = round((ep - entry) * qty, 2)
+            pos_realized = p.get("realized_pl", 0) or 0
+            partial_qty_exited = sum(e.get("quantity", 0) for e in p.get("partial_exits", []))
+            exit_qty = qty - partial_qty_exited
+            p["gainAmt"] = round(pos_realized + (ep - entry) * exit_qty, 2)
     stats = _compute_board_stats(positions)
     return {"stats": stats, "lastUpdated": data.get("lastUpdated")}
 
@@ -1533,7 +1712,13 @@ def trade_board_positions(status: str = "") -> dict:
             # Compute final gain for closed/stopped positions
             ep = float(p["exit_price"])
             p["gainPct"] = round((ep - entry) / entry * 100, 2)
-            p["gainAmt"] = round((ep - entry) * qty, 2)
+            # For positions with partial exits, total P&L = realized from partials + (exit - entry) * remaining at close
+            pos_realized = p.get("realized_pl", 0) or 0
+            # remaining_quantity for a fully closed position should be 0; the exit_price covers what was left
+            # We need to figure out how many shares the exit_price applies to
+            partial_qty_exited = sum(e.get("quantity", 0) for e in p.get("partial_exits", []))
+            exit_qty = qty - partial_qty_exited  # shares closed at exit_price
+            p["gainAmt"] = round(pos_realized + (ep - entry) * exit_qty, 2)
     if status:
         positions = [p for p in positions if p.get("status") == status]
     # Sort: OPEN/PARTIAL first, then by gain desc
@@ -1561,8 +1746,31 @@ def trade_board_update_position(position_id: str, update: TradeBoardUpdate) -> d
         positions = data.get("positions", [])
         for i, p in enumerate(positions):
             if p.get("id") == position_id:
-                upd = {k: v for k, v in update.model_dump().items() if v is not None}
+                upd = update.model_dump(exclude_unset=True)
                 positions[i].update(upd)
+                # If status is a closing status and exit_price is set,
+                # auto-compute realized_pl for the remaining shares
+                new_status = positions[i].get("status", "OPEN")
+                closing_statuses = ("CLOSED", "SL_HIT", "T1_HIT", "T2_HIT", "T3_HIT")
+                if new_status in closing_statuses and positions[i].get("exit_price"):
+                    entry = positions[i].get("entry", 0)
+                    total_qty = positions[i].get("quantity", 1)
+                    exits = positions[i].get("partial_exits", [])
+                    partial_qty = sum(e.get("quantity", 0) for e in exits)
+                    remaining = total_qty - partial_qty
+                    ep = float(positions[i]["exit_price"])
+                    # Realized from partials
+                    partial_realized = sum(
+                        (e["price"] - entry) * e["quantity"] for e in exits
+                    )
+                    # Total realized = partials + final exit on remaining
+                    positions[i]["realized_pl"] = round(
+                        partial_realized + (ep - entry) * remaining, 2
+                    )
+                    positions[i]["remaining_quantity"] = 0
+                    # Auto-set exit_date if not provided
+                    if not positions[i].get("exit_date"):
+                        positions[i]["exit_date"] = datetime.now().strftime("%Y-%m-%d")
                 data["positions"] = positions
                 _save_board(data)
                 return {"position": positions[i], "ok": True}
@@ -1643,8 +1851,20 @@ def _enrich_position_metrics(p: dict) -> dict:
     if not sym:
         return p
     rows = _read_ohlcv(sym, days=300)  # need ~252 for yearly volume analysis
-    if not rows or len(rows) < 25:
+    if not rows or len(rows) < 5:
+        # Still flag IPO status even with minimal data
+        if rows:
+            p["ipoFlag"] = len(rows) < 126
+            p["daysSinceListing"] = len(rows)
+        else:
+            p["ipoFlag"] = True
+            p["daysSinceListing"] = 0
         return p
+
+    # For stocks with <25 bars, set IPO flag and compute what we can
+    if len(rows) < 25:
+        p["ipoFlag"] = True
+        p["daysSinceListing"] = len(rows)
 
     closes = [r["close"] for r in rows]
     highs = [r["high"] for r in rows]
@@ -1653,6 +1873,7 @@ def _enrich_position_metrics(p: dict) -> dict:
 
     # 20 EMA
     ema20 = _calc_ema(closes, 20)
+    ema5 = _calc_ema(closes, 5)
     if ema20[-1] is not None and ema20[-1] > 0:
         ext = round((closes[-1] - ema20[-1]) / ema20[-1] * 100, 2)
         dist_abs = round(closes[-1] - ema20[-1], 2)
@@ -1666,6 +1887,14 @@ def _enrich_position_metrics(p: dict) -> dict:
         p["ema20ext"] = None
         p["ema20dist"] = None
         p["surfing20ema"] = False
+
+    # 5EMA safety check
+    if ema5[-1] is not None and ema5[-1] > 0:
+        p["ema5"] = round(ema5[-1], 2)
+        p["ema5Safe"] = closes[-1] >= ema5[-1]
+    else:
+        p["ema5"] = None
+        p["ema5Safe"] = None
 
     # ADR (Average Daily Range) — last 20 days
     adr_period = min(20, len(rows))
@@ -1750,11 +1979,13 @@ def trade_board_positions_enriched(status: str = "") -> dict:
 
 @app.get("/api/trade-board/watchlist/enriched")
 def trade_board_watchlist_enriched() -> dict:
-    """Return watchlist items enriched with 20EMA extension + volume records."""
+    """Return watchlist items enriched with 20EMA extension + volume records (parallelized)."""
+    from concurrent.futures import ThreadPoolExecutor
     with _watchlist_lock:
         items = _load_watchlist()
     sig_index = _load_scan_signals_index()
-    for item in items:
+
+    def _enrich_wl(item):
         sym = item.get("symbol", "")
         cmp, prev_close, last_date = _get_price_info(sym)
         if cmp:
@@ -1762,9 +1993,7 @@ def trade_board_watchlist_enriched() -> dict:
             item["lastPriceDate"] = last_date
         if cmp and prev_close and prev_close > 0:
             item["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
-        # Enrich with 20EMA extension + volume records + ADR
         _enrich_position_metrics(item)
-        # Merge scan signal data (all fields from regular watchlist endpoint)
         sig = sig_index.get(sym) or sig_index.get(sym + ".NS") or sig_index.get(sym.replace(".NS", ""))
         if sig:
             item["scanSetup"] = sig.get("setup", "")
@@ -1779,6 +2008,10 @@ def trade_board_watchlist_enriched() -> dict:
             item["inScan"] = True
         else:
             item["inScan"] = False
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(_enrich_wl, items))
+
     return {"items": items, "total": len(items)}
 
 
@@ -2186,6 +2419,57 @@ def trade_board_market_overview(market: str = "india", timeframe: str = "daily")
             pass
 
     return result
+
+
+@app.get("/api/trade-board/price-debug")
+def price_debug(symbols: str = "") -> dict:
+    """
+    Debug endpoint: shows exactly where each symbol's price comes from.
+    ?symbols=MTARTECH,ATHERENERG  or leave blank for open positions + watchlist.
+    """
+    if symbols:
+        sym_list = [s.strip().upper() for s in symbols.split(",") if s.strip()]
+    else:
+        with _board_lock:
+            board = _load_board()
+        with _watchlist_lock:
+            wl = _load_watchlist()
+        pos_syms = [p["symbol"] for p in board.get("positions", [])
+                    if p.get("status") in ("OPEN", "PARTIAL") and p.get("symbol")]
+        wl_syms = [w["symbol"] for w in wl if w.get("symbol")]
+        sym_list = list(dict.fromkeys(pos_syms + wl_syms))
+
+    results = []
+    for sym in sym_list[:20]:
+        canon = _canonical_sym(sym)
+        # Flush in-memory cache to force a fresh fetch
+        with _live_cache_lock:
+            _live_cache.pop(canon, None)
+
+        live = _get_live_price(sym)
+
+        rows = _read_ohlcv(sym, days=3)
+        csv_close = rows[-1]["close"] if rows else None
+        csv_date  = rows[-1]["date"]  if rows else None
+
+        results.append({
+            "symbol":       sym,
+            "live_price":   live.get("price")     if live else None,
+            "prev_close":   live.get("prevClose")  if live else None,
+            "source":       live.get("source")     if live else "none — CSV cache used",
+            "cached":       live.get("cached")     if live else None,
+            "csv_close":    csv_close,
+            "csv_date":     csv_date,
+            "market_open":  _is_market_open(),
+        })
+
+    return {
+        "results":            results,
+        "groww_enabled":      bool(_GROWW_API_KEY or _GROWW_ACCESS_TOKEN),
+        "groww_client_ready": _groww_client is not None,
+        "groww_init_failed":  _groww_init_failed,
+        "market_open":        _is_market_open(),
+    }
 
 
 # ── Trade Board Export / Backup ────────────────────────────────────────────────
