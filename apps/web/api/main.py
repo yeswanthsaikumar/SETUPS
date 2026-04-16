@@ -703,9 +703,13 @@ def regenerate_all_dashboards() -> dict:
 
 @app.get("/")
 def ui_index() -> FileResponse:
-    if not UI_INDEX.exists():
-        raise HTTPException(status_code=404, detail="UI file not found")
-    return FileResponse(UI_INDEX)
+    """Root page serves the Trade Board directly."""
+    if not TRADE_BOARD_UI.exists():
+        raise HTTPException(status_code=404, detail="Trade board UI not found")
+    return FileResponse(TRADE_BOARD_UI)
+
+
+
 
 
 @app.get("/api/health")
