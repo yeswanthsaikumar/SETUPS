@@ -32,14 +32,15 @@ class AlertConfig:
     """Global alert configuration."""
     enabled: bool = True
     scan_interval_seconds: int = 120        # How often to scan (2 min during market hours)
-    volume_threshold: float = 1.5           # Min vol ratio vs 20d avg
-    volume_strong_threshold: float = 2.5    # Strong volume surge
-    body_ratio_min: float = 0.55            # Candle body must be >55% of range
-    close_near_high_pct: float = 0.75       # Close in top 25% of range
-    consolidation_days: int = 15            # Min days of consolidation before breakout
-    consolidation_max_range_pct: float = 15 # Max range% during consolidation
-    atr_breakout_multiple: float = 1.5      # Breakout candle range > 1.5x ATR
-    min_rs_score: float = 0                 # Min RS score filter (0 = disabled)
+    # ── Core detection params ─────────────────────────────────────────────
+    volume_threshold: float = 2.5           # Candle vol must be >= 2.5x avg of last N bars
+    volume_avg_bars: int = 5                # Average volume over last N bars ("few trading days")
+    volume_strong_threshold: float = 4.0    # Exceptionally strong volume
+    body_ratio_min: float = 0.30            # Candle body must be >30% of range (relaxed)
+    close_near_high_pct: float = 0.50       # Close in top 50% of range (relaxed)
+    min_base_bars: int = 5                  # Min bars of consolidation before breakout
+    max_base_range_pct: float = 20          # Max range% during consolidation
+    atr_breakout_multiple: float = 0.0      # 0 = disabled (volume is primary filter)
     lookback_days: int = 252                # Data lookback for level detection
     pivot_entry_window: int = 5             # Days after breakout to watch for pivot re-entry
     # ── Telegram (FREE — recommended) ─────────────────────────────────────
@@ -51,6 +52,10 @@ class AlertConfig:
     gmail_address: str = ""                 # your.email@gmail.com
     gmail_app_password: str = ""            # 16-char app password (not your login password)
     email_to: str = ""                      # recipient (can be same as gmail_address)
+    # ── Deprecated fields kept for config compat ──────────────────────────
+    consolidation_days: int = 5
+    consolidation_max_range_pct: float = 20
+    min_rs_score: float = 0
 
 
 @dataclass
@@ -145,13 +150,13 @@ def _calc_ema(values: list, period: int) -> list:
 
 def _find_resistance_levels(rows: list[dict], current_idx: int) -> list[dict]:
     """
-    Find key resistance levels from price history:
+    Find key resistance levels that matter for breakout trading:
+    - Range high (consolidation top — the most common breakout setup)
+    - Bull flag channel high (downtrend line after a run-up)
+    - Prior swing highs
     - 52-week high
-    - Recent consolidation high (last 15-60 bars)
-    - Swing highs (local maxima)
-    - Round numbers near price
     """
-    if current_idx < 20:
+    if current_idx < 10:
         return []
 
     levels = []
@@ -161,43 +166,72 @@ def _find_resistance_levels(rows: list[dict], current_idx: int) -> list[dict]:
         return levels
 
     current_close = rows[current_idx - 1]["close"] if current_idx > 0 else 0
+    recent = rows[max(0, current_idx - 60):current_idx]
 
-    # 52-week high
-    high_52w = max(r["high"] for r in window)
-    levels.append({"price": high_52w, "type": "52W_HIGH", "strength": 3})
+    # ── 1. Range High / Consolidation top (most important for your style)
+    # Look at last 5-60 bars for a tight range, take the high
+    for span in [5, 10, 15, 20, 30, 45, 60]:
+        if current_idx < span:
+            continue
+        sub = rows[current_idx - span:current_idx]
+        hi = max(r["high"] for r in sub)
+        lo = min(r["low"] for r in sub)
+        if lo <= 0:
+            continue
+        range_pct = (hi - lo) / lo * 100
+        # Tight range = strong level. < 15% range for 10+ bars is a real base
+        if range_pct <= 20 and span >= 5:
+            strength = 3 if (range_pct <= 10 and span >= 15) else 2 if range_pct <= 15 else 1
+            levels.append({"price": hi, "type": f"RANGE_HIGH_{span}B", "strength": strength})
 
-    # Consolidation high (last 15-60 days)
-    for span in [15, 30, 60]:
-        if current_idx >= span:
-            cons_window = rows[current_idx - span:current_idx]
-            cons_high = max(r["high"] for r in cons_window)
-            if cons_high < high_52w * 0.98:  # Don't duplicate 52w
-                levels.append({
-                    "price": cons_high,
-                    "type": f"CONSOLIDATION_HIGH_{span}D",
-                    "strength": 2 if span >= 30 else 1,
-                })
+    # ── 2. Bull flag channel top
+    # After an uptrend (20+ bars), price consolidates in a downward channel
+    # The top of the flag is the breakout level
+    if current_idx >= 30:
+        # Check if there was a strong uptrend before the recent consolidation
+        trend_start = max(0, current_idx - 60)
+        trend_end = max(0, current_idx - 15)
+        if trend_end > trend_start:
+            trend_bars = rows[trend_start:trend_end]
+            flag_bars = rows[trend_end:current_idx]
+            if trend_bars and flag_bars:
+                trend_gain = (trend_bars[-1]["close"] - trend_bars[0]["close"]) / trend_bars[0]["close"] * 100
+                flag_highs = [r["high"] for r in flag_bars]
+                flag_lows = [r["low"] for r in flag_bars]
+                # Uptrend > 10% followed by a pullback/flag
+                if trend_gain > 10 and len(flag_highs) >= 3:
+                    # Flag: highs are declining (downward channel)
+                    declining_highs = all(flag_highs[i] >= flag_highs[i+1] * 0.99
+                                          for i in range(min(3, len(flag_highs)-1)))
+                    flag_range = (max(flag_highs) - min(flag_lows)) / min(flag_lows) * 100 if min(flag_lows) > 0 else 99
+                    if flag_range < 20:  # Tight flag
+                        flag_top = max(flag_highs)
+                        levels.append({"price": flag_top, "type": "BULL_FLAG", "strength": 3})
 
-    # Swing highs — local maxima with at least 5 bars on each side
-    for i in range(5, len(window) - 5):
-        h = window[i]["high"]
-        left = max(r["high"] for r in window[i - 5:i])
-        right = max(r["high"] for r in window[i + 1:i + 6])
+    # ── 3. Swing highs — local maxima with 3+ bars on each side
+    search_window = rows[max(0, current_idx - 120):current_idx]
+    for i in range(3, len(search_window) - 3):
+        h = search_window[i]["high"]
+        left = max(r["high"] for r in search_window[max(0, i-3):i])
+        right = max(r["high"] for r in search_window[i+1:i+4])
         if h > left and h > right:
-            # Only keep if within 10% of current price
-            if current_close > 0 and abs(h - current_close) / current_close < 0.10:
-                levels.append({"price": h, "type": "SWING_HIGH", "strength": 1})
+            if current_close > 0 and abs(h - current_close) / current_close < 0.08:
+                levels.append({"price": h, "type": "SWING_HIGH", "strength": 2})
 
-    # Deduplicate levels within 1% of each other
+    # ── 4. 52-week high
+    if lookback >= 100:
+        high_52w = max(r["high"] for r in window)
+        if current_close > 0 and abs(high_52w - current_close) / current_close < 0.05:
+            levels.append({"price": high_52w, "type": "52W_HIGH", "strength": 3})
+
+    # Deduplicate levels within 1.5% of each other — keep the stronger one
     levels.sort(key=lambda x: x["price"])
     deduped = []
     for lev in levels:
-        if not deduped or abs(lev["price"] - deduped[-1]["price"]) / deduped[-1]["price"] > 0.01:
+        if not deduped or abs(lev["price"] - deduped[-1]["price"]) / max(deduped[-1]["price"], 0.01) > 0.015:
             deduped.append(lev)
-        else:
-            # Keep the stronger one
-            if lev["strength"] > deduped[-1]["strength"]:
-                deduped[-1] = lev
+        elif lev["strength"] > deduped[-1]["strength"]:
+            deduped[-1] = lev
 
     return deduped
 
@@ -239,21 +273,18 @@ def detect_breakout_candle(
     rows: list[dict],
     idx: int,
     config: AlertConfig,
-    avg_vol_20: float,
+    avg_vol: float,
     atr: float,
 ) -> Optional[BreakoutSignal]:
     """
-    Check if the candle at `idx` is a breakout candle.
+    Detect a breakout candle at index `idx`.
 
-    Criteria:
-    1. Price closes above a major resistance level
-    2. Volume > 1.5x 20-day average
-    3. Candle body is >55% of range (strong conviction)
-    4. Close is in top 25% of the day's range
-    5. Range is > 1.5x ATR (wide-range bar)
-    6. Prior consolidation of at least 10 days
+    Core criteria (matching your trading style):
+    1. Volume >= 2.5x average of last few trading days
+    2. Price breaks above a key level (range high, bull flag, swing high)
+    3. Bullish candle (close > open, close in upper half of range)
     """
-    if idx < 20 or idx >= len(rows):
+    if idx < 10 or idx >= len(rows):
         return None
 
     r = rows[idx]
@@ -261,112 +292,141 @@ def detect_breakout_candle(
     dt = r["date"]
 
     candle_range = h - l
-    if candle_range <= 0 or c <= 0 or avg_vol_20 <= 0:
+    if candle_range <= 0 or c <= 0 or avg_vol <= 0:
         return None
 
     body = abs(c - o)
     body_ratio = body / candle_range
     close_position = (c - l) / candle_range  # 0=low, 1=high
 
-    vol_ratio = v / avg_vol_20 if avg_vol_20 > 0 else 0
+    vol_ratio = v / avg_vol if avg_vol > 0 else 0
     atr_multiple = candle_range / atr if atr > 0 else 0
 
-    # ── Filter 1: Volume surge
+    # ── PRIMARY FILTER: Volume surge >= 2.5x
     if vol_ratio < config.volume_threshold:
         return None
 
-    # ── Filter 2: Bullish candle (close > open and close near high)
-    if c <= o:  # bearish candle
+    # ── Bullish candle: close > open
+    if c <= o:
         return None
+
+    # ── Close in upper portion of range (relaxed: top 50%)
     if close_position < config.close_near_high_pct:
         return None
 
-    # ── Filter 3: Strong body
+    # ── Body has some substance (relaxed: 30% of range)
     if body_ratio < config.body_ratio_min:
         return None
 
-    # ── Filter 4: Wide-range bar
-    if atr_multiple < config.atr_breakout_multiple:
+    # ── Optional ATR filter (disabled by default, vol is primary)
+    if config.atr_breakout_multiple > 0 and atr_multiple < config.atr_breakout_multiple:
         return None
 
-    # ── Filter 5: Breaking a resistance level
+    # ── Breaking a key resistance level
     levels = _find_resistance_levels(rows, idx)
     broken_level = None
+    prev_close = rows[idx - 1]["close"]
     for lev in sorted(levels, key=lambda x: -x["strength"]):
         level_price = lev["price"]
-        # Previous close was below/at the level, current close is above
-        prev_close = rows[idx - 1]["close"]
-        if prev_close <= level_price * 1.01 and c > level_price:
+        # Previous close was at/below the level, current candle breaks above
+        if prev_close <= level_price * 1.02 and c > level_price:
+            broken_level = lev
+            break
+        # Or high pierces the level even if close didn't fully clear
+        if prev_close <= level_price * 1.01 and h > level_price * 1.005:
             broken_level = lev
             break
 
     if not broken_level:
+        # Even without a clean level break, a massive volume candle (>= 4x)
+        # is worth flagging as a VOLUME_SURGE signal
+        if vol_ratio >= config.volume_strong_threshold:
+            cons_days, cons_range = _measure_consolidation(rows, idx)
+            stop_loss = l
+            risk = max(c - stop_loss, atr * 0.5)
+            return BreakoutSignal(
+                symbol=rows[0].get("_symbol", ""),
+                signal_type="VOLUME_SURGE",
+                date=dt, price=c, close=c, high=h, low=l, open_price=o,
+                volume=v, avg_volume_20=avg_vol,
+                volume_ratio=round(vol_ratio, 2),
+                body_ratio=round(body_ratio, 2),
+                close_position=round(close_position, 2),
+                breakout_level=0, breakout_level_type="NONE",
+                atr_14=round(atr, 2), atr_multiple=round(atr_multiple, 2),
+                consolidation_days=cons_days, consolidation_range_pct=cons_range,
+                strength_score=round(min(100, vol_ratio * 12 + body_ratio * 10 + close_position * 8), 1),
+                entry_price=round(c, 2), stop_loss=round(stop_loss, 2),
+                target_1=round(c + risk * 2, 2), target_2=round(c + risk * 3.5, 2),
+                risk_reward=round(risk / c * 100, 2) if c > 0 else 0,
+                notes=f"🔥 MASSIVE VOL {vol_ratio:.1f}x — watch for follow-through",
+            )
         return None
 
-    # ── Filter 6: Consolidation before breakout
+    # ── Consolidation check (relaxed: 5 bars minimum)
     cons_days, cons_range = _measure_consolidation(rows, idx)
-    if cons_days < config.consolidation_days:
-        return None
-    if cons_range > config.consolidation_max_range_pct:
-        return None
+    min_base = config.min_base_bars or config.consolidation_days or 5
+    max_range = config.max_base_range_pct or config.consolidation_max_range_pct or 20
+    # Don't reject if it's breaking a very strong level (52W / bull flag)
+    if broken_level["strength"] < 3:
+        if cons_days < min_base:
+            return None
+        if cons_range > max_range:
+            return None
 
     # ── Compute trade plan
-    stop_loss = max(l, rows[idx - 1]["low"])  # Below breakout candle low or prev low
+    stop_loss = max(l, rows[idx - 1]["low"])
     risk = c - stop_loss
     if risk <= 0:
-        risk = atr
-        stop_loss = c - atr
+        risk = atr if atr > 0 else c * 0.03
+        stop_loss = c - risk
 
-    target_1 = c + risk * 2    # 2R
-    target_2 = c + risk * 3.5  # 3.5R
-    rr = risk / c * 100 if c > 0 else 0
+    target_1 = c + risk * 2
+    target_2 = c + risk * 3.5
 
-    # ── Strength score (0-100)
+    # ── Strength score (0-100) — volume-weighted
     score = 0
-    score += min(20, vol_ratio * 8)                          # Volume: up to 20 pts
-    score += min(15, body_ratio * 15)                         # Body strength: up to 15 pts
-    score += min(10, close_position * 10)                     # Close position: up to 10 pts
-    score += min(15, atr_multiple * 10)                       # ATR expansion: up to 15 pts
-    score += min(10, cons_days / 5)                           # Consolidation: up to 10 pts
-    score += broken_level["strength"] * 10                    # Level strength: up to 30 pts
+    score += min(30, vol_ratio * 10)                          # Volume: up to 30 pts (primary)
+    score += min(10, body_ratio * 12)                          # Body: up to 10 pts
+    score += min(10, close_position * 10)                      # Close position: up to 10 pts
+    score += min(10, atr_multiple * 6)                         # ATR expansion: up to 10 pts
+    score += min(10, cons_days / 3)                            # Base length: up to 10 pts
+    score += broken_level["strength"] * 10                     # Level: up to 30 pts
     score = min(100, round(score, 1))
 
     # Notes
     notes_parts = []
     if vol_ratio >= config.volume_strong_threshold:
-        notes_parts.append(f"🔥 STRONG VOL {vol_ratio:.1f}x")
-    if broken_level["type"] == "52W_HIGH":
-        notes_parts.append("🚀 52W HIGH BREAKOUT")
-    if cons_days >= 30:
-        notes_parts.append(f"📦 {cons_days}d tight base")
-    if atr_multiple >= 2.5:
-        notes_parts.append("⚡ EXPLOSIVE range")
+        notes_parts.append(f"🔥 VOL {vol_ratio:.1f}x")
+    else:
+        notes_parts.append(f"📊 Vol {vol_ratio:.1f}x")
+    level_type = broken_level["type"]
+    if "52W" in level_type:
+        notes_parts.append("🚀 52W HIGH")
+    elif "BULL_FLAG" in level_type:
+        notes_parts.append("🏁 BULL FLAG BREAK")
+    elif "RANGE_HIGH" in level_type:
+        notes_parts.append(f"📦 RANGE BREAK ({level_type.split('_')[-1]})")
+    elif "SWING" in level_type:
+        notes_parts.append("📈 SWING HIGH BREAK")
+    if cons_days >= 15:
+        notes_parts.append(f"Base {cons_days}d")
 
     return BreakoutSignal(
         symbol=rows[0].get("_symbol", ""),
         signal_type="BREAKOUT",
-        date=dt,
-        price=c,
-        close=c,
-        high=h,
-        low=l,
-        open_price=o,
-        volume=v,
-        avg_volume_20=avg_vol_20,
+        date=dt, price=c, close=c, high=h, low=l, open_price=o,
+        volume=v, avg_volume_20=avg_vol,
         volume_ratio=round(vol_ratio, 2),
         body_ratio=round(body_ratio, 2),
         close_position=round(close_position, 2),
         breakout_level=broken_level["price"],
         breakout_level_type=broken_level["type"],
-        atr_14=round(atr, 2),
-        atr_multiple=round(atr_multiple, 2),
-        consolidation_days=cons_days,
-        consolidation_range_pct=cons_range,
+        atr_14=round(atr, 2), atr_multiple=round(atr_multiple, 2),
+        consolidation_days=cons_days, consolidation_range_pct=cons_range,
         strength_score=score,
-        entry_price=round(c, 2),
-        stop_loss=round(stop_loss, 2),
-        target_1=round(target_1, 2),
-        target_2=round(target_2, 2),
+        entry_price=round(c, 2), stop_loss=round(stop_loss, 2),
+        target_1=round(target_1, 2), target_2=round(target_2, 2),
         risk_reward=round(risk / c * 100, 2) if c > 0 else 0,
         notes=" | ".join(notes_parts),
     )
@@ -466,13 +526,14 @@ def scan_stock_for_breakouts(
     start_idx = max(20, len(rows) - scan_last_n)
 
     for idx in range(start_idx, len(rows)):
-        # 20-day avg volume
-        vol_window = volumes[max(0, idx - 20):idx]
-        avg_vol_20 = sum(vol_window) / len(vol_window) if vol_window else 1
+        # Average volume over last N bars (default 5 = "last few trading days")
+        n_bars = config.volume_avg_bars or 5
+        vol_window = volumes[max(0, idx - n_bars):idx]
+        avg_vol = sum(vol_window) / len(vol_window) if vol_window else 1
 
         atr = atrs[idx] if idx < len(atrs) else atrs[-1]
 
-        signal = detect_breakout_candle(rows, idx, config, avg_vol_20, atr)
+        signal = detect_breakout_candle(rows, idx, config, avg_vol, atr)
         if signal:
             signal.symbol = symbol
             signals.append(signal)
@@ -519,11 +580,12 @@ def backtest_breakout_detection(
         if idx < skip_until:
             continue
 
-        vol_window = volumes[max(0, idx - 20):idx]
-        avg_vol_20 = sum(vol_window) / len(vol_window) if vol_window else 1
+        n_bars = config.volume_avg_bars or 5
+        vol_window = volumes[max(0, idx - n_bars):idx]
+        avg_vol = sum(vol_window) / len(vol_window) if vol_window else 1
         atr = atrs[idx] if idx < len(atrs) else 0
 
-        signal = detect_breakout_candle(rows, idx, config, avg_vol_20, atr)
+        signal = detect_breakout_candle(rows, idx, config, avg_vol, atr)
         if not signal:
             continue
 
@@ -828,6 +890,221 @@ def send_alert_summary(signals: list[BreakoutSignal], config: AlertConfig) -> di
     return results
 
 
+# ─── Intraday 30-min Data Fetching ───────────────────────────────────────────
+
+def _fetch_intraday_30m(symbol: str, days: int = 5) -> list[dict]:
+    """
+    Fetch 30-min intraday candles for an NSE stock via yfinance.
+    Returns list of OHLCV dicts with 'datetime' (ISO str), 'date', etc.
+    """
+    try:
+        import yfinance as yf
+        ticker = symbol.upper()
+        if not ticker.endswith(".NS") and not ticker.endswith(".BO"):
+            ticker = ticker + ".NS"
+        df = yf.download(ticker, period=f"{days}d", interval="30m", progress=False)
+        if df is None or df.empty:
+            return []
+        # Handle multi-level columns from yfinance
+        if hasattr(df.columns, 'levels') and len(df.columns.levels) > 1:
+            df.columns = df.columns.get_level_values(0)
+        rows = []
+        for ts, row in df.iterrows():
+            o = float(row.get("Open", 0) or 0)
+            h = float(row.get("High", 0) or 0)
+            lo = float(row.get("Low", 0) or 0)
+            c = float(row.get("Close", 0) or 0)
+            v = float(row.get("Volume", 0) or 0)
+            if c <= 0:
+                continue
+            dt_str = ts.strftime("%Y-%m-%d %H:%M")
+            rows.append({
+                "datetime": dt_str,
+                "date": ts.strftime("%Y-%m-%d"),
+                "time": ts.strftime("%H:%M"),
+                "open": o, "high": h, "low": lo, "close": c, "volume": v,
+            })
+        return rows
+    except Exception as e:
+        print(f"⚠ Intraday fetch failed for {symbol}: {e}", flush=True)
+        return []
+
+
+def _detect_intraday_breakout(
+    intraday_rows: list[dict],
+    daily_rows: list[dict],
+    symbol: str,
+    config: AlertConfig,
+) -> Optional[BreakoutSignal]:
+    """
+    Detect breakout on the LATEST 30-min candle:
+    1. Volume of this 30-min candle >= 2.5x avg of last N 30-min candles
+    2. Price breaks a key daily resistance level
+    3. Bullish candle (close > open)
+    """
+    if len(intraday_rows) < 6:
+        return None
+
+    # Latest completed 30-min candle
+    candle = intraday_rows[-1]
+    o, h, l, c, v = candle["open"], candle["high"], candle["low"], candle["close"], candle["volume"]
+    dt = candle.get("datetime", candle["date"])
+
+    candle_range = h - l
+    if candle_range <= 0 or c <= 0:
+        return None
+
+    body = abs(c - o)
+    body_ratio = body / candle_range
+    close_position = (c - l) / candle_range
+
+    # Volume: compare to avg of last N 30-min candles (excluding current)
+    n_bars = config.volume_avg_bars or 5
+    prev_candles = intraday_rows[-(n_bars + 1):-1]
+    prev_volumes = [r["volume"] for r in prev_candles if r["volume"] > 0]
+    avg_vol = sum(prev_volumes) / len(prev_volumes) if prev_volumes else 1
+    vol_ratio = v / avg_vol if avg_vol > 0 else 0
+
+    # PRIMARY: Volume surge
+    if vol_ratio < config.volume_threshold:
+        return None
+
+    # Bullish
+    if c <= o:
+        return None
+
+    # Close in upper half
+    if close_position < config.close_near_high_pct:
+        return None
+
+    # Body substance
+    if body_ratio < config.body_ratio_min:
+        return None
+
+    # Find key resistance levels from DAILY data (excluding today)
+    if not daily_rows or len(daily_rows) < 20:
+        return None
+
+    # Exclude today's daily bar so levels aren't distorted by today's move
+    today_date = candle.get("date", "")
+    daily_for_levels = [r for r in daily_rows if r["date"] < today_date] if today_date else daily_rows
+    if len(daily_for_levels) < 20:
+        daily_for_levels = daily_rows  # fallback
+
+    for r in daily_for_levels:
+        r["_symbol"] = symbol
+    levels = _find_resistance_levels(daily_for_levels, len(daily_for_levels))
+
+    # Check: is this candle breaking above a daily resistance level?
+    # Use previous day's close as reference (not just prev 30-min candle)
+    # because breakouts gap up at open
+    prev_30m_close = intraday_rows[-2]["close"] if len(intraday_rows) >= 2 else 0
+    # Find the last candle from a different date (previous day's last candle)
+    today = candle.get("date", "")
+    prev_day_close = daily_rows[-1]["close"] if daily_rows else prev_30m_close
+    for r in reversed(intraday_rows[:-1]):
+        if r.get("date", "") != today:
+            prev_day_close = r["close"]
+            break
+
+    broken_level = None
+    for lev in sorted(levels, key=lambda x: -x["strength"]):
+        level_price = lev["price"]
+        # Key check: previous day close was at/below the level, and current 30m candle is above
+        if prev_day_close <= level_price * 1.02 and c > level_price:
+            broken_level = lev
+            break
+        # Or: previous 30-min candle was below, and this one breaks above (intraday range expansion)
+        if prev_30m_close <= level_price * 1.02 and c > level_price:
+            broken_level = lev
+            break
+        # Or: candle high pierces the level
+        if prev_30m_close <= level_price * 1.01 and h > level_price * 1.005 and c > level_price * 0.99:
+            broken_level = lev
+            break
+        # Gap-up breakout: today's open gapped above the level (prev day was below)
+        if prev_day_close <= level_price * 1.02 and o > level_price and c > level_price:
+            broken_level = lev
+            break
+
+    signal_type = "BREAKOUT"
+    if not broken_level:
+        # No level break — but if volume is extreme (>= 4x), still alert as VOLUME_SURGE
+        if vol_ratio >= config.volume_strong_threshold:
+            signal_type = "VOLUME_SURGE"
+            broken_level = {"price": 0, "type": "NONE", "strength": 0}
+        else:
+            return None
+
+    # ATR from daily data (excluding today)
+    highs = [r["high"] for r in daily_for_levels]
+    lows = [r["low"] for r in daily_for_levels]
+    closes = [r["close"] for r in daily_for_levels]
+    atrs = _calc_atr(highs, lows, closes)
+    atr = atrs[-1] if atrs else candle_range
+
+    # Trade plan
+    stop_loss = l  # 30-min candle low
+    risk = c - stop_loss
+    if risk <= 0:
+        risk = atr * 0.5
+        stop_loss = c - risk
+
+    target_1 = c + risk * 2
+    target_2 = c + risk * 3.5
+    atr_multiple = candle_range / atr if atr > 0 else 0
+
+    # Consolidation from daily (excluding today)
+    cons_days, cons_range = _measure_consolidation(daily_for_levels, len(daily_for_levels))
+
+    # Score — heavily weighted on volume (the primary signal)
+    score = 0
+    score += min(30, vol_ratio * 10)
+    score += min(10, body_ratio * 12)
+    score += min(10, close_position * 10)
+    score += min(10, atr_multiple * 6)
+    score += min(10, cons_days / 3)
+    score += broken_level["strength"] * 10
+    score = min(100, round(score, 1))
+
+    notes_parts = [f"⏱ 30min candle {candle.get('time', '')}"]
+    if vol_ratio >= config.volume_strong_threshold:
+        notes_parts.append(f"🔥 VOL {vol_ratio:.1f}x")
+    else:
+        notes_parts.append(f"📊 Vol {vol_ratio:.1f}x")
+    lt = broken_level["type"]
+    if "52W" in lt:
+        notes_parts.append("🚀 52W HIGH")
+    elif "BULL_FLAG" in lt:
+        notes_parts.append("🏁 FLAG BREAK")
+    elif "RANGE" in lt:
+        notes_parts.append(f"📦 RANGE BREAK")
+    elif "SWING" in lt:
+        notes_parts.append("📈 SWING BREAK")
+    elif signal_type == "VOLUME_SURGE":
+        notes_parts.append("⚡ MASSIVE VOLUME — watch for follow-through")
+
+    return BreakoutSignal(
+        symbol=symbol,
+        signal_type=signal_type,
+        date=dt,
+        price=c, close=c, high=h, low=l, open_price=o,
+        volume=v, avg_volume_20=avg_vol,
+        volume_ratio=round(vol_ratio, 2),
+        body_ratio=round(body_ratio, 2),
+        close_position=round(close_position, 2),
+        breakout_level=broken_level["price"],
+        breakout_level_type=broken_level["type"],
+        atr_14=round(atr, 2), atr_multiple=round(atr_multiple, 2),
+        consolidation_days=cons_days, consolidation_range_pct=cons_range,
+        strength_score=score,
+        entry_price=round(c, 2), stop_loss=round(stop_loss, 2),
+        target_1=round(target_1, 2), target_2=round(target_2, 2),
+        risk_reward=round(risk / c * 100, 2) if c > 0 else 0,
+        notes=" | ".join(notes_parts),
+    )
+
+
 # ─── Alert State Persistence ─────────────────────────────────────────────────
 
 class AlertState:
@@ -909,20 +1186,23 @@ class AlertState:
 
 class BreakoutScanner:
     """
-    Background scanner that periodically checks watchlist stocks for breakouts.
-    Runs in a daemon thread. Sends WhatsApp alerts for new signals.
+    Background scanner that checks watchlist stocks for breakouts on 30-min candles.
+    During market hours: fetches live 30-min intraday data, detects breakouts on each candle close.
+    After hours: falls back to daily data scan.
+    Sends instant Telegram/Gmail alerts for new signals.
     """
 
     def __init__(self, data_dir: Path, cache_dir: Path, read_ohlcv_fn=None):
         self.state = AlertState(data_dir)
         self.cache_dir = cache_dir
-        self._read_ohlcv = read_ohlcv_fn  # External function to read OHLCV
+        self._read_ohlcv = read_ohlcv_fn
         self._thread: Optional[threading.Thread] = None
         self._running = False
         self._last_scan_time: Optional[str] = None
         self._last_scan_results: list[dict] = []
         self._lock = threading.Lock()
-        self._alerted_keys: set = set()  # track "symbol:date" to avoid dupes
+        self._alerted_keys: set = set()  # "symbol:datetime:type" to avoid dupes
+        self._scan_mode: str = "idle"    # "intraday" | "daily" | "idle"
 
     @property
     def is_running(self) -> bool:
@@ -935,6 +1215,7 @@ class BreakoutScanner:
                 "lastScanTime": self._last_scan_time,
                 "lastSignalCount": len(self._last_scan_results),
                 "alertedCount": len(self._alerted_keys),
+                "scanMode": self._scan_mode,
             }
 
     def start(self):
@@ -947,39 +1228,82 @@ class BreakoutScanner:
     def stop(self):
         self._running = False
 
+    def _is_market_hours(self) -> bool:
+        """Check if NSE market is open (9:15 AM - 3:30 PM IST, Mon-Fri)."""
+        try:
+            from datetime import timezone
+            ist = timezone(timedelta(hours=5, minutes=30))
+            now = datetime.now(ist)
+            if now.weekday() >= 5:  # Sat/Sun
+                return False
+            market_open = now.replace(hour=9, minute=15, second=0, microsecond=0)
+            market_close = now.replace(hour=15, minute=30, second=0, microsecond=0)
+            return market_open <= now <= market_close
+        except Exception:
+            return False
+
     def _loop(self):
-        """Main scanner loop."""
+        """
+        Main scanner loop.
+        During market hours: scan every 2 min using live 30-min intraday candles.
+        After hours: scan once with daily data, then sleep longer.
+        """
         while self._running:
             try:
                 config = self.state.load_config()
                 if config.enabled:
-                    self._scan_once(config)
+                    if self._is_market_hours():
+                        self._scan_mode = "intraday"
+                        self._scan_intraday(config)
+                    else:
+                        self._scan_mode = "daily"
+                        self._scan_daily(config)
             except Exception as e:
                 print(f"⚠ Breakout scanner error: {e}", flush=True)
 
             config = self.state.load_config()
-            interval = config.scan_interval_seconds
-            # Sleep in small increments so we can stop quickly
+            interval = config.scan_interval_seconds if self._is_market_hours() else 300
             for _ in range(interval):
                 if not self._running:
                     return
                 time.sleep(1)
 
-    def _scan_once(self, config: AlertConfig) -> list[BreakoutSignal]:
-        """Run one scan cycle across all watchlist stocks."""
-        from pathlib import Path
-        import csv as _csv
+    def _scan_intraday(self, config: AlertConfig) -> list[BreakoutSignal]:
+        """
+        LIVE INTRADAY SCAN: Fetch 30-min candles and detect breakouts.
+        This runs every ~2 min during market hours.
+        """
+        symbols = self._get_watchlist_symbols()
+        if not symbols:
+            return []
 
-        # Get watchlist symbols
-        wl_path = self.state.data_dir / "watchlist.json"
-        symbols = []
-        if wl_path.exists():
+        print(f"🔍 Intraday scan: {len(symbols)} stocks at {datetime.now().strftime('%H:%M:%S')}", flush=True)
+
+        all_signals = []
+        for sym in symbols:
             try:
-                items = json.loads(wl_path.read_text())
-                symbols = [i.get("symbol", "").upper() for i in items if i.get("symbol")]
-            except Exception:
-                pass
+                # Fetch live 30-min intraday candles
+                intraday = _fetch_intraday_30m(sym, days=5)
+                if not intraday or len(intraday) < 6:
+                    continue
 
+                # Also get daily data for resistance levels
+                daily = self._get_ohlcv(sym, days=252)
+                if not daily or len(daily) < 20:
+                    continue
+
+                signal = _detect_intraday_breakout(intraday, daily, sym, config)
+                if signal:
+                    all_signals.append(signal)
+            except Exception as e:
+                print(f"  ⚠ {sym}: {e}", flush=True)
+                continue
+
+        return self._process_signals(all_signals, config)
+
+    def _scan_daily(self, config: AlertConfig) -> list[BreakoutSignal]:
+        """After-hours scan using daily data (fallback)."""
+        symbols = self._get_watchlist_symbols()
         if not symbols:
             return []
 
@@ -994,7 +1318,10 @@ class BreakoutScanner:
             except Exception:
                 continue
 
-        # Filter already-alerted
+        return self._process_signals(all_signals, config)
+
+    def _process_signals(self, all_signals: list[BreakoutSignal], config: AlertConfig) -> list[BreakoutSignal]:
+        """Filter dupes, send alerts, persist."""
         new_signals = []
         for s in all_signals:
             key = f"{s.symbol}:{s.date}:{s.signal_type}"
@@ -1002,14 +1329,13 @@ class BreakoutScanner:
                 new_signals.append(s)
                 self._alerted_keys.add(key)
 
-        # Send alerts via all enabled channels (Telegram + Gmail)
         if new_signals:
-            if len(new_signals) == 1:
-                send_alert(new_signals[0], config)
-            else:
-                send_alert_summary(new_signals, config)
+            print(f"  🔔 {len(new_signals)} NEW signal(s)!", flush=True)
+            for s in new_signals:
+                print(f"     {s.signal_type}: {s.symbol} ₹{s.close:.1f} Vol {s.volume_ratio:.1f}x", flush=True)
+                # Send individual alert for each signal (for quick action)
+                send_alert(s, config)
 
-        # Persist
         if new_signals:
             self.state.append_signals(new_signals)
 
@@ -1019,30 +1345,43 @@ class BreakoutScanner:
 
         return all_signals
 
-    def scan_now(self, symbols: list[str] | None = None) -> list[dict]:
-        """Run an immediate scan (not background). Returns signal dicts."""
+    def _get_watchlist_symbols(self) -> list[str]:
+        wl_path = self.state.data_dir / "watchlist.json"
+        if wl_path.exists():
+            try:
+                items = json.loads(wl_path.read_text())
+                return [i.get("symbol", "").upper() for i in items if i.get("symbol")]
+            except Exception:
+                pass
+        return []
+
+    def scan_now(self, symbols: list[str] | None = None, intraday: bool = False) -> list[dict]:
+        """
+        Run an immediate scan. If intraday=True, uses live 30-min candles.
+        Returns signal dicts.
+        """
         config = self.state.load_config()
 
         if symbols is None:
-            wl_path = self.state.data_dir / "watchlist.json"
-            if wl_path.exists():
-                try:
-                    items = json.loads(wl_path.read_text())
-                    symbols = [i.get("symbol", "").upper() for i in items if i.get("symbol")]
-                except Exception:
-                    symbols = []
-
+            symbols = self._get_watchlist_symbols()
         if not symbols:
             return []
 
         all_signals = []
         for sym in symbols:
             try:
-                rows = self._get_ohlcv(sym)
-                if not rows or len(rows) < 30:
-                    continue
-                signals = scan_stock_for_breakouts(rows, sym, config, scan_last_n=3)
-                all_signals.extend(signals)
+                if intraday:
+                    intra = _fetch_intraday_30m(sym, days=5)
+                    daily = self._get_ohlcv(sym, days=252)
+                    if intra and len(intra) >= 6 and daily and len(daily) >= 20:
+                        signal = _detect_intraday_breakout(intra, daily, sym, config)
+                        if signal:
+                            all_signals.append(signal)
+                else:
+                    rows = self._get_ohlcv(sym)
+                    if rows and len(rows) >= 30:
+                        signals = scan_stock_for_breakouts(rows, sym, config, scan_last_n=3)
+                        all_signals.extend(signals)
             except Exception as e:
                 print(f"  ⚠ {sym}: {e}", flush=True)
                 continue
@@ -1050,7 +1389,6 @@ class BreakoutScanner:
         result = [asdict(s) for s in all_signals]
         result.sort(key=lambda x: -x.get("strength_score", 0))
 
-        # Persist
         if all_signals:
             self.state.append_signals(all_signals)
 

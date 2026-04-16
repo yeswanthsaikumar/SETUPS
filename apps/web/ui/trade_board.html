@@ -418,7 +418,8 @@
           Free alerts via Telegram or Gmail.
         </p>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
-          <button class="btn btn-primary btn-sm" onclick="boScanNow2()">⚡ Scan Now</button>
+          <button class="btn btn-primary btn-sm" onclick="boScanNow2(true)">⚡ Scan 30m Live</button>
+          <button class="btn btn-outline btn-sm" onclick="boScanNow2(false)">📅 Scan Daily</button>
           <button class="btn btn-outline btn-sm" onclick="boToggleScanner2()" id="boToggleScannerBtn2">▶ Start Scanner</button>
           <button class="btn btn-outline btn-sm" onclick="boRunBacktest2()">📊 Backtest</button>
           <button class="btn btn-outline btn-sm" onclick="boLoadSignals2()">📋 History</button>
@@ -430,11 +431,11 @@
         <div id="boConfigPanel2" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:14px;margin-bottom:14px;">
           <div style="font-size:13px;font-weight:700;color:#93c5fd;margin-bottom:8px;">Detection Parameters</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;font-size:12px;">
-            <div><label style="color:var(--muted);display:block;margin-bottom:2px;">Vol Threshold (x avg)</label><input id="boCfg2Vol" type="number" step="0.1" value="1.5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 8px;font-size:12px;"></div>
-            <div><label style="color:var(--muted);display:block;margin-bottom:2px;">Body Ratio Min</label><input id="boCfg2Body" type="number" step="0.05" value="0.55" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 8px;font-size:12px;"></div>
-            <div><label style="color:var(--muted);display:block;margin-bottom:2px;">ATR Multiple</label><input id="boCfg2Atr" type="number" step="0.1" value="1.5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 8px;font-size:12px;"></div>
-            <div><label style="color:var(--muted);display:block;margin-bottom:2px;">Min Base Days</label><input id="boCfg2Cons" type="number" value="15" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 8px;font-size:12px;"></div>
-            <div><label style="color:var(--muted);display:block;margin-bottom:2px;">Max Base Range %</label><input id="boCfg2Range" type="number" value="15" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 8px;font-size:12px;"></div>
+            <div><label style="color:var(--muted);display:block;margin-bottom:2px;">Vol Threshold (x avg)</label><input id="boCfg2Vol" type="number" step="0.1" value="2.5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 8px;font-size:12px;"></div>
+            <div><label style="color:var(--muted);display:block;margin-bottom:2px;">Vol Avg Bars</label><input id="boCfg2VolBars" type="number" value="5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 8px;font-size:12px;"></div>
+            <div><label style="color:var(--muted);display:block;margin-bottom:2px;">Body Ratio Min</label><input id="boCfg2Body" type="number" step="0.05" value="0.30" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 8px;font-size:12px;"></div>
+            <div><label style="color:var(--muted);display:block;margin-bottom:2px;">Min Base Bars</label><input id="boCfg2Cons" type="number" value="5" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 8px;font-size:12px;"></div>
+            <div><label style="color:var(--muted);display:block;margin-bottom:2px;">Max Base Range %</label><input id="boCfg2Range" type="number" value="20" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 8px;font-size:12px;"></div>
             <div><label style="color:var(--muted);display:block;margin-bottom:2px;">Scan Interval (sec)</label><input id="boCfg2Interval" type="number" value="120" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:5px 8px;font-size:12px;"></div>
           </div>
           <div style="font-size:13px;font-weight:700;color:#0ea5e9;margin:12px 0 6px;">📲 Telegram (FREE)</div>
@@ -1944,17 +1945,18 @@ document.addEventListener('keydown', e => {
 
 let _boRunning2 = false;
 
-async function boScanNow2() {
+async function boScanNow2(intraday=true) {
   const el = document.getElementById('boResults2');
-  el.innerHTML = '<div style="color:var(--muted);animation:blink 1.2s infinite;">⚡ Scanning watchlist for breakout candles…</div>';
+  const mode = intraday ? '30-min intraday' : 'daily';
+  el.innerHTML = '<div style="color:var(--muted);animation:blink 1.2s infinite;">⚡ Scanning watchlist ('+mode+' candles)…</div>';
   try {
-    const res = await fetch(API + '/api/breakout-alerts/scan-now', {method:'POST', headers:{'Content-Type':'application/json'}, body:'null'});
+    const res = await fetch(API + '/api/breakout-alerts/scan-now?intraday='+(intraday?'true':'false'), {method:'POST', headers:{'Content-Type':'application/json'}, body:'null'});
     const data = await res.json();
     if (!data.signals || !data.signals.length) {
-      el.innerHTML = '<div style="color:var(--muted);padding:20px 0;">No breakout signals detected on current watchlist candles.<br>This means no stock had a candle breaking a major level with volume surge + tight base in the last few sessions.</div>';
+      el.innerHTML = '<div style="color:var(--muted);padding:20px 0;">No breakout signals detected on '+mode+' candles.<br><span style="font-size:11px;">Mode: '+data.mode+' — '+data.scannedAt+'</span></div>';
       return;
     }
-    el.innerHTML = boRenderSignals2(data.signals, data.scannedAt);
+    el.innerHTML = '<div style="font-size:10px;color:var(--cyan);margin-bottom:4px;">Mode: '+data.mode+'</div>' + boRenderSignals2(data.signals, data.scannedAt);
   } catch(e) { el.innerHTML = '<div style="color:var(--red);">Error: '+e.message+'</div>'; }
 }
 
@@ -2014,9 +2016,9 @@ async function boLoadStatus2() {
     }
     if (d.config) {
       const c=d.config, s=(id,v)=>{const e=document.getElementById(id);if(e&&v!=null)e.value=v;};
-      s('boCfg2Vol',c.volume_threshold); s('boCfg2Body',c.body_ratio_min);
-      s('boCfg2Atr',c.atr_breakout_multiple); s('boCfg2Cons',c.consolidation_days);
-      s('boCfg2Range',c.consolidation_max_range_pct); s('boCfg2Interval',c.scan_interval_seconds);
+      s('boCfg2Vol',c.volume_threshold); s('boCfg2VolBars',c.volume_avg_bars); s('boCfg2Body',c.body_ratio_min);
+      s('boCfg2Cons',c.min_base_bars||c.consolidation_days);
+      s('boCfg2Range',c.max_base_range_pct||c.consolidation_max_range_pct); s('boCfg2Interval',c.scan_interval_seconds);
       s('boCfg2TgToken',c.telegram_bot_token); s('boCfg2TgChat',c.telegram_chat_id);
       s('boCfg2Gmail',c.gmail_address); s('boCfg2EmailTo',c.email_to);
       const tge=document.getElementById('boCfg2TgEnabled'); if(tge)tge.checked=c.telegram_enabled;
@@ -2028,9 +2030,11 @@ async function boLoadStatus2() {
 async function boSaveConfig2() {
   const cfg = {
     volume_threshold: parseFloat(document.getElementById('boCfg2Vol').value),
+    volume_avg_bars: parseInt(document.getElementById('boCfg2VolBars').value),
     body_ratio_min: parseFloat(document.getElementById('boCfg2Body').value),
-    atr_breakout_multiple: parseFloat(document.getElementById('boCfg2Atr').value),
+    min_base_bars: parseInt(document.getElementById('boCfg2Cons').value),
     consolidation_days: parseInt(document.getElementById('boCfg2Cons').value),
+    max_base_range_pct: parseInt(document.getElementById('boCfg2Range').value),
     consolidation_max_range_pct: parseInt(document.getElementById('boCfg2Range').value),
     scan_interval_seconds: parseInt(document.getElementById('boCfg2Interval').value),
     telegram_enabled: document.getElementById('boCfg2TgEnabled').checked,

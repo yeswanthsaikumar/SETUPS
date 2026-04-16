@@ -2683,8 +2683,12 @@ class BreakoutAlertConfigUpdate(BaseModel):
     enabled: Optional[bool] = None
     scan_interval_seconds: Optional[int] = None
     volume_threshold: Optional[float] = None
+    volume_avg_bars: Optional[int] = None
+    volume_strong_threshold: Optional[float] = None
     body_ratio_min: Optional[float] = None
     close_near_high_pct: Optional[float] = None
+    min_base_bars: Optional[int] = None
+    max_base_range_pct: Optional[float] = None
     consolidation_days: Optional[int] = None
     consolidation_max_range_pct: Optional[float] = None
     atr_breakout_multiple: Optional[float] = None
@@ -2728,15 +2732,15 @@ def update_breakout_alert_config(update: BreakoutAlertConfigUpdate) -> dict:
 
 
 @app.post("/api/breakout-alerts/scan-now")
-def breakout_scan_now(symbols: list[str] | None = None) -> dict:
-    """Run an immediate breakout scan on watchlist (or specified symbols)."""
-    # Wire up the _read_ohlcv function if not done
+def breakout_scan_now(symbols: list[str] | None = None, intraday: bool = True) -> dict:
+    """Run an immediate breakout scan. intraday=True uses live 30-min candles."""
     if _breakout_scanner._read_ohlcv is None:
         _breakout_scanner._read_ohlcv = _read_ohlcv
-    results = _breakout_scanner.scan_now(symbols=symbols)
+    results = _breakout_scanner.scan_now(symbols=symbols, intraday=intraday)
     return {
         "signals": results,
         "count": len(results),
+        "mode": "intraday_30m" if intraday else "daily",
         "scannedAt": datetime.now().isoformat(timespec="seconds"),
     }
 
