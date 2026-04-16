@@ -37,6 +37,11 @@ if [ -f ".venv/bin/activate" ]; then
     source .venv/bin/activate
 fi
 
+# ── Load .env file if present (for GROWW_API_KEY etc.) ────────────────────────
+if [ -f ".env" ]; then
+    set -a; source .env; set +a
+fi
+
 echo ""
 echo -e "${BOLD}${CYAN}╔══════════════════════════════════════════════════════╗${RESET}"
 echo -e "${BOLD}${CYAN}║        SETUPS Web Console                          ║${RESET}"
@@ -79,6 +84,12 @@ if [ "$AUTO_OPEN" = true ]; then
 fi
 
 # Start the server — runs immediately, cache refresh happens inside
+# Set GROWW_API_KEY + GROWW_API_SECRET for live prices via Groww Developer API
+# Or set GROWW_ACCESS_TOKEN directly if you already have one
+# Get credentials at: https://developer.groww.in/
+GROWW_API_KEY="${GROWW_API_KEY:-}" \
+GROWW_API_SECRET="${GROWW_API_SECRET:-}" \
+GROWW_ACCESS_TOKEN="${GROWW_ACCESS_TOKEN:-}" \
 SETUPS_SKIP_STARTUP_REFRESH="${SKIP_REFRESH}" \
 PYTHONPATH="$(pwd)/apps/python/lib" \
 uvicorn apps.web.api.main:app \

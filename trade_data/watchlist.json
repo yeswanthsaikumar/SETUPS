@@ -7,5 +7,23 @@
     "setup": "Base Building",
     "id": "7c51bf2f-ef44-4787-b52b-3a29b05cef8e",
     "added_at": "2026-04-15T08:41:36"
+  },
+  {
+    "symbol": "PFOCUS",
+    "name": "pfocus",
+    "notes": "",
+    "alert_price": null,
+    "setup": "Watching",
+    "id": "547ff884-ffdf-4e54-ad31-721888e1d11a",
+    "added_at": "2026-04-16T22:16:57"
+  },
+  {
+    "symbol": "GMDCLTD",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "",
+    "id": "ae09bd0a-bdc9-4008-85d9-98e9c0aaf690",
+    "added_at": "2026-04-16T22:24:49"
   }
 ]
