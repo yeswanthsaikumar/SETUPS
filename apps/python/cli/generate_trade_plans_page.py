@@ -1824,48 +1824,48 @@ def build_html(signals: list[dict], run_history: dict | None = None) -> str:
     </div>
   </div>
 
-  <div class="sig-footer">
-    <div class="sig-stat">
-      <span class="sstat-label">Regime</span>
-      <span class="{regime_cls}">{regime_str}</span>
-    </div>
-    <div class="sig-stat">
-      <span class="sstat-label">RS 3M</span>
-      <span class="{rs3m_cls}">{rs3m_text}</span>
-    </div>
-    <div class="sig-stat">
-      <span class="sstat-label">RS 6M</span>
-      <span class="{rs6m_cls}">{rs6m_text}</span>
-    </div>
-    <div class="sig-stat">
-      <span class="sstat-label">Vol %</span>
-      <span style="color:#79c0ff">{vol_pct_text}</span>
-    </div>
-    <div class="sig-stat">
-      <span class="sstat-label">RExp</span>
-      <span style="color:#e3b341">{rexp_text}</span>
-    </div>
-  </div>
+   <!-- EMA & ADR row - MOVED UP FOR VISIBILITY -->
+   <div class="ema-adr-row">
+     <div class="ema-cell">
+       <span class="ema-label">EMA 21</span>
+       {fmt_ema_vs(pv_ema21)}
+     </div>
+     <div class="ema-cell">
+       <span class="ema-label">EMA 50</span>
+       {fmt_ema_vs(pv_ema50)}
+     </div>
+     <div class="ema-cell">
+       <span class="ema-label">EMA 200</span>
+       {fmt_ema_vs(pv_ema200)}
+     </div>
+     <div class="ema-cell">
+       <span class="ema-label">ADR%</span>
+       {fmt_adr(adr_pct_val)}
+     </div>
+   </div>
 
-  <!-- EMA & ADR row -->
-  <div class="ema-adr-row">
-    <div class="ema-cell">
-      <span class="ema-label">EMA 21</span>
-      {fmt_ema_vs(pv_ema21)}
-    </div>
-    <div class="ema-cell">
-      <span class="ema-label">EMA 50</span>
-      {fmt_ema_vs(pv_ema50)}
-    </div>
-    <div class="ema-cell">
-      <span class="ema-label">EMA 200</span>
-      {fmt_ema_vs(pv_ema200)}
-    </div>
-    <div class="ema-cell">
-      <span class="ema-label">ADR%</span>
-      {fmt_adr(adr_pct_val)}
-    </div>
-  </div>
+   <div class="sig-footer">
+     <div class="sig-stat">
+       <span class="sstat-label">Regime</span>
+       <span class="{regime_cls}">{regime_str}</span>
+     </div>
+     <div class="sig-stat">
+       <span class="sstat-label">RS 3M</span>
+       <span class="{rs3m_cls}">{rs3m_text}</span>
+     </div>
+     <div class="sig-stat">
+       <span class="sstat-label">RS 6M</span>
+       <span class="{rs6m_cls}">{rs6m_text}</span>
+     </div>
+     <div class="sig-stat">
+       <span class="sstat-label">Vol %</span>
+       <span style="color:#79c0ff">{vol_pct_text}</span>
+     </div>
+     <div class="sig-stat">
+       <span class="sstat-label">RExp</span>
+       <span style="color:#e3b341">{rexp_text}</span>
+     </div>
+   </div>
 
   <!-- Performance row -->
   <div class="perf-row">
@@ -2258,13 +2258,13 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
 .perf-row{{display:flex;gap:0;border-top:1px solid #21262d;background:#090e14;flex-wrap:wrap}}
 
 /* EMA & ADR ROW */
-.ema-adr-row{{display:flex;gap:0;border-top:1px solid #1c2333;background:#0c1220;flex-wrap:wrap}}
-.ema-cell{{flex:1;min-width:65px;padding:6px 10px;text-align:center;border-right:1px solid #1c2333}}
+.ema-adr-row{{display:flex;gap:0;border-top:2px solid #2d5016;border-bottom:1px solid #1c2333;background:#0d1a09;flex-wrap:wrap}}
+.ema-cell{{flex:1;min-width:70px;padding:8px 12px;text-align:center;border-right:1px solid #1c2333}}
 .ema-cell:last-child{{border-right:none}}
-.ema-label{{display:block;font-size:.58em;color:#4b6080;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;font-weight:700}}
-.ema-above{{font-size:.78em;font-weight:700;color:#3fb950}}
-.ema-below{{font-size:.78em;font-weight:700;color:#f85149}}
-.ema-na{{font-size:.78em;color:#8b949e}}
+.ema-label{{display:block;font-size:.65em;color:#4b8050;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px;font-weight:800}}
+.ema-above{{font-size:.85em;font-weight:800;color:#4ade80;text-shadow:0 0 8px rgba(74,222,128,.3)}}
+.ema-below{{font-size:.85em;font-weight:800;color:#f85149;text-shadow:0 0 8px rgba(248,81,73,.3)}}
+.ema-na{{font-size:.85em;color:#8b949e}}
 .perf-cell{{flex:1;min-width:60px;padding:7px 10px;text-align:center;border-right:1px solid #21262d}}
 .perf-cell:last-child{{border-right:none}}
 .perf-cell.appear-cell{{flex:1.3;min-width:90px}}

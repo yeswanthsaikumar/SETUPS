@@ -11,5 +11,6 @@ services:
     volumes:
       - ./output:/app/output
       - ./cache:/app/cache
+      - ./trade_data:/app/trade_data
     restart: unless-stopped
 
