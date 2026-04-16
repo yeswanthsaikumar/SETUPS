@@ -34,6 +34,11 @@ ROOT      = Path(__file__).resolve().parents[1]
 CACHE_DIR = ROOT / "cache"
 DATA_DIR  = ROOT / "data"
 
+# Ensure lib is on path for shared modules
+_LIB_DIR = str(ROOT / "apps" / "python" / "lib")
+if _LIB_DIR not in sys.path:
+    sys.path.insert(0, _LIB_DIR)
+
 IST = zoneinfo.ZoneInfo("Asia/Kolkata")
 NSE_CLOSE_HOUR, NSE_CLOSE_MIN = 15, 35
 MAX_DATA_GAP_DAYS = 10
@@ -162,8 +167,14 @@ def _find_stale_caches(symbol_filter=None, indian_only=False):
 # ═══════════════════════════════════════════════════════════════════════════
 
 def _fetch_bars(symbol: str, from_date: str | None = None) -> list[dict]:
-    """Try every source in priority order."""
-    # 1. yfinance
+    """Try every source in priority order: Groww → yfinance → NSE India → raw Yahoo v8."""
+    # 0. Groww API (primary — most reliable for NSE stocks when configured)
+    if symbol.endswith(".NS") or symbol.endswith(".BO"):
+        bars = _fetch_groww(symbol, from_date)
+        if bars:
+            return bars
+
+    # 1. yfinance (fallback)
     bars = _fetch_yfinance(symbol, from_date)
     if bars:
         return bars
@@ -174,9 +185,108 @@ def _fetch_bars(symbol: str, from_date: str | None = None) -> list[dict]:
         if bars:
             return bars
 
-    # 3. Raw Yahoo v8
+    # 3. Raw Yahoo v8 (last resort)
     bars = _fetch_raw_yahoo(symbol, from_date)
     return bars
+
+
+# ── Source 0: Groww API (primary for NSE stocks) ────────────────────────────
+
+def _fetch_groww(symbol, from_date):
+    """Fetch historical daily candles from Groww API."""
+    try:
+        from groww_client import get_groww_client
+    except ImportError:
+        return []
+    client = get_groww_client()
+    if not client:
+        return []
+    try:
+        from growwapi import GrowwAPI
+        base_sym = symbol.replace(".NS", "").replace(".BO", "")
+        exchange = GrowwAPI.EXCHANGE_NSE
+
+        if from_date:
+            start_dt = (datetime.date.fromisoformat(from_date)
+                        + datetime.timedelta(days=1))
+        else:
+            start_dt = datetime.date.today() - datetime.timedelta(days=730)
+        end_dt = datetime.date.today()
+
+        # Groww expects ISO datetime strings
+        start_str = datetime.datetime(start_dt.year, start_dt.month, start_dt.day,
+                                      tzinfo=IST).strftime("%Y-%m-%dT%H:%M:%S+05:30")
+        end_str = datetime.datetime(end_dt.year, end_dt.month, end_dt.day,
+                                    hour=23, minute=59, tzinfo=IST).strftime("%Y-%m-%dT%H:%M:%S+05:30")
+
+        _throttle()
+        # Try get_historical_candle_data first (uses trading_symbol directly)
+        try:
+            data = client.get_historical_candle_data(
+                trading_symbol=base_sym,
+                exchange=exchange,
+                segment=GrowwAPI.SEGMENT_CASH,
+                start_time=start_str,
+                end_time=end_str,
+                interval_in_minutes=None,  # daily
+                timeout=15,
+            )
+        except Exception:
+            # Fallback to get_historical_candles (uses groww_symbol)
+            data = client.get_historical_candles(
+                exchange=exchange,
+                segment=GrowwAPI.SEGMENT_CASH,
+                groww_symbol=base_sym,
+                start_time=start_str,
+                end_time=end_str,
+                candle_interval=GrowwAPI.CANDLE_INTERVAL_DAY,
+                timeout=15,
+            )
+
+        if not data:
+            return []
+
+        # Parse response - Groww returns candles as list of dicts or nested structure
+        candles = []
+        if isinstance(data, dict):
+            candles = data.get("candles", data.get("data", []))
+        elif isinstance(data, list):
+            candles = data
+
+        bars = []
+        for c in candles:
+            try:
+                if isinstance(c, dict):
+                    dt = c.get("date", c.get("timestamp", c.get("time", "")))
+                    o = float(c.get("open", 0))
+                    h = float(c.get("high", 0))
+                    lo = float(c.get("low", 0))
+                    cl = float(c.get("close", 0))
+                    v = int(float(c.get("volume", 0)))
+                elif isinstance(c, (list, tuple)) and len(c) >= 6:
+                    # [timestamp, open, high, low, close, volume]
+                    dt = c[0]
+                    o, h, lo, cl, v = float(c[1]), float(c[2]), float(c[3]), float(c[4]), int(c[5])
+                else:
+                    continue
+
+                if isinstance(dt, (int, float)):
+                    dt = datetime.datetime.fromtimestamp(dt, IST).strftime("%Y-%m-%d")
+                elif isinstance(dt, str) and len(dt) >= 10:
+                    dt = dt[:10]
+                else:
+                    continue
+
+                if o <= 0 or h <= 0 or lo <= 0 or cl <= 0 or v <= 0:
+                    continue
+                bars.append(dict(date=dt, open=round(o, 5), high=round(h, 5),
+                                 low=round(lo, 5), close=round(cl, 5), volume=v))
+            except Exception:
+                continue
+
+        return sorted(bars, key=lambda b: b["date"])
+    except Exception:
+        return []
 
 
 # ── Source 1: yfinance ──────────────────────────────────────────────────────

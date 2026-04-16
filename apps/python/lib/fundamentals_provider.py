@@ -93,12 +93,89 @@ class FundamentalsProvider:
         except Exception:
             pass
 
+    def _fetch_groww(self, symbol: str) -> dict | None:
+        """Fetch fundamentals from Groww API. Returns dict or None on failure."""
+        try:
+            from groww_client import get_groww_client
+        except ImportError:
+            return None
+        client = get_groww_client()
+        if not client:
+            return None
+        try:
+            from growwapi import GrowwAPI
+            base_sym = symbol.replace(".NS", "").replace(".BO", "")
+            exchange_sym = f"NSE_{base_sym}"
+
+            # Get quote which includes fundamental data
+            quote = client.get_quote(
+                trading_symbol=base_sym,
+                exchange=GrowwAPI.EXCHANGE_NSE,
+                segment=GrowwAPI.SEGMENT_CASH,
+                timeout=10,
+            )
+            if not quote or not isinstance(quote, dict):
+                return None
+
+            result: dict = {"symbol": symbol, "_source": "groww"}
+
+            # Extract fields from Groww quote response
+            # Groww returns various structures; extract what's available
+            info = quote if isinstance(quote, dict) else {}
+
+            result["sector"] = info.get("sector")
+            result["industry"] = info.get("industry")
+            result["currency"] = "INR"
+
+            pe = info.get("pe") or info.get("trailingPE") or info.get("pe_ratio")
+            result["pe"] = float(pe) if pe else None
+
+            fwd_pe = info.get("forwardPE") or info.get("forward_pe")
+            result["fwd_pe"] = float(fwd_pe) if fwd_pe else None
+
+            mc = info.get("marketCap") or info.get("market_cap")
+            result["market_cap"] = float(mc) if mc else None
+
+            # EPS growth - may not be available from Groww quote
+            result["eps_qoq"] = None
+            result["eps_yoy"] = None
+
+            eg = info.get("earningsGrowth") or info.get("earningsQuarterlyGrowth")
+            if eg is not None:
+                try:
+                    result["eps_yoy"] = round(float(eg) * 100, 1) if abs(float(eg)) < 10 else round(float(eg), 1)
+                except Exception:
+                    pass
+
+            rg = info.get("revenueGrowth")
+            result["rev_yoy"] = round(float(rg) * 100, 1) if rg else None
+
+            result["debt_trend_pct"] = None
+
+            dy = info.get("dividendYield") or info.get("dividend_yield")
+            result["div_yield"] = round(float(dy) * 100, 2) if dy else None
+
+            # Only return if we got at least some useful data
+            if result.get("pe") or result.get("market_cap") or result.get("sector"):
+                return result
+            return None
+        except Exception:
+            return None
+
     def fetch(self, symbol: str) -> dict:
-        """Return a rich fundamentals dict for one symbol."""
+        """Return a rich fundamentals dict for one symbol. Tries Groww first, yfinance as fallback."""
         cached = self._load_cache(symbol)
         if cached:
             return cached
 
+        # Try Groww API first (primary source for NSE stocks)
+        if symbol.endswith(".NS") or symbol.endswith(".BO") or not "." in symbol:
+            result = self._fetch_groww(symbol)
+            if result and not result.get("error"):
+                self._save_cache(symbol, result)
+                return result
+
+        # Fallback to yfinance
         if not HAS_YFINANCE:
             return {"symbol": symbol, "error": "yfinance_unavailable"}
 
