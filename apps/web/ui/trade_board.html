@@ -458,6 +458,23 @@
 
         <!-- Results -->
         <div id="boResults2"></div>
+
+        <!-- Position 5 EMA Proximity Alerts -->
+        <div style="margin-top:24px;border-top:1px solid var(--border2);padding-top:16px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+            <span style="font-size:16px;font-weight:700;color:#f59e0b;">📉 Position 5 EMA Alerts</span>
+          </div>
+          <p style="color:var(--muted);font-size:12px;margin-bottom:10px;">
+            Monitors your open positions and alerts when price is approaching, touching, or breaking below the 5 EMA (trailing stop indicator).
+            Runs automatically with the background scanner.
+          </p>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+            <button class="btn btn-outline btn-sm" onclick="ema5CheckNow()" style="border-color:#f59e0b44;color:#f59e0b;">📉 Check Positions Now</button>
+            <button class="btn btn-outline btn-sm" onclick="ema5ScanSend()" style="border-color:#ef444444;color:#ef4444;">🔔 Check & Alert</button>
+          </div>
+          <div id="ema5Results"></div>
+        </div>
+
       </div>
     </div>
 
@@ -2110,6 +2127,72 @@ async function boTestAlert2() {
 }
 
 // Load alert status when navigating to alerts page
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ── Position 5 EMA Proximity Alerts ─────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function ema5CheckNow() {
+  const el = document.getElementById('ema5Results');
+  el.innerHTML = '<div style="color:var(--muted);animation:blink 1.2s infinite;">📉 Checking open positions against 5 EMA…</div>';
+  try {
+    const res = await fetch(API + '/api/position-alerts/ema5-check');
+    const data = await res.json();
+    el.innerHTML = ema5RenderAlerts(data);
+  } catch(e) { el.innerHTML = '<div style="color:var(--red);">Error: ' + e.message + '</div>'; }
+}
+
+async function ema5ScanSend() {
+  const el = document.getElementById('ema5Results');
+  el.innerHTML = '<div style="color:var(--muted);animation:blink 1.2s infinite;">🔔 Checking positions & sending Telegram alerts…</div>';
+  try {
+    const res = await fetch(API + '/api/position-alerts/ema5-scan-send', {method:'POST'});
+    const data = await res.json();
+    let msg = '';
+    if (data.telegramSent > 0) msg = data.telegramSent + ' alert(s) sent via Telegram!';
+    else if (data.newAlerts > 0) msg = data.newAlerts + ' new alert(s) (Telegram not configured)';
+    else msg = 'No new alerts (already sent or no positions approaching 5 EMA)';
+    toast(msg, data.telegramSent > 0 ? 'success' : 'info');
+    el.innerHTML = ema5RenderAlerts(data);
+  } catch(e) { el.innerHTML = '<div style="color:var(--red);">Error: ' + e.message + '</div>'; }
+}
+
+function ema5RenderAlerts(data) {
+  const alerts = data.alerts || [];
+  if (!alerts.length) {
+    return '<div style="color:var(--muted);padding:12px 0;font-size:12px;">✅ All ' + (data.totalOpen||0) + ' open position(s) are safely above 5 EMA.<br><span style="font-size:10px;">Checked at ' + (data.checkedAt||'') + '</span></div>';
+  }
+  let h = '<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">Checked ' + (data.totalOpen||0) + ' open positions — ' + alerts.length + ' alert(s) at ' + (data.checkedAt||'') + '</div>';
+  h += '<div style="display:grid;gap:8px;">';
+  for (const a of alerts) {
+    const typeColors = {
+      'EMA5_BROKEN': { bg: '#ef44441a', border: '#ef4444', icon: '🔴', label: '5 EMA BROKEN' },
+      'EMA5_TOUCHED': { bg: '#f59e0b1a', border: '#f59e0b', icon: '🟡', label: '5 EMA TOUCHED' },
+      'EMA5_APPROACHING': { bg: '#3b82f61a', border: '#3b82f6', icon: '📉', label: 'APPROACHING 5 EMA' },
+    };
+    const t = typeColors[a.alert_type] || typeColors['EMA5_APPROACHING'];
+    const gainCls = a.gain_pct >= 0 ? 'var(--green)' : 'var(--red)';
+    h += '<div style="background:' + t.bg + ';border:1px solid ' + t.border + '44;border-radius:8px;padding:10px 12px;">';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">';
+    h += '<span style="font-size:16px;">' + t.icon + '</span>';
+    h += '<span style="font-weight:700;font-size:14px;color:' + t.border + ';">' + a.symbol + '</span>';
+    h += '<span style="font-size:11px;background:' + t.border + '33;color:' + t.border + ';padding:1px 6px;border-radius:4px;">' + t.label + '</span>';
+    h += '</div>';
+    h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:4px 12px;font-size:12px;margin-top:4px;">';
+    h += '<div>💰 CMP: <b>₹' + a.price.toFixed(2) + '</b></div>';
+    h += '<div>📊 5 EMA: <b>₹' + a.ema5.toFixed(2) + '</b> <span style="color:' + (a.ema5_dist_pct >= 0 ? 'var(--green)' : 'var(--red)') + ';">(' + (a.ema5_dist_pct >= 0 ? '+' : '') + a.ema5_dist_pct.toFixed(2) + '%)</span></div>';
+    h += '<div>📈 20 EMA: ₹' + a.ema20.toFixed(2) + ' <span style="color:' + (a.ema20_dist_pct >= 0 ? 'var(--green)' : 'var(--red)') + ';">(' + (a.ema20_dist_pct >= 0 ? '+' : '') + a.ema20_dist_pct.toFixed(2) + '%)</span></div>';
+    h += '<div>🎯 Entry: ₹' + a.entry_price.toFixed(2) + ' <span style="color:' + gainCls + ';">(' + (a.gain_pct >= 0 ? '+' : '') + a.gain_pct.toFixed(1) + '%)</span></div>';
+    h += '<div>📏 ADR: ' + a.adr_pct.toFixed(1) + '%</div>';
+    if (a.sl) h += '<div>🛑 SL: ₹' + a.sl.toFixed(2) + '</div>';
+    h += '</div>';
+    h += '<div style="font-size:11px;color:var(--muted);margin-top:4px;">💡 ' + (a.notes||'') + '</div>';
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
 </script>
 </body>
 </html>

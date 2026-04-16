@@ -1105,6 +1105,185 @@ def _detect_intraday_breakout(
     )
 
 
+# ─── Position 5 EMA Proximity Alert ─────────────────────────────────────────
+
+@dataclass
+class EmaProximityAlert:
+    """Alert when an open position's price is approaching the 5 EMA."""
+    symbol: str
+    alert_type: str        # "EMA5_APPROACHING" | "EMA5_TOUCHED" | "EMA5_BROKEN"
+    price: float
+    ema5: float
+    ema5_dist_pct: float   # % distance from 5 EMA (positive = above)
+    ema20: float
+    ema20_dist_pct: float
+    entry_price: float
+    gain_pct: float        # unrealized P&L %
+    adr_pct: float         # average daily range %
+    date: str
+    notes: str = ""
+    alerted: bool = False
+
+
+def check_position_ema5_proximity(
+    rows: list[dict],
+    symbol: str,
+    entry_price: float,
+    threshold_pct: float = 1.5,
+) -> Optional[EmaProximityAlert]:
+    """
+    Check if an open position's price is approaching the 5 EMA.
+
+    Alert tiers:
+    - EMA5_APPROACHING: price within `threshold_pct`% of 5 EMA (from above)
+    - EMA5_TOUCHED: price within 0.3% of 5 EMA
+    - EMA5_BROKEN: price closed below 5 EMA
+
+    Only alerts when price is coming DOWN toward 5 EMA (pullback from above).
+    """
+    if not rows or len(rows) < 10:
+        return None
+
+    closes = [r["close"] for r in rows]
+    ema5 = _calc_ema(closes, 5)
+    ema20 = _calc_ema(closes, 20)
+
+    current_close = closes[-1]
+    prev_close = closes[-2] if len(closes) >= 2 else current_close
+    e5 = ema5[-1]
+    e20 = ema20[-1]
+
+    if not e5 or e5 <= 0:
+        return None
+
+    dist_pct = (current_close - e5) / e5 * 100
+    prev_dist_pct = (prev_close - (ema5[-2] if len(ema5) >= 2 and ema5[-2] else e5)) / e5 * 100
+
+    e20_dist = (current_close - e20) / e20 * 100 if e20 and e20 > 0 else 0
+    gain_pct = (current_close - entry_price) / entry_price * 100 if entry_price > 0 else 0
+
+    # ADR
+    adr_period = min(20, len(rows))
+    recent = rows[-adr_period:]
+    adr_abs = sum(r["high"] - r["low"] for r in recent) / adr_period if adr_period > 0 else 0
+    adr_pct = round(adr_abs / current_close * 100, 2) if current_close > 0 else 0
+
+    # Determine alert type — only when price is pulling back (was above, now closer)
+    alert_type = None
+    notes_parts = []
+
+    if dist_pct < -0.3:
+        # Price CLOSED BELOW 5 EMA
+        alert_type = "EMA5_BROKEN"
+        notes_parts.append(f"⚠️ CLOSED BELOW 5 EMA — consider trailing SL")
+    elif abs(dist_pct) <= 0.3:
+        # Price touching 5 EMA
+        alert_type = "EMA5_TOUCHED"
+        notes_parts.append(f"🟡 TOUCHING 5 EMA — watch for bounce or break")
+    elif 0 < dist_pct <= threshold_pct and prev_dist_pct > dist_pct:
+        # Price approaching from above (pulling back)
+        alert_type = "EMA5_APPROACHING"
+        notes_parts.append(f"📉 Pulling back toward 5 EMA")
+    else:
+        return None  # Not approaching or too far
+
+    # Add context
+    if e20 and e20 > 0:
+        if current_close > e20:
+            notes_parts.append("✅ Above 20 EMA")
+        else:
+            notes_parts.append("⚠️ Below 20 EMA too!")
+
+    if gain_pct > 10:
+        notes_parts.append(f"💰 +{gain_pct:.1f}% from entry")
+    elif gain_pct > 0:
+        notes_parts.append(f"📊 +{gain_pct:.1f}% from entry")
+    else:
+        notes_parts.append(f"🔴 {gain_pct:.1f}% from entry")
+
+    return EmaProximityAlert(
+        symbol=symbol,
+        alert_type=alert_type,
+        price=round(current_close, 2),
+        ema5=round(e5, 2),
+        ema5_dist_pct=round(dist_pct, 2),
+        ema20=round(e20, 2) if e20 else 0,
+        ema20_dist_pct=round(e20_dist, 2),
+        entry_price=round(entry_price, 2),
+        gain_pct=round(gain_pct, 2),
+        adr_pct=adr_pct,
+        date=rows[-1].get("date", ""),
+        notes=" | ".join(notes_parts),
+    )
+
+
+def _format_ema5_alert_message(alert: EmaProximityAlert, html: bool = False) -> str:
+    """Format a 5 EMA proximity alert into a readable message."""
+    b = "<b>" if html else "*"
+    be = "</b>" if html else "*"
+    nl = "<br>" if html else "\n"
+    line = "━" * 18
+
+    emoji_map = {
+        "EMA5_BROKEN": "🔴",
+        "EMA5_TOUCHED": "🟡",
+        "EMA5_APPROACHING": "📉",
+    }
+    label_map = {
+        "EMA5_BROKEN": "5 EMA BROKEN",
+        "EMA5_TOUCHED": "5 EMA TOUCHED",
+        "EMA5_APPROACHING": "APPROACHING 5 EMA",
+    }
+    emoji = emoji_map.get(alert.alert_type, "📉")
+    label = label_map.get(alert.alert_type, alert.alert_type)
+
+    return (
+        f"{emoji} {b}POSITION ALERT: {alert.symbol}{be}{nl}"
+        f"{line}{nl}"
+        f"🏷 {b}{label}{be}{nl}"
+        f"💰 CMP: ₹{alert.price:.2f}{nl}"
+        f"📊 5 EMA: ₹{alert.ema5:.2f} ({alert.ema5_dist_pct:+.2f}%){nl}"
+        f"📈 20 EMA: ₹{alert.ema20:.2f} ({alert.ema20_dist_pct:+.2f}%){nl}"
+        f"🎯 Entry: ₹{alert.entry_price:.2f} ({alert.gain_pct:+.1f}%){nl}"
+        f"📏 ADR: {alert.adr_pct:.1f}%{nl}"
+        f"{line}{nl}"
+        f"💡 {alert.notes}"
+    )
+
+
+def send_ema5_telegram_alert(alert: EmaProximityAlert, config: AlertConfig) -> bool:
+    """Send a 5 EMA proximity alert via Telegram."""
+    if not config.telegram_enabled or not config.telegram_bot_token or not config.telegram_chat_id:
+        return False
+    try:
+        import urllib.request, urllib.error
+        msg = _format_ema5_alert_message(alert, html=False)
+        url = f"https://api.telegram.org/bot{config.telegram_bot_token}/sendMessage"
+        payload = json.dumps({
+            "chat_id": config.telegram_chat_id,
+            "text": msg,
+            "parse_mode": "Markdown",
+        }).encode()
+        req = urllib.request.Request(url, data=payload,
+                                     headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return json.loads(resp.read()).get("ok", False)
+        except urllib.error.HTTPError:
+            # Retry without markdown
+            payload2 = json.dumps({
+                "chat_id": config.telegram_chat_id,
+                "text": msg.replace("*", ""),
+            }).encode()
+            req2 = urllib.request.Request(url, data=payload2,
+                                          headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req2, timeout=10) as resp2:
+                return json.loads(resp2.read()).get("ok", False)
+    except Exception as e:
+        print(f"⚠ EMA5 Telegram alert failed: {e}", flush=True)
+        return False
+
+
 # ─── Alert State Persistence ─────────────────────────────────────────────────
 
 class AlertState:
@@ -1202,7 +1381,9 @@ class BreakoutScanner:
         self._last_scan_results: list[dict] = []
         self._lock = threading.Lock()
         self._alerted_keys: set = set()  # "symbol:datetime:type" to avoid dupes
+        self._ema5_alerted_keys: set = set()  # position EMA5 alert dedup
         self._scan_mode: str = "idle"    # "intraday" | "daily" | "idle"
+        self._load_positions_fn = None   # callback to load open positions
 
     @property
     def is_running(self) -> bool:
@@ -1255,9 +1436,11 @@ class BreakoutScanner:
                     if self._is_market_hours():
                         self._scan_mode = "intraday"
                         self._scan_intraday(config)
+                        self._scan_positions_ema5(config)
                     else:
                         self._scan_mode = "daily"
                         self._scan_daily(config)
+                        self._scan_positions_ema5(config)
             except Exception as e:
                 print(f"⚠ Breakout scanner error: {e}", flush=True)
 
@@ -1319,6 +1502,38 @@ class BreakoutScanner:
                 continue
 
         return self._process_signals(all_signals, config)
+
+    def _scan_positions_ema5(self, config: AlertConfig):
+        """Check open positions for 5 EMA proximity and send alerts."""
+        if not self._load_positions_fn:
+            return
+        try:
+            positions = self._load_positions_fn()
+        except Exception:
+            return
+
+        open_pos = [p for p in positions if p.get("status") in ("OPEN", "PARTIAL")]
+        if not open_pos:
+            return
+
+        for p in open_pos:
+            sym = p.get("symbol", "")
+            entry = p.get("entry", 0)
+            if not sym or not entry:
+                continue
+            try:
+                rows = self._get_ohlcv(sym, days=60)
+                if not rows or len(rows) < 10:
+                    continue
+                alert = check_position_ema5_proximity(rows, sym, entry)
+                if alert:
+                    key = f"{alert.symbol}:{alert.date}:{alert.alert_type}"
+                    if key not in self._ema5_alerted_keys:
+                        self._ema5_alerted_keys.add(key)
+                        print(f"  📉 Position EMA5: {alert.symbol} {alert.alert_type} ₹{alert.price} (5EMA ₹{alert.ema5})", flush=True)
+                        send_ema5_telegram_alert(alert, config)
+            except Exception as e:
+                print(f"  ⚠ EMA5 position check {sym}: {e}", flush=True)
 
     def _process_signals(self, all_signals: list[BreakoutSignal], config: AlertConfig) -> list[BreakoutSignal]:
         """Filter dupes, send alerts, persist."""

@@ -54,6 +54,8 @@ from breakout_alert_engine import (
     BreakoutScanner, AlertConfig, AlertState,
     scan_stock_for_breakouts, backtest_breakout_detection,
     send_alert, send_telegram_text,
+    check_position_ema5_proximity, EmaProximityAlert,
+    send_ema5_telegram_alert, _format_ema5_alert_message,
 )
 
 _mf_provider = MutualFundsProvider(cache_dir=str(ROOT / "cache"), cache_ttl_hours=6)
@@ -2750,6 +2752,12 @@ def breakout_scanner_start() -> dict:
     """Start the background breakout scanner."""
     if _breakout_scanner._read_ohlcv is None:
         _breakout_scanner._read_ohlcv = _read_ohlcv
+    if _breakout_scanner._load_positions_fn is None:
+        def _load_open_positions():
+            with _board_lock:
+                data = _load_board()
+                return data.get("positions", [])
+        _breakout_scanner._load_positions_fn = _load_open_positions
     _breakout_scanner.start()
     return {"ok": True, "message": "Breakout scanner started"}
 
@@ -2836,4 +2844,96 @@ def test_alert_channels() -> dict:
     }
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# ── Position 5 EMA Proximity Alerts ──────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
 
+# Track alerted position EMA keys to avoid duplicate alerts
+_ema5_alerted_keys: set = set()
+
+
+@app.get("/api/position-alerts/ema5-check")
+def position_ema5_check(threshold: float = 1.5) -> dict:
+    """
+    Check all open positions for 5 EMA proximity.
+    Returns alerts for positions where price is approaching/touching/below 5 EMA.
+    """
+    with _board_lock:
+        data = _load_board()
+        positions = data.get("positions", [])
+
+    open_positions = [p for p in positions if p.get("status") in ("OPEN", "PARTIAL")]
+    if not open_positions:
+        return {"alerts": [], "message": "No open positions", "checkedAt": datetime.now().isoformat(timespec="seconds")}
+
+    alerts = []
+    for p in open_positions:
+        sym = p.get("symbol", "")
+        entry = p.get("entry", 0)
+        if not sym or not entry:
+            continue
+        try:
+            rows = _read_ohlcv(sym, days=60)
+            if not rows or len(rows) < 10:
+                continue
+            alert = check_position_ema5_proximity(rows, sym, entry, threshold_pct=threshold)
+            if alert:
+                from dataclasses import asdict as _ad
+                d = _ad(alert)
+                d["position_id"] = p.get("id", "")
+                d["sl"] = p.get("sl", 0)
+                d["remaining_qty"] = p.get("remaining_quantity") or p.get("quantity", 1)
+                alerts.append(d)
+        except Exception as e:
+            print(f"  ⚠ EMA5 check {sym}: {e}", flush=True)
+
+    # Sort: broken > touched > approaching
+    priority = {"EMA5_BROKEN": 0, "EMA5_TOUCHED": 1, "EMA5_APPROACHING": 2}
+    alerts.sort(key=lambda a: priority.get(a.get("alert_type", ""), 9))
+
+    return {
+        "alerts": alerts,
+        "count": len(alerts),
+        "totalOpen": len(open_positions),
+        "checkedAt": datetime.now().isoformat(timespec="seconds"),
+    }
+
+
+@app.post("/api/position-alerts/ema5-scan-send")
+def position_ema5_scan_and_alert(threshold: float = 1.5) -> dict:
+    """
+    Scan open positions for 5 EMA proximity AND send Telegram alerts for new ones.
+    Deduplicates: won't re-alert the same symbol+type+date combo.
+    """
+    global _ema5_alerted_keys
+    check_result = position_ema5_check(threshold)
+    alerts = check_result.get("alerts", [])
+    config = _breakout_scanner.state.load_config()
+
+    new_alerts = []
+    for a in alerts:
+        key = f"{a['symbol']}:{a['date']}:{a['alert_type']}"
+        if key not in _ema5_alerted_keys:
+            _ema5_alerted_keys.add(key)
+            new_alerts.append(a)
+
+    sent_count = 0
+    for a in new_alerts:
+        alert_obj = EmaProximityAlert(
+            symbol=a["symbol"], alert_type=a["alert_type"],
+            price=a["price"], ema5=a["ema5"], ema5_dist_pct=a["ema5_dist_pct"],
+            ema20=a["ema20"], ema20_dist_pct=a["ema20_dist_pct"],
+            entry_price=a["entry_price"], gain_pct=a["gain_pct"],
+            adr_pct=a["adr_pct"], date=a["date"], notes=a["notes"],
+        )
+        ok = send_ema5_telegram_alert(alert_obj, config)
+        if ok:
+            sent_count += 1
+            print(f"  📉 EMA5 alert sent: {a['symbol']} {a['alert_type']} ₹{a['price']}", flush=True)
+
+    return {
+        "alerts": alerts,
+        "newAlerts": len(new_alerts),
+        "telegramSent": sent_count,
+        "checkedAt": datetime.now().isoformat(timespec="seconds"),
+    }

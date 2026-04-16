@@ -61,5 +61,50 @@
     "setup": "",
     "id": "9fbb1356-8b87-4d1b-aa4b-e1e933584036",
     "added_at": "2026-04-16T23:40:06"
+  },
+  {
+    "symbol": "AVANTIFEED",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "",
+    "id": "f7067527-4533-4f2d-bcf8-aee2cd7de8bf",
+    "added_at": "2026-04-17T02:27:09"
+  },
+  {
+    "symbol": "SANSERA",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "",
+    "id": "2030afe4-cc60-4c07-b319-212e2f2bd8fc",
+    "added_at": "2026-04-17T02:27:40"
+  },
+  {
+    "symbol": "MTARTECH",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "",
+    "id": "6be9cd92-8658-442d-b2ee-4a10f6f310ab",
+    "added_at": "2026-04-17T02:27:57"
+  },
+  {
+    "symbol": "SPORTKING",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "",
+    "id": "69492ecd-93a1-43b3-9a77-05197e669a0c",
+    "added_at": "2026-04-17T02:28:43"
+  },
+  {
+    "symbol": "GRANULES",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "",
+    "id": "2fbf93da-acd4-4aaf-8dd0-e7ede3cddd74",
+    "added_at": "2026-04-17T02:29:25"
   }
 ]
