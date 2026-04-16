@@ -1,6 +1,6 @@
 # SETUPS System – Improvements Summary
 
-> Generated: 2026-03-23
+> Last Updated: 2026-04-14
 
 ## Overview
 
@@ -192,9 +192,83 @@ python apps/python/cli/run_vcp_system.py --markets india --timeframes daily --se
 # Get trade plan brief
 python apps/python/cli/run_trade_plan_assistant.py --market india --timeframe daily --setups full --top-n 10
 
-# Start the web console
+# Start the web console (includes Trade Board at /board)
 source .venv/bin/activate && uvicorn apps.web.api.main:app --host 0.0.0.0 --port 8000
+
+# Open Trade Board in browser
+open http://localhost:8000/board
 
 # Smoke test
 source .venv/bin/activate && python apps/web/scripts/smoke_test.py
 ```
+
+---
+
+## 11 · Trade Board (`/board`) — April 2026
+
+**Files changed:** `apps/web/ui/trade_board.html` *(new)*, `apps/web/api/main.py`
+
+A full-featured live position tracker accessible at `http://localhost:8000/board`.
+Trade data is persisted in `output/trade_board.json`.
+
+### Backend additions (`main.py`)
+
+| Item | Detail |
+|---|---|
+| `TradeBoardPosition` model | id, symbol, name, entry, qty, sl, t1/t2/t3, setup, rating, notes, status, exit_price/date |
+| `TradeBoardUpdate` model | Partial update for status, SL, exit price/date, notes |
+| `_get_price_info(symbol)` | Returns `(cmp, prev_close)` from cached OHLCV — powers day P&L |
+| `_compute_board_stats()` | Aggregates day_pl, total_pl, open_risk, locked_profit |
+| `GET /api/trade-board/positions` | Positions enriched with live CMP, gainPct, gainAmt, dayChangePct, dayChangeAmt |
+| `GET /api/trade-board/summary` | Aggregate stats only |
+| `POST /api/trade-board/positions` | Create position |
+| `PUT /api/trade-board/positions/{id}` | Update position |
+| `DELETE /api/trade-board/positions/{id}` | Delete position |
+| `GET /api/trade-board/chart/{symbol}` | OHLCV + EMA5/20/50 from cache CSV files |
+| `GET /api/trade-board/equity` | Equity curve (date, pl, cumPl) for closed trades |
+| `GET /api/trade-board/scan-signals` | Top 30 signals from `open_trades_*` or `vcp_hits_*` LATEST JSON |
+
+**Key fixes vs. initial version:**
+- `day_pl` was always `0` — now computed from `prev_close → cmp` delta × qty for each open position
+- Closed positions had `gainPct = 0` — now computed from `exit_price - entry`
+- Scan signals fallback: tries `open_trades_*` first, then `vcp_hits_*`; normalises `score` → `rankingScore`
+
+### Frontend additions (`trade_board.html`)
+
+**Stats Bar**
+- Day's P&L now shows real money (sum of today's moves across all open positions)
+
+**Position Cards**
+- `▲/▼ X.X% today` chip below the gain — green/red, only on OPEN positions
+- Status-aware footer: `⏱ Holding 14d` | `🛑 SL HIT · 7d` | `✅ T1 HIT · 5d` | `🏆 T3 HIT · 3d`
+- EMA badge (`Above MAs` / `EMA20 ⚠` / `Below MAs ⚠`) injected into the card *after* the mini chart loads, using EMA5 + EMA20 crossover logic
+- Closed position exit label changes dynamically: `SL Exit` / `T1 HIT` / `T2 HIT` etc.
+
+**Detail Panel (click any card)**
+- Trade Plan section: T1/T2/T3 boxes showing price + R:R (e.g. `T2 · 2.4R`) + `% from entry`
+- Risk summary line: `Risk/share: ₹95 · Total risk: ₹9,500`
+- Today's Move row (open positions): `▲ 1.5% · ₹2,400`
+- Correct exit info for closed positions (exit price, date, hold duration in days)
+
+**Scan Signals Drawer**
+- Signal rows now show `Setup · VOL 69% · Dist 1.2%` sub-info
+- `prefillFromSignal()` maps uppercase `T1`/`T2`/`T3` fields from scan JSON → Add Position modal
+- Fallback to `vcp_hits_*` if `open_trades_*` doesn't exist
+
+**Equity Curve + Closed Trade Stats**
+- After the equity chart: Win Rate · Avg Win · Avg Loss · Expectancy row
+- Appears automatically once there is at least one closed trade
+
+### Before vs. After
+
+| Area | Before | After |
+|---|---|---|
+| Day's P&L | Always `—` / 0 | Real-time from OHLCV prev_close |
+| Closed position gain | Always 0% | Computed from exit_price |
+| EMA badge | Never shown | Injected after chart load |
+| Card footer | "Holding Xd" always | Status icon + hold duration |
+| Detail panel targets | Not shown | T1/T2/T3 with R:R + % |
+| Signal prefill | Entry + SL only | Entry + SL + T1 + T2 + T3 |
+| Signal sub-info | Setup type only | Setup + VOL% + Dist% |
+| Performance stats | None | Win rate, avg win/loss, expectancy |
+

@@ -3,6 +3,11 @@ public class AppConfig {
     public final int lookbackDays;
     public final String timeframe;
 
+    // ── IPO detection ─────────────────────────────────────────────────────────
+    // Stocks with fewer trading bars than this are flagged as IPO (recently listed).
+    // Daily: ~126 bars ≈ 6 months of trading; Weekly: ~26 bars ≈ 6 months.
+    public final int ipoMaxBarsSinceListing;
+
     // ── VCP base detection ───────────────────────────────────────────────────
     // Multiple window lengths tried — best score wins (genuine bases of any length)
     public final int[] consolidationWindows;
@@ -125,6 +130,7 @@ public class AppConfig {
 
         this.timeframe                 = weekly ? "weekly" : "daily";
         this.lookbackDays              = weekly ? 104 : 252;
+        this.ipoMaxBarsSinceListing    = weekly ? 26 : 126;  // ~6 months of trading
 
         // IPO-friendly windows are included so recently listed stocks can still qualify.
         // Daily: short windows + quarter-style variants, Weekly: few-weeks + quarter-style variants.

@@ -1173,35 +1173,53 @@ def _load_bars(symbol: str, lookback: int, timeframe: str, cache: Path) -> list[
         if current: weekly.append(current)
         return weekly
 
+    def _try_read(p: Path) -> list[dict]:
+        rows = []
+        try:
+            with open(p, newline="") as fh:
+                for row in csv.DictReader(fh):
+                    try:
+                        import math
+                        _c = row.get("close")
+                        close = float(_c) if _c not in (None, "", "nan", "NaN") else 0.0
+                        if math.isnan(close):
+                            close = 0.0
+                    except (ValueError, TypeError):
+                        continue
+                    if close <= 0:
+                        continue
+                    rows.append({
+                        "date":   str(row.get("date") or "").strip(),
+                        "open":   float(row.get("open") or 0),
+                        "high":   float(row.get("high") or 0),
+                        "low":    float(row.get("low") or 0),
+                        "close":  close,
+                        "volume": float(row.get("volume") or 0),
+                    })
+        except Exception:
+            return []
+        return rows
+
+    min_bars = int(_timeframe_params(timeframe)["min_bars"])
+
+    # 1) Try unified file first
+    unified = cache / f"{symbol}.csv"
+    if unified.exists():
+        rows = _try_read(unified)
+        if timeframe == "weekly":
+            rows = aggregate_weekly(rows)
+        if len(rows) >= min_bars:
+            return rows
+
+    # 2) Legacy fallback
     for n in sorted({lookback, 252, 504, 728, 900}):
         p = cache / f"{symbol}_{n}.csv"
         if p.exists():
-            try:
-                with open(p, newline="") as fh:
-                    rows = []
-                    for row in csv.DictReader(fh):
-                        try:
-                            close = float(row.get("close") or 0)
-                        except (ValueError, TypeError):
-                            continue
-                        if close <= 0:
-                            continue
-                        rows.append({
-                            "date":   str(row.get("date") or "").strip(),
-                            "open":   float(row.get("open") or 0),
-                            "high":   float(row.get("high") or 0),
-                            "low":    float(row.get("low") or 0),
-                            "close":  close,
-                            "volume": float(row.get("volume") or 0),
-                        })
-
-                if timeframe == "weekly":
-                    rows = aggregate_weekly(rows)
-
-                if len(rows) >= int(_timeframe_params(timeframe)["min_bars"]):
-                    return rows
-            except Exception:
-                continue
+            rows = _try_read(p)
+            if timeframe == "weekly":
+                rows = aggregate_weekly(rows)
+            if len(rows) >= min_bars:
+                return rows
     return []
 
 

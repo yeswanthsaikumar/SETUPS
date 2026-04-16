@@ -5,9 +5,12 @@ public final class Indicators {
     }
 
     public static double averageClose(List<Candle> candles, int start, int end) {
+        if (candles == null || candles.isEmpty()) return 0.0;
+        int s = Math.max(0, start);
+        int e = Math.min(end, candles.size() - 1);
         double sum = 0.0;
         int count = 0;
-        for (int i = start; i <= end; i++) {
+        for (int i = s; i <= e; i++) {
             sum += candles.get(i).getClose();
             count++;
         }
@@ -15,9 +18,12 @@ public final class Indicators {
     }
 
     public static double averageVolume(List<Candle> candles, int start, int end) {
+        if (candles == null || candles.isEmpty()) return 0.0;
+        int s = Math.max(0, start);
+        int e = Math.min(end, candles.size() - 1);
         double sum = 0.0;
         int count = 0;
-        for (int i = start; i <= end; i++) {
+        for (int i = s; i <= e; i++) {
             sum += candles.get(i).getVolume();
             count++;
         }
@@ -25,23 +31,29 @@ public final class Indicators {
     }
 
     public static double highestHigh(List<Candle> candles, int start, int end) {
+        if (candles == null || candles.isEmpty()) return 0.0;
+        int s = Math.max(0, start);
+        int e = Math.min(end, candles.size() - 1);
         double max = Double.NEGATIVE_INFINITY;
-        for (int i = start; i <= end; i++) {
+        for (int i = s; i <= e; i++) {
             max = Math.max(max, candles.get(i).getHigh());
         }
-        return max;
+        return max == Double.NEGATIVE_INFINITY ? 0.0 : max;
     }
 
     public static double lowestLow(List<Candle> candles, int start, int end) {
+        if (candles == null || candles.isEmpty()) return 0.0;
+        int s = Math.max(0, start);
+        int e = Math.min(end, candles.size() - 1);
         double min = Double.POSITIVE_INFINITY;
-        for (int i = start; i <= end; i++) {
+        for (int i = s; i <= e; i++) {
             min = Math.min(min, candles.get(i).getLow());
         }
-        return min;
+        return min == Double.POSITIVE_INFINITY ? 0.0 : min;
     }
 
     public static double averageTrueRange(List<Candle> candles, int endIndexInclusive, int period) {
-        if (endIndexInclusive <= 0 || endIndexInclusive >= candles.size()) {
+        if (candles == null || candles.isEmpty() || endIndexInclusive <= 0 || endIndexInclusive >= candles.size()) {
             return 0.0;
         }
         int start = Math.max(1, endIndexInclusive - period + 1);
@@ -119,6 +131,7 @@ public final class Indicators {
      * Highest high over the full list (used for 52-week high).
      */
     public static double highestHigh(List<Candle> candles) {
+        if (candles == null || candles.isEmpty()) return 0.0;
         return highestHigh(candles, 0, candles.size() - 1);
     }
 }

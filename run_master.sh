@@ -89,6 +89,45 @@ echo -e "  Output dir : ${YELLOW}${OUTPUT_DIR}${RESET}"
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
+# STEP 0a — Migrate legacy cache files (one-time: SYMBOL_N.csv → SYMBOL.csv)
+# ─────────────────────────────────────────────────────────────────────────────
+LEGACY_COUNT=$(find "$CACHE_DIR" -maxdepth 1 -name '*_[0-9]*.csv' 2>/dev/null | wc -l | tr -d ' ')
+if [ "$LEGACY_COUNT" -gt 0 ] && [ -f "scripts/merge_cache_to_single_file.py" ]; then
+    echo -e "${BOLD}▶ Step 0a — Merging ${LEGACY_COUNT} legacy cache files into unified format…${RESET}"
+    python3 scripts/merge_cache_to_single_file.py --cache-dir "$CACHE_DIR"
+    echo ""
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 0b — Auto-refresh stale cache (Python Yahoo Finance with cookie+crumb)
+# ─────────────────────────────────────────────────────────────────────────────
+echo -e "${BOLD}▶ Step 0 — Refreshing stale cache files (Yahoo Finance)…${RESET}"
+START_CACHE=$SECONDS
+if [ -f "scripts/refresh_cache.py" ]; then
+    set +e   # Non-zero exit from refresh (exit 2 = Yahoo blocked) is non-fatal
+    python3 scripts/refresh_cache.py --workers 8
+    REFRESH_EXIT=$?
+    set -euo pipefail
+    CACHE_TIME=$((SECONDS - START_CACHE))
+    if [ "$REFRESH_EXIT" -eq 2 ]; then
+        echo -e "${YELLOW}  ⚠  Yahoo Finance is BLOCKED on this network — cache NOT updated.${RESET}"
+        echo -e "${YELLOW}     Stock prices may be stale (last data: before today).${RESET}"
+        echo -e "${YELLOW}     💡 Tip: Run from mobile hotspot / VPN to bypass network restriction.${RESET}"
+    elif [ "$REFRESH_EXIT" -ne 0 ]; then
+        echo -e "${YELLOW}  ⚠ Cache refresh had issues (non-fatal — scan continues with existing data)${RESET}"
+    else
+        echo -e "${GREEN}   ✅ Cache refresh done in ${CACHE_TIME}s${RESET}"
+    fi
+    # Always clean up any provisional (NaN-close) bars left from partial fetches
+    if [ -f "scripts/clean_bad_cache_bars.py" ]; then
+        python3 scripts/clean_bad_cache_bars.py 2>/dev/null | grep -E "removed|Done" || true
+    fi
+else
+    echo -e "${YELLOW}  ⚠ scripts/refresh_cache.py not found — skipping cache refresh${RESET}"
+fi
+echo ""
+
+# ─────────────────────────────────────────────────────────────────────────────
 # STEP 1 — Full scan (India + US, Daily + Weekly, all setups)
 # ─────────────────────────────────────────────────────────────────────────────
 echo -e "${BOLD}▶ Step 1/2 — Running full breakout scan…${RESET}"

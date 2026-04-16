@@ -622,7 +622,7 @@ public class HtmlReportGenerator {
                   <div class="logic-item"><strong>NO_BREAKOUT:</strong> Price failed to close above pivot + buffer OR intraday high didn't pierce pivot</div>
                   <div class="logic-item"><strong>LOW_QUALITY_SETUP:</strong> Base shows < required volume/range contraction</div>
                   <div class="logic-item"><strong>PRICE_BELOW_MA:</strong> Close is below configured moving average (trend filter)</div>
-                  <div class="logic_item"><strong>FAR_FROM_52WK_HIGH:</strong> Stock is too far below 52-week high (likely in downtrend)</div>
+                  <div class="logic-item"><strong>FAR_FROM_52WK_HIGH:</strong> Stock is too far below 52-week high (likely in downtrend)</div>
                   <div class="logic-item"><strong>PENNY_STOCK:</strong> Price is below minimum price threshold (default $1.00)</div>
                   <div class="logic-item"><strong>ATR_EXPANDING:</strong> For range expansion setups, breakout range < required ATR multiple</div>
                   <div class="logic-item"><strong>INSUFFICIENT_DATA:</strong> < 8 bars of historical data available</div>
@@ -783,8 +783,8 @@ public class HtmlReportGenerator {
             document.getElementById('scoreSlider')?.addEventListener('input', function(e) {
               const minScore = parseFloat(e.target.value);
               document.querySelectorAll('tbody tr').forEach(row => {
-                const scoreText = row.cells[2].textContent;
-                row.style.display = 'none'; // Default: hide (since quality is in text format)
+                const scoreVal = parseFloat(row.cells[2].textContent);
+                row.style.display = (!isNaN(scoreVal) && scoreVal >= minScore) ? '' : 'none';
               });
             });
             
@@ -792,7 +792,7 @@ public class HtmlReportGenerator {
             document.getElementById('setupFilter')?.addEventListener('change', function(e) {
               const setupType = e.target.value;
               document.querySelectorAll('tbody tr').forEach(row => {
-                const setup = row.cells[1].textContent;
+                const setup = row.cells[7].textContent;
                 if (setupType === 'all' || setup.includes(setupType)) {
                   row.style.display = '';
                 } else {
@@ -805,7 +805,7 @@ public class HtmlReportGenerator {
             document.getElementById('ratingFilter')?.addEventListener('change', function(e) {
               const rating = e.target.value;
               document.querySelectorAll('tbody tr').forEach(row => {
-                const rowRating = row.cells[2].textContent.trim();
+                const rowRating = row.cells[5].querySelector('.rating')?.textContent.trim() || row.cells[5].textContent.trim();
                 if (rating === 'all') {
                   row.style.display = '';
                 } else if (rating === 'A+' && rowRating === 'A+') {

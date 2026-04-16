@@ -313,7 +313,7 @@ def compute_trajectories(industry_data: list[dict]) -> dict[str, list[dict]]:
     """
     _PICK = ("industry","sector","stage","total","pct_20ma","pct_50ma",
              "avg_rs3m","avg_rs_delta","avg_vol_rank","ind_ret_1m",
-             "ind_ret_3m","trend_score","new_52wh","vol_spike_pct")
+             "ind_ret_3m","trend_score","new_52wh","vol_spike_pct","stock_list")
 
     acc, imp, ste, dec, col = [], [], [], [], []
 
@@ -372,7 +372,7 @@ def compute_smart_money_footprint(industry_data: list[dict]) -> list[dict]:
     """
     _PICK = ("industry","sector","stage","total","pct_20ma","pct_50ma",
              "avg_rs3m","avg_rs_delta","avg_vol_rank","vol_spike_pct",
-             "new_52wh","ind_ret_1m","ind_ret_3m","trend_score","pct_52wh")
+             "new_52wh","ind_ret_1m","ind_ret_3m","trend_score","pct_52wh","stock_list")
 
     candidates: list[dict] = []
     for d in industry_data:

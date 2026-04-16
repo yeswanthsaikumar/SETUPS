@@ -204,7 +204,8 @@ python3 apps/python/cli/generate_backtest_dashboard.py --max-stocks 200
 | Problem | Fix |
 |---------|-----|
 | Java compile error | `javac src/*.java` → fix error → rerun |
-| Stale US symbols | `./run_master.sh --force-us-refresh` |
+| Stale data in scan results | Cache is auto-refreshed per data-date rules (see below). Force full refresh: `find cache -name '*.NS_252.csv' -delete && ./run_master.sh` |
+| Data shows old date (pre-holiday) | Expected — NSE is closed. Scan uses the last available trading session. Data auto-updates when markets reopen. |
 | Fundamentals slow | 20 parallel workers — ~15 sec for 1,674 symbols; cached 24 h |
 | 401 yfinance errors | Rate-limit noise — cached results used; retries next run |
 | Scan killed / timeout | Run step-by-step with explicit commands — see §Scope Variants |

@@ -152,7 +152,7 @@ public class FollowThroughDetector {
             
             int daysSinceBreakout = candles.size() - 1 - breakoutIdx;
             int daysInPullback = pullback.lowIdx - breakoutIdx;
-            double pullbackDepth = (pullback.lowPrice - pivot) / pivot;
+            double pullbackDepth = (pivot - pullback.lowPrice) / pivot;
             double recoveryProgress = calculateRecoveryProgress(pivot, pullback.lowPrice, recovery.recoveryClose);
             
             String reason = String.format(

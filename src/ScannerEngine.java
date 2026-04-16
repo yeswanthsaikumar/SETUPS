@@ -198,6 +198,9 @@ public class ScannerEngine {
 
         ScanResult result = new ScanResult(symbol, setup, signalCandle, plan, signalType);
 
+        // IPO flag: stock has limited trading history
+        result.setIpoFlag(slice.size() < config.ipoMaxBarsSinceListing, slice.size());
+
         // Apply multi-timeframe alignment analysis
         // Only for daily scans; skip for weekly scans
         if (!"weekly".equalsIgnoreCase(config.timeframe)) {
@@ -258,6 +261,9 @@ public class ScannerEngine {
         }
 
         WatchlistResult result = new WatchlistResult(symbol, setup, signalCandle, plan, distanceToPivotPct);
+
+        // IPO flag: stock has limited trading history
+        result.setIpoFlag(slice.size() < config.ipoMaxBarsSinceListing, slice.size());
 
         // Apply multi-timeframe alignment analysis
         // Only for daily scans; skip for weekly scans
@@ -338,7 +344,7 @@ public class ScannerEngine {
             }
             double pivotHoldRatePct = observedBars == 0 ? 100.0 : (pivotHoldBars * 100.0) / observedBars;
 
-            return new AlreadyBreakoutResult(
+            AlreadyBreakoutResult abResult = new AlreadyBreakoutResult(
                     symbol,
                     setup,
                     breakoutCandle.getDate(),
@@ -350,6 +356,11 @@ public class ScannerEngine {
                     maxDrawdownPct,
                     pivotHoldRatePct
             );
+
+            // IPO flag: stock has limited trading history
+            abResult.setIpoFlag(candles.size() < config.ipoMaxBarsSinceListing, candles.size());
+
+            return abResult;
         }
 
         return null;

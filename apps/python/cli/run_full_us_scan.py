@@ -570,6 +570,12 @@ def enrich_and_filter_rows(rows: list[dict], args, regime: dict, list_type: str)
         row["regimeScore"] = round(regime.get("score", 1.0) * 100.0, 2)
         row["regimeState"] = "FAVORABLE" if regime.get("favorable", True) else "UNFAVORABLE"
 
+        # IPO flag: detect if stock has limited trading history (< ~6 months)
+        ipo_threshold = 26 if args.timeframe == "weekly" else 126
+        if "ipoFlag" not in row or row.get("ipoFlag") is None:
+            row["ipoFlag"] = len(bars) < ipo_threshold
+            row["daysSinceListing"] = len(bars)
+
         rs3 = _safe_return(closes, rs3_bars)
         rs6 = _safe_return(closes, rs6_bars)
         rs12 = _safe_return(closes, rs12_bars)
@@ -981,6 +987,10 @@ def scan_batch(batch: list[str], args) -> list[str]:
         with lock:
             print(f"  [WARN] batch timed out after {JAVA_TIMEOUT_SEC}s for {','.join(batch[:5])}", flush=True)
         return []
+    except Exception as exc:
+        with lock:
+            print(f"  [WARN] scan batch error: {exc}", flush=True)
+        return []
 
 
 def scan_watchlist_batch(batch: list[str], args) -> list[str]:
@@ -1020,6 +1030,7 @@ def scan_watchlist_batch(batch: list[str], args) -> list[str]:
     except Exception as exc:
         with lock:
             print(f"  [WARN] watchlist batch error: {exc}", flush=True)
+        return []
 
 
 def scan_combined_batch(batch: list[str], args) -> tuple[list[str], list[str]]:
@@ -1105,13 +1116,18 @@ def parse_hit(line: str) -> dict:
                 "SL": "sl",
             }
             for key, out_key in pairs.items():
-                m = re.search(rf"\\b{key}\\s+([^\\s]+)", line)
+                m = re.search(rf"\b{key}\s+([^\s]+)", line)
                 if m:
                     d[out_key] = m.group(1)
 
-            t = re.search(r"\\bT1\\s+([^\\s]+)\\s+T2\\s+([^\\s]+)\\s+T3\\s+([^\\s]+)", line)
+            t = re.search(r"\bT1\s+([^\s]+)\s+T2\s+([^\s]+)\s+T3\s+([^\s]+)", line)
             if t:
                 d["T1"], d["T2"], d["T3"] = t.group(1), t.group(2), t.group(3)
+            # Parse IPO tag e.g. [IPO 45d]
+            ipo_m = re.search(r"\[IPO\s+(\d+)d\]", line)
+            if ipo_m:
+                d["ipoFlag"] = True
+                d["daysSinceListing"] = int(ipo_m.group(1))
             return d
 
         parts = [p.strip() for p in line.split("|")]
@@ -1120,7 +1136,7 @@ def parse_hit(line: str) -> dict:
             if part.startswith("Type"):
                 vals = part.split()
                 d["listType"] = vals[-1] if vals else "BREAKOUT"
-            if "Setup" in part:
+            elif "Setup" in part:
                 d["setup"] = part.split()[-1]
             elif "Window" in part:
                 d["window"] = part.split()[-1]
@@ -1136,7 +1152,7 @@ def parse_hit(line: str) -> dict:
                 d["dist%"] = part.split()[-1]
             elif "Rating" in part:
                 d["rating"] = part.split()[-1]
-            if   "Close"  in part: d["close"]  = part.split()[-1]
+            elif "Close"  in part: d["close"]  = part.split()[-1]
             elif "Pivot"  in part: d["pivot"]  = part.split()[-1]
             elif "Entry"  in part: d["entry"]  = part.split()[-1]
             elif "Score"  in part: d["score"]  = part.split()[-1]
@@ -1150,6 +1166,11 @@ def parse_hit(line: str) -> dict:
                 d["T1"] = vals[1] if len(vals) > 1 else ""
                 d["T2"] = vals[3] if len(vals) > 3 else ""
                 d["T3"] = vals[5] if len(vals) > 5 else ""
+        # Parse IPO tag from end of line e.g. [IPO 45d]
+        ipo_m = re.search(r"\[IPO\s+(\d+)d\]", line)
+        if ipo_m:
+            d["ipoFlag"] = True
+            d["daysSinceListing"] = int(ipo_m.group(1))
         return d
     except Exception:
         return {"symbol": line, "raw": line}
@@ -1162,6 +1183,8 @@ CSV_FIELDS = [
     "range%", "vol%", "rexp", "shares", "sl", "T1", "T2", "T3", "avgVol20", "avgDollarVol20", "rs3m", "rs6m", "rs12m", "rsScore", "rsRankScore",
     "regimeState", "regimeScore", "regimeSupport", "regimeSupportScore", "weeklyAgreement", "weeklyAgreementScore", "volumeDryUpScore", "volumeDryUpRatio",
     "rankingScore", "riskR", "heatAfterR",
+    # IPO flag
+    "ipoFlag", "daysSinceListing",
     # Mean reversion specific
     "mrSubtype", "mrRsi", "mrSma20", "mrSma50", "mrSma200", "mrAtr", "mrLowerBB", "mrUpperBB", "mrBbPct", "mrVolRatio", "mrPullbackVolRatio",
     # Breakout pullback (ABFP) specific
@@ -1713,14 +1736,18 @@ def save_html(rows: list[dict], path: Path, meta: dict):
             return html.escape(str(x))
 
         fund_auto = html.escape(str(r.get('fundSummary') or '—'))
+        ipo_flag = r.get('ipoFlag', False)
+        ipo_badge = "<span class='ipo-badge' title='Recently listed / IPO stock'>🆕 IPO</span>" if ipo_flag else ""
+        ipo_days = r.get('daysSinceListing', '')
         rows_html += (
             f"<tr data-symbol='{html.escape(r.get('symbol', ''))}' "
             f"data-setup-type='{setup_type}' "
             f"data-rating='{rating_val}' "
             f"data-list-type='{list_type_raw}' "
+            f"data-ipo='{str(bool(ipo_flag)).lower()}' "
             f"data-score='{score_val}' "
             f"data-base-score='{score_val}'>"
-            f"<td><b>{symbol}</b></td>"
+            f"<td><b>{symbol}</b> {ipo_badge}</td>"
             f"<td>{list_type_chip}</td>"
             f"<td>{html.escape(setup_type)}</td>"
             f"<td>{html.escape(str(r.get('window','')))}</td>"
@@ -1999,6 +2026,7 @@ def save_html(rows: list[dict], path: Path, meta: dict):
     .list-watchlist {{ color:#f2cc60; border-color:#6b5b2a; background:#f2cc6018; }}
     .list-open_trade {{ color:#7ee787; border-color:#285b35; background:#7ee78718; }}
     .score-chip {{ border:1px solid #2f445a; border-radius:8px; padding:2px 7px; color:#a5d6ff; background:#0f1b2a; font-variant-numeric: tabular-nums; }}
+    .ipo-badge {{ display:inline-block; font-size:.7em; color:#f2cc60; background:#f2cc6018; border:1px solid #6b5b2a; border-radius:999px; padding:1px 6px; margin-left:4px; vertical-align:middle; font-weight:600; letter-spacing:.02em; }}
     .empty-state {{ display:none; margin-top:12px; border:1px dashed #35506f; border-radius:10px; padding:12px; color:#9ecbff; background:#0f1a28; }}
     .mobile-note {{ display:none; margin-top:8px; color:#8fb9e7; font-size:.85em; }}
 
@@ -2247,6 +2275,11 @@ def save_html(rows: list[dict], path: Path, meta: dict):
         <option value="D">D</option>
       </select>
     </div>
+    <div class="control-group">
+      <label class="control-label">IPO:</label>
+      <button class="filter-btn" id="ipoToggleBtn" data-ipo="all">All</button>
+      <button class="filter-btn" id="ipoOnlyBtn" data-ipo="true">🆕 IPO Only</button>
+    </div>
     <button class="export-btn" id="exportBtn">📥 Export Filtered</button>
     <button class="reset-btn" id="resetFiltersBtn">↺ Reset Filters</button>
     <button class="reset-btn" id="compactToggleBtn" title="Toggle compact row density">▦ Compact</button>
@@ -2316,7 +2349,7 @@ def save_html(rows: list[dict], path: Path, meta: dict):
     // Data for filtering and sorting
     const originalRows = Array.from(document.querySelectorAll('#tableBody tr'));
     let currentSort = {{ column: null, direction: 'asc' }};
-    let currentFilters = {{ search: '', score: 0, setup: 'all', rating: 'all', listType: 'all' }};
+    let currentFilters = {{ search: '', score: 0, setup: 'all', rating: 'all', listType: 'all', ipo: 'all' }};
 
     // Search functionality
     document.getElementById('searchInput').addEventListener('input', (e) => {{
@@ -2356,9 +2389,21 @@ def save_html(rows: list[dict], path: Path, meta: dict):
       applyFilters();
     }});
 
+    // IPO filter toggle buttons
+    document.querySelectorAll('button[data-ipo]').forEach(btn => {{
+      btn.addEventListener('click', () => {{
+        document.querySelectorAll('button[data-ipo]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilters.ipo = btn.dataset.ipo;
+        applyFilters();
+      }});
+    }});
+    // Default: "All" active
+    document.querySelector('button[data-ipo="all"]').classList.add('active');
+
     // Reset filters
     document.getElementById('resetFiltersBtn').addEventListener('click', () => {{
-      currentFilters = {{ search: '', score: 0, setup: 'all', rating: 'all', listType: 'all' }};
+      currentFilters = {{ search: '', score: 0, setup: 'all', rating: 'all', listType: 'all', ipo: 'all' }};
       document.getElementById('searchInput').value = '';
       scoreSlider.value = 0;
       scoreDisplay.textContent = '0+';
@@ -2366,6 +2411,8 @@ def save_html(rows: list[dict], path: Path, meta: dict):
       document.getElementById('listTypeFilter').value = 'all';
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       document.querySelector('.filter-btn[data-setup="all"]').classList.add('active');
+      document.querySelectorAll('button[data-ipo]').forEach(b => b.classList.remove('active'));
+      document.querySelector('button[data-ipo="all"]').classList.add('active');
       applyFilters();
     }});
 
@@ -2441,8 +2488,10 @@ def save_html(rows: list[dict], path: Path, meta: dict):
         const matchesSetup = currentFilters.setup === 'all' || setup === currentFilters.setup;
         const matchesRating = currentFilters.rating === 'all' || rating === currentFilters.rating;
         const matchesListType = currentFilters.listType === 'all' || listType === currentFilters.listType;
+        const ipoVal = row.dataset.ipo || 'false';
+        const matchesIpo = currentFilters.ipo === 'all' || ipoVal === currentFilters.ipo;
 
-        if (matchesSearch && matchesScore && matchesSetup && matchesRating && matchesListType) {{
+        if (matchesSearch && matchesScore && matchesSetup && matchesRating && matchesListType && matchesIpo) {{
           row.classList.remove('hidden');
           visible++;
         }} else {{

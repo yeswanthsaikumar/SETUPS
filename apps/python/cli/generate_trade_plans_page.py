@@ -87,7 +87,7 @@ SECTOR_MAP = {
     "VENUSREM":"Pharma","AKUMS":"Pharma","SENORES":"Pharma","ENTERO":"Pharma",
     "MEDPLUS":"Pharma","ALIVUS":"Pharma","ASTERDM":"Pharma","SAILIFE":"Pharma",
     "PFOCUS":"Pharma","SOLARA":"Pharma","BIOCON":"Pharma","SEQUENT":"Pharma",
-    "AAVAS":"Pharma","LAURUS":"Pharma","STRIDES":"Pharma","SUDARSCHEM":"Pharma",
+    "AAVAS":"NBFC","LAURUS":"Pharma","STRIDES":"Pharma","SUDARSCHEM":"Chemicals",
     "NEULANDLAB":"Pharma","PIRAMALPHA":"Pharma","YATHARTH":"Pharma","RAINBOW":"Pharma",
     # Auto & Auto Ancillaries
     "MARUTI":"Auto","TATAMOTORS":"Auto","HEROMOTOCO":"Auto","EICHERMOT":"Auto",
@@ -106,7 +106,7 @@ SECTOR_MAP = {
     "JINDALSAW":"Metals","NELCAST":"Metals","BHARATFORG":"Metals",
     "GRAPHITE":"Metals","STEELCAS":"Metals","SARDAEN":"Metals","LLOYDSME":"Metals",
     "RATNAMANI":"Metals","TIGL":"Metals","MSTCLTD":"Metals","MOIL":"Metals",
-    "GMDC":"Metals","MGEL":"Metals","NILE":"Metals","KALYANKJIL":"Metals",
+    "GMDC":"Metals","MGEL":"Metals","NILE":"Metals","KALYANKJIL":"Consumer",
     "MANAKSIA":"Metals","JSWHL":"Metals","JSWISPL":"Metals","NSLNISP":"Metals",
     "SSWL":"Metals","SANDUMA":"Metals","SUNFLAG":"Metals",
     # Cables & Wires
@@ -115,8 +115,8 @@ SECTOR_MAP = {
     "RR":"Cables","INDOTECH":"Cables",
     # Electronic Components & Defense Electronics
     "CENTUM":"Electronics","SYRMA":"Electronics","DATAPATTNS":"Electronics",
-    "AXISCADES":"Electronics","AEROFLEX":"Electronics","VOLTAMP":"Electronics",
-    "POWERINDIA":"Electronics","TDPOWERSYS":"Electronics","KRN":"Electronics",
+    "AXISCADES":"Electronics","AEROFLEX":"Electronics","VOLTAMP":"Cap Goods",
+    "POWERINDIA":"Electronics","TDPOWERSYS":"Cap Goods","KRN":"Electronics",
     "ADVAIT":"Electronics","INOXINDIA":"Electronics","KAYNES":"Electronics",
     "AMBER":"Electronics","PGEL":"Electronics","TEJAS":"Electronics",
     "SGIL":"Electronics","AVALON":"Electronics","ELCOMPCORP":"Electronics",
@@ -128,9 +128,9 @@ SECTOR_MAP = {
     "PIXTRANS":"Cap Goods","KMEW":"Cap Goods","AIAENG":"Cap Goods",
     "ELGI":"Cap Goods","GRINDMASTER":"Cap Goods","RITEFIL":"Cap Goods",
     "ISGEC":"Cap Goods","TRIVENIENG":"Cap Goods","TEXRAIL":"Cap Goods",
-    "RIIL":"Cap Goods","PATELENG":"Cap Goods","KNRCON":"Cap Goods",
+    "RIIL":"Cap Goods","PATELENG":"Cap Goods","KNRCON":"Infra",
     "DEEDEV":"Cap Goods","CGPOWER":"Cap Goods","GEPIL":"Cap Goods","INOXAIR":"Cap Goods",
-    "APARINDS":"Cap Goods","VOLTAMP":"Cap Goods","TDPOWERSYS":"Cap Goods","GRSE":"Cap Goods",
+    "GRSE":"Cap Goods",
     "MDL":"Cap Goods","COCHINSHIP":"Cap Goods","BEML":"Cap Goods","MAZDOCK":"Cap Goods",
     "SKIPPER":"Cap Goods","KECL":"Cap Goods","KALPATPOWR":"Cap Goods","SANGHVI":"Cap Goods",
     "ELGIEQUIP":"Cap Goods","KIRLOSBROS":"Cap Goods","POWERMECH":"Cap Goods","NRAIL":"Cap Goods",
@@ -155,16 +155,16 @@ SECTOR_MAP = {
     "LINCOLN":"Chemicals","FINEORG":"Chemicals","DEEPAKFERT":"Chemicals",
     "TATACHEM":"Chemicals","AARTI":"Chemicals","VINATI":"Chemicals",
     "CLEAN":"Chemicals","NEOGEN":"Chemicals","GALAXYSURF":"Chemicals",
-    "PCBL":"Chemicals","SRF":"Chemicals","ATUL":"Chemicals","AAVAS":"Chemicals",
+    "PCBL":"Chemicals","SRF":"Chemicals","ATUL":"Chemicals",
     "FLUOROCHEM":"Chemicals","CAMLIN":"Chemicals","BASF":"Chemicals",
-    "SUDARSCHEM":"Chemicals","ALKYLAMINE":"Chemicals",
+    "ALKYLAMINE":"Chemicals",
     "ROSSARI":"Chemicals","TRANSPEK":"Chemicals","DEEPAKNTR":"Chemicals",
     "EPIGRAL":"Chemicals","CHEMCON":"Chemicals","PAUSHAKLTD":"Chemicals",
     # Sugar
     "RENUKA":"Sugar","TRIVENI":"Sugar","BALRAMCHIN":"Sugar","DALMIASUG":"Sugar",
     "DHAMPURSUG":"Sugar","AVADHSUGAR":"Sugar","MAWANASUG":"Sugar","KMSUGAR":"Sugar",
     "UTTAMSUGAR":"Sugar","UGARSUGAR":"Sugar","DWARKESH":"Sugar",
-    "DHAMPUR":"Sugar","SIMBHAOLI":"Sugar","DCMSHRIRAM":"Sugar",
+    "DHAMPUR":"Sugar","SIMBHAOLI":"Sugar",
     # Textiles & Apparel
     "ARVIND":"Textiles","SANGAMIND":"Textiles","RUBYMILLS":"Textiles",
     "SPORTKING":"Textiles","NITINSPIN":"Textiles","NAHARSPING":"Textiles",
@@ -178,11 +178,11 @@ SECTOR_MAP = {
     "EPL":"Packaging","JINDALPOLY":"Packaging","PREMIERPOL":"Packaging",
     "XPROINDIA":"Packaging","ORICONENT":"Packaging","SESHAPAPER":"Packaging",
     "MKTGCD":"Packaging","UFLEX":"Packaging","HUHTAMAKI":"Packaging",
-    "SMVD":"Packaging","KANSAINER":"Packaging","BALRAMCHIN":"Packaging",
+    "SMVD":"Packaging","KANSAINER":"Packaging",
     # Infrastructure / Construction
     "ADANIENT":"Infra","ADANIPORTS":"Infra","L&T":"Infra","IRB":"Infra",
     "CEIGALL":"Infra","TEXINFRA":"Infra","MANGLMCEM":"Infra","BHAGYANGR":"Infra",
-    "GODAVARIB":"Infra","KNRCON":"Infra","HGINFRA":"Infra","GPPL":"Infra",
+    "GODAVARIB":"Infra","HGINFRA":"Infra","GPPL":"Infra",
     "PNC":"Infra","ASHOKA":"Infra","SADBHAV":"Infra","NBCC":"Infra",
     "RITES":"Infra","IRCON":"Infra","RVNL":"Infra","RAIL":"Infra",
     # Financial Services
@@ -202,7 +202,7 @@ SECTOR_MAP = {
     # Consumer Durables / Retail
     "TITAN":"Consumer","ASIANPAINT":"Consumer","PIDILITIND":"Consumer","HAVELLS":"Consumer",
     "VOLTAS":"Consumer","DIXON":"Consumer","CROMPTON":"Consumer","LENSKART":"Consumer",
-    "THANGAMAYL":"Consumer","KALYANKJIL":"Consumer","SENCO":"Consumer",
+    "THANGAMAYL":"Consumer","SENCO":"Consumer",
     "VSTIND":"Consumer","BAJAJELECTR":"Consumer","WHIRLPOOL":"Consumer",
     "BLUESTAR":"Consumer","SYMPHONY":"Consumer","ORIENTELEC":"Consumer",
     # Internet / Tech Platforms
@@ -222,8 +222,8 @@ SECTOR_MAP = {
     "BDSL":"Defense","PARAS":"Defense","MIDHANI":"Defense","ASTRA":"Defense",
     "IDEAFORGE":"Defense","ZEN":"Defense","ELCIDSIMP":"Defense",
     # Agri / Food Processing
-    "AVANTIFEED":"Agri","TIRUPATIFL":"Agri","PKTEA":"Agri",
-    "KRBL":"Agri","LT":"Agri","LAKSHMI":"Agri","PATANJALI":"Agri",
+    "AVANTIFEED":"Agri","TIRUPATIFL":"Agri",
+    "KRBL":"Agri","LT":"Agri","LAKSHMI":"Agri",
     "VENKYS":"Agri","SUGARIND":"Agri","SRIKALAHASTHI":"Agri",
     # Other
     "STAR":"Other","SGMART":"Other","MWL":"Other","AVL":"Other",
@@ -286,7 +286,7 @@ INDUSTRY_MAP = {
     "PKTEA":"FMCG - Tea","HNDFDS":"FMCG - Foods","TRAVELFOOD":"FMCG - Foods",
     "PRSMJOHNSN":"FMCG - Foods","BIKAJI":"FMCG - Foods","PATANJALI":"FMCG - Foods",
     "VARUN":"FMCG - Beverages",
-    "DEVYANI":"QSR","SAPPHIRE":"QSR","WESTLIFE":"QSR","JUBLFOOD":"QSR",
+    "DEVYANI":"QSR - KFC/Pizza Hut","SAPPHIRE":"QSR","WESTLIFE":"QSR - McDonald's","JUBLFOOD":"QSR - Domino's",
     # Pharma - Formulations
     "SUNPHARMA":"Pharma Formulations","DRREDDY":"Pharma Formulations",
     "CIPLA":"Pharma Formulations","DIVISLAB":"Pharma Formulations",
@@ -407,7 +407,7 @@ INDUSTRY_MAP = {
     "DEEDEV":"Industrial Piping & Pressure Vessels","KNRCON":"Roads & Highways","RITEFIL":"Filtration",
     # Defense
     "DYNAMATECH":"Aerospace & Defense","MTARTECH":"Aerospace & Defense",
-    "DATAPATTNS":"Defense Electronics","HAL":"Aerospace & Defense",
+    "HAL":"Aerospace & Defense",
     "BDSL":"Defense","PARAS":"Defense","MIDHANI":"Aerospace Alloys",
     "ASTRA":"Defense","IDEAFORGE":"Drones","ZEN":"Defense",
     "GRSE":"Shipbuilding Defense","COCHINSHIP":"Shipbuilding","MDL":"Submarine Builder",
@@ -436,7 +436,7 @@ INDUSTRY_MAP = {
     # Consumer - Retail / QSR / Hotels
     "DMART":"Retail - Hypermarket","VMART":"Value Retail","TRENT":"Retail - Fashion",
     "SPENCERS":"Retail","SHOPSTOP":"Retail - Dept Store",
-    "JUBLFOOD":"QSR - Domino's","DEVYANI":"QSR - KFC/Pizza Hut","WESTLIFE":"QSR - McDonald's",
+    
     "BARBEQUE":"Casual Dining","SPECIALITY":"Casual Dining","JUBILANT":"Diversified Consumer",
     "INDHOTELS":"Hotels","EIHOTEL":"Hotels - Oberoi","LEMONTRE":"Budget Hotels",
     "CHALET":"Hotels","TAJGVK":"Hotels","SAMHI":"Hotels","VENTIVE":"Hospitality",
@@ -448,9 +448,9 @@ INDUSTRY_MAP = {
     "BAJAJELEC":"Consumer Electricals","HAVELLS":"Consumer Electricals",
     "LLOYDS":"Air Conditioning","GODREJAP":"Home Appliances",
     # Consumer - Jewellery & Accessories
-    "KALYANKJIL":"Jewellery","DPABHUSHAN":"Jewellery","GOLDIAM":"Jewellery",
-    "VAIBHAVGBL":"Jewellery","SENCO":"Jewellery","PCJEWELLER":"Jewellery",
-    "THANGAMAYL":"Jewellery","SKYGOLD":"Jewellery",
+    "DPABHUSHAN":"Jewellery","GOLDIAM":"Jewellery",
+    "VAIBHAVGBL":"Jewellery","SENCO":"Gold Jewelry","PCJEWELLER":"Jewellery",
+    "THANGAMAYL":"Gold Jewelry","SKYGOLD":"Jewellery",
     # Consumer - Tiles / Sanitaryware / Home
     "CERA":"Sanitaryware","HINDWARE":"Sanitaryware","KAJARIACER":"Tiles",
     "ASIANTILES":"Tiles","SOMANY":"Tiles","ORIENTBELL":"Tiles",
@@ -485,25 +485,25 @@ INDUSTRY_MAP = {
     "ANGELONE":"Stock Broking","DBSTOCKBRO":"Stock Broking",
     "GROWW":"Stock Broking","ICICISEC":"Stock Broking",
     "GEOJITFSL":"Stock Broking","SMIFS":"Stock Broking","CHOICEIN":"Stock Broking",
-    "ABSLAMC":"Asset Management",
+    
     # Insurance
-    "STARHEALTH":"Health Insurance","HDFCLIFE":"Life Insurance",
-    "SBILIFE":"Life Insurance","ICICIPRU":"Life Insurance",
+    
+    "ICICIPRU":"Life Insurance",
     # Consumer
-    "TITAN":"Jewelry & Watches","THANGAMAYL":"Gold Jewelry",
-    "KALYANKJIL":"Gold Jewelry","SENCO":"Gold Jewelry",
+    "TITAN":"Jewelry & Watches",
+    
     "ASIANPAINT":"Paints","PIDILITIND":"Adhesives & Chemicals",
-    "HAVELLS":"Consumer Electricals","VOLTAS":"Air Conditioners",
-    "BLUESTAR":"Air Conditioners","SYMPHONY":"Air Coolers",
-    "ORIENTELEC":"Consumer Electricals","BAJAJELECTR":"Consumer Electricals",
-    "DIXON":"Consumer Electronics","CROMPTON":"Consumer Electricals",
-    "WHIRLPOOL":"Consumer Appliances","VSTIND":"Cigarettes",
+    
+    "BLUESTAR":"Air Conditioners",
+    "BAJAJELECTR":"Consumer Electricals",
+    "DIXON":"Consumer Electronics",
+    "VSTIND":"Cigarettes",
     "LENSKART":"Eyewear Retail",
     # Internet / Platforms
     "NAUKRI":"Online Recruitment","ZOMATO":"Food Delivery","PAYTM":"Fintech",
-    "IRCTC":"Travel & Hospitality","SWIGGY":"Food Delivery",
+    "SWIGGY":"Food Delivery",
     "MAPMYINDIA":"Digital Maps","INDIAMART":"B2B Marketplace",
-    "POLICYBZR":"Insurance Technology","DELHIVERY":"Last Mile Logistics",
+    "POLICYBZR":"Insurance Technology",
     # Real Estate
     "DLF":"Real Estate - Residential","GODREJPROP":"Real Estate - Residential",
     "OBEROIRLTY":"Real Estate - Premium","PRESTIGE":"Real Estate - Residential",
@@ -512,10 +512,10 @@ INDUSTRY_MAP = {
     "SUNTECK":"Real Estate - Residential","KOLTEPATIL":"Real Estate - Residential",
     # Shipping
     "GESHIP":"Shipping","SEAMECLTD":"Shipping Services",
-    "COASTCORP":"Logistics","JETFREIGHT":"Logistics","SCI":"Shipping",
+    "COASTCORP":"Logistics","JETFREIGHT":"Logistics",
     # Agri
     "AVANTIFEED":"Aquaculture / Shrimp Feed","TIRUPATIFL":"Flour Milling",
-    "PKTEA":"Tea Plantations","KRBL":"Rice / Agri","VENKYS":"Poultry & Agri",
+    "KRBL":"Rice / Agri","VENKYS":"Poultry & Agri",
 }
 
 SETUP_META = {
@@ -618,27 +618,43 @@ def compute_industry_breadth_all(
 
 
 def _load_price_rows_uncached(symbol: str) -> list[dict]:
-    for suffix in ["_900", "_504", "_252"]:
-        p = CACHE_DIR / f"{symbol}{suffix}.csv"
-        if not p.exists():
-            continue
-        rows: list[dict] = []
+    """Load price rows preferring unified SYMBOL.csv, legacy fallback."""
+    def _read(p: Path) -> tuple[list[dict], str]:
+        rows, last_date = [], ""
         try:
             with open(p) as f:
                 for row in csv.DictReader(f):
+                    d = row.get("date", "")
+                    if d: last_date = d
                     rows.append({
-                        "date": row.get("date", ""),
-                        "open": _f(row.get("open")),
-                        "high": _f(row.get("high")),
-                        "low": _f(row.get("low")),
-                        "close": _f(row.get("close")),
+                        "date": d, "open": _f(row.get("open")), "high": _f(row.get("high")),
+                        "low": _f(row.get("low")), "close": _f(row.get("close")),
                         "volume": _f(row.get("volume")),
                     })
         except Exception:
             rows = []
-        if rows:
-            return rows
-    return []
+        return rows, last_date
+
+    # 1) Try unified file
+    for name in [f"{symbol}.csv", f"{symbol}.NS.csv"]:
+        p = CACHE_DIR / name
+        if p.exists():
+            rows, _ = _read(p)
+            if rows:
+                return rows
+
+    # 2) Legacy fallback
+    best_rows: list[dict] = []
+    best_date: str = ""
+    for suffix in ["_5096", "_3528", "_900", "_728", "_504", "_252", "_60"]:
+        p = CACHE_DIR / f"{symbol}{suffix}.csv"
+        if p.exists():
+            rows, last_date = _read(p)
+            if rows and last_date > best_date:
+                best_rows = rows
+                best_date = last_date
+
+    return best_rows
 
 
 @lru_cache(maxsize=8192)
@@ -711,6 +727,84 @@ def fmt_x(value: float | None) -> str:
     if abs(value) < 0.05:
         return "&mdash;"
     return f"{value:.2f}x"
+
+
+# ── EMA & ADR helpers ────────────────────────────────────────────────────────
+
+def compute_ema(closes: list[float], period: int) -> float | None:
+    """Compute EMA for the given period from a list of closes (oldest→newest)."""
+    if len(closes) < period:
+        return None
+    mult = 2.0 / (period + 1)
+    ema = sum(closes[:period]) / period  # seed with SMA
+    for c in closes[period:]:
+        ema = (c - ema) * mult + ema
+    return ema
+
+
+def compute_ema_adr(rows: list[dict]) -> dict:
+    """
+    Compute EMA(21, 50, 200) and ADR% (14-day Average Daily Range as % of price)
+    from daily OHLCV rows (sorted oldest→newest).
+    Returns dict with keys: ema21, ema50, ema200, adr_pct, price_vs_ema21,
+    price_vs_ema50, price_vs_ema200 (all float|None).
+    """
+    closes = [_f(r.get("close")) for r in rows if _f(r.get("close")) > 0]
+    if not closes:
+        return {
+            "ema21": None, "ema50": None, "ema200": None, "adr_pct": None,
+            "price_vs_ema21": None, "price_vs_ema50": None, "price_vs_ema200": None,
+        }
+
+    price = closes[-1]
+    ema21 = compute_ema(closes, 21)
+    ema50 = compute_ema(closes, 50)
+    ema200 = compute_ema(closes, 200)
+
+    def _pct_vs(ema_val: float | None) -> float | None:
+        if ema_val is None or ema_val <= 0:
+            return None
+        return (price / ema_val - 1.0) * 100.0
+
+    # ADR% = average of (high - low) / close over last 14 bars, expressed as %
+    adr_pct = None
+    recent = rows[-14:] if len(rows) >= 14 else rows
+    if recent:
+        ranges = []
+        for r in recent:
+            h, l, c = _f(r.get("high")), _f(r.get("low")), _f(r.get("close"))
+            if c > 0 and h > 0 and l > 0:
+                ranges.append((h - l) / c * 100.0)
+        if ranges:
+            adr_pct = sum(ranges) / len(ranges)
+
+    return {
+        "ema21": round(ema21, 2) if ema21 else None,
+        "ema50": round(ema50, 2) if ema50 else None,
+        "ema200": round(ema200, 2) if ema200 else None,
+        "adr_pct": round(adr_pct, 2) if adr_pct else None,
+        "price_vs_ema21": round(_pct_vs(ema21), 2) if ema21 else None,
+        "price_vs_ema50": round(_pct_vs(ema50), 2) if ema50 else None,
+        "price_vs_ema200": round(_pct_vs(ema200), 2) if ema200 else None,
+    }
+
+
+def fmt_ema_vs(value: float | None) -> str:
+    """Format price-vs-EMA percentage as coloured HTML."""
+    if value is None:
+        return '<span class="ema-na">&mdash;</span>'
+    cls = "ema-above" if value >= 0 else "ema-below"
+    sign = "+" if value >= 0 else ""
+    return f'<span class="{cls}">{sign}{value:.1f}%</span>'
+
+
+def fmt_adr(value: float | None) -> str:
+    """Format ADR% as coloured HTML."""
+    if value is None:
+        return '<span class="ema-na">&mdash;</span>'
+    # Color by volatility: low=blue, mid=yellow, high=red
+    color = "#58a6ff" if value < 2.5 else "#e3b341" if value < 5.0 else "#f85149"
+    return f'<span style="color:{color};font-weight:600">{value:.1f}%</span>'
 
 
 # ── Run-history helpers ──────────────────────────────────────────────────────
@@ -1564,6 +1658,16 @@ def build_html(signals: list[dict], run_history: dict | None = None) -> str:
         daily_rows = load_price_rows(sym, weekly=False)
         perf = compute_price_performance(daily_rows)
 
+        # ── EMA & ADR metrics
+        ema_adr = compute_ema_adr(daily_rows)
+        ema21_val = ema_adr["ema21"]
+        ema50_val = ema_adr["ema50"]
+        ema200_val = ema_adr["ema200"]
+        adr_pct_val = ema_adr["adr_pct"]
+        pv_ema21 = ema_adr["price_vs_ema21"]
+        pv_ema50 = ema_adr["price_vs_ema50"]
+        pv_ema200 = ema_adr["price_vs_ema200"]
+
         regime     = sig.get("regimeState","")
         regime_str = ("Favorable" if "FAV" in regime and "UNFAV" not in regime
                       else "Unfavorable" if "UNFAV" in regime else "Neutral")
@@ -1677,7 +1781,7 @@ def build_html(signals: list[dict], run_history: dict | None = None) -> str:
         all_setup_types_set  = {st for st, _ in all_setups}
 
         rows_html.append(f"""
-<div class="sig-card" data-symbol="{sym}" data-setup="{all_setup_types_pipe}" data-rating="{rating}" data-sector="{sector}" data-industry="{industry}" data-appear="{app_count}" data-appear-total="{app_total}">
+<div class="sig-card" data-symbol="{sym}" data-setup="{all_setup_types_pipe}" data-rating="{rating}" data-sector="{sector}" data-industry="{industry}" data-appear="{app_count}" data-appear-total="{app_total}" data-ema21="{pv_ema21 if pv_ema21 is not None else ''}" data-ema50="{pv_ema50 if pv_ema50 is not None else ''}" data-ema200="{pv_ema200 if pv_ema200 is not None else ''}" data-adr="{adr_pct_val if adr_pct_val is not None else ''}">
   <div class="sig-header">
     <div class="sig-left">
       <div class="sig-sym">{sym.replace('.NS','')}</div>
@@ -1720,28 +1824,48 @@ def build_html(signals: list[dict], run_history: dict | None = None) -> str:
     </div>
   </div>
 
-  <div class="sig-footer">
-    <div class="sig-stat">
-      <span class="sstat-label">Regime</span>
-      <span class="{regime_cls}">{regime_str}</span>
-    </div>
-    <div class="sig-stat">
-      <span class="sstat-label">RS 3M</span>
-      <span class="{rs3m_cls}">{rs3m_text}</span>
-    </div>
-    <div class="sig-stat">
-      <span class="sstat-label">RS 6M</span>
-      <span class="{rs6m_cls}">{rs6m_text}</span>
-    </div>
-    <div class="sig-stat">
-      <span class="sstat-label">Vol %</span>
-      <span style="color:#79c0ff">{vol_pct_text}</span>
-    </div>
-    <div class="sig-stat">
-      <span class="sstat-label">RExp</span>
-      <span style="color:#e3b341">{rexp_text}</span>
-    </div>
-  </div>
+   <!-- EMA & ADR row - MOVED UP FOR VISIBILITY -->
+   <div class="ema-adr-row">
+     <div class="ema-cell">
+       <span class="ema-label">EMA 21</span>
+       {fmt_ema_vs(pv_ema21)}
+     </div>
+     <div class="ema-cell">
+       <span class="ema-label">EMA 50</span>
+       {fmt_ema_vs(pv_ema50)}
+     </div>
+     <div class="ema-cell">
+       <span class="ema-label">EMA 200</span>
+       {fmt_ema_vs(pv_ema200)}
+     </div>
+     <div class="ema-cell">
+       <span class="ema-label">ADR%</span>
+       {fmt_adr(adr_pct_val)}
+     </div>
+   </div>
+
+   <div class="sig-footer">
+     <div class="sig-stat">
+       <span class="sstat-label">Regime</span>
+       <span class="{regime_cls}">{regime_str}</span>
+     </div>
+     <div class="sig-stat">
+       <span class="sstat-label">RS 3M</span>
+       <span class="{rs3m_cls}">{rs3m_text}</span>
+     </div>
+     <div class="sig-stat">
+       <span class="sstat-label">RS 6M</span>
+       <span class="{rs6m_cls}">{rs6m_text}</span>
+     </div>
+     <div class="sig-stat">
+       <span class="sstat-label">Vol %</span>
+       <span style="color:#79c0ff">{vol_pct_text}</span>
+     </div>
+     <div class="sig-stat">
+       <span class="sstat-label">RExp</span>
+       <span style="color:#e3b341">{rexp_text}</span>
+     </div>
+   </div>
 
   <!-- Performance row -->
   <div class="perf-row">
@@ -2132,6 +2256,15 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
 
 /* PERFORMANCE ROW */
 .perf-row{{display:flex;gap:0;border-top:1px solid #21262d;background:#090e14;flex-wrap:wrap}}
+
+/* EMA & ADR ROW */
+.ema-adr-row{{display:flex;gap:0;border-top:2px solid #2d5016;border-bottom:1px solid #1c2333;background:#0d1a09;flex-wrap:wrap}}
+.ema-cell{{flex:1;min-width:70px;padding:8px 12px;text-align:center;border-right:1px solid #1c2333}}
+.ema-cell:last-child{{border-right:none}}
+.ema-label{{display:block;font-size:.65em;color:#4b8050;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px;font-weight:800}}
+.ema-above{{font-size:.85em;font-weight:800;color:#4ade80;text-shadow:0 0 8px rgba(74,222,128,.3)}}
+.ema-below{{font-size:.85em;font-weight:800;color:#f85149;text-shadow:0 0 8px rgba(248,81,73,.3)}}
+.ema-na{{font-size:.85em;color:#8b949e}}
 .perf-cell{{flex:1;min-width:60px;padding:7px 10px;text-align:center;border-right:1px solid #21262d}}
 .perf-cell:last-child{{border-right:none}}
 .perf-cell.appear-cell{{flex:1.3;min-width:90px}}
@@ -2317,6 +2450,17 @@ body{{font-family:'Inter',system-ui,sans-serif;background:#0d1117;color:#c9d1d9;
   <button class="btn-filter" onclick="toggleSort('score')" id="btn-sort-score">&#128202; Sort: Score</button>
   <button class="btn-filter" onclick="toggleSort('symbol')" id="btn-sort-sym">&#9776; Sort: Symbol</button>
   <button class="btn-filter" onclick="toggleSort('appear')" id="btn-sort-appear">&#128257; Sort: Recurring</button>
+  <button class="btn-filter" onclick="toggleSort('adr')" id="btn-sort-adr">📊 Sort: ADR%</button>
+  <button class="btn-filter" onclick="toggleSort('ema21')" id="btn-sort-ema21">📈 Sort: EMA21</button>
+  <select class="sel" id="emaFilter" onchange="applyFilters()" title="Filter by EMA position">
+    <option value="">All EMA</option>
+    <option value="above21">Above EMA 21</option>
+    <option value="above50">Above EMA 50</option>
+    <option value="above200">Above EMA 200</option>
+    <option value="aboveAll">Above All EMAs</option>
+    <option value="below21">Below EMA 21</option>
+    <option value="below50">Below EMA 50</option>
+  </select>
   <button class="btn-export" onclick="exportCSV()">&#8659; Export CSV</button>
   <span id="filterCount" style="color:#8b949e;font-size:.83em;margin-left:8px"></span>
 </div>
@@ -2874,7 +3018,7 @@ function wplExportCSV() {{
   if (!_wplTable.length) return;
   const h=['Symbol','Price','20d%','60d%','RS','ADR%','Stage','Pattern','Conviction','Action','Entry','Stop','T1','R:R','Setup'];
   const rows=_wplTable.map(r=>[r.symbol,r.price,r.ret_20d,r.ret_60d,r.rs_score,r.adr_pct,r.stage,
-    (r.pattern||'').replace(/[^\w\s]/g,''),r.conviction,r.action,r.entry,r.stop,r.t1,r.rr_t1,r.setup
+    (r.pattern||'').replace(/[^\\w\\s]/g,''),r.conviction,r.action,r.entry,r.stop,r.t1,r.rr_t1,r.setup
   ].map(v=>v==null?'':String(v)).join(','));
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent([h.join(','),...rows].join('\\n'));
@@ -2904,6 +3048,7 @@ function applyFilters() {{
   const rating   = document.getElementById('ratingFilter').value;
   const appear   = document.getElementById('appearFilter').value;
   const industry = document.getElementById('industryFilter').value || activeIndustry;
+  const emaF     = document.getElementById('emaFilter').value;
   let visible = 0;
   document.querySelectorAll('.sig-card').forEach(card => {{
     const sym    = (card.dataset.symbol||'').toLowerCase();
@@ -2913,6 +3058,9 @@ function applyFilters() {{
     const crate  = card.dataset.rating||'';
     const capp   = parseInt(card.dataset.appear||'0', 10);
     const ctotal = parseInt(card.dataset.appearTotal||'0', 10);
+    const e21    = card.dataset.ema21 !== '' ? parseFloat(card.dataset.ema21) : null;
+    const e50    = card.dataset.ema50 !== '' ? parseFloat(card.dataset.ema50) : null;
+    const e200   = card.dataset.ema200 !== '' ? parseFloat(card.dataset.ema200) : null;
     let show = (sym.includes(q) || sec.includes(q) || ind.includes(q));
     // Multi-setup: data-setup is pipe-separated (e.g. "VCP|RANGE_EXPANSION")
     if(setup && !csetup.split('|').includes(setup)) show = false;
@@ -2927,6 +3075,15 @@ function applyFilters() {{
       if(appear === 'warm'  && capp < 8)  show = false;
       if(appear === '50'    && ctotal > 0 && capp / ctotal < 0.5) show = false;
       if(appear === '75'    && ctotal > 0 && capp / ctotal < 0.75) show = false;
+    }}
+    // EMA filter
+    if(emaF) {{
+      if(emaF === 'above21'  && (e21 === null || e21 < 0)) show = false;
+      if(emaF === 'above50'  && (e50 === null || e50 < 0)) show = false;
+      if(emaF === 'above200' && (e200 === null || e200 < 0)) show = false;
+      if(emaF === 'aboveAll' && (e21 === null || e21 < 0 || e50 === null || e50 < 0 || e200 === null || e200 < 0)) show = false;
+      if(emaF === 'below21'  && (e21 === null || e21 >= 0)) show = false;
+      if(emaF === 'below50'  && (e50 === null || e50 >= 0)) show = false;
     }}
     card.style.display = show ? '' : 'none';
     if(show) visible++;
@@ -2961,6 +3118,7 @@ function resetAllFilters() {{
   document.getElementById('ratingFilter').value = '';
   document.getElementById('industryFilter').value = '';
   document.getElementById('appearFilter').value = '';
+  document.getElementById('emaFilter').value = '';
   document.querySelectorAll('.sector-pill').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.sector-pill')[0]?.classList.add('active');
   applyFilters();
@@ -2981,17 +3139,27 @@ function toggleSort(mode) {{
   cards.sort((a, b) => {{
     if(mode === 'symbol') return (a.dataset.symbol||'').localeCompare(b.dataset.symbol||'');
     if(mode === 'appear') return parseInt(b.dataset.appear||'0',10) - parseInt(a.dataset.appear||'0',10);
+    if(mode === 'adr') {{
+      const av = a.dataset.adr ? parseFloat(a.dataset.adr) : -999;
+      const bv = b.dataset.adr ? parseFloat(b.dataset.adr) : -999;
+      return bv - av; // highest ADR% first
+    }}
+    if(mode === 'ema21') {{
+      const av = a.dataset.ema21 !== '' ? parseFloat(a.dataset.ema21) : -9999;
+      const bv = b.dataset.ema21 !== '' ? parseFloat(b.dataset.ema21) : -9999;
+      return bv - av; // most above EMA21 first
+    }}
     return 0; // score order is default DOM order
   }});
   cards.forEach(c => grid.appendChild(c));
   document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
-  const btnMap = {{'score':'btn-sort-score','symbol':'btn-sort-sym','appear':'btn-sort-appear'}};
+  const btnMap = {{'score':'btn-sort-score','symbol':'btn-sort-sym','appear':'btn-sort-appear','adr':'btn-sort-adr','ema21':'btn-sort-ema21'}};
   const btnId = btnMap[mode];
   if(btnId) document.getElementById(btnId)?.classList.add('active');
 }}
 
 function exportCSV() {{
-  const rows = [['Symbol','Sector','Setup','Rating','Entry','Stop','Shares','Regime','RS3M','RS6M','VolPct','RExp','1W%','1M%','3M%','6M%','SeenRuns','TotalRuns','EPSGrowth','DebtChange','MacroTrigger','MarketTrigger','FundSummary']];
+  const rows = [['Symbol','Sector','Setup','Rating','Entry','Stop','Shares','Regime','RS3M','RS6M','VolPct','RExp','EMA21%','EMA50%','EMA200%','ADR%','1W%','1M%','3M%','6M%','SeenRuns','TotalRuns','EPSGrowth','DebtChange','MacroTrigger','MarketTrigger','FundSummary']];
   document.querySelectorAll('.sig-card').forEach(card => {{
     if(card.style.display === 'none') return;
     const planVals = [...card.querySelectorAll('.plan-value')].map(v => v.textContent.replace(/[₹,]/g,'').trim());
@@ -3003,6 +3171,10 @@ function exportCSV() {{
     const p6m = perfCells[3]?.querySelector('span:last-child')?.textContent?.trim() || '';
     const seenRuns   = card.dataset.appear || '0';
     const totalRuns  = card.dataset.appearTotal || '0';
+    const ema21Pct   = card.dataset.ema21 || '';
+    const ema50Pct   = card.dataset.ema50 || '';
+    const ema200Pct  = card.dataset.ema200 || '';
+    const adrPct     = card.dataset.adr || '';
     const epsGrowth    = card.querySelector('.insight-item:nth-child(1) .insight-value')?.textContent?.trim() || '';
     const debtChange   = card.querySelector('.insight-item:nth-child(2) .insight-value')?.textContent?.trim() || '';
     const macroTrigger = card.querySelector('.insight-item:nth-child(3) .insight-pill')?.textContent?.trim() || '';
@@ -3021,6 +3193,7 @@ function exportCSV() {{
       stats[2] || '',
       stats[3] || '',
       stats[4] || '',
+      ema21Pct, ema50Pct, ema200Pct, adrPct,
       p1w, p1m, p3m, p6m,
       seenRuns, totalRuns,
       epsGrowth,

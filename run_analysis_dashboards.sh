@@ -41,6 +41,22 @@ if [ "$SKIP_MF" = false ]; then
 fi
 echo ""
 
+# ── 0. Auto-refresh stale cache ─────────────────────────────────────────────
+if [ -f "scripts/refresh_cache.py" ]; then
+  echo "Refreshing stale Yahoo Finance cache files…"
+  set +e   # Allow non-zero exit (exit 2 = Yahoo blocked is non-fatal)
+  python3 scripts/refresh_cache.py --workers 8
+  REFRESH_EXIT=$?
+  set -e
+  if [ "$REFRESH_EXIT" -eq 2 ]; then
+    echo "  ⚠  Yahoo Finance is BLOCKED on this network — stock prices may be stale."
+    echo "     💡 Run from mobile hotspot/VPN to fetch latest data."
+  elif [ "$REFRESH_EXIT" -ne 0 ]; then
+    echo "  ⚠ Cache refresh had issues (non-fatal)"
+  fi
+  echo ""
+fi
+
 # ── 1. Live Trade Plans (with MF holdings) + Sector & Macro + Market Breadth ───────
 if [ "$SKIP_MF" = true ]; then
   echo "[1/1] Generating Trade Plans (MF skipped) + Sector & Macro + Market Breadth..."
@@ -85,5 +101,7 @@ if command -v open &>/dev/null; then
   open output/trade_plans_live.html
   sleep 0.4
   open output/market_breadth.html
+  sleep 0.4
+  open output/sector_macro_analysis.html
 fi
 

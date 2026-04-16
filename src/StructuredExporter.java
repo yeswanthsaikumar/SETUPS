@@ -77,6 +77,9 @@ public class StructuredExporter {
         public String breakoutQualityRating; // EXCELLENT/STRONG/GOOD/FAIR/WEAK
         public double breakoutQualityScore;  // 0-40 pts
         
+        public boolean ipoFlag;
+        public int daysSinceListing;
+
         public SetupDetails setup;
         public BreakoutDetails breakout;
         public TradePlanDetails tradePlan;
@@ -135,6 +138,9 @@ public class StructuredExporter {
         public String breakoutQualityRating;
         public double breakoutQualityScore;
         
+        public boolean ipoFlag;
+        public int daysSinceListing;
+
         public SetupDetails setup;
         public WatchlistDetails watchlist;
         public TradePlanDetails tradePlan;
@@ -223,12 +229,17 @@ public class StructuredExporter {
     }
     
     private static String signalToJson(SignalExport s) {
+        String qualityRating = s.breakoutQualityRating != null ? s.breakoutQualityRating : "";
         return String.format(
             "{\"symbol\":\"%s\",\"signalType\":\"%s\",\"baseScore\":%.1f," +
             "\"alignmentBonus\":%.1f,\"finalScore\":%.1f," +
-            "\"qualityRating\":\"%s\",\"qualityScore\":%.1f}",
-            s.symbol, s.signalType, s.baseQualityScore, s.alignmentBonus,
-            s.finalScore, s.breakoutQualityRating, s.breakoutQualityScore
+            "\"qualityRating\":\"%s\",\"qualityScore\":%.1f," +
+            "\"ipoFlag\":%b,\"daysSinceListing\":%d}",
+            s.symbol != null ? s.symbol : "",
+            s.signalType != null ? s.signalType : "",
+            s.baseQualityScore, s.alignmentBonus,
+            s.finalScore, qualityRating, s.breakoutQualityScore,
+            s.ipoFlag, s.daysSinceListing
         );
     }
     
@@ -239,9 +250,12 @@ public class StructuredExporter {
             WatchlistExport w = items.get(i);
             sb.append(String.format(
                 "{\"symbol\":\"%s\",\"baseScore\":%.1f,\"alignmentBonus\":%.1f," +
-                "\"finalScore\":%.1f,\"qualityRating\":\"%s\"}",
-                w.symbol, w.baseQualityScore, w.alignmentBonus,
-                w.finalScore, w.breakoutQualityRating
+                "\"finalScore\":%.1f,\"qualityRating\":\"%s\"," +
+                "\"ipoFlag\":%b,\"daysSinceListing\":%d}",
+                w.symbol != null ? w.symbol : "",
+                w.baseQualityScore, w.alignmentBonus,
+                w.finalScore, w.breakoutQualityRating != null ? w.breakoutQualityRating : "",
+                w.ipoFlag, w.daysSinceListing
             ));
         }
         sb.append("]");
@@ -255,7 +269,9 @@ public class StructuredExporter {
             RejectionExport r = rejections.get(i);
             sb.append(String.format(
                 "{\"symbol\":\"%s\",\"reason\":\"%s\",\"type\":\"%s\"}",
-                r.symbol, escapeJson(r.rejectionReason), r.rejectionType
+                r.symbol != null ? r.symbol : "",
+                escapeJson(r.rejectionReason),
+                r.rejectionType != null ? r.rejectionType : ""
             ));
         }
         sb.append("]");
@@ -285,12 +301,13 @@ public class StructuredExporter {
     
     private static String exportHitsAsCsv(List<SignalExport> signals) {
         StringBuilder sb = new StringBuilder();
-        sb.append("symbol,signalType,baseScore,alignmentBonus,finalScore,qualityRating,qualityScore\n");
-        
+        sb.append("symbol,signalType,baseScore,alignmentBonus,finalScore,qualityRating,qualityScore,ipoFlag,daysSinceListing\n");
+
         for (SignalExport s : signals) {
-            sb.append(String.format("%s,%s,%.2f,%.2f,%.2f,%s,%.1f\n",
+            sb.append(String.format("%s,%s,%.2f,%.2f,%.2f,%s,%.1f,%b,%d\n",
                 s.symbol, s.signalType, s.baseQualityScore, s.alignmentBonus,
-                s.finalScore, s.breakoutQualityRating, s.breakoutQualityScore
+                s.finalScore, s.breakoutQualityRating, s.breakoutQualityScore,
+                s.ipoFlag, s.daysSinceListing
             ));
         }
         
@@ -299,12 +316,13 @@ public class StructuredExporter {
     
     private static String exportWatchlistAsCsv(List<WatchlistExport> items) {
         StringBuilder sb = new StringBuilder();
-        sb.append("symbol,baseScore,alignmentBonus,finalScore,qualityRating,qualityScore\n");
-        
+        sb.append("symbol,baseScore,alignmentBonus,finalScore,qualityRating,qualityScore,ipoFlag,daysSinceListing\n");
+
         for (WatchlistExport w : items) {
-            sb.append(String.format("%s,%.2f,%.2f,%.2f,%s,%.1f\n",
+            sb.append(String.format("%s,%.2f,%.2f,%.2f,%s,%.1f,%b,%d\n",
                 w.symbol, w.baseQualityScore, w.alignmentBonus,
-                w.finalScore, w.breakoutQualityRating, w.breakoutQualityScore
+                w.finalScore, w.breakoutQualityRating, w.breakoutQualityScore,
+                w.ipoFlag, w.daysSinceListing
             ));
         }
         
@@ -345,10 +363,14 @@ public class StructuredExporter {
         Path outPath = Paths.get(outputDir);
         Files.createDirectories(outPath);
         
-        if ("json".equalsIgnoreCase(format)) {
+        boolean writeJson = "json".equalsIgnoreCase(format) || "both".equalsIgnoreCase(format);
+        boolean writeCsv  = "csv".equalsIgnoreCase(format) || "both".equalsIgnoreCase(format);
+
+        if (writeJson) {
             String jsonContent = exportAsJson(data);
             Files.write(outPath.resolve(prefix + "_scan.json"), jsonContent.getBytes());
-        } else if ("csv".equalsIgnoreCase(format)) {
+        }
+        if (writeCsv) {
             Map<String, String> csvFiles = exportAsCsv(data);
             for (Map.Entry<String, String> entry : csvFiles.entrySet()) {
                 Files.write(outPath.resolve(prefix + "_" + entry.getKey()), 
@@ -359,6 +381,7 @@ public class StructuredExporter {
     
     // Helper methods
     private static String escapeJson(String s) {
+        if (s == null) return "";
         return s.replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
@@ -366,6 +389,7 @@ public class StructuredExporter {
     }
     
     private static String escapeQuotes(String s) {
+        if (s == null) return "";
         return s.replace("\"", "\"\"");
     }
 }
