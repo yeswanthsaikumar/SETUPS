@@ -568,6 +568,14 @@ async def lifespan(app: FastAPI):
     else:
         print("⏭  Breakout alert scanner disabled in config", flush=True)
 
+    # ── TELEGRAM BACKUP (once per day) ──
+    try:
+        sys.path.insert(0, str(ROOT / "scripts"))
+        from telegram_backup import run_backup_background
+        run_backup_background()
+    except Exception as e:
+        print(f"☁️  Backup init: {e}", flush=True)
+
     yield  # App is running
 
     # ── SHUTDOWN ──
@@ -841,6 +849,30 @@ def start_scan(req: ScanJobRequest) -> dict:
         command.append("--skip-us-refresh")
     job = _submit_job("scan", command)
     return {"job": job}
+
+
+# ── iCloud Backup ──────────────────────────────────────────────────────────
+
+@app.get("/api/backup/status")
+def backup_status() -> dict:
+    """Get the last backup status."""
+    try:
+        sys.path.insert(0, str(ROOT / "scripts"))
+        from icloud_backup import get_backup_status
+        return get_backup_status()
+    except Exception as e:
+        return {"configured": False, "error": str(e)}
+
+@app.post("/api/backup/trigger")
+def backup_trigger(force: bool = False) -> dict:
+    """Manually trigger an iCloud backup."""
+    try:
+        sys.path.insert(0, str(ROOT / "scripts"))
+        from icloud_backup import run_backup
+        result = run_backup(force=force)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/assistant/scan-brief")
@@ -2466,17 +2498,220 @@ class JournalEntry(BaseModel):
     date: str = ""
     title: str = ""
     body: str = ""
-    mood: str = ""   # bullish/bearish/neutral
+    mood: str = ""   # bullish/bearish/neutral/fearful/greedy/disciplined/fomo/revenge
     tags: list[str] = Field(default_factory=list)
+    # ── Advanced journal fields ──
+    category: str = ""  # trade_entry/trade_exit/trade_review/market_analysis/cash_decision/lesson/mistake/rules
+    entry_type: str = ""  # pre_trade/during_trade/post_trade/daily_review/weekly_review
+    # Trade context
+    trade_id: str = ""  # Link to a position
+    direction: str = ""  # long/short
+    setup_type: str = ""  # VCP/breakout/bull_flag etc
+    entry_price: float = 0
+    exit_price: float = 0
+    stop_loss: float = 0
+    position_size: int = 0
+    risk_amount: float = 0
+    risk_pct: float = 0  # % of capital risked
+    # Decision framework
+    thesis: str = ""  # Why entering/exiting
+    conviction: int = 0  # 1-5 scale
+    followed_rules: bool = True
+    rule_violations: list[str] = Field(default_factory=list)
+    # Emotional state
+    emotions: list[str] = Field(default_factory=list)
+    stress_level: int = 0  # 1-5
+    # Outcome & lessons
+    outcome: str = ""  # win/loss/breakeven/avoided
+    pnl_amount: float = 0
+    r_multiple: float = 0
+    lesson_learned: str = ""
+    what_went_well: str = ""
+    what_went_wrong: str = ""
+    would_take_again: bool = True
+    # Screenshots (stored as base64 data URLs or file paths)
+    screenshots: list[str] = Field(default_factory=list)
+    # Rating
+    execution_rating: int = 0  # 1-5 stars
+    # ── New advanced fields ──
+    market_condition: str = ""  # trending_up/trending_down/range_bound/volatile/uncertain
+    sector_strength: str = ""  # strong/neutral/weak
+    timeframe: str = ""  # intraday/swing/positional
+    pre_trade_checklist: list[str] = Field(default_factory=list)
+    capital_deployed_pct: float = 0  # % of total capital in this trade
+    account_balance: float = 0  # account balance at time of entry
 
 @app.get("/api/trade-journal")
-def get_journal(symbol: str = "", limit: int = 100) -> dict:
+def get_journal(symbol: str = "", limit: int = 200, category: str = "", search: str = "", date_from: str = "", date_to: str = "") -> dict:
     with _journal_lock:
         entries = _load_journal()
     if symbol:
         entries = [e for e in entries if e.get("symbol","").upper() == symbol.upper()]
+    if category:
+        entries = [e for e in entries if e.get("category","") == category]
+    if search:
+        q = search.lower()
+        entries = [e for e in entries if q in (e.get("title","") + " " + e.get("body","") + " " + e.get("thesis","") + " " + e.get("symbol","") + " " + e.get("lesson_learned","")).lower()]
+    if date_from:
+        entries = [e for e in entries if e.get("date","") >= date_from]
+    if date_to:
+        entries = [e for e in entries if e.get("date","") <= date_to]
     entries.sort(key=lambda e: e.get("date",""), reverse=True)
-    return {"entries": entries[:limit], "total": len(entries)}
+
+    # ── Compute comprehensive journal analytics ──
+    total = len(entries)
+    moods = {}
+    categories = {}
+    emotions_count = {}
+    rules_followed = 0
+    rules_broken = 0
+    # Trade performance
+    wins = 0; losses = 0; breakevens = 0; avoided = 0
+    total_pnl = 0.0; win_pnl = 0.0; loss_pnl = 0.0
+    r_multiples = []
+    # Setup performance
+    setup_stats = {}  # {setup: {wins, losses, total_pnl, r_multiples}}
+    # Monthly breakdown
+    monthly = {}  # {YYYY-MM: {entries, wins, losses, pnl}}
+    # Date heatmap (entries per date)
+    date_counts = {}
+    # Emotion-outcome correlation
+    emotion_outcomes = {}  # {emotion: {win, loss, total}}
+    # Conviction-outcome correlation
+    conviction_outcomes = {}  # {level: {win, loss, total}}
+    # Best/worst trades
+    best_trade = None; worst_trade = None
+    best_pnl = 0; worst_pnl = 0
+
+    for e in entries:
+        m = e.get("mood", "")
+        if m:
+            moods[m] = moods.get(m, 0) + 1
+        c = e.get("category", "")
+        if c:
+            categories[c] = categories.get(c, 0) + 1
+        for em in e.get("emotions", []):
+            emotions_count[em] = emotions_count.get(em, 0) + 1
+        if e.get("followed_rules") is True:
+            rules_followed += 1
+        elif e.get("followed_rules") is False:
+            rules_broken += 1
+
+        # Date heatmap
+        d = e.get("date", "")
+        if d:
+            date_counts[d] = date_counts.get(d, 0) + 1
+
+        # Trade outcomes
+        outcome = e.get("outcome", "")
+        pnl = e.get("pnl_amount", 0) or 0
+        rm = e.get("r_multiple", 0) or 0
+        setup = e.get("setup_type", "")
+
+        if outcome == "win":
+            wins += 1; win_pnl += pnl
+        elif outcome == "loss":
+            losses += 1; loss_pnl += pnl
+        elif outcome == "breakeven":
+            breakevens += 1
+        elif outcome == "avoided":
+            avoided += 1
+
+        if outcome in ("win", "loss", "breakeven"):
+            total_pnl += pnl
+            if rm: r_multiples.append(rm)
+            if pnl > best_pnl:
+                best_pnl = pnl; best_trade = {"symbol": e.get("symbol",""), "pnl": pnl, "date": d, "title": e.get("title","")}
+            if pnl < worst_pnl:
+                worst_pnl = pnl; worst_trade = {"symbol": e.get("symbol",""), "pnl": pnl, "date": d, "title": e.get("title","")}
+
+            # Setup performance
+            if setup:
+                if setup not in setup_stats:
+                    setup_stats[setup] = {"wins": 0, "losses": 0, "total_pnl": 0, "r_multiples": [], "count": 0}
+                setup_stats[setup]["count"] += 1
+                setup_stats[setup]["total_pnl"] += pnl
+                if rm: setup_stats[setup]["r_multiples"].append(rm)
+                if outcome == "win": setup_stats[setup]["wins"] += 1
+                elif outcome == "loss": setup_stats[setup]["losses"] += 1
+
+            # Emotion-outcome correlation
+            for em in e.get("emotions", []):
+                if em not in emotion_outcomes:
+                    emotion_outcomes[em] = {"win": 0, "loss": 0, "total": 0}
+                emotion_outcomes[em]["total"] += 1
+                if outcome == "win": emotion_outcomes[em]["win"] += 1
+                elif outcome == "loss": emotion_outcomes[em]["loss"] += 1
+
+            # Conviction-outcome
+            conv = e.get("conviction", 0)
+            if conv:
+                ck = str(conv)
+                if ck not in conviction_outcomes:
+                    conviction_outcomes[ck] = {"win": 0, "loss": 0, "total": 0, "pnl": 0}
+                conviction_outcomes[ck]["total"] += 1
+                conviction_outcomes[ck]["pnl"] += pnl
+                if outcome == "win": conviction_outcomes[ck]["win"] += 1
+                elif outcome == "loss": conviction_outcomes[ck]["loss"] += 1
+
+        # Monthly
+        if d and len(d) >= 7:
+            ym = d[:7]
+            if ym not in monthly:
+                monthly[ym] = {"entries": 0, "wins": 0, "losses": 0, "pnl": 0}
+            monthly[ym]["entries"] += 1
+            if outcome == "win": monthly[ym]["wins"] += 1
+            elif outcome == "loss": monthly[ym]["losses"] += 1
+            if outcome in ("win", "loss", "breakeven"):
+                monthly[ym]["pnl"] += pnl
+
+    # Computed metrics
+    total_trades = wins + losses + breakevens
+    win_rate = round(wins / total_trades * 100, 1) if total_trades else 0
+    avg_r = round(sum(r_multiples) / len(r_multiples), 2) if r_multiples else 0
+    avg_win = round(win_pnl / wins, 2) if wins else 0
+    avg_loss = round(loss_pnl / losses, 2) if losses else 0
+    expectancy = round(avg_r, 2) if avg_r else (round((win_rate/100 * avg_win + (1-win_rate/100) * avg_loss), 2) if total_trades else 0)
+    profit_factor = round(abs(win_pnl / loss_pnl), 2) if loss_pnl else (999 if win_pnl > 0 else 0)
+
+    # Streak
+    dates_sorted = sorted(set(e.get("date","") for e in entries if e.get("date","")), reverse=True)
+    streak = 0
+    for i, d in enumerate(dates_sorted):
+        expected = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
+        if d == expected: streak += 1
+        else: break
+
+    # Setup stats: compute win rate and avg R for each
+    for k, v in setup_stats.items():
+        t = v["wins"] + v["losses"]
+        v["win_rate"] = round(v["wins"] / t * 100, 1) if t else 0
+        v["avg_r"] = round(sum(v["r_multiples"]) / len(v["r_multiples"]), 2) if v["r_multiples"] else 0
+        del v["r_multiples"]  # don't send raw list
+
+    stats = {
+        "total": total,
+        "moods": moods,
+        "categories": categories,
+        "emotions": emotions_count,
+        "rules_followed": rules_followed,
+        "rules_broken": rules_broken,
+        # Trade performance
+        "wins": wins, "losses": losses, "breakevens": breakevens, "avoided": avoided,
+        "total_trades": total_trades, "win_rate": win_rate,
+        "total_pnl": round(total_pnl, 2), "avg_win": avg_win, "avg_loss": avg_loss,
+        "avg_r": avg_r, "expectancy": expectancy, "profit_factor": profit_factor,
+        "r_multiples": r_multiples[-50:],  # last 50 for chart
+        "best_trade": best_trade, "worst_trade": worst_trade,
+        # Breakdowns
+        "setup_performance": setup_stats,
+        "monthly": dict(sorted(monthly.items())),
+        "date_counts": date_counts,
+        "emotion_outcomes": emotion_outcomes,
+        "conviction_outcomes": conviction_outcomes,
+        "streak": streak,
+    }
+    return {"entries": entries[:limit], "total": total, "stats": stats}
 
 @app.post("/api/trade-journal")
 def add_journal_entry(entry: JournalEntry) -> dict:
@@ -2491,6 +2726,24 @@ def add_journal_entry(entry: JournalEntry) -> dict:
         _save_journal(entries)
     return {"ok": True, "entry": rec}
 
+@app.put("/api/trade-journal/{entry_id}")
+def update_journal_entry(entry_id: str, entry: JournalEntry) -> dict:
+    with _journal_lock:
+        entries = _load_journal()
+        idx = next((i for i, e in enumerate(entries) if e.get("id") == entry_id), None)
+        if idx is None:
+            raise HTTPException(status_code=404, detail="Journal entry not found")
+        rec = entry.model_dump()
+        rec["id"] = entry_id
+        rec["created_at"] = entries[idx].get("created_at", datetime.now().isoformat(timespec="seconds"))
+        rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
+        # Preserve screenshots from existing entry if not provided in update
+        if not rec.get("screenshots") and entries[idx].get("screenshots"):
+            rec["screenshots"] = entries[idx]["screenshots"]
+        entries[idx] = rec
+        _save_journal(entries)
+    return {"ok": True, "entry": rec}
+
 @app.delete("/api/trade-journal/{entry_id}")
 def delete_journal_entry(entry_id: str) -> dict:
     with _journal_lock:
@@ -2501,6 +2754,36 @@ def delete_journal_entry(entry_id: str) -> dict:
             raise HTTPException(status_code=404, detail="Journal entry not found")
         _save_journal(entries)
     return {"ok": True, "deleted": entry_id}
+
+@app.get("/api/trade-journal/export")
+def export_journal():
+    """Export journal entries as CSV for analysis"""
+    import io
+    entries = _load_journal()
+    if not entries:
+        raise HTTPException(status_code=404, detail="No entries to export")
+    fields = ["date","symbol","category","title","outcome","pnl_amount","r_multiple",
+              "setup_type","entry_price","exit_price","stop_loss","position_size",
+              "risk_amount","risk_pct","conviction","execution_rating","stress_level",
+              "mood","emotions","followed_rules","rule_violations","thesis",
+              "what_went_well","what_went_wrong","lesson_learned","market_condition",
+              "timeframe","tags","body"]
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=fields, extrasaction="ignore")
+    writer.writeheader()
+    for e in sorted(entries, key=lambda x: x.get("date",""), reverse=True):
+        row = dict(e)
+        row["emotions"] = "; ".join(row.get("emotions", []))
+        row["rule_violations"] = "; ".join(row.get("rule_violations", []))
+        row["tags"] = "; ".join(row.get("tags", []))
+        writer.writerow(row)
+    from fastapi.responses import StreamingResponse
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=trading_journal_export.csv"}
+    )
 
 
 # ── Trade Watchlist ────────────────────────────────────────────────────────────
