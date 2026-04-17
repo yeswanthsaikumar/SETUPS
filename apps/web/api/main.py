@@ -555,9 +555,27 @@ async def lifespan(app: FastAPI):
     else:
         print("⏭  Startup cache refresh skipped (env)", flush=True)
 
+    # ── AUTO-START BREAKOUT ALERT SCANNER ──
+    # Wire up dependencies and start the background scanner so alerts
+    # are sent automatically (Telegram + Gmail) without manual trigger.
+    if _breakout_scanner._read_ohlcv is None:
+        _breakout_scanner._read_ohlcv = _read_ohlcv
+    if _breakout_scanner._load_positions_fn is None:
+        def _load_open_positions_startup():
+            data = _load_board()
+            return data.get("positions", [])
+        _breakout_scanner._load_positions_fn = _load_open_positions_startup
+    config = _breakout_scanner.state.load_config()
+    if config.enabled:
+        print("🔔 Auto-starting breakout alert scanner (Telegram + Gmail)…", flush=True)
+        _breakout_scanner.start()
+    else:
+        print("⏭  Breakout alert scanner disabled in config", flush=True)
+
     yield  # App is running
 
     # ── SHUTDOWN ──
+    _breakout_scanner.stop()
     print("👋 Shutting down…", flush=True)
 
 
@@ -2739,14 +2757,14 @@ def update_breakout_alert_config(update: BreakoutAlertConfigUpdate) -> dict:
 
 @app.post("/api/breakout-alerts/scan-now")
 def breakout_scan_now(symbols: list[str] | None = None, intraday: bool = True) -> dict:
-    """Run an immediate breakout scan. intraday=True uses live 30-min candles."""
+    """Run an immediate breakout scan. intraday=True uses live 15-min candles."""
     if _breakout_scanner._read_ohlcv is None:
         _breakout_scanner._read_ohlcv = _read_ohlcv
     results = _breakout_scanner.scan_now(symbols=symbols, intraday=intraday)
     return {
         "signals": results,
         "count": len(results),
-        "mode": "intraday_30m" if intraday else "daily",
+        "mode": "intraday_15m" if intraday else "daily",
         "scannedAt": datetime.now().isoformat(timespec="seconds"),
     }
 

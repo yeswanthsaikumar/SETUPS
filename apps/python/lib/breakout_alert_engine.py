@@ -890,11 +890,11 @@ def send_alert_summary(signals: list[BreakoutSignal], config: AlertConfig) -> di
     return results
 
 
-# ─── Intraday 30-min Data Fetching ───────────────────────────────────────────
+# ─── Intraday 15-min Data Fetching ───────────────────────────────────────────
 
 def _fetch_intraday_30m(symbol: str, days: int = 5) -> list[dict]:
     """
-    Fetch 30-min intraday candles for an NSE stock via yfinance.
+    Fetch 15-min intraday candles for an NSE stock via yfinance.
     Returns list of OHLCV dicts with 'datetime' (ISO str), 'date', etc.
     """
     try:
@@ -902,7 +902,7 @@ def _fetch_intraday_30m(symbol: str, days: int = 5) -> list[dict]:
         ticker = symbol.upper()
         if not ticker.endswith(".NS") and not ticker.endswith(".BO"):
             ticker = ticker + ".NS"
-        df = yf.download(ticker, period=f"{days}d", interval="30m", progress=False)
+        df = yf.download(ticker, period=f"{days}d", interval="15m", progress=False)
         if df is None or df.empty:
             return []
         # Handle multi-level columns from yfinance
@@ -937,15 +937,15 @@ def _detect_intraday_breakout(
     config: AlertConfig,
 ) -> Optional[BreakoutSignal]:
     """
-    Detect breakout on the LATEST 30-min candle:
-    1. Volume of this 30-min candle >= 2.5x avg of last N 30-min candles
+    Detect breakout on the LATEST 15-min candle:
+    1. Volume of this 15-min candle >= 2.5x avg of last N 15-min candles
     2. Price breaks a key daily resistance level
     3. Bullish candle (close > open)
     """
     if len(intraday_rows) < 6:
         return None
 
-    # Latest completed 30-min candle
+    # Latest completed 15-min candle
     candle = intraday_rows[-1]
     o, h, l, c, v = candle["open"], candle["high"], candle["low"], candle["close"], candle["volume"]
     dt = candle.get("datetime", candle["date"])
@@ -958,7 +958,7 @@ def _detect_intraday_breakout(
     body_ratio = body / candle_range
     close_position = (c - l) / candle_range
 
-    # Volume: compare to avg of last N 30-min candles (excluding current)
+    # Volume: compare to avg of last N 15-min candles (excluding current)
     n_bars = config.volume_avg_bars or 5
     prev_candles = intraday_rows[-(n_bars + 1):-1]
     prev_volumes = [r["volume"] for r in prev_candles if r["volume"] > 0]
@@ -996,7 +996,7 @@ def _detect_intraday_breakout(
     levels = _find_resistance_levels(daily_for_levels, len(daily_for_levels))
 
     # Check: is this candle breaking above a daily resistance level?
-    # Use previous day's close as reference (not just prev 30-min candle)
+    # Use previous day's close as reference (not just prev 15-min candle)
     # because breakouts gap up at open
     prev_30m_close = intraday_rows[-2]["close"] if len(intraday_rows) >= 2 else 0
     # Find the last candle from a different date (previous day's last candle)
@@ -1014,7 +1014,7 @@ def _detect_intraday_breakout(
         if prev_day_close <= level_price * 1.02 and c > level_price:
             broken_level = lev
             break
-        # Or: previous 30-min candle was below, and this one breaks above (intraday range expansion)
+        # Or: previous 15-min candle was below, and this one breaks above (intraday range expansion)
         if prev_30m_close <= level_price * 1.02 and c > level_price:
             broken_level = lev
             break
@@ -1044,7 +1044,7 @@ def _detect_intraday_breakout(
     atr = atrs[-1] if atrs else candle_range
 
     # Trade plan
-    stop_loss = l  # 30-min candle low
+    stop_loss = l  # 15-min candle low
     risk = c - stop_loss
     if risk <= 0:
         risk = atr * 0.5
@@ -1067,7 +1067,7 @@ def _detect_intraday_breakout(
     score += broken_level["strength"] * 10
     score = min(100, round(score, 1))
 
-    notes_parts = [f"⏱ 30min candle {candle.get('time', '')}"]
+    notes_parts = [f"⏱ 15min candle {candle.get('time', '')}"]
     if vol_ratio >= config.volume_strong_threshold:
         notes_parts.append(f"🔥 VOL {vol_ratio:.1f}x")
     else:
@@ -1365,8 +1365,8 @@ class AlertState:
 
 class BreakoutScanner:
     """
-    Background scanner that checks watchlist stocks for breakouts on 30-min candles.
-    During market hours: fetches live 30-min intraday data, detects breakouts on each candle close.
+    Background scanner that checks watchlist stocks for breakouts on 15-min candles.
+    During market hours: fetches live 15-min intraday data, detects breakouts on each candle close.
     After hours: falls back to daily data scan.
     Sends instant Telegram/Gmail alerts for new signals.
     """
@@ -1426,7 +1426,7 @@ class BreakoutScanner:
     def _loop(self):
         """
         Main scanner loop.
-        During market hours: scan every 2 min using live 30-min intraday candles.
+        During market hours: scan every 2 min using live 15-min intraday candles.
         After hours: scan once with daily data, then sleep longer.
         """
         while self._running:
@@ -1453,7 +1453,7 @@ class BreakoutScanner:
 
     def _scan_intraday(self, config: AlertConfig) -> list[BreakoutSignal]:
         """
-        LIVE INTRADAY SCAN: Fetch 30-min candles and detect breakouts.
+        LIVE INTRADAY SCAN: Fetch 15-min candles and detect breakouts.
         This runs every ~2 min during market hours.
         """
         symbols = self._get_watchlist_symbols()
@@ -1465,7 +1465,7 @@ class BreakoutScanner:
         all_signals = []
         for sym in symbols:
             try:
-                # Fetch live 30-min intraday candles
+                # Fetch live 15-min intraday candles
                 intraday = _fetch_intraday_30m(sym, days=5)
                 if not intraday or len(intraday) < 6:
                     continue
@@ -1572,7 +1572,7 @@ class BreakoutScanner:
 
     def scan_now(self, symbols: list[str] | None = None, intraday: bool = False) -> list[dict]:
         """
-        Run an immediate scan. If intraday=True, uses live 30-min candles.
+        Run an immediate scan. If intraday=True, uses live 15-min candles.
         Returns signal dicts.
         """
         config = self.state.load_config()
@@ -1600,6 +1600,20 @@ class BreakoutScanner:
             except Exception as e:
                 print(f"  ⚠ {sym}: {e}", flush=True)
                 continue
+
+        # Send alerts for new signals (dedup by key)
+        new_signals = []
+        for s in all_signals:
+            key = f"{s.symbol}:{s.date}:{s.signal_type}"
+            if key not in self._alerted_keys:
+                new_signals.append(s)
+                self._alerted_keys.add(key)
+
+        if new_signals:
+            print(f"  🔔 scan_now: {len(new_signals)} NEW signal(s) — sending alerts!", flush=True)
+            for s in new_signals:
+                print(f"     {s.signal_type}: {s.symbol} ₹{s.close:.1f} Vol {s.volume_ratio:.1f}x", flush=True)
+                send_alert(s, config)
 
         result = [asdict(s) for s in all_signals]
         result.sort(key=lambda x: -x.get("strength_score", 0))
