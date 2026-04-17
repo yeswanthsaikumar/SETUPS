@@ -484,12 +484,8 @@ def _is_price_stale(last_date_str: str) -> bool:
               if (last_date + _dt.timedelta(days=d)).weekday() < 5)
     if biz == 0:
         return False
-    if biz >= 2:
-        return True
-    # Exactly 1 business day — stale only after NSE closes (3:35 PM IST)
-    now_ist = _dt.datetime.now(_ist)
-    nse_close = now_ist.replace(hour=15, minute=35, second=0, microsecond=0)
-    return now_ist >= nse_close
+    # Any business day gap means stale — refresh immediately
+    return True
 
 
 def _refresh_symbol_if_stale(symbol: str, force: bool = False) -> bool:
@@ -587,6 +583,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def no_cache_html(request, call_next):
+    """Prevent browser caching of HTML pages so UI changes take effect immediately."""
+    response = await call_next(request)
+    ct = response.headers.get("content-type", "")
+    if "text/html" in ct:
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
 
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 WEB_JOBS_DIR.mkdir(parents=True, exist_ok=True)
@@ -1980,6 +1988,22 @@ def _enrich_position_metrics(p: dict) -> dict:
     if not sym:
         return p
     rows = _read_ohlcv(sym, days=300)  # need ~252 for yearly volume analysis
+    # Inject live price into the latest bar so EMA/metrics reflect current price
+    if rows:
+        live = _get_live_price(sym)
+        if live and live.get("price") and live["price"] > 0:
+            import datetime as _dtmod
+            today_str = _dtmod.datetime.now(_IST).strftime("%Y-%m-%d")
+            lp = live["price"]
+            if rows[-1]["date"] == today_str:
+                rows[-1]["close"] = lp
+                rows[-1]["high"] = max(rows[-1]["high"], lp)
+                rows[-1]["low"] = min(rows[-1]["low"], lp)
+            elif rows[-1]["date"] < today_str:
+                rows.append({
+                    "date": today_str, "open": live.get("prevClose") or rows[-1]["close"],
+                    "high": lp, "low": lp, "close": lp, "volume": 0,
+                })
     if not rows or len(rows) < 5:
         # Still flag IPO status even with minimal data
         if rows:
@@ -2186,6 +2210,33 @@ def trade_board_chart(symbol: str, days: int = 252) -> dict:
     rows = _read_ohlcv(symbol, days=max(days, 30) if days > 0 else 0)
     if not rows:
         raise HTTPException(status_code=404, detail=f"No price data for {symbol}")
+
+    # ── Append / update today's live bar during market hours ──────────────
+    # The CSV cache only has completed daily bars.  During market hours the
+    # latest bar may be yesterday's close.  Fetch live price and either
+    # update today's row (if cache already has today) or append a new one.
+    live = _get_live_price(symbol)
+    if live and live.get("price") and live["price"] > 0:
+        import datetime as _dtmod
+        today_str = _dtmod.datetime.now(_IST).strftime("%Y-%m-%d")
+        lp = live["price"]
+        if rows[-1]["date"] == today_str:
+            # Update today's bar with live price (high/low may have moved)
+            rows[-1]["close"] = lp
+            rows[-1]["high"] = max(rows[-1]["high"], lp)
+            rows[-1]["low"] = min(rows[-1]["low"], lp)
+        elif rows[-1]["date"] < today_str:
+            # Append a synthetic "today" bar using live price
+            prev_close = live.get("prevClose") or rows[-1]["close"]
+            rows.append({
+                "date": today_str,
+                "open": prev_close,  # best guess for open
+                "high": lp,
+                "low": lp,
+                "close": lp,
+                "volume": 0,  # intraday volume not available from quote API
+            })
+
     closes = [r["close"] for r in rows]
     volumes = [r["volume"] for r in rows]
     ema5   = _calc_ema(closes, 5)

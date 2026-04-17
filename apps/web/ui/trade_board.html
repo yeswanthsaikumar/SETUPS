@@ -91,6 +91,30 @@
     .pe-hist{margin-top:6px;font-size:10px}.pe-row{display:flex;gap:8px;padding:3px 0;color:var(--muted);border-bottom:1px solid var(--border)}.pe-row b{color:var(--text)}.pe-row .pe-pl{font-weight:700}
     .ema-chip{display:flex;align-items:center;justify-content:space-between;padding:4px 12px;font-size:10px;border-top:1px solid var(--border);gap:6px}
     .ema-ext{font-weight:800;font-size:11px}.ema-ext.ext-hot{color:#f87171}.ema-ext.ext-warm{color:#f59e0b}.ema-ext.ext-cool{color:#4ade80}.ema-ext.ext-under{color:#7dd3fc}
+    /* ACTION SIGNAL BANNER */
+    .action-banner{padding:4px 12px;font-size:10px;font-weight:800;display:flex;align-items:center;gap:5px;letter-spacing:.2px}
+    .ab-exit{background:linear-gradient(90deg,#450a0a,#1a0505);color:#f87171;border-bottom:1px solid #7f1d1d33}
+    .ab-book{background:linear-gradient(90deg,#422006,#1a0e02);color:#fdba74;border-bottom:1px solid #ea580c22}
+    .ab-add{background:linear-gradient(90deg,#052e16,#020e06);color:#4ade80;border-bottom:1px solid #16a34a22}
+    .ab-surf{background:linear-gradient(90deg,#0c2d48,#050e18);color:#38bdf8;border-bottom:1px solid #0284c722}
+    .ab-tight{background:linear-gradient(90deg,#1e1b4b,#0c0a24);color:#a5b4fc;border-bottom:1px solid #6366f122}
+    /* RISK-REWARD GAUGE */
+    .rr-gauge{padding:5px 12px;border-top:1px solid var(--border)}
+    .rr-track{position:relative;height:6px;background:var(--bg3);border-radius:3px;margin:4px 0 2px}
+    .rr-zone-red{position:absolute;left:0;height:100%;background:#ef444433;border-radius:3px 0 0 3px}
+    .rr-zone-green{position:absolute;height:100%;background:#22c55e22;border-radius:0 3px 3px 0}
+    .rr-marker{position:absolute;top:-3px;width:3px;height:12px;border-radius:2px;transform:translateX(-50%)}
+    .rr-labels{display:flex;justify-content:space-between;font-size:8px;color:var(--muted);font-weight:700;margin-top:1px}
+    .rr-rmul{font-size:11px;font-weight:900;letter-spacing:-.3px}
+    /* METRICS STRIP */
+    .metrics-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-top:1px solid var(--border)}
+    .ms-cell{background:var(--bg2);padding:4px 8px;text-align:center}
+    .ms-l{font-size:7.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+    .ms-v{font-size:10px;font-weight:800;margin-top:1px}
+    /* HEALTH BAR */
+    .health-bar{display:flex;align-items:center;gap:4px;padding:3px 12px;border-top:1px solid var(--border);font-size:9px}
+    .hb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+    .hb-green{background:#22c55e}.hb-yellow{background:#f59e0b}.hb-red{background:#ef4444}
     .vol-rec{padding:1px 5px;border-radius:3px;font-size:8.5px;font-weight:800;letter-spacing:.2px}
     .vol-yr{background:#3b0764;color:#d8b4fe;border:1px solid #7c3aed33}.vol-qtr{background:#1e1b4b;color:#a5b4fc;border:1px solid #6366f133}
     .vol-hi{background:#422006;color:#fdba74;border:1px solid #ea580c33}
@@ -99,7 +123,7 @@
     .card-gain-amt{font-size:11.5px;font-weight:700;margin-top:1px}
     .card-gain-day{font-size:9px;color:var(--muted);margin-top:2px}
     .gain-pos{color:var(--green)}.gain-neg{color:var(--red)}.gain-neu{color:var(--muted)}
-    .card-chart{height:150px;background:var(--bg4)}
+    .card-chart{height:210px;background:var(--bg4);position:relative}
     .price-row{display:grid;grid-template-columns:repeat(3,1fr);background:var(--bg4);border-top:1px solid var(--border);padding:5px 12px}
     .pr-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;font-weight:700}
     .pr-v{font-size:.95em;font-weight:800}
@@ -186,7 +210,7 @@
     .wl-alert{font-size:10px;color:var(--cyan);font-weight:700}
     .wl-del{position:absolute;top:7px;right:9px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:1px 4px;border-radius:3px;transition:color .15s;z-index:2}
     .wl-del:hover{color:var(--red)}
-    .wl-chart{height:130px;background:var(--bg4)}
+    .wl-chart{height:200px;background:var(--bg4);position:relative}
     /* SIGNALS DRAWER */
     .sig-drawer{position:fixed;right:-480px;top:48px;bottom:0;width:480px;background:var(--bg2);border-left:1px solid var(--border2);z-index:250;overflow:auto;transition:right .3s ease;display:flex;flex-direction:column}
     .sig-drawer.open{right:0}
@@ -658,6 +682,11 @@
         <div class="fg"><label class="ml">Entry Price</label><input class="mi" id="uEntry" type="number" step="0.01" placeholder="Entry price"></div>
         <div class="fg"><label class="ml">Quantity</label><input class="mi" id="uQty" type="number" min="1" placeholder="Total shares"></div>
       </div>
+      <div class="fr">
+        <div class="fg"><label class="ml">Target 1</label><input class="mi" id="uT1" type="number" step="0.01" placeholder="T1"></div>
+        <div class="fg"><label class="ml">Target 2</label><input class="mi" id="uT2" type="number" step="0.01" placeholder="T2"></div>
+        <div class="fg"><label class="ml">Target 3</label><input class="mi" id="uT3" type="number" step="0.01" placeholder="T3"></div>
+      </div>
       <div class="fg"><label class="ml">Notes</label><input class="mi" id="uNotes" placeholder="Exit reason…"></div>
     </div>
     <div class="modal-foot">
@@ -998,7 +1027,6 @@ function buildCard(p) {
 async function initMini(p) {
   const el = document.getElementById('chart-' + p.id);
   if (!el || miniInst[p.id]) return;
-  // If element has no width yet, retry after a short delay (layout not ready)
   if (el.offsetWidth < 10) {
     setTimeout(() => initMini(p), 150);
     return;
@@ -1008,28 +1036,68 @@ async function initMini(p) {
     const d = await r.json();
     if (!d.candles || d.candles.length < 2) return;
     if (miniInst[p.id]) return;
-    // Re-check element is still in DOM (may have been replaced by another render cycle)
     const el2 = document.getElementById('chart-' + p.id);
     if (!el2) return;
+    const chartH = 210;
     const chart = LightweightCharts.createChart(el2, {
-      width: el2.offsetWidth, height: 150,
-      layout: {background: {type: 'Solid', color: '#0c1220'}, textColor: '#64748b'},
-      grid: {vertLines: {visible: false}, horzLines: {visible: false}},
-      crosshair: {mode: LightweightCharts.CrosshairMode.Hidden},
-      rightPriceScale: {visible: false}, timeScale: {visible: false},
-      handleScroll: false, handleScale: false,
+      width: el2.offsetWidth, height: chartH,
+      layout: {background: {type: 'Solid', color: '#0c1220'}, textColor: '#475569', fontSize: 9},
+      grid: {vertLines: {visible: false}, horzLines: {color: '#1a243a', style: 3}},
+      crosshair: {mode: LightweightCharts.CrosshairMode.Magnet, vertLine: {labelVisible: false}, horzLine: {labelVisible: true}},
+      rightPriceScale: {visible: true, borderColor: '#1a2840', scaleMargins: {top: 0.02, bottom: 0.18}},
+      timeScale: {visible: true, borderColor: '#1a2840', timeVisible: false, fixLeftEdge: true, fixRightEdge: true},
+      handleScroll: {mouseWheel: false, pressedMouseMove: true}, handleScale: false,
     });
+    // Candlestick series
     const candle = chart.addCandlestickSeries({
       upColor: '#22c55e', downColor: '#ef4444', borderUpColor: '#22c55e', borderDownColor: '#ef4444',
       wickUpColor: '#22c55e88', wickDownColor: '#ef444488',
-      priceLineVisible: false, lastValueVisible: false,
+      priceLineVisible: false, lastValueVisible: true,
     });
     candle.setData(d.candles.map(c => ({time: c.date.slice(0, 10), open: c.open, high: c.high, low: c.low, close: c.close})));
-    candle.createPriceLine({price: p.entry, color: '#7dd3fc', lineWidth: 1, lineStyle: 2, axisLabelVisible: false});
-    if (p.sl) candle.createPriceLine({price: p.sl, color: '#ef4444', lineWidth: 1, lineStyle: 2, axisLabelVisible: false});
-    if (p.t1) candle.createPriceLine({price: p.t1, color: '#4ade80', lineWidth: 1, lineStyle: 2, axisLabelVisible: false});
+
+    // EMA overlay lines (5=yellow, 20=blue, 50=purple)
+    const emaLines = [
+      {key: 'ema5', color: '#facc15', width: 1, title: '5E'},
+      {key: 'ema20', color: '#3b82f6', width: 1, title: '20E'},
+      {key: 'ema50', color: '#a855f7', width: 1, title: '50E'},
+    ];
+    emaLines.forEach(em => {
+      const pts = d.candles.filter(c => c[em.key] != null).map(c => ({time: c.date.slice(0,10), value: c[em.key]}));
+      if (pts.length > 5) {
+        const s = chart.addLineSeries({color: em.color, lineWidth: em.width, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
+        s.setData(pts);
+      }
+    });
+
+    // Volume histogram (bottom pane via overlay)
+    const volSeries = chart.addHistogramSeries({
+      priceFormat: {type: 'volume'},
+      priceScaleId: 'vol',
+      color: '#334155',
+      lastValueVisible: false, priceLineVisible: false,
+    });
+    chart.priceScale('vol').applyOptions({scaleMargins: {top: 0.85, bottom: 0}});
+    const avgVol = d.avgVol20 || 1;
+    volSeries.setData(d.candles.map(c => ({
+      time: c.date.slice(0,10),
+      value: c.volume,
+      color: c.volume > avgVol * 2.5 ? '#22c55e55' : c.volume > avgVol * 1.5 ? '#3b82f633' : '#1e293b44',
+    })));
+
+    // Price level lines: Entry (cyan dashed), SL (red dashed), T1 (green dotted)
+    candle.createPriceLine({price: p.entry, color: '#7dd3fc', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'Entry'});
+    if (p.sl) candle.createPriceLine({price: p.sl, color: '#ef4444', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'SL'});
+    if (p.t1) candle.createPriceLine({price: p.t1, color: '#4ade8066', lineWidth: 1, lineStyle: 3, axisLabelVisible: false, title: 'T1'});
+
+    // 52-week high line
+    if (d.high52w) {
+      candle.createPriceLine({price: d.high52w, color: '#f59e0b44', lineWidth: 1, lineStyle: 1, axisLabelVisible: false, title: '52W'});
+    }
+
     chart.timeScale().fitContent();
     miniInst[p.id] = chart;
+
     // EMA badge injection
     const last = d.candles[d.candles.length - 1];
     const cmpNow = last.close;
@@ -1043,19 +1111,21 @@ async function initMini(p) {
       const ema5Label = aboveEma5 ? '5E ✓ Safe' : '5E ✗ Unsafe';
       badgeEl.insertAdjacentHTML('beforeend', '<span class="badge ' + ema5Cls + '" style="margin-top:2px">' + ema5Label + '</span>');
       badgeEl.insertAdjacentHTML('beforeend', '<span class="badge ' + maCls + '" style="margin-top:2px">' + maLabel + '</span>');
-      // RSI badge
       const rsi = last.rsi;
       if (rsi != null) {
         const rsiCls = rsi > 70 ? 'ma-danger' : rsi < 35 ? 'ma-safe' : 'ma-warn';
         badgeEl.insertAdjacentHTML('beforeend', '<span class="badge ' + rsiCls + '" style="margin-top:2px">RSI ' + rsi.toFixed(0) + '</span>');
       }
-      // Volume ratio
       const vr = last.volRatio;
       if (vr != null && vr > 1.5) {
         badgeEl.insertAdjacentHTML('beforeend', '<span class="badge" style="background:#1a1a2e;color:#a5b4fc;border:1px solid #3b82f622;margin-top:2px">Vol ' + vr.toFixed(1) + 'x</span>');
       }
     }
-  } catch(e) {}
+    // Chart legend overlay
+    el2.insertAdjacentHTML('beforeend', '<div style="position:absolute;bottom:2px;left:6px;display:flex;gap:6px;font-size:8px;font-weight:700;opacity:.7;z-index:5;pointer-events:none">' +
+      '<span style="color:#facc15">5E</span><span style="color:#3b82f6">20E</span><span style="color:#a855f7">50E</span>' +
+      '<span style="color:#7dd3fc">Entry</span><span style="color:#ef4444">SL</span></div>');
+  } catch(e) { console.warn('initMini error:', e); }
 }
 
 async function openDetail(id) {
@@ -1414,6 +1484,9 @@ function openUpdateModal(id) {
   document.getElementById('uEntry').value = p.entry || '';
   document.getElementById('uQty').value = p.quantity || 1;
   document.getElementById('uNotes').value = p.notes || '';
+  const t1El = document.getElementById('uT1'); if (t1El) t1El.value = p.t1 || '';
+  const t2El = document.getElementById('uT2'); if (t2El) t2El.value = p.t2 || '';
+  const t3El = document.getElementById('uT3'); if (t3El) t3El.value = p.t3 || '';
   document.getElementById('updateModal').classList.add('open');
 }
 function onUpdateStatusChange() {
@@ -1439,15 +1512,29 @@ function openUpdateFromDetail() { if (currentDetId) openUpdateModal(currentDetId
 
 async function submitUpdate() {
   const id = document.getElementById('uId').value;
-  const body = {
-    status: document.getElementById('uStatus').value,
-    exit_price: parseFloat(document.getElementById('uExitPrice').value) || null,
-    exit_date: document.getElementById('uExitDate').value || null,
-    sl: parseFloat(document.getElementById('uSl').value) || null,
-    entry: parseFloat(document.getElementById('uEntry').value) || null,
-    quantity: parseInt(document.getElementById('uQty').value) || null,
-    notes: document.getElementById('uNotes').value,
-  };
+  const body = {};
+  // Only include fields that have actual values to avoid wiping existing data
+  const status = document.getElementById('uStatus').value;
+  if (status) body.status = status;
+  const exitPrice = parseFloat(document.getElementById('uExitPrice').value);
+  if (!isNaN(exitPrice)) body.exit_price = exitPrice;
+  const exitDate = document.getElementById('uExitDate').value;
+  if (exitDate) body.exit_date = exitDate;
+  const sl = parseFloat(document.getElementById('uSl').value);
+  if (!isNaN(sl)) body.sl = sl;
+  const entry = parseFloat(document.getElementById('uEntry').value);
+  if (!isNaN(entry)) body.entry = entry;
+  const qty = parseInt(document.getElementById('uQty').value);
+  if (!isNaN(qty) && qty > 0) body.quantity = qty;
+  const notes = document.getElementById('uNotes').value;
+  if (notes !== undefined) body.notes = notes;  // always send notes (can be cleared)
+  // Add targets if available in form
+  const t1El = document.getElementById('uT1');
+  const t2El = document.getElementById('uT2');
+  const t3El = document.getElementById('uT3');
+  if (t1El) { const v = parseFloat(t1El.value); if (!isNaN(v)) body.t1 = v; }
+  if (t2El) { const v = parseFloat(t2El.value); if (!isNaN(v)) body.t2 = v; }
+  if (t3El) { const v = parseFloat(t3El.value); if (!isNaN(v)) body.t3 = v; }
   try {
     const r = await fetch(API + '/api/trade-board/positions/' + id, {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
     if (!r.ok) throw new Error(await r.text());
@@ -1758,28 +1845,75 @@ async function initWlMini(item) {
     const d = await r.json();
     if (!d.candles || d.candles.length < 2) { el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--dim);font-size:10px">No data</div>'; return; }
     if (wlMiniInst[item.id]) return;
+    const chartH = 200;
     const chart = LightweightCharts.createChart(el, {
-      width: el.offsetWidth, height: 130,
-      layout: {background: {type: 'Solid', color: '#0c1220'}, textColor: '#64748b'},
-      grid: {vertLines: {visible: false}, horzLines: {visible: false}},
-      crosshair: {mode: LightweightCharts.CrosshairMode.Hidden},
-      rightPriceScale: {visible: false}, timeScale: {visible: false},
-      handleScroll: false, handleScale: false,
+      width: el.offsetWidth, height: chartH,
+      layout: {background: {type: 'Solid', color: '#0c1220'}, textColor: '#475569', fontSize: 9},
+      grid: {vertLines: {visible: false}, horzLines: {color: '#1a243a', style: 3}},
+      crosshair: {mode: LightweightCharts.CrosshairMode.Magnet, vertLine: {labelVisible: false}, horzLine: {labelVisible: true}},
+      rightPriceScale: {visible: true, borderColor: '#1a2840', scaleMargins: {top: 0.02, bottom: 0.18}},
+      timeScale: {visible: true, borderColor: '#1a2840', timeVisible: false, fixLeftEdge: true, fixRightEdge: true},
+      handleScroll: {mouseWheel: false, pressedMouseMove: true}, handleScale: false,
     });
+    // Candlestick
     const candle = chart.addCandlestickSeries({
       upColor: '#22c55e', downColor: '#ef4444', borderUpColor: '#22c55e', borderDownColor: '#ef4444',
       wickUpColor: '#22c55e88', wickDownColor: '#ef444488',
-      priceLineVisible: false, lastValueVisible: false,
+      priceLineVisible: false, lastValueVisible: true,
     });
     candle.setData(d.candles.map(c => ({time: c.date.slice(0, 10), open: c.open, high: c.high, low: c.low, close: c.close})));
-    // Show scan entry & SL lines if available
+
+    // EMA overlays
+    const emaLines = [
+      {key: 'ema5', color: '#facc15', width: 1},
+      {key: 'ema20', color: '#3b82f6', width: 1},
+      {key: 'ema50', color: '#a855f7', width: 1},
+    ];
+    emaLines.forEach(em => {
+      const pts = d.candles.filter(c => c[em.key] != null).map(c => ({time: c.date.slice(0,10), value: c[em.key]}));
+      if (pts.length > 5) {
+        const s = chart.addLineSeries({color: em.color, lineWidth: em.width, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false});
+        s.setData(pts);
+      }
+    });
+
+    // Volume histogram
+    const volSeries = chart.addHistogramSeries({
+      priceFormat: {type: 'volume'}, priceScaleId: 'vol', color: '#334155',
+      lastValueVisible: false, priceLineVisible: false,
+    });
+    chart.priceScale('vol').applyOptions({scaleMargins: {top: 0.85, bottom: 0}});
+    const avgVol = d.avgVol20 || 1;
+    volSeries.setData(d.candles.map(c => ({
+      time: c.date.slice(0,10), value: c.volume,
+      color: c.volume > avgVol * 2.5 ? '#22c55e55' : c.volume > avgVol * 1.5 ? '#3b82f633' : '#1e293b44',
+    })));
+
+    // Level lines
     const scanEntry = item.scanEntry ? parseFloat(item.scanEntry) : 0;
     const scanSl = item.scanSl ? parseFloat(item.scanSl) : 0;
-    if (scanEntry) candle.createPriceLine({price: scanEntry, color: '#7dd3fc', lineWidth: 1, lineStyle: 2, axisLabelVisible: false});
-    if (scanSl) candle.createPriceLine({price: scanSl, color: '#ef4444', lineWidth: 1, lineStyle: 2, axisLabelVisible: false});
-    if (item.alert_price) candle.createPriceLine({price: item.alert_price, color: '#f59e0b', lineWidth: 1, lineStyle: 2, axisLabelVisible: false});
+    if (scanEntry) candle.createPriceLine({price: scanEntry, color: '#7dd3fc', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'Entry'});
+    if (scanSl) candle.createPriceLine({price: scanSl, color: '#ef4444', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'SL'});
+    if (item.alert_price) candle.createPriceLine({price: item.alert_price, color: '#f59e0b', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'Alert'});
+    // 52W high
+    if (d.high52w) {
+      candle.createPriceLine({price: d.high52w, color: '#f59e0b44', lineWidth: 1, lineStyle: 1, axisLabelVisible: false, title: '52W'});
+    }
+    // Resistance: recent range high (last 30 bars)
+    const recent30 = d.candles.slice(-30);
+    if (recent30.length >= 10) {
+      const rangeHigh = Math.max(...recent30.map(c => c.high));
+      const rangeLow = Math.min(...recent30.map(c => c.low));
+      const cmpNow = d.candles[d.candles.length - 1].close;
+      // Only show range high if CMP is approaching it (within 5%)
+      if (rangeHigh > 0 && cmpNow < rangeHigh && (rangeHigh - cmpNow) / cmpNow < 0.05) {
+        candle.createPriceLine({price: rangeHigh, color: '#f97316', lineWidth: 1, lineStyle: 1, axisLabelVisible: false, title: 'R'});
+      }
+    }
+
     chart.timeScale().fitContent();
     wlMiniInst[item.id] = chart;
+
     // Inject MA/RSI/5EMA badges
     const lastCandle = d.candles[d.candles.length - 1];
     const cmpNow = lastCandle.close;
@@ -1798,7 +1932,10 @@ async function initWlMini(item) {
         badgeEl.insertAdjacentHTML('beforeend', '<span class="badge ' + rsiCls + '" style="margin-top:2px">RSI ' + lastCandle.rsi.toFixed(0) + '</span>');
       }
     }
-  } catch(e) {}
+    // Chart legend overlay
+    el.insertAdjacentHTML('beforeend', '<div style="position:absolute;bottom:2px;left:6px;display:flex;gap:6px;font-size:8px;font-weight:700;opacity:.7;z-index:5;pointer-events:none">' +
+      '<span style="color:#facc15">5E</span><span style="color:#3b82f6">20E</span><span style="color:#a855f7">50E</span></div>');
+  } catch(e) { console.warn('initWlMini error:', e); }
 }
 
 function openWLModal() { document.getElementById('wlModal').classList.add('open'); }

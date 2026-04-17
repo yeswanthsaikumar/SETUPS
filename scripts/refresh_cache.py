@@ -81,12 +81,9 @@ def _is_stale(last_date_str: str) -> bool:
               if (last_date + datetime.timedelta(days=d)).weekday() < 5)
     if biz == 0:
         return False
-    if biz >= 2:
-        return True
-    now_ist = datetime.datetime.now(IST)
-    nse_close = now_ist.replace(hour=NSE_CLOSE_HOUR, minute=NSE_CLOSE_MIN,
-                                second=0, microsecond=0)
-    return now_ist >= nse_close
+    # Any business day gap means stale — fetch whatever Yahoo has available
+    # (Yahoo returns the previous completed trading day's data during market hours)
+    return True
 
 
 def _read_last_date(csv_path: Path) -> str:
