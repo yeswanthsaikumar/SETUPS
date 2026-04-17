@@ -2083,6 +2083,40 @@ def _enrich_position_metrics(p: dict) -> dict:
     p["lastVol"] = round(cmp_vol)
     p["avgVol20"] = round(avg20)
 
+    # RSI (14-period)
+    rsi_vals = _calc_rsi(closes, 14)
+    p["rsi"] = rsi_vals[-1] if rsi_vals and rsi_vals[-1] is not None else None
+
+    # 52-week high/low
+    yr_data = rows[-252:] if len(rows) >= 252 else rows
+    high_52w = max(r["high"] for r in yr_data) if yr_data else 0
+    low_52w = min(r["low"] for r in yr_data) if yr_data else 0
+    p["high52w"] = round(high_52w, 2)
+    p["low52w"] = round(low_52w, 2)
+    p["pctFrom52wHigh"] = round((closes[-1] - high_52w) / high_52w * 100, 2) if high_52w else 0
+
+    # SMA 200 position (trend filter)
+    sma200 = _calc_sma(closes, 200)
+    if sma200[-1] is not None and sma200[-1] > 0:
+        p["sma200"] = round(sma200[-1], 2)
+        p["aboveSma200"] = closes[-1] >= sma200[-1]
+    else:
+        p["sma200"] = None
+        p["aboveSma200"] = None
+
+    # Accumulation/Distribution day count (last 50 days)
+    dist_days = 0
+    accum_days = 0
+    for i in range(max(0, len(rows) - 50), len(rows)):
+        r = rows[i]
+        prev = rows[i-1] if i > 0 else r
+        if r["close"] < prev["close"] and r["volume"] > avg20:
+            dist_days += 1
+        elif r["close"] > prev["close"] and r["volume"] > avg20:
+            accum_days += 1
+    p["accumDays"] = accum_days
+    p["distDays"] = dist_days
+
     # IPO flag — stock with fewer than ~126 trading days of data
     ipo_threshold = 126
     if "ipoFlag" not in p or p.get("ipoFlag") is None:

@@ -206,19 +206,41 @@
       "realized_pl": -1744.0
     },
     {
-      "id": "92801bf5",
+      "id": "12591509",
       "symbol": "GMDCLTD",
       "name": "GMDCLTD",
       "entry": 749.64,
-      "quantity": 1,
-      "remaining_quantity": null,
+      "quantity": 1300,
+      "remaining_quantity": 0,
       "sl": 730.0,
       "t1": 0.0,
       "t2": 0.0,
       "t3": 0.0,
-      "setup": "VCP",
+      "setup": "BREAKOUT",
       "rating": "A+",
-      "notes": "have a tight 1% stoploss resting on highs market strong",
+      "notes": "stop loss hit, and reasoing is i can find better high probability risk:reward setup dalmiasugar",
+      "entry_date": "2026-04-17",
+      "status": "SL_HIT",
+      "exit_price": 735.71,
+      "exit_date": "2026-04-17",
+      "tags": [],
+      "partial_exits": [],
+      "realized_pl": -18109.0
+    },
+    {
+      "id": "d9763710",
+      "symbol": "DALMIASUG",
+      "name": "DALMIASUG",
+      "entry": 392.88,
+      "quantity": 3500,
+      "remaining_quantity": null,
+      "sl": 376.0,
+      "t1": 0.0,
+      "t2": 0.0,
+      "t3": 0.0,
+      "setup": "BULL_FLAG",
+      "rating": "A+",
+      "notes": "better risk:reward ",
       "entry_date": "2026-04-17",
       "status": "OPEN",
       "exit_price": null,
@@ -228,5 +250,5 @@
     }
   ],
   "created": "2026-04-14T11:55:48.601550",
-  "lastUpdated": "2026-04-17T14:53:12.871422"
+  "lastUpdated": "2026-04-17T15:26:31.780033"
 }
