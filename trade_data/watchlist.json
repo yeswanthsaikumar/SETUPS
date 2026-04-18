@@ -45,15 +45,6 @@
     "added_at": "2026-04-16T22:59:18"
   },
   {
-    "symbol": "AXISCADES",
-    "name": "",
-    "notes": "",
-    "alert_price": null,
-    "setup": "",
-    "id": "4c8ea445-b5a6-450d-96aa-9b2a7704c6a2",
-    "added_at": "2026-04-16T23:30:20"
-  },
-  {
     "symbol": "DMART",
     "name": "",
     "notes": "",
@@ -106,5 +97,14 @@
     "setup": "",
     "id": "2fbf93da-acd4-4aaf-8dd0-e7ede3cddd74",
     "added_at": "2026-04-17T02:29:25"
+  },
+  {
+    "symbol": "WAAREERTL",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "",
+    "id": "d856addd-5b72-46f5-a65a-ad434f9e7037",
+    "added_at": "2026-04-17T09:34:43"
   }
 ]

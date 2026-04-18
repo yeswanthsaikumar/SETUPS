@@ -39,6 +39,8 @@ public class VcpDetector {
             return null;
         }
 
+        boolean isIpo = candles.size() < config.ipoMaxBarsSinceListing;
+
         // ── Gate 1: minimum price ──────────────────────────────────────────────
         double latestClose = candles.get(candles.size() - 1).getClose();
         if (latestClose < config.minPrice) {
@@ -47,22 +49,36 @@ public class VcpDetector {
 
         // ── Gate 2: 52-week high proximity ────────────────────────────────────
         // Stock must be within maxDistanceFrom52WkHighPct of its trailing 1-year high.
+        // IPO stocks get a wider allowance (40%) since their highs may be IPO-day spikes.
         int highLookback = Math.min(candles.size(), config.annualHighLookbackBars);
         double high52w = Indicators.highestHigh(candles,
                 candles.size() - highLookback, candles.size() - 1);
         if (high52w > 0) {
             double distanceFromHigh = (high52w - latestClose) / high52w;
-            if (distanceFromHigh > config.maxDistanceFrom52WkHighPct) {
-                return null;   // base is too far below 52-week high — likely a downtrend
+            double maxDist = isIpo ? 0.40 : config.maxDistanceFrom52WkHighPct;
+            if (distanceFromHigh > maxDist) {
+                return null;   // base is too far below high — likely a downtrend
             }
         }
 
         // ── Gate 3: trend filter (price above MA at base end) ─────────────────
+        // IPO stocks: skip MA filter if not enough bars for the configured MA period,
+        // or fall back to a shorter MA that the data can support.
         if (config.requireAboveMA) {
             int baseEndIdx = candles.size() - 2;   // second-to-last bar (last bar is breakout)
-            double ma = Indicators.movingAverage(candles, baseEndIdx, config.maPeriod);
-            if (ma > 0 && candles.get(baseEndIdx).getClose() < ma) {
-                return null;   // stock is below MA — not in an uptrend
+            int effectiveMaPeriod = config.maPeriod;
+            if (isIpo && candles.size() < config.maPeriod + 2) {
+                // Fall back to shorter MA: try 20, then skip if even 20 is not available
+                effectiveMaPeriod = Math.min(20, candles.size() - 2);
+                if (effectiveMaPeriod < 5) {
+                    effectiveMaPeriod = 0; // skip MA check entirely for very new IPOs
+                }
+            }
+            if (effectiveMaPeriod > 0) {
+                double ma = Indicators.movingAverage(candles, baseEndIdx, effectiveMaPeriod);
+                if (ma > 0 && candles.get(baseEndIdx).getClose() < ma) {
+                    return null;   // stock is below MA — not in an uptrend
+                }
             }
         }
 

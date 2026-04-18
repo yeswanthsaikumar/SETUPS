@@ -173,7 +173,7 @@ public class AppConfig {
         // ── Quality gates (tightened for higher win-rate) ─────────────────────
         this.minRangeContraction       = weekly ? 0.15 : 0.18;   // was 0.12/0.15
         this.minVolumeContraction      = weekly ? 0.10 : 0.12;   // was 0.08/0.10
-        this.minQualityScore           = weekly ? 40.0 : 45.0;   // was 30/35 — cuts C/D-grade noise
+        this.minQualityScore           = weekly ? 38.0 : 40.0;   // lowered from 40/45 to catch GMDC-type wider bases
         this.minRangeExpansionMultiplier = weekly ? 1.20 : 1.35; // was 1.15/1.25 — stronger expansion required
         this.minExpansionVolumeMultiplier = weekly ? 1.15 : 1.25;// was 1.05/1.10 — more vol conviction
         this.minExpansionClosePosition = 0.65;                    // was 0.60 — close must be in upper 35%
@@ -188,15 +188,15 @@ public class AppConfig {
         this.lowerWickPositiveWeight   = 1.35;                    // was 1.25
         this.upperWickNegativeWeight   = 1.60;                    // was 1.45 — penalise rejection more
         this.maxWickBodyScoreAdjustment = weekly ? 10.0 : 14.0;  // was 8/12
-        this.minBaseHeightPct          = weekly ? 7.0 : 5.0;     // was 6/4
-        this.maxBaseHeightPct          = weekly ? 60.0 : 45.0;   // was 75/60 — cut erratic wide bases
+        this.minBaseHeightPct          = weekly ? 6.0 : 4.0;     // lowered from 7/5 to catch tighter/shallower bases
+        this.maxBaseHeightPct          = weekly ? 65.0 : 50.0;   // raised from 60/45 to allow wider bases (GMDC-type)
         this.shortWindowHeightCapPct   = weekly ? 35.0 : 25.0;   // was 40/30
         this.longWindowHeightCapPct    = weekly ? 58.0 : 44.0;   // was 72/58
         this.shortWindowContractionPairRatio = weekly ? 1.0 : 1.0;// was 0.95/1.0
         this.longWindowContractionPairRatio  = 0.60;              // was 0.50
 
         // Trend filter: tighter proximity to highs, above stronger MA
-        this.maxDistanceFrom52WkHighPct = 0.25;  // was 0.35 — no more than 25% below 52-wk high
+        this.maxDistanceFrom52WkHighPct = 0.30;  // was 0.25 — allow 30% below 52-wk high for wider bases (e.g. GMDC)
         this.requireAboveMA            = true;
         this.maPeriod                  = weekly ? 30 : 50;        // was 10/50 — weekly uses 30-bar MA
         this.annualHighLookbackBars    = weekly ? 52 : 252;

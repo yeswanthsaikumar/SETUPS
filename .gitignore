@@ -47,3 +47,9 @@ trade_data/
 ### Logs ###
 *.log
 
+
+# Google Drive service account key (sensitive)
+config/gdrive_service_account.json
+trade_data/.gdrive_backup_state.json
+config/gdrive_token.json
+config/gdrive_credentials.json

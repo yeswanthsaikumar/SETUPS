@@ -594,6 +594,8 @@ public class ScannerEngine {
             return new RejectionDiagnostic(symbol, mode, timeframe, RejectionDiagnostic.Reason.INSUFFICIENT_DATA, "Too few candles");
         }
 
+        boolean isIpo = slice.size() < config.ipoMaxBarsSinceListing;
+
         double latestClose = slice.get(slice.size() - 1).getClose();
         if (latestClose < config.minPrice) {
             return new RejectionDiagnostic(symbol, mode, timeframe, RejectionDiagnostic.Reason.LOW_PRICE,
@@ -604,19 +606,28 @@ public class ScannerEngine {
         double high52w = Indicators.highestHigh(slice, slice.size() - highLookback, slice.size() - 1);
         if (high52w > 0) {
             double distanceFromHigh = (high52w - latestClose) / high52w;
-            if (distanceFromHigh > config.maxDistanceFrom52WkHighPct) {
+            double maxDist = isIpo ? 0.40 : config.maxDistanceFrom52WkHighPct;
+            if (distanceFromHigh > maxDist) {
                 return new RejectionDiagnostic(symbol, mode, timeframe, RejectionDiagnostic.Reason.FAR_FROM_52W_HIGH,
-                        String.format("distance=%.4f max=%.4f", distanceFromHigh, config.maxDistanceFrom52WkHighPct));
+                        String.format("distance=%.4f max=%.4f", distanceFromHigh, maxDist));
             }
         }
 
         if (config.requireAboveMA) {
             int baseEndIdx = slice.size() - 2;
             if (baseEndIdx >= 0) {
-                double ma = Indicators.movingAverage(slice, baseEndIdx, config.maPeriod);
-                if (ma > 0 && slice.get(baseEndIdx).getClose() < ma) {
-                    return new RejectionDiagnostic(symbol, mode, timeframe, RejectionDiagnostic.Reason.BELOW_MA,
-                            String.format("close=%.2f ma=%.2f", slice.get(baseEndIdx).getClose(), ma));
+                int effectiveMaPeriod = config.maPeriod;
+                if (isIpo && slice.size() < config.maPeriod + 2) {
+                    effectiveMaPeriod = Math.min(20, slice.size() - 2);
+                    if (effectiveMaPeriod < 5) effectiveMaPeriod = 0;
+                }
+                if (effectiveMaPeriod > 0) {
+                    double ma = Indicators.movingAverage(slice, baseEndIdx, effectiveMaPeriod);
+                    if (ma > 0 && slice.get(baseEndIdx).getClose() < ma) {
+                        return new RejectionDiagnostic(symbol, mode, timeframe, RejectionDiagnostic.Reason.BELOW_MA,
+                                String.format("close=%.2f ma=%.2f (period=%d%s)", slice.get(baseEndIdx).getClose(), ma,
+                                        effectiveMaPeriod, isIpo ? " IPO-adjusted" : ""));
+                    }
                 }
             }
         }

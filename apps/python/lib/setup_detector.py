@@ -45,9 +45,10 @@ _DEFAULT_SMA_LONG = 200
 _DEFAULT_ATR_PERIOD = 14
 _DEFAULT_LOOKBACK_WINDOW = 5
 _MIN_BARS = 210
+_MIN_BARS_IPO = 60   # IPO-friendly: allow stocks with ~3 months of daily history
 
 
-def _timeframe_params(timeframe: str) -> dict[str, int | float]:
+def _timeframe_params(timeframe: str, ipo_mode: bool = False) -> dict[str, int | float]:
     tf = (timeframe or "daily").strip().lower()
     if tf == "weekly":
         return {
@@ -57,7 +58,7 @@ def _timeframe_params(timeframe: str) -> dict[str, int | float]:
             "bb_period": 10,
             "atr_period": 10,
             "pullback_window": 3,
-            "min_bars": 52,
+            "min_bars": 20 if ipo_mode else 52,
         }
     return {
         "sma_short": _DEFAULT_SMA_SHORT,
@@ -66,7 +67,7 @@ def _timeframe_params(timeframe: str) -> dict[str, int | float]:
         "bb_period": _DEFAULT_BB_PERIOD,
         "atr_period": _DEFAULT_ATR_PERIOD,
         "pullback_window": _DEFAULT_LOOKBACK_WINDOW,
-        "min_bars": _MIN_BARS,
+        "min_bars": _MIN_BARS_IPO if ipo_mode else _MIN_BARS,
     }
 
 
@@ -252,6 +253,31 @@ def _rating_from_score(score: float) -> str:
     return "D"
 
 
+def _is_ipo_stock(bars: list[dict], timeframe: str) -> bool:
+    """Return True if the stock has limited trading history (IPO / recently listed)."""
+    threshold = 26 if (timeframe or "daily").strip().lower() == "weekly" else 126
+    return len(bars) < threshold
+
+
+def _ipo_trend_ma(closes: list[float], params: dict) -> float:
+    """Return the best available trend MA for IPO-friendly validation.
+
+    For stocks with enough history, use sma_long (200).
+    For IPOs, fall back to sma_med (50), then sma_short (20), then 0.
+    """
+    sma_long = int(params["sma_long"])
+    sma_med = int(params["sma_med"])
+    sma_short = int(params["sma_short"])
+    ma = _sma(closes, sma_long)
+    if ma > 0:
+        return ma
+    ma = _sma(closes, sma_med)
+    if ma > 0:
+        return ma
+    ma = _sma(closes, sma_short)
+    return ma
+
+
 # ── Setup detectors ───────────────────────────────────────────────────────────
 
 def detect_mean_reversion(
@@ -271,7 +297,9 @@ def detect_mean_reversion(
     atr_period_eff = int(params["atr_period"])
     pullback_window_eff = int(params["pullback_window"])
 
-    if len(bars) < int(params["min_bars"]): return None
+    ipo = _is_ipo_stock(bars, timeframe)
+    ipo_params = _timeframe_params(timeframe, ipo_mode=True) if ipo else params
+    if len(bars) < int(ipo_params["min_bars"]): return None
 
     closes = [b["close"] for b in bars]
     volumes = [b.get("volume", 0.0) for b in bars]
@@ -279,12 +307,13 @@ def detect_mean_reversion(
     sma20 = _sma(closes, sma_short_period)
     sma50 = _sma(closes, sma_med_period)
     sma200 = _sma(closes, sma_long_period)
+    trend_ma = _ipo_trend_ma(closes, params) if ipo else sma200
     rsi_val = _rsi(closes[-(max(_DEFAULT_RSI_PERIOD + 50, sma_med_period + 10)):], _DEFAULT_RSI_PERIOD)
     bb_mid, bb_lower, bb_upper = _bollinger(closes[-(max(60, bb_period_eff + 20)):], bb_period_eff, _DEFAULT_BB_STD)
     atr_val = _atr(bars[-(atr_period_eff + 20):], atr_period_eff)
 
     current_close = closes[-1]
-    if current_close < min_price_floor or sma200 <= 0 or current_close < sma200 * 0.95:
+    if current_close < min_price_floor or trend_ma <= 0 or current_close < trend_ma * 0.95:
         return None
 
     # Volume analysis
@@ -396,7 +425,9 @@ def detect_breakout(
       remains above the breakout level (i.e., 'pullback still above breakout day high')
     - Populate breakoutDate, max_after_breakout, min_after_breakout and subtype
     """
-    if len(bars) < int(params["min_bars"]):
+    ipo = _is_ipo_stock(bars, timeframe)
+    ipo_params = _timeframe_params(timeframe, ipo_mode=True) if ipo else params
+    if len(bars) < int(ipo_params["min_bars"]):
         return None
 
     closes = [float(b["close"]) for b in bars]
@@ -405,12 +436,13 @@ def detect_breakout(
     volumes = [float(b.get("volume", 0.0)) for b in bars]
     sma50 = _sma(closes, int(params["sma_med"]))
     sma200 = _sma(closes, int(params["sma_long"]))
+    trend_ma = _ipo_trend_ma(closes, params) if ipo else sma200
     atr_val = _atr(bars[-(int(params["atr_period"]) + 20):], int(params["atr_period"]))
     current_close = closes[-1]
     current_high = highs[-1]
     current_low = lows[-1]
 
-    if current_close < min_price_floor or sma200 <= 0 or current_close < sma200 * 0.95:
+    if current_close < min_price_floor or trend_ma <= 0 or current_close < trend_ma * 0.95:
         return None
 
     # Parameters for breakout detection
@@ -577,7 +609,9 @@ def detect_breakout_pullback(
     - Stop below the breakout level (the support line) - 0.5 ATR.
     - T1 at the prior post-breakout peak; T2/T3 project beyond it.
     """
-    if len(bars) < int(params["min_bars"]):
+    ipo = _is_ipo_stock(bars, timeframe)
+    ipo_params = _timeframe_params(timeframe, ipo_mode=True) if ipo else params
+    if len(bars) < int(ipo_params["min_bars"]):
         return None
 
     closes  = [float(b["close"])          for b in bars]
@@ -587,10 +621,11 @@ def detect_breakout_pullback(
 
     sma50   = _sma(closes, int(params["sma_med"]))
     sma200  = _sma(closes, int(params["sma_long"]))
+    trend_ma = _ipo_trend_ma(closes, params) if ipo else sma200
     atr_val = _atr(bars[-(int(params["atr_period"]) + 20):], int(params["atr_period"]))
     current_close = closes[-1]
 
-    if current_close < min_price_floor or sma200 <= 0 or current_close < sma200 * 0.90:
+    if current_close < min_price_floor or trend_ma <= 0 or current_close < trend_ma * 0.90:
         return None
 
     avg_vol_20 = _sma(volumes[-21:-1], 20) if len(volumes) >= 21 else _sma(volumes, len(volumes))
@@ -811,7 +846,9 @@ def detect_bull_flag(
     FLAG_BREAKOUT – price is already at/through the flag high
     FLAG_FORMING  – price is approaching the flag high (pre-breakout alert)
     """
-    if len(bars) < int(params["min_bars"]):
+    ipo = _is_ipo_stock(bars, timeframe)
+    ipo_params = _timeframe_params(timeframe, ipo_mode=True) if ipo else params
+    if len(bars) < int(ipo_params["min_bars"]):
         return None
 
     closes  = [float(b["close"])            for b in bars]
@@ -821,10 +858,11 @@ def detect_bull_flag(
 
     sma50   = _sma(closes, int(params["sma_med"]))
     sma200  = _sma(closes, int(params["sma_long"]))
+    trend_ma = _ipo_trend_ma(closes, params) if ipo else sma200
     atr_val = _atr(bars[-(int(params["atr_period"]) + 20):], int(params["atr_period"]))
     current_close = closes[-1]
 
-    if current_close < min_price_floor or sma200 <= 0 or current_close < sma200 * 0.85:
+    if current_close < min_price_floor or trend_ma <= 0 or current_close < trend_ma * 0.85:
         return None
 
     avg_vol_20 = _sma(volumes[-21:-1], 20) if len(volumes) >= 21 else _sma(volumes, len(volumes))
@@ -1201,6 +1239,7 @@ def _load_bars(symbol: str, lookback: int, timeframe: str, cache: Path) -> list[
         return rows
 
     min_bars = int(_timeframe_params(timeframe)["min_bars"])
+    min_bars_ipo = int(_timeframe_params(timeframe, ipo_mode=True)["min_bars"])
 
     # 1) Try unified file first
     unified = cache / f"{symbol}.csv"
@@ -1208,7 +1247,7 @@ def _load_bars(symbol: str, lookback: int, timeframe: str, cache: Path) -> list[
         rows = _try_read(unified)
         if timeframe == "weekly":
             rows = aggregate_weekly(rows)
-        if len(rows) >= min_bars:
+        if len(rows) >= min_bars or len(rows) >= min_bars_ipo:
             return rows
 
     # 2) Legacy fallback
@@ -1218,7 +1257,7 @@ def _load_bars(symbol: str, lookback: int, timeframe: str, cache: Path) -> list[
             rows = _try_read(p)
             if timeframe == "weekly":
                 rows = aggregate_weekly(rows)
-            if len(rows) >= min_bars:
+            if len(rows) >= min_bars or len(rows) >= min_bars_ipo:
                 return rows
     return []
 
