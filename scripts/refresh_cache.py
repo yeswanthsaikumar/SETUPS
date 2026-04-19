@@ -164,12 +164,28 @@ def _find_stale_caches(symbol_filter=None, indian_only=False):
 # ═══════════════════════════════════════════════════════════════════════════
 
 def _fetch_bars(symbol: str, from_date: str | None = None) -> list[dict]:
-    """Try every source in priority order: Groww → yfinance → NSE India → raw Yahoo v8."""
+    """Try every source in priority order: Groww → yfinance → NSE India → raw Yahoo v8.
+
+    When GROWW_ONLY mode is on (default), Indian stocks (.NS/.BO) are
+    fetched ONLY from Groww — no silent fallback to geo-blocked Yahoo/NSE
+    that would either fail or require a dead free-proxy VPN.
+    """
     # 0. Groww API (primary — most reliable for NSE stocks when configured)
     if symbol.endswith(".NS") or symbol.endswith(".BO"):
         bars = _fetch_groww(symbol, from_date)
         if bars:
             return bars
+
+    # Groww-only gate: for Indian stocks, stop here if fallbacks are forbidden.
+    try:
+        import sys as _sys
+        from pathlib import Path as _P
+        _sys.path.insert(0, str(_P(__file__).resolve().parents[1] / "apps" / "python" / "lib"))
+        from groww_client import should_use_non_groww_source
+    except Exception:
+        should_use_non_groww_source = lambda s: True  # fail-open if import breaks
+    if not should_use_non_groww_source(symbol):
+        return []
 
     # 1. yfinance (fallback)
     bars = _fetch_yfinance(symbol, from_date)

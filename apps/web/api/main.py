@@ -57,8 +57,13 @@ from breakout_alert_engine import (
     check_position_ema5_proximity, EmaProximityAlert,
     send_ema5_telegram_alert, _format_ema5_alert_message,
 )
+from vpn_manager import get_vpn_manager
 
 _mf_provider = MutualFundsProvider(cache_dir=str(ROOT / "cache"), cache_ttl_hours=6)
+
+# ── VPN / Proxy manager (singleton) ────────────────────────────────────────
+# Persisted state lives in trade_data/ so it survives output/ cleanups.
+_vpn = get_vpn_manager(ROOT / "trade_data" / "vpn_config.json")
 
 # ── Breakout Alert Scanner (singleton) ──────────────────────────────────────
 _breakout_scanner = BreakoutScanner(
@@ -820,6 +825,104 @@ def cache_refresh_specific_symbols(symbols: list[str]) -> dict:
         results[sym_clean] = "updated" if updated else "fresh_or_cooldown"
 
     return {"results": results, "count": len(results)}
+
+
+# ── VPN / Proxy Toggle API ────────────────────────────────────────────────────
+# Free-proxy-based outbound routing. Toggle enables/disables routing all
+# outbound HTTP(S) traffic (Yahoo, NSE, yfinance, Groww, …) through a proxy.
+# Providers:
+#   • free   — rotated from public proxy lists (no account needed)
+#   • custom — user-supplied URL, e.g. http://user:pass@host:port
+
+class VpnConfigRequest(BaseModel):
+    provider: Optional[Literal["free", "custom"]] = None
+    custom_proxy_url: Optional[str] = None
+
+
+@app.get("/api/vpn/status")
+def vpn_status() -> dict:
+    """Current VPN/proxy status — enabled flag, provider, active proxy, last test."""
+    return _vpn.status()
+
+
+@app.get("/api/groww/verify")
+def groww_verify(symbol: str = "RELIANCE") -> dict:
+    """End-to-end Groww health check. Returns whether Groww-only mode is on,
+    whether credentials are set, whether the client initialized, and a
+    live LTP probe for the given NSE symbol (default RELIANCE).
+
+    Use this to debug "no data in UI" when GROWW_ONLY mode is enforced.
+    """
+    try:
+        from groww_client import verify_groww_live
+        return verify_groww_live(probe_symbol=symbol.upper())
+    except Exception as e:
+        return {"ok": False, "error": f"{type(e).__name__}: {e}"}
+
+
+@app.post("/api/vpn/toggle")
+def vpn_toggle() -> dict:
+    """Flip VPN enabled state. Picks a fresh free proxy on enable."""
+    try:
+        return _vpn.toggle()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/vpn/enable")
+def vpn_enable() -> dict:
+    try:
+        return _vpn.enable()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/vpn/disable")
+def vpn_disable() -> dict:
+    return _vpn.disable()
+
+
+@app.post("/api/vpn/config")
+def vpn_config(req: VpnConfigRequest) -> dict:
+    """Update provider and/or custom proxy URL."""
+    try:
+        return _vpn.set_config(
+            provider=req.provider,
+            custom_proxy_url=req.custom_proxy_url,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/vpn/rotate")
+def vpn_rotate() -> dict:
+    """Pick a new working free proxy (provider=free only)."""
+    return _vpn.rotate()
+
+
+@app.post("/api/vpn/test")
+def vpn_test() -> dict:
+    """Test current outbound routing — returns external IP seen by api.ipify.org."""
+    return _vpn.test()
+
+
+@app.post("/api/vpn/refresh-pool")
+def vpn_refresh_pool() -> dict:
+    """Force refresh of the free public proxy list."""
+    return _vpn.refresh_free_pool()
+
+
+@app.post("/api/vpn/health")
+def vpn_health() -> dict:
+    """Parallel health check: direct network vs through the VPN proxy.
+
+    Returns latency (ms), download speed (KB/s), external IP, and reachability
+    for the app's own data sources (Yahoo, NSE) for each route plus a
+    comparison summary (slowdown %, verdict, IP-masked flag).
+    """
+    return _vpn.health_check()
 
 
 @app.post("/api/jobs/scan")
@@ -1711,17 +1814,26 @@ def _get_live_price(symbol: str) -> Optional[dict]:
     if not quote:
         quote = _fetch_groww_quote(base)
 
+    # Groww-only gate: for Indian symbols, forbid silent fallback to
+    # geo-blocked Yahoo/NSE. If Groww failed, surface the failure (cache
+    # CSV fallback happens at caller layer, which is fine).
+    try:
+        from groww_client import should_use_non_groww_source
+        _allow_fallback = should_use_non_groww_source(base + ".NS")
+    except Exception:
+        _allow_fallback = True
+
     # 2. During market hours: try NSE (fast for live intraday)
-    if not quote and market_open:
+    if not quote and market_open and _allow_fallback:
         quote = _fetch_live_quote_nse(base)
 
     # 3. Yahoo v8
-    if not quote:
+    if not quote and _allow_fallback:
         ns_sym = base + ".NS"
         quote = _fetch_live_quote_yahoo(ns_sym)
 
     # 4. yfinance fallback
-    if not quote:
+    if not quote and _allow_fallback:
         ns_sym = base + ".NS"
         quote = _fetch_live_quote_yfinance(ns_sym)
 

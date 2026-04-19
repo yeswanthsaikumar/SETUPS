@@ -770,12 +770,36 @@ class MutualFundsProvider:
             pass
 
     def fetch(self, symbol: str, market: str = "india") -> dict:
-        """Return full MF/institutional holdings dict for one symbol."""
+        """Return full MF/institutional holdings dict for one symbol.
+
+        Honors GROWW_ONLY mode: when on, skips screener.in scrape and
+        yfinance institutional fetch for Indian stocks (Groww doesn't
+        provide this data, so the panel is simply blank — no silent
+        fallback to geo-blocked external sites).
+        """
         cached = self._load_cache(symbol)
         if cached:
             return cached
 
+        try:
+            from groww_client import should_use_non_groww_source
+            _allow_external = should_use_non_groww_source(symbol)
+        except Exception:
+            _allow_external = True
+
         result: dict[str, Any] = {"symbol": symbol, "market": market}
+
+        if not _allow_external:
+            result.update({
+                "screener_slug": None,
+                "quarterly_data": [],
+                "top_mf_holders": [],
+                "screener_error": "groww_only_mode",
+                "_hint": ("GROWW_ONLY mode: screener.in + yfinance "
+                          "institutional data disabled. Set GROWW_ONLY=0 "
+                          "to re-enable."),
+            })
+            return result
 
         # Screener.in for Indian stocks
         if market == "india" or symbol.endswith(".NS") or symbol.endswith(".BO"):

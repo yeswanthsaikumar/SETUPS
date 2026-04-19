@@ -175,6 +175,25 @@ class FundamentalsProvider:
                 self._save_cache(symbol, result)
                 return result
 
+        # Groww-only gate: for Indian symbols, no silent fallback to yfinance
+        # (which routes through geo-blocked Yahoo and requires a VPN that
+        # may itself be broken). Return an explicit "source_unavailable"
+        # marker so the UI can prompt the user to fix Groww creds.
+        try:
+            from groww_client import should_use_non_groww_source
+        except Exception:
+            should_use_non_groww_source = lambda s: True
+        if not should_use_non_groww_source(symbol):
+            return {
+                "symbol": symbol,
+                "error": "groww_unavailable",
+                "_source": "groww",
+                "_hint": ("Groww-only mode is ON and Groww did not return "
+                          "fundamentals. Verify credentials via "
+                          "/api/groww/verify or set GROWW_ONLY=0 to restore "
+                          "yfinance fallback."),
+            }
+
         # Fallback to yfinance
         if not HAS_YFINANCE:
             return {"symbol": symbol, "error": "yfinance_unavailable"}

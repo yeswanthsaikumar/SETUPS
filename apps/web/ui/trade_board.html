@@ -415,6 +415,9 @@
     <div class="cache-badge idle" id="cacheBadge" onclick="toggleCacheRefresh()" title="Click to refresh OHLCV cache">
       <span class="cache-dot"></span><span id="cacheLabel">Cache</span> <span class="cache-progress" id="cacheProg"></span>
     </div>
+    <div class="cache-badge idle" id="vpnBadge" onclick="openVpnPanel()" title="VPN / Proxy toggle">
+      <span class="cache-dot"></span><span id="vpnLabel">VPN Off</span>
+    </div>
     <div class="live-badge"><span class="live-dot"></span>Live <span id="refreshCd">30s</span></div>
     <button class="btn btn-green btn-sm" onclick="openAddModal()">+ Position</button>
     <button class="btn btn-outline btn-sm" onclick="toggleDrawer()">📡 Signals</button>
@@ -3658,6 +3661,363 @@ function ema5RenderAlerts(data) {
   h += '</div>';
   return h;
 }
+
+// ── VPN / Proxy Toggle ───────────────────────────────────────────────────────
+let _vpnState = null;
+
+async function refreshVpnStatus() {
+  try {
+    const r = await fetch(API + '/api/vpn/status');
+    if (!r.ok) return;
+    const d = await r.json();
+    _vpnState = d;
+    const badge = document.getElementById('vpnBadge');
+    const label = document.getElementById('vpnLabel');
+    if (!badge) return;
+    if (d.enabled) {
+      badge.className = 'cache-badge completed';
+      const ok = d.last_test_ok;
+      label.textContent = ok === false ? 'VPN ⚠' : 'VPN On';
+      const ip = d.last_test_ip ? ` · ${d.last_test_ip}` : '';
+      badge.title = `VPN ${d.provider === 'custom' ? 'custom' : 'free'} proxy active${ip}\nProxy: ${d.current_proxy || '—'}\nClick to manage`;
+    } else {
+      badge.className = 'cache-badge idle';
+      label.textContent = 'VPN Off';
+      badge.title = 'VPN / proxy disabled — click to enable';
+    }
+  } catch(e) { /* ignore */ }
+}
+
+function openVpnPanel() {
+  if (document.getElementById('vpnModal')) {
+    document.getElementById('vpnModal').remove();
+    return;
+  }
+  // Always try to have fresh data before rendering
+  const render = () => {
+    const existing = document.getElementById('vpnModal');
+    if (existing) existing.remove();
+    const d = _vpnState || { enabled:false, provider:'free', custom_proxy_url:'', current_proxy:'' };
+    const modal = document.createElement('div');
+    modal.id = 'vpnModal';
+    modal.style.cssText = 'position:fixed;top:54px;right:16px;z-index:9999;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px;width:360px;box-shadow:0 12px 40px rgba(0,0,0,.6);font-size:12px;';
+    const onLabel = d.enabled ? 'Turn OFF' : 'Turn ON';
+    const onColor = d.enabled ? 'btn-red' : 'btn-green';
+    modal.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-weight:800;font-size:13px;">🌐 VPN / Proxy</div>
+        <button class="btn btn-ghost btn-xs" onclick="document.getElementById('vpnModal').remove()">✕</button>
+      </div>
+      <div id="vpnBusyBar" style="display:none;background:#0c2d48;color:#38bdf8;padding:8px 10px;border-radius:7px;margin-bottom:10px;font-weight:700;text-align:center;">
+        <span class="live-dot" style="background:#38bdf8;display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;animation:blink .8s infinite;"></span>
+        <span id="vpnBusyText">Connecting — searching for a working proxy (up to 25s)…</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg3);border-radius:7px;margin-bottom:10px;">
+        <span class="live-badge" style="background:${d.enabled ? 'var(--green-bg)' : 'var(--bg)'};color:${d.enabled ? 'var(--green)' : 'var(--muted)'};border-color:${d.enabled ? '#16a34a33' : 'var(--border2)'};font-size:11px;padding:4px 10px;">
+          ${d.enabled ? '● VPN ACTIVE' : '○ VPN OFF'}
+        </span>
+        <button id="vpnToggleBtn" class="btn ${onColor} btn-sm" style="margin-left:auto;min-width:110px;" onclick="vpnToggleClicked()">
+          ${onLabel}
+        </button>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px;">Provider</div>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="tab-pill ${d.provider==='free'?'active':''}" style="flex:1;" onclick="setVpnProvider('free')">Free (public)</button>
+          <button type="button" class="tab-pill ${d.provider==='custom'?'active':''}" style="flex:1;" onclick="setVpnProvider('custom')">Custom URL</button>
+        </div>
+      </div>
+      <div id="vpnCustomWrap" style="display:${d.provider==='custom'?'block':'none'};margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px;">Custom proxy URL</div>
+        <input id="vpnCustomUrl" class="f-input" style="width:100%;" placeholder="http://user:pass@host:port" value="${(d.custom_proxy_url||'').replace(/"/g,'&quot;')}"/>
+        <button class="btn btn-outline btn-xs" style="margin-top:5px;" onclick="saveVpnCustom()">Save URL</button>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px;font-family:ui-monospace,monospace;font-size:10.5px;line-height:1.5;margin-bottom:8px;word-break:break-all;">
+        <div><span style="color:var(--muted);">Active proxy:</span> ${d.current_proxy || '—'}</div>
+        <div><span style="color:var(--muted);">External IP:</span> ${d.last_test_ip || '—'} ${d.last_test_ok===false ? '<span style="color:var(--red);">(test failed)</span>' : ''}</div>
+        <div><span style="color:var(--muted);">Pool size:</span> ${d.proxy_list_size || 0} free proxies</div>
+        ${d.last_test_error ? `<div style="color:var(--red);">⚠ ${d.last_test_error}</div>` : ''}
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-xs" onclick="testVpn()">🔍 Test</button>
+        <button class="btn btn-outline btn-xs" onclick="rotateVpn()">🔄 Rotate</button>
+        <button class="btn btn-outline btn-xs" onclick="refreshVpnPool()">⟳ Refresh pool</button>
+        <button class="btn btn-outline btn-xs" style="border-color:#38bdf866;color:#38bdf8;" onclick="runVpnHealth()">⚡ Health check</button>
+      </div>
+      <div id="vpnHealthCard" style="display:none;margin-top:8px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px;font-size:11px;"></div>
+      <div style="margin-top:8px;font-size:10px;color:var(--muted);line-height:1.4;">
+        Routes outbound HTTP(S) traffic (Yahoo, NSE, yfinance, Groww) through the selected proxy. Free proxies are often slow or geo-blocked by NSE/BSE — use <b>⚡ Health check</b> to verify, <b>🔄 Rotate</b> to try another, or set a Custom URL.<br/>
+        <span style="color:var(--yellow);">ℹ VPN always starts OFF each session</span> to prevent a dead proxy from breaking data fetches.
+      </div>
+    `;
+    document.body.appendChild(modal);
+  };
+  render();
+  // refresh status in background, then re-render if state changed
+  refreshVpnStatus().then(() => {
+    if (document.getElementById('vpnModal')) render();
+  });
+}
+
+// Flag so concurrent clicks don't stack
+let _vpnToggleInFlight = false;
+
+async function vpnToggleClicked() {
+  if (_vpnToggleInFlight) return;
+  _vpnToggleInFlight = true;
+
+  // Decide action from authoritative server-side state (not DOM)
+  const currentlyEnabled = !!(_vpnState && _vpnState.enabled);
+  const willEnable = !currentlyEnabled;
+  const endpoint = willEnable ? '/api/vpn/enable' : '/api/vpn/disable';
+
+  // UI: lock button, show busy bar inside modal, change topbar badge
+  const btn = document.getElementById('vpnToggleBtn');
+  if (btn) { btn.disabled = true; btn.textContent = willEnable ? 'Connecting…' : 'Disabling…'; }
+  const busy = document.getElementById('vpnBusyBar');
+  const busyTxt = document.getElementById('vpnBusyText');
+  if (busy) busy.style.display = 'block';
+  if (busyTxt) busyTxt.textContent = willEnable
+    ? 'Searching for a working free proxy — up to 5 min (keeps trying until one passes Yahoo)…'
+    : 'Disabling proxy routing…';
+  const topBadge = document.getElementById('vpnBadge');
+  const topLabel = document.getElementById('vpnLabel');
+  if (topBadge) topBadge.className = 'cache-badge running';
+  if (topLabel) topLabel.textContent = willEnable ? 'Connecting…' : 'Disabling…';
+
+  let resultOk = false, resultData = {};
+  try {
+    const r = await fetch(API + endpoint, {method:'POST'});
+    try { resultData = await r.json(); } catch(_) {}
+    resultOk = r.ok && resultData.ok !== false;
+    if (resultOk) {
+      if (resultData.enabled) {
+        toast(`🌐 VPN ON · IP ${resultData.externalIp || '?'}`, 'success');
+      } else {
+        toast('🌐 VPN OFF', 'success');
+      }
+    } else {
+      const msg = resultData.error || resultData.detail || `HTTP ${r.status}`;
+      toast('⚠ ' + msg, 'error');
+    }
+  } catch(e) {
+    toast('VPN request failed: ' + (e && e.message || e), 'error');
+  } finally {
+    _vpnToggleInFlight = false;
+  }
+  await refreshVpnStatus();
+  // Re-render modal with fresh state (if still open)
+  const m = document.getElementById('vpnModal');
+  if (m) { m.remove(); openVpnPanel(); }
+}
+
+async function toggleVpn() {
+  // Back-compat shim — delegate to the new state-authoritative handler
+  return vpnToggleClicked();
+}
+
+async function setVpnProvider(prov) {
+  try {
+    await fetch(API + '/api/vpn/config', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({provider: prov}),
+    });
+    toast('Provider set to ' + prov, 'success');
+  } catch(e) { toast('Failed to set provider', 'error'); }
+  await refreshVpnStatus();
+  const m = document.getElementById('vpnModal');
+  if (m) { m.remove(); openVpnPanel(); }
+}
+
+async function saveVpnCustom() {
+  const url = document.getElementById('vpnCustomUrl').value.trim();
+  try {
+    const r = await fetch(API + '/api/vpn/config', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({provider:'custom', custom_proxy_url: url}),
+    });
+    if (r.ok) toast('Custom proxy saved', 'success');
+    else toast('Save failed', 'error');
+  } catch(e) { toast('Save failed', 'error'); }
+  await refreshVpnStatus();
+}
+
+async function testVpn() {
+  toast('Testing…', 'info');
+  try {
+    const r = await fetch(API + '/api/vpn/test', {method:'POST'});
+    const d = await r.json();
+    toast(d.ok ? `✅ OK · IP ${d.externalIp}` : `❌ ${d.error || 'test failed'}`, d.ok ? 'success' : 'error');
+  } catch(e) { toast('Test failed', 'error'); }
+  await refreshVpnStatus();
+  const m = document.getElementById('vpnModal');
+  if (m) { m.remove(); openVpnPanel(); }
+}
+
+async function rotateVpn() {
+  toast('Rotating proxy — this can take up to 25s…', 'info');
+  const badge = document.getElementById('vpnBadge');
+  const label = document.getElementById('vpnLabel');
+  if (badge) badge.className = 'cache-badge running';
+  if (label) label.textContent = 'Rotating…';
+  try {
+    const r = await fetch(API + '/api/vpn/rotate', {method:'POST'});
+    const d = await r.json();
+    toast(d.ok ? `✅ New proxy · IP ${d.externalIp||'?'}` : `❌ ${d.error || 'rotate failed'}`, d.ok ? 'success' : 'error');
+  } catch(e) { toast('Rotate failed', 'error'); }
+  await refreshVpnStatus();
+  const m = document.getElementById('vpnModal');
+  if (m) { m.remove(); openVpnPanel(); }
+}
+
+async function refreshVpnPool() {
+  toast('Refreshing free proxy list…', 'info');
+  try {
+    const r = await fetch(API + '/api/vpn/refresh-pool', {method:'POST'});
+    const d = await r.json();
+    toast(`Pool size: ${d.size || 0}`, 'success');
+  } catch(e) { toast('Refresh failed', 'error'); }
+  await refreshVpnStatus();
+}
+
+async function runVpnHealth() {
+  const card = document.getElementById('vpnHealthCard');
+  if (card) {
+    card.style.display = 'block';
+    card.innerHTML = '<div style="color:#38bdf8;text-align:center;padding:6px;"><span class="live-dot" style="background:#38bdf8;display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;animation:blink .8s infinite;"></span>Running health check — measuring latency &amp; throughput (direct + proxy)…</div>';
+  }
+  toast('⚡ Running VPN health check…', 'info');
+  let d = null;
+  try {
+    const r = await fetch(API + '/api/vpn/health', {method:'POST'});
+    d = await r.json();
+  } catch(e) {
+    if (card) card.innerHTML = `<div style="color:var(--red);">⚠ Health check failed: ${e && e.message || e}</div>`;
+    toast('Health check failed', 'error');
+    return;
+  }
+  if (!card) return;
+  card.innerHTML = renderVpnHealth(d);
+  const v = d.comparison && d.comparison.verdict;
+  const emojiMap = { excellent:'🟢', ok:'🟡', slow:'🟠', very_slow:'🔴', unknown:'⚪' };
+  toast(`Health: ${emojiMap[v] || '⚪'} ${(v || 'done').replace('_',' ')}`,
+        v === 'excellent' || v === 'ok' ? 'success' : (v === 'unknown' ? 'info' : 'error'));
+}
+
+function renderVpnHealth(d) {
+  if (!d) return '<div style="color:var(--red);">No data</div>';
+  const fmtMs = (x) => x == null ? '—' : `${x.toFixed ? x.toFixed(0) : x} ms`;
+  const fmtSpd = (x) => x == null ? '—' : (x >= 1024 ? `${(x/1024).toFixed(2)} MB/s` : `${x.toFixed ? x.toFixed(1) : x} KB/s`);
+  const col = (a, b, betterLow) => {
+    if (a == null || b == null) return 'var(--muted)';
+    const better = betterLow ? (a < b) : (a > b);
+    return better ? 'var(--green)' : 'var(--red)';
+  };
+  const dot = (ok) => ok === true ? '<span style="color:var(--green);">●</span>'
+                       : ok === false ? '<span style="color:var(--red);">●</span>'
+                       : '<span style="color:var(--muted);">○</span>';
+  const dir = d.direct || {};
+  const prx = d.proxied || null;
+  const cmp = d.comparison || null;
+
+  let h = '<div style="font-weight:800;margin-bottom:6px;">⚡ Health Check Result</div>';
+  // Table header
+  h += '<table style="width:100%;border-collapse:collapse;font-size:11px;">';
+  h += '<thead><tr style="color:var(--muted);text-align:right;">'
+     + '<th style="text-align:left;padding:2px 4px;font-weight:700;">Metric</th>'
+     + '<th style="padding:2px 4px;font-weight:700;">Direct</th>'
+     + '<th style="padding:2px 4px;font-weight:700;">' + (prx ? 'Via VPN' : '—') + '</th>'
+     + '</tr></thead><tbody>';
+  const dirLat = dir.latency_ms, prxLat = prx && prx.latency_ms;
+  const dirSpd = dir.download_kbps, prxSpd = prx && prx.download_kbps;
+  h += `<tr><td style="padding:2px 4px;">Latency</td>`
+     + `<td style="text-align:right;padding:2px 4px;color:${col(dirLat, prxLat, true)};">${fmtMs(dirLat)}</td>`
+     + `<td style="text-align:right;padding:2px 4px;color:${col(prxLat, dirLat, true)};">${prx ? fmtMs(prxLat) : '—'}</td>`
+     + `</tr>`;
+  h += `<tr><td style="padding:2px 4px;">Download</td>`
+     + `<td style="text-align:right;padding:2px 4px;color:${col(dirSpd, prxSpd, false)};">${fmtSpd(dirSpd)}</td>`
+     + `<td style="text-align:right;padding:2px 4px;color:${col(prxSpd, dirSpd, false)};">${prx ? fmtSpd(prxSpd) : '—'}</td>`
+     + `</tr>`;
+  h += `<tr><td style="padding:2px 4px;">External IP</td>`
+     + `<td style="text-align:right;padding:2px 4px;font-family:ui-monospace,monospace;font-size:10px;">${dir.ip || '—'}</td>`
+     + `<td style="text-align:right;padding:2px 4px;font-family:ui-monospace,monospace;font-size:10px;">${(prx && prx.ip) || '—'}</td>`
+     + `</tr>`;
+  h += '</tbody></table>';
+
+  // ── Financial data sources (per-target reachability) ──────────────────
+  const dirT = (dir && dir.targets) || {};
+  const prxT = (prx && prx.targets) || {};
+  // Union of keys preserving order from direct.targets first
+  const keys = Object.keys(dirT);
+  Object.keys(prxT).forEach(k => { if (!keys.includes(k)) keys.push(k); });
+  if (keys.length) {
+    h += '<div style="margin-top:10px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px;">Financial data sources</div>';
+    h += '<table style="width:100%;border-collapse:collapse;font-size:11px;"><tbody>';
+    for (const k of keys) {
+      const a = dirT[k] || {}, b = prxT[k] || {};
+      const name = a.name || b.name || k;
+      const dirCell = (a.ok == null && !a.error)
+          ? '—'
+          : `${dot(a.ok)} ${fmtMs(a.ms)}${a.status ? ` <span style="color:var(--muted);">(${a.status})</span>` : ''}`;
+      const prxCell = prx
+          ? ((b.ok == null && !b.error)
+              ? '—'
+              : `${dot(b.ok)} ${fmtMs(b.ms)}${b.status ? ` <span style="color:var(--muted);">(${b.status})</span>` : ''}`)
+          : '—';
+      h += `<tr>`
+         + `<td style="padding:2px 4px;">${name}</td>`
+         + `<td style="text-align:right;padding:2px 4px;">${dirCell}</td>`
+         + `<td style="text-align:right;padding:2px 4px;">${prxCell}</td>`
+         + `</tr>`;
+    }
+    h += '</tbody></table>';
+    // Summary counts
+    const totalDir = keys.filter(k => (dirT[k] && dirT[k].ok)).length;
+    const totalPrx = prx ? keys.filter(k => (prxT[k] && prxT[k].ok)).length : null;
+    h += `<div style="margin-top:4px;font-size:10px;color:var(--muted);">`
+       + `Reachable: <span style="color:var(--green);">${totalDir}/${keys.length} direct</span>`
+       + (prx ? ` · <span style="color:${totalPrx === keys.length ? 'var(--green)' : (totalPrx === 0 ? 'var(--red)' : 'var(--yellow)')};">${totalPrx}/${keys.length} via VPN</span>` : '')
+       + `</div>`;
+  }
+
+  // Verdict strip
+  if (cmp) {
+    const vMap = {
+      excellent: {col:'var(--green)', bg:'#052e16',  icon:'🟢', label:'Excellent'},
+      ok:        {col:'var(--green)', bg:'#042818',  icon:'🟡', label:'OK'},
+      slow:      {col:'var(--yellow)',bg:'#2a1a00',  icon:'🟠', label:'Slow'},
+      very_slow: {col:'var(--red)',   bg:'var(--red-bg)', icon:'🔴', label:'Very slow'},
+      unknown:   {col:'var(--muted)', bg:'var(--bg3)',    icon:'⚪', label:'Unknown'},
+    };
+    const v = vMap[cmp.verdict] || vMap.unknown;
+    h += `<div style="margin-top:8px;padding:7px 9px;border-radius:6px;background:${v.bg};color:${v.col};font-weight:700;display:flex;align-items:center;gap:8px;">
+            <span style="font-size:15px;">${v.icon}</span>
+            <span>VPN speed is <b>${v.label}</b></span>
+            <span style="margin-left:auto;font-weight:600;font-size:10.5px;opacity:.85;">`
+       + (cmp.slowdownPct != null ? `${cmp.slowdownPct > 0 ? '−' : '+'}${Math.abs(cmp.slowdownPct).toFixed(0)}% vs direct`
+                                  : '')
+       + `</span></div>`;
+    const notes = [];
+    if (cmp.latencyOverheadMs != null)
+      notes.push(`Adds ${cmp.latencyOverheadMs.toFixed ? cmp.latencyOverheadMs.toFixed(0) : cmp.latencyOverheadMs} ms latency`);
+    if (cmp.speedRatio != null)
+      notes.push(`Throughput ${(cmp.speedRatio * 100).toFixed(0)}% of direct`);
+    if (cmp.ipChanged === true) notes.push('IP masked ✓');
+    if (cmp.ipChanged === false) notes.push('<span style="color:var(--red);">⚠ IP NOT masked</span>');
+    if (notes.length) {
+      h += `<div style="margin-top:4px;font-size:10px;color:var(--muted);line-height:1.5;">${notes.join(' · ')}</div>`;
+    }
+  } else if (!prx) {
+    h += '<div style="margin-top:8px;padding:7px 9px;border-radius:6px;background:var(--bg3);color:var(--muted);font-size:10.5px;">VPN is disabled — showing direct metrics only. Turn on VPN to compare.</div>';
+  } else if (prx && prx.error) {
+    h += `<div style="margin-top:8px;padding:7px 9px;border-radius:6px;background:var(--red-bg);color:var(--red);font-size:10.5px;">⚠ Proxied probe failed: ${prx.error}</div>`;
+  }
+  return h;
+}
+
+// Initial status + periodic refresh
+refreshVpnStatus();
+setInterval(refreshVpnStatus, 60000);
 
 </script>
 </body>
