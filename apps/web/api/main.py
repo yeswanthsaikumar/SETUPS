@@ -34,13 +34,17 @@ TRADE_PLANS_HTML = OUTPUT_DIR / "trade_plans_live.html"
 GENERATE_TRADE_PLANS = CLI_DIR / "generate_trade_plans_page.py"
 WEB_JOBS_DIR = OUTPUT_DIR / "web_jobs"
 PERF_TRACKER_JSON = OUTPUT_DIR / "performance_tracker.json"
-# Trade data stored in dedicated folder (not output/) so it survives output/ cleanups
-TRADE_DATA_DIR = ROOT / "trade_data"
+# Trade data stored in dedicated folder (not output/) so it survives output/ cleanups.
+# Honor SETUPS_TRADE_DATA_DIR / SETUPS_CACHE_DIR env vars so tests (and other
+# embeddings) can point the app at a clean directory without editing code.
+_TD_ENV = os.environ.get("SETUPS_TRADE_DATA_DIR", "").strip()
+TRADE_DATA_DIR = Path(_TD_ENV) if _TD_ENV else ROOT / "trade_data"
 TRADE_BOARD_JSON = TRADE_DATA_DIR / "positions.json"
 TRADE_JOURNAL_JSON = TRADE_DATA_DIR / "journal.json"
 TRADE_WATCHLIST_JSON = TRADE_DATA_DIR / "watchlist.json"
 TRADE_BOARD_JSON_LEGACY = OUTPUT_DIR / "trade_board.json"  # kept for migration only
-CACHE_DIR = ROOT / "cache"
+_CD_ENV = os.environ.get("SETUPS_CACHE_DIR", "").strip()
+CACHE_DIR = Path(_CD_ENV) if _CD_ENV else ROOT / "cache"
 REFRESH_CACHE_SCRIPT = ROOT / "scripts" / "refresh_cache.py"
 REFRESH_LOG = OUTPUT_DIR / "cache_refresh.log"
 
@@ -2524,9 +2528,35 @@ def trade_board_equity() -> dict:
             # If partials covered full qty, they're already in events
 
     events.sort(key=lambda e: e.get("date", ""))
+
+    # IMPORTANT: LightweightCharts requires strictly ascending, UNIQUE time
+    # values. When multiple exits share a date (e.g. two T3 hits same day, or
+    # a full close + a partial on the same day), we MUST aggregate them into
+    # a single curve point — otherwise the chart silently fails to draw any
+    # line/area (axis still renders, so the bug is easy to miss visually).
+    daily_pl: dict[str, float] = {}
+    daily_symbols: dict[str, list[str]] = {}
+    daily_events: dict[str, list[dict]] = {}
     for ev in events:
-        total += ev["pl"]
-        curve.append({**ev, "cumPl": round(total, 2)})
+        d = ev.get("date") or ""
+        daily_pl[d] = daily_pl.get(d, 0.0) + ev["pl"]
+        daily_symbols.setdefault(d, []).append(ev.get("symbol", ""))
+        daily_events.setdefault(d, []).append(ev)
+
+    for d in sorted(daily_pl.keys()):
+        pl = round(daily_pl[d], 2)
+        total += pl
+        # Keep per-day events for drill-down, but the top-level curve is
+        # date-unique so the frontend chart library is happy.
+        curve.append({
+            "date": d,
+            "pl": pl,
+            "cumPl": round(total, 2),
+            "symbol": ", ".join(sorted(set(s for s in daily_symbols[d] if s))),
+            "status": daily_events[d][-1].get("status", ""),
+            "type": "aggregate" if len(daily_events[d]) > 1 else daily_events[d][0].get("type", "close"),
+            "events": daily_events[d],
+        })
 
     return {"curve": curve, "totalPl": round(total, 2)}
 
