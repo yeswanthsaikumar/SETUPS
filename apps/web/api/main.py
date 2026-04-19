@@ -16,7 +16,7 @@ from typing import Literal, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -51,6 +51,7 @@ REFRESH_LOG = OUTPUT_DIR / "cache_refresh.log"
 sys.path.insert(0, str(PY_LIB_DIR))
 from trade_plan_assistant import brief_as_json, build_scan_brief
 from stock_analyzer import analyze_stock
+import trading_wisdom
 import performance_tracker as _pt
 from mutual_funds_provider import MutualFundsProvider, swing_context as _mf_swing_context
 import watchlist_pattern_engine as _wpe
@@ -625,6 +626,13 @@ if TRADE_BOARD_JSON_LEGACY.exists() and not TRADE_BOARD_JSON.exists():
 if OUTPUT_DIR.exists():
     app.mount("/reports", StaticFiles(directory=str(OUTPUT_DIR)), name="reports")
 
+# Mount the UI folder so wisdom.js (and any future static UI assets) are
+# reachable by the browser at /ui/wisdom.js.  Kept read-only — anything
+# dynamic stays behind an API route.
+_UI_DIR = TRADE_BOARD_UI.parent
+if _UI_DIR.exists():
+    app.mount("/ui", StaticFiles(directory=str(_UI_DIR)), name="ui")
+
 
 def _ensure_parent_dir(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -672,15 +680,45 @@ def trade_board_page() -> FileResponse:
     return FileResponse(TRADE_BOARD_UI)
 
 
+# ── Wisdom-layer HTML helper ───────────────────────────────────────────────
+# The sector/breadth/trades pages are generated as static HTML by the CLI
+# scripts and written into output/.  They don't go through a template engine,
+# so we can't add the wisdom <script> tag there without rerunning the scan.
+# Instead we inject it at serve time — one line, deterministic, and nothing
+# to keep in sync across four generators.
+_WISDOM_SCRIPT_TAG = (
+    '<script defer src="/ui/wisdom.js"></script>'
+    '<!-- injected by serve_with_wisdom() -->'
+)
+
+
+def _serve_with_wisdom(path: Path, media_type: str = "text/html") -> Response:
+    """Serve a static HTML file with the wisdom reminder layer injected
+    right before </body>.  Falls back to untouched content if </body> isn't
+    found — we never want an injection bug to 500 a page.
+    """
+    try:
+        html = path.read_text(encoding="utf-8")
+    except Exception:
+        raise HTTPException(status_code=500, detail="could not read page")
+    if _WISDOM_SCRIPT_TAG not in html:
+        idx = html.rfind("</body>")
+        if idx != -1:
+            html = html[:idx] + _WISDOM_SCRIPT_TAG + html[idx:]
+        else:
+            html = html + _WISDOM_SCRIPT_TAG
+    return Response(content=html, media_type=media_type)
+
+
 @app.get("/sector")
-def sector_macro_page() -> FileResponse:
+def sector_macro_page() -> Response:
     """Serve the pre-built Sector Rotation & Macro Analysis HTML page."""
     if not SECTOR_MACRO_HTML.exists():
         raise HTTPException(
             status_code=404,
             detail="Sector macro analysis page not found. Run generate_sector_macro_page.py first.",
         )
-    return FileResponse(SECTOR_MACRO_HTML, media_type="text/html")
+    return _serve_with_wisdom(SECTOR_MACRO_HTML)
 
 
 @app.post("/api/jobs/sector-macro")
@@ -692,14 +730,14 @@ def start_sector_macro_job() -> dict:
 
 
 @app.get("/breadth")
-def breadth_dashboard_page() -> FileResponse:
+def breadth_dashboard_page() -> Response:
     """Serve the pre-built Market Breadth & Trend Detection HTML page."""
     if not BREADTH_HTML.exists():
         raise HTTPException(
             status_code=404,
             detail="Market breadth dashboard not found. It will be auto-generated after cache refresh completes, or trigger manually via POST /api/jobs/breadth.",
         )
-    return FileResponse(BREADTH_HTML, media_type="text/html")
+    return _serve_with_wisdom(BREADTH_HTML)
 
 
 @app.post("/api/jobs/breadth")
@@ -711,14 +749,14 @@ def start_breadth_job() -> dict:
 
 
 @app.get("/trades")
-def trade_plans_page() -> FileResponse:
+def trade_plans_page() -> Response:
     """Serve the pre-built Live Breakout Trade Plans HTML page."""
     if not TRADE_PLANS_HTML.exists():
         raise HTTPException(
             status_code=404,
             detail="Trade plans page not found. It will be auto-generated after cache refresh completes, or trigger manually via POST /api/jobs/trade-plans. A scan must have run at least once.",
         )
-    return FileResponse(TRADE_PLANS_HTML, media_type="text/html")
+    return _serve_with_wisdom(TRADE_PLANS_HTML)
 
 
 @app.post("/api/jobs/trade-plans")
@@ -3469,3 +3507,68 @@ def position_ema5_scan_and_alert(threshold: float = 1.5) -> dict:
         "telegramSent": sent_count,
         "checkedAt": datetime.now().isoformat(timespec="seconds"),
     }
+
+
+# ── Trading wisdom / daily reminders ───────────────────────────────────────
+# These endpoints power the always-on nudge layer in the UI: quote-of-the-day
+# panel, page-contextual reminders, psychology pings on open positions, etc.
+# All data is served from trading_wisdom.QUOTES (pure-data, see lib module).
+#
+# NOTE: every endpoint returns JSONResponse with Cache-Control: no-store.
+# Without that header browsers (especially Safari) were caching responses
+# aggressively, so navigating between pages or hitting the rotate button
+# silently replayed stale quotes — the #1 complaint from the first rollout.
+
+_WISDOM_NO_CACHE_HEADERS = {
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0",
+}
+
+
+def _wisdom_json(payload: dict, status_code: int = 200):
+    from fastapi.responses import JSONResponse
+    return JSONResponse(payload, status_code=status_code,
+                        headers=_WISDOM_NO_CACHE_HEADERS)
+
+
+@app.get("/api/wisdom/quote-of-the-day")
+def wisdom_qotd():
+    """Deterministic-by-date quote. Same date → same quote on every device."""
+    q = trading_wisdom.quote_of_the_day()
+    return _wisdom_json({**q, "date": datetime.now().strftime("%Y-%m-%d")})
+
+
+@app.get("/api/wisdom/random")
+def wisdom_random(tags: str = "", exclude: str = ""):
+    """Random quote, optionally filtered by comma-separated tags / authors."""
+    tag_list = [t.strip() for t in tags.split(",") if t.strip()] or None
+    ex_list = [a.strip() for a in exclude.split(",") if a.strip()] or None
+    q = trading_wisdom.random_quote(tags=tag_list, exclude_authors=ex_list)
+    if not q:
+        return _wisdom_json({"detail": "no quotes match"}, status_code=404)
+    return _wisdom_json(q)
+
+
+@app.get("/api/wisdom/for-page")
+def wisdom_for_page(page: str = "home", regime: str = "unknown",
+                    count: int = 3):
+    """Contextual nudges for a page + market-regime combination.
+
+    regime: 'bull' | 'bear' | 'neutral' | 'unknown'
+
+    Returns a FRESH random mix on every call (no date-seed lock-in) — that
+    is what makes the panel feel alive as the user moves between pages.
+    """
+    count = max(1, min(count, 10))
+    items = trading_wisdom.reminders_for_page(
+        page=page, market_regime=regime, count=count)
+    return _wisdom_json({"page": page, "regime": regime,
+                         "count": len(items), "items": items})
+
+
+@app.get("/api/wisdom/stats")
+def wisdom_stats():
+    """Totals, per-author & per-tag counts — used by tests and an About page."""
+    return _wisdom_json(trading_wisdom.stats())
+
