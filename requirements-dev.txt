@@ -1,0 +1,20 @@
+# Testing framework — install with:
+#   pip install -r requirements-dev.txt
+#
+# After installing Playwright once, also run:
+#   playwright install chromium
+#
+-r requirements-web.txt
+
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-mock>=3.12.0
+pytest-cov>=4.1.0
+pytest-xdist>=3.5.0          # parallel test runs
+httpx>=0.28.0                # already pulled by FastAPI, TestClient uses it
+freezegun>=1.4.0             # deterministic time
+responses>=0.25.0            # mock requests/yfinance HTTP
+
+# UI tests (optional — installed only if you want browser coverage)
+playwright>=1.44.0
+

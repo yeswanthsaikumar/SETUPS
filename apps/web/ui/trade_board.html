@@ -72,13 +72,34 @@
     .refresh-btn:hover{border-color:var(--cyan);color:var(--cyan)}.refresh-btn.spinning svg{animation:spin .7s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
     /* POSITIONS GRID */
-    .pos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:14px;padding:16px;overflow-y:auto;align-items:start}
-    /* POSITION CARD */
-    .pos-card{background:var(--bg2);border:1px solid var(--border2);border-radius:11px;overflow:hidden;cursor:pointer;transition:all .2s;position:relative}
-    .pos-card:hover{border-color:#2a4a6a;box-shadow:0 6px 24px rgba(0,0,0,.5);transform:translateY(-2px)}
+    .pos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:14px;padding:16px;overflow-y:auto;overflow-x:visible;align-items:start}
+    /* POSITION CARD
+       • overflow:visible so hover effects (shadow, scale, reveal panel) are
+         never clipped — the primary bug the user reported.
+       • will-change:transform keeps the :hover lift animation smooth.
+       • z-index on :hover lifts the card above siblings so a wider shadow
+         doesn't get painted behind neighbour cards.                        */
+    .pos-card{background:var(--bg2);border:1px solid var(--border2);border-radius:11px;overflow:visible;cursor:pointer;transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;position:relative;will-change:transform;z-index:1}
+    .pos-card:hover{border-color:#3b5f8a;box-shadow:0 12px 38px rgba(0,0,0,.65),0 0 0 1px rgba(59,130,246,.25);transform:translateY(-3px) scale(1.015);z-index:20}
+    .pos-card:active{transform:translateY(-1px) scale(1.005)}
     .pos-card.status-open{border-top:2px solid var(--green)}.pos-card.status-partial{border-top:2px solid var(--purple)}.pos-card.status-sl{border-top:2px solid var(--red);background:#0c0808}
     .pos-card.status-t1{border-top:2px solid #4ade80}.pos-card.status-t2{border-top:2px solid var(--cyan)}
     .pos-card.status-t3{border-top:2px solid var(--yellow)}.pos-card.status-closed{border-top:2px solid var(--dim);opacity:.75}
+    .pos-card.status-closed:hover{opacity:1}
+    /* Hover-reveal panel: additional details that would crowd the compact
+       card are hidden by default and slide in on :hover. max-height trick
+       avoids a display:none → block flash and keeps the transition smooth. */
+    .card-reveal{max-height:0;opacity:0;overflow:hidden;transition:max-height .25s ease, opacity .2s ease;border-top:0 solid var(--border);background:linear-gradient(180deg,transparent,rgba(59,130,246,.04))}
+    .pos-card:hover .card-reveal{max-height:220px;opacity:1;border-top-width:1px}
+    .card-reveal-inner{padding:9px 12px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px;font-size:10px;color:var(--muted)}
+    .card-reveal-inner b{color:var(--text);font-size:11px;display:block;margin-top:1px}
+    .card-reveal-inner .rv-full{grid-column:1/-1}
+    .card-reveal-hint{position:absolute;bottom:6px;right:10px;font-size:9px;color:var(--muted);opacity:.55;pointer-events:none;transition:opacity .2s}
+    .pos-card:hover .card-reveal-hint{opacity:0}
+    /* Prefer reduced motion → disable the lift animation entirely.        */
+    @media (prefers-reduced-motion: reduce){
+      .pos-card,.pos-card:hover{transition:none;transform:none}
+    }
     .card-hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 12px 4px}
     .card-sym{font-size:1.1em;font-weight:900;color:var(--text)}.card-name{font-size:10.5px;color:var(--muted);margin-top:1px}
     .card-badges{display:flex;gap:3px;flex-wrap:wrap;margin-top:3px}
@@ -414,6 +435,9 @@
   <div class="topbar-right">
     <div class="cache-badge idle" id="cacheBadge" onclick="toggleCacheRefresh()" title="Click to refresh OHLCV cache">
       <span class="cache-dot"></span><span id="cacheLabel">Cache</span> <span class="cache-progress" id="cacheProg"></span>
+    </div>
+    <div class="cache-badge idle" id="vpnBadge" onclick="openVpnPanel()" title="VPN / Proxy toggle">
+      <span class="cache-dot"></span><span id="vpnLabel">VPN Off</span>
     </div>
     <div class="live-badge"><span class="live-dot"></span>Live <span id="refreshCd">30s</span></div>
     <button class="btn btn-green btn-sm" onclick="openAddModal()">+ Position</button>
@@ -1648,7 +1672,7 @@ function buildCard(p) {
   // Invested amount
   const invested = e * remaining;
 
-  return '<div class="pos-card status-' + st + '" onclick="openDetail(\'' + p.id + '\')">' +
+  return '<div class="pos-card status-' + st + '" onclick="openDetail(\'' + p.id + '\')" title="Click for full details">' +
     buildActionSignal(p) +
     '<div class="card-hdr"><div><div class="card-sym">' + (p.symbol || '—') + '</div>' +
     '<div class="card-name">' + (p.name || '') + '</div>' +
@@ -1663,8 +1687,43 @@ function buildCard(p) {
     buildRRGauge(p) +
     buildMetricsStrip(p) +
     buildHealthBar(p) +
+    buildRevealPanel(p, {gPct, gAmt, invested, days, remaining, e, sl, cmp}) +
     '<div class="card-foot"><span class="hold-d" style="display:flex;align-items:center;gap:4px"><span class="hb-dot ' + dayDotCls + '" style="width:5px;height:5px"></span>' + days + 'd · ' + remaining + ' qty · ₹' + invested.toLocaleString('en-IN',{maximumFractionDigits:0}) + '</span>' +
-    '<div class="card-acts" onclick="event.stopPropagation()">' + peBtn + '<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();openUpdateModal(\'' + p.id + '\')">Edit</button></div></div></div>';
+    '<div class="card-acts" onclick="event.stopPropagation()">' + peBtn + '<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();openUpdateModal(\'' + p.id + '\')">Edit</button></div></div>' +
+    '<div class="card-reveal-hint">hover for more · click to open</div></div>';
+}
+
+/* buildRevealPanel(p, ctx) → HTML that is hidden by default and slides in on
+ * card hover. Shows the details that don't fit the compact card view:
+ *   • R-multiple, risk amount, distance to stop
+ *   • Targets & their % distance from CMP
+ *   • Days held, entry date, remaining qty breakdown
+ *   • Setup, rating, notes snippet
+ * Never called from anywhere but buildCard.                                */
+function buildRevealPanel(p, ctx) {
+  const {gPct, gAmt, invested, days, remaining, e, sl, cmp} = ctx;
+  const riskAmt = e > 0 && sl > 0 ? Math.abs(e - sl) : 0;
+  const totalRisk = riskAmt * (p.quantity || 1);
+  const rMul = riskAmt > 0 ? ((cmp - e) / riskAmt).toFixed(2) : '—';
+  const slDistPct = cmp > 0 && sl > 0 ? ((cmp - sl) / cmp * 100).toFixed(2) + '%' : '—';
+  const tLine = (t, label) => t > 0 && cmp > 0
+    ? '<div><span style="color:var(--muted)">' + label + '</span><b>₹' + Number(t).toLocaleString('en-IN') + ' <span style="color:' + (t > cmp ? 'var(--green)' : 'var(--muted)') + ';font-size:9.5px">(' + (((t - cmp) / cmp) * 100).toFixed(1) + '%)</span></b></div>'
+    : '';
+  const notes = (p.notes || '').toString().trim();
+  const notesClipped = notes.length > 140 ? notes.slice(0, 140) + '…' : notes;
+  const setup = p.setup || '—', rating = p.rating || '—';
+  const entryDate = p.entry_date || '—';
+  const soldQty = (p.quantity || 0) - (remaining || 0);
+  return '<div class="card-reveal"><div class="card-reveal-inner">' +
+    '<div><span style="color:var(--muted)">R-multiple</span><b style="color:' + (parseFloat(rMul) >= 0 ? 'var(--green)' : 'var(--red)') + '">' + (parseFloat(rMul) >= 0 ? '+' : '') + rMul + 'R</b></div>' +
+    '<div><span style="color:var(--muted)">Risk ₹</span><b>₹' + totalRisk.toLocaleString('en-IN', {maximumFractionDigits: 0}) + '</b></div>' +
+    '<div><span style="color:var(--muted)">SL dist</span><b>' + slDistPct + '</b></div>' +
+    tLine(p.t1, 'T1') + tLine(p.t2, 'T2') + tLine(p.t3, 'T3') +
+    '<div><span style="color:var(--muted)">Entered</span><b>' + entryDate + ' · ' + days + 'd</b></div>' +
+    '<div><span style="color:var(--muted)">Setup</span><b>' + setup + ' · ' + rating + '</b></div>' +
+    '<div><span style="color:var(--muted)">Qty</span><b>' + remaining + ' open' + (soldQty > 0 ? ' · ' + soldQty + ' sold' : '') + '</b></div>' +
+    (notesClipped ? '<div class="rv-full" style="margin-top:4px;color:var(--dim);font-style:italic">“' + notesClipped.replace(/</g, '&lt;') + '”</div>' : '') +
+  '</div></div>';
 }
 
 async function initMini(p) {
@@ -2203,10 +2262,15 @@ async function deleteFromDetail() {
 async function loadEquity() {
   try {
     const r = await fetch(API + '/api/trade-board/equity');
+    if (!r.ok) throw new Error('equity API ' + r.status);
     const d = await r.json();
     renderEqChart(d.curve || []);
     renderClosedTable();
-  } catch(e) {}
+  } catch(e) {
+    console.error('loadEquity failed:', e);
+    const el = document.getElementById('equityChart');
+    if (el) el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--red);font-size:12px">Failed to load equity curve: ' + (e.message || e) + '</div>';
+  }
 }
 
 function renderEqChart(curve) {
@@ -2214,14 +2278,38 @@ function renderEqChart(curve) {
   if (eqChart) { try { eqChart.remove(); } catch(e) {} eqChart = null; }
   el.innerHTML = '';
   if (!curve.length) { el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:12px">No closed trades yet</div>'; return; }
+
+  // Defensive dedup + sort: LightweightCharts refuses to render a series
+  // with duplicate or unsorted time values. Keep the LAST cumPl for any
+  // duplicate date (API should already do this — this is belt-and-braces).
+  const byDate = new Map();
+  for (const c of curve) {
+    const t = (c.date || '').slice(0, 10);
+    if (!t) continue;
+    byDate.set(t, c);                 // last write wins
+  }
+  const points = Array.from(byDate.entries())
+    .sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)
+    .map(([t, c]) => ({ time: t, value: Number(c.cumPl) || 0 }));
+  if (!points.length) {
+    el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:12px">No closed trades with valid dates</div>';
+    return;
+  }
+
+  // Ensure the container has non-zero dimensions before creating the chart —
+  // if the analytics tab was hidden when we rendered, offsetWidth is 0 and
+  // the chart silently renders at width 0.
+  const w = Math.max(el.offsetWidth, 320);
   const chart = LightweightCharts.createChart(el, {
-    width: el.offsetWidth, height: 200,
+    width: w, height: 200,
     layout: {background: {type: 'Solid', color: '#0f1623'}, textColor: '#8b9dba'},
     grid: {vertLines: {color: '#0f1928'}, horzLines: {color: '#0f1928'}},
     rightPriceScale: {borderColor: '#1a2840'}, timeScale: {borderColor: '#1a2840'},
   });
   const ser = chart.addAreaSeries({lineColor: '#3b82f6', topColor: 'rgba(59,130,246,.2)', bottomColor: 'transparent', lineWidth: 2});
-  ser.setData(curve.map(c => ({time: (c.date || '2024-01-01').slice(0, 10), value: c.cumPl})));
+  // Mark the series container so tests can assert the chart actually rendered.
+  try { el.dataset.points = String(points.length); } catch(e) {}
+  ser.setData(points);
   chart.timeScale().fitContent();
   new ResizeObserver(() => chart.applyOptions({width: el.offsetWidth})).observe(el);
   eqChart = chart;
@@ -3658,6 +3746,363 @@ function ema5RenderAlerts(data) {
   h += '</div>';
   return h;
 }
+
+// ── VPN / Proxy Toggle ───────────────────────────────────────────────────────
+let _vpnState = null;
+
+async function refreshVpnStatus() {
+  try {
+    const r = await fetch(API + '/api/vpn/status');
+    if (!r.ok) return;
+    const d = await r.json();
+    _vpnState = d;
+    const badge = document.getElementById('vpnBadge');
+    const label = document.getElementById('vpnLabel');
+    if (!badge) return;
+    if (d.enabled) {
+      badge.className = 'cache-badge completed';
+      const ok = d.last_test_ok;
+      label.textContent = ok === false ? 'VPN ⚠' : 'VPN On';
+      const ip = d.last_test_ip ? ` · ${d.last_test_ip}` : '';
+      badge.title = `VPN ${d.provider === 'custom' ? 'custom' : 'free'} proxy active${ip}\nProxy: ${d.current_proxy || '—'}\nClick to manage`;
+    } else {
+      badge.className = 'cache-badge idle';
+      label.textContent = 'VPN Off';
+      badge.title = 'VPN / proxy disabled — click to enable';
+    }
+  } catch(e) { /* ignore */ }
+}
+
+function openVpnPanel() {
+  if (document.getElementById('vpnModal')) {
+    document.getElementById('vpnModal').remove();
+    return;
+  }
+  // Always try to have fresh data before rendering
+  const render = () => {
+    const existing = document.getElementById('vpnModal');
+    if (existing) existing.remove();
+    const d = _vpnState || { enabled:false, provider:'free', custom_proxy_url:'', current_proxy:'' };
+    const modal = document.createElement('div');
+    modal.id = 'vpnModal';
+    modal.style.cssText = 'position:fixed;top:54px;right:16px;z-index:9999;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:14px;width:360px;box-shadow:0 12px 40px rgba(0,0,0,.6);font-size:12px;';
+    const onLabel = d.enabled ? 'Turn OFF' : 'Turn ON';
+    const onColor = d.enabled ? 'btn-red' : 'btn-green';
+    modal.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-weight:800;font-size:13px;">🌐 VPN / Proxy</div>
+        <button class="btn btn-ghost btn-xs" onclick="document.getElementById('vpnModal').remove()">✕</button>
+      </div>
+      <div id="vpnBusyBar" style="display:none;background:#0c2d48;color:#38bdf8;padding:8px 10px;border-radius:7px;margin-bottom:10px;font-weight:700;text-align:center;">
+        <span class="live-dot" style="background:#38bdf8;display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;animation:blink .8s infinite;"></span>
+        <span id="vpnBusyText">Connecting — searching for a working proxy (up to 25s)…</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg3);border-radius:7px;margin-bottom:10px;">
+        <span class="live-badge" style="background:${d.enabled ? 'var(--green-bg)' : 'var(--bg)'};color:${d.enabled ? 'var(--green)' : 'var(--muted)'};border-color:${d.enabled ? '#16a34a33' : 'var(--border2)'};font-size:11px;padding:4px 10px;">
+          ${d.enabled ? '● VPN ACTIVE' : '○ VPN OFF'}
+        </span>
+        <button id="vpnToggleBtn" class="btn ${onColor} btn-sm" style="margin-left:auto;min-width:110px;" onclick="vpnToggleClicked()">
+          ${onLabel}
+        </button>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px;">Provider</div>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="tab-pill ${d.provider==='free'?'active':''}" style="flex:1;" onclick="setVpnProvider('free')">Free (public)</button>
+          <button type="button" class="tab-pill ${d.provider==='custom'?'active':''}" style="flex:1;" onclick="setVpnProvider('custom')">Custom URL</button>
+        </div>
+      </div>
+      <div id="vpnCustomWrap" style="display:${d.provider==='custom'?'block':'none'};margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px;">Custom proxy URL</div>
+        <input id="vpnCustomUrl" class="f-input" style="width:100%;" placeholder="http://user:pass@host:port" value="${(d.custom_proxy_url||'').replace(/"/g,'&quot;')}"/>
+        <button class="btn btn-outline btn-xs" style="margin-top:5px;" onclick="saveVpnCustom()">Save URL</button>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px;font-family:ui-monospace,monospace;font-size:10.5px;line-height:1.5;margin-bottom:8px;word-break:break-all;">
+        <div><span style="color:var(--muted);">Active proxy:</span> ${d.current_proxy || '—'}</div>
+        <div><span style="color:var(--muted);">External IP:</span> ${d.last_test_ip || '—'} ${d.last_test_ok===false ? '<span style="color:var(--red);">(test failed)</span>' : ''}</div>
+        <div><span style="color:var(--muted);">Pool size:</span> ${d.proxy_list_size || 0} free proxies</div>
+        ${d.last_test_error ? `<div style="color:var(--red);">⚠ ${d.last_test_error}</div>` : ''}
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-xs" onclick="testVpn()">🔍 Test</button>
+        <button class="btn btn-outline btn-xs" onclick="rotateVpn()">🔄 Rotate</button>
+        <button class="btn btn-outline btn-xs" onclick="refreshVpnPool()">⟳ Refresh pool</button>
+        <button class="btn btn-outline btn-xs" style="border-color:#38bdf866;color:#38bdf8;" onclick="runVpnHealth()">⚡ Health check</button>
+      </div>
+      <div id="vpnHealthCard" style="display:none;margin-top:8px;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px;font-size:11px;"></div>
+      <div style="margin-top:8px;font-size:10px;color:var(--muted);line-height:1.4;">
+        Routes outbound HTTP(S) traffic (Yahoo, NSE, yfinance, Groww) through the selected proxy. Free proxies are often slow or geo-blocked by NSE/BSE — use <b>⚡ Health check</b> to verify, <b>🔄 Rotate</b> to try another, or set a Custom URL.<br/>
+        <span style="color:var(--yellow);">ℹ VPN always starts OFF each session</span> to prevent a dead proxy from breaking data fetches.
+      </div>
+    `;
+    document.body.appendChild(modal);
+  };
+  render();
+  // refresh status in background, then re-render if state changed
+  refreshVpnStatus().then(() => {
+    if (document.getElementById('vpnModal')) render();
+  });
+}
+
+// Flag so concurrent clicks don't stack
+let _vpnToggleInFlight = false;
+
+async function vpnToggleClicked() {
+  if (_vpnToggleInFlight) return;
+  _vpnToggleInFlight = true;
+
+  // Decide action from authoritative server-side state (not DOM)
+  const currentlyEnabled = !!(_vpnState && _vpnState.enabled);
+  const willEnable = !currentlyEnabled;
+  const endpoint = willEnable ? '/api/vpn/enable' : '/api/vpn/disable';
+
+  // UI: lock button, show busy bar inside modal, change topbar badge
+  const btn = document.getElementById('vpnToggleBtn');
+  if (btn) { btn.disabled = true; btn.textContent = willEnable ? 'Connecting…' : 'Disabling…'; }
+  const busy = document.getElementById('vpnBusyBar');
+  const busyTxt = document.getElementById('vpnBusyText');
+  if (busy) busy.style.display = 'block';
+  if (busyTxt) busyTxt.textContent = willEnable
+    ? 'Searching for a working free proxy — up to 5 min (keeps trying until one passes Yahoo)…'
+    : 'Disabling proxy routing…';
+  const topBadge = document.getElementById('vpnBadge');
+  const topLabel = document.getElementById('vpnLabel');
+  if (topBadge) topBadge.className = 'cache-badge running';
+  if (topLabel) topLabel.textContent = willEnable ? 'Connecting…' : 'Disabling…';
+
+  let resultOk = false, resultData = {};
+  try {
+    const r = await fetch(API + endpoint, {method:'POST'});
+    try { resultData = await r.json(); } catch(_) {}
+    resultOk = r.ok && resultData.ok !== false;
+    if (resultOk) {
+      if (resultData.enabled) {
+        toast(`🌐 VPN ON · IP ${resultData.externalIp || '?'}`, 'success');
+      } else {
+        toast('🌐 VPN OFF', 'success');
+      }
+    } else {
+      const msg = resultData.error || resultData.detail || `HTTP ${r.status}`;
+      toast('⚠ ' + msg, 'error');
+    }
+  } catch(e) {
+    toast('VPN request failed: ' + (e && e.message || e), 'error');
+  } finally {
+    _vpnToggleInFlight = false;
+  }
+  await refreshVpnStatus();
+  // Re-render modal with fresh state (if still open)
+  const m = document.getElementById('vpnModal');
+  if (m) { m.remove(); openVpnPanel(); }
+}
+
+async function toggleVpn() {
+  // Back-compat shim — delegate to the new state-authoritative handler
+  return vpnToggleClicked();
+}
+
+async function setVpnProvider(prov) {
+  try {
+    await fetch(API + '/api/vpn/config', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({provider: prov}),
+    });
+    toast('Provider set to ' + prov, 'success');
+  } catch(e) { toast('Failed to set provider', 'error'); }
+  await refreshVpnStatus();
+  const m = document.getElementById('vpnModal');
+  if (m) { m.remove(); openVpnPanel(); }
+}
+
+async function saveVpnCustom() {
+  const url = document.getElementById('vpnCustomUrl').value.trim();
+  try {
+    const r = await fetch(API + '/api/vpn/config', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({provider:'custom', custom_proxy_url: url}),
+    });
+    if (r.ok) toast('Custom proxy saved', 'success');
+    else toast('Save failed', 'error');
+  } catch(e) { toast('Save failed', 'error'); }
+  await refreshVpnStatus();
+}
+
+async function testVpn() {
+  toast('Testing…', 'info');
+  try {
+    const r = await fetch(API + '/api/vpn/test', {method:'POST'});
+    const d = await r.json();
+    toast(d.ok ? `✅ OK · IP ${d.externalIp}` : `❌ ${d.error || 'test failed'}`, d.ok ? 'success' : 'error');
+  } catch(e) { toast('Test failed', 'error'); }
+  await refreshVpnStatus();
+  const m = document.getElementById('vpnModal');
+  if (m) { m.remove(); openVpnPanel(); }
+}
+
+async function rotateVpn() {
+  toast('Rotating proxy — this can take up to 25s…', 'info');
+  const badge = document.getElementById('vpnBadge');
+  const label = document.getElementById('vpnLabel');
+  if (badge) badge.className = 'cache-badge running';
+  if (label) label.textContent = 'Rotating…';
+  try {
+    const r = await fetch(API + '/api/vpn/rotate', {method:'POST'});
+    const d = await r.json();
+    toast(d.ok ? `✅ New proxy · IP ${d.externalIp||'?'}` : `❌ ${d.error || 'rotate failed'}`, d.ok ? 'success' : 'error');
+  } catch(e) { toast('Rotate failed', 'error'); }
+  await refreshVpnStatus();
+  const m = document.getElementById('vpnModal');
+  if (m) { m.remove(); openVpnPanel(); }
+}
+
+async function refreshVpnPool() {
+  toast('Refreshing free proxy list…', 'info');
+  try {
+    const r = await fetch(API + '/api/vpn/refresh-pool', {method:'POST'});
+    const d = await r.json();
+    toast(`Pool size: ${d.size || 0}`, 'success');
+  } catch(e) { toast('Refresh failed', 'error'); }
+  await refreshVpnStatus();
+}
+
+async function runVpnHealth() {
+  const card = document.getElementById('vpnHealthCard');
+  if (card) {
+    card.style.display = 'block';
+    card.innerHTML = '<div style="color:#38bdf8;text-align:center;padding:6px;"><span class="live-dot" style="background:#38bdf8;display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:6px;animation:blink .8s infinite;"></span>Running health check — measuring latency &amp; throughput (direct + proxy)…</div>';
+  }
+  toast('⚡ Running VPN health check…', 'info');
+  let d = null;
+  try {
+    const r = await fetch(API + '/api/vpn/health', {method:'POST'});
+    d = await r.json();
+  } catch(e) {
+    if (card) card.innerHTML = `<div style="color:var(--red);">⚠ Health check failed: ${e && e.message || e}</div>`;
+    toast('Health check failed', 'error');
+    return;
+  }
+  if (!card) return;
+  card.innerHTML = renderVpnHealth(d);
+  const v = d.comparison && d.comparison.verdict;
+  const emojiMap = { excellent:'🟢', ok:'🟡', slow:'🟠', very_slow:'🔴', unknown:'⚪' };
+  toast(`Health: ${emojiMap[v] || '⚪'} ${(v || 'done').replace('_',' ')}`,
+        v === 'excellent' || v === 'ok' ? 'success' : (v === 'unknown' ? 'info' : 'error'));
+}
+
+function renderVpnHealth(d) {
+  if (!d) return '<div style="color:var(--red);">No data</div>';
+  const fmtMs = (x) => x == null ? '—' : `${x.toFixed ? x.toFixed(0) : x} ms`;
+  const fmtSpd = (x) => x == null ? '—' : (x >= 1024 ? `${(x/1024).toFixed(2)} MB/s` : `${x.toFixed ? x.toFixed(1) : x} KB/s`);
+  const col = (a, b, betterLow) => {
+    if (a == null || b == null) return 'var(--muted)';
+    const better = betterLow ? (a < b) : (a > b);
+    return better ? 'var(--green)' : 'var(--red)';
+  };
+  const dot = (ok) => ok === true ? '<span style="color:var(--green);">●</span>'
+                       : ok === false ? '<span style="color:var(--red);">●</span>'
+                       : '<span style="color:var(--muted);">○</span>';
+  const dir = d.direct || {};
+  const prx = d.proxied || null;
+  const cmp = d.comparison || null;
+
+  let h = '<div style="font-weight:800;margin-bottom:6px;">⚡ Health Check Result</div>';
+  // Table header
+  h += '<table style="width:100%;border-collapse:collapse;font-size:11px;">';
+  h += '<thead><tr style="color:var(--muted);text-align:right;">'
+     + '<th style="text-align:left;padding:2px 4px;font-weight:700;">Metric</th>'
+     + '<th style="padding:2px 4px;font-weight:700;">Direct</th>'
+     + '<th style="padding:2px 4px;font-weight:700;">' + (prx ? 'Via VPN' : '—') + '</th>'
+     + '</tr></thead><tbody>';
+  const dirLat = dir.latency_ms, prxLat = prx && prx.latency_ms;
+  const dirSpd = dir.download_kbps, prxSpd = prx && prx.download_kbps;
+  h += `<tr><td style="padding:2px 4px;">Latency</td>`
+     + `<td style="text-align:right;padding:2px 4px;color:${col(dirLat, prxLat, true)};">${fmtMs(dirLat)}</td>`
+     + `<td style="text-align:right;padding:2px 4px;color:${col(prxLat, dirLat, true)};">${prx ? fmtMs(prxLat) : '—'}</td>`
+     + `</tr>`;
+  h += `<tr><td style="padding:2px 4px;">Download</td>`
+     + `<td style="text-align:right;padding:2px 4px;color:${col(dirSpd, prxSpd, false)};">${fmtSpd(dirSpd)}</td>`
+     + `<td style="text-align:right;padding:2px 4px;color:${col(prxSpd, dirSpd, false)};">${prx ? fmtSpd(prxSpd) : '—'}</td>`
+     + `</tr>`;
+  h += `<tr><td style="padding:2px 4px;">External IP</td>`
+     + `<td style="text-align:right;padding:2px 4px;font-family:ui-monospace,monospace;font-size:10px;">${dir.ip || '—'}</td>`
+     + `<td style="text-align:right;padding:2px 4px;font-family:ui-monospace,monospace;font-size:10px;">${(prx && prx.ip) || '—'}</td>`
+     + `</tr>`;
+  h += '</tbody></table>';
+
+  // ── Financial data sources (per-target reachability) ──────────────────
+  const dirT = (dir && dir.targets) || {};
+  const prxT = (prx && prx.targets) || {};
+  // Union of keys preserving order from direct.targets first
+  const keys = Object.keys(dirT);
+  Object.keys(prxT).forEach(k => { if (!keys.includes(k)) keys.push(k); });
+  if (keys.length) {
+    h += '<div style="margin-top:10px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:4px;">Financial data sources</div>';
+    h += '<table style="width:100%;border-collapse:collapse;font-size:11px;"><tbody>';
+    for (const k of keys) {
+      const a = dirT[k] || {}, b = prxT[k] || {};
+      const name = a.name || b.name || k;
+      const dirCell = (a.ok == null && !a.error)
+          ? '—'
+          : `${dot(a.ok)} ${fmtMs(a.ms)}${a.status ? ` <span style="color:var(--muted);">(${a.status})</span>` : ''}`;
+      const prxCell = prx
+          ? ((b.ok == null && !b.error)
+              ? '—'
+              : `${dot(b.ok)} ${fmtMs(b.ms)}${b.status ? ` <span style="color:var(--muted);">(${b.status})</span>` : ''}`)
+          : '—';
+      h += `<tr>`
+         + `<td style="padding:2px 4px;">${name}</td>`
+         + `<td style="text-align:right;padding:2px 4px;">${dirCell}</td>`
+         + `<td style="text-align:right;padding:2px 4px;">${prxCell}</td>`
+         + `</tr>`;
+    }
+    h += '</tbody></table>';
+    // Summary counts
+    const totalDir = keys.filter(k => (dirT[k] && dirT[k].ok)).length;
+    const totalPrx = prx ? keys.filter(k => (prxT[k] && prxT[k].ok)).length : null;
+    h += `<div style="margin-top:4px;font-size:10px;color:var(--muted);">`
+       + `Reachable: <span style="color:var(--green);">${totalDir}/${keys.length} direct</span>`
+       + (prx ? ` · <span style="color:${totalPrx === keys.length ? 'var(--green)' : (totalPrx === 0 ? 'var(--red)' : 'var(--yellow)')};">${totalPrx}/${keys.length} via VPN</span>` : '')
+       + `</div>`;
+  }
+
+  // Verdict strip
+  if (cmp) {
+    const vMap = {
+      excellent: {col:'var(--green)', bg:'#052e16',  icon:'🟢', label:'Excellent'},
+      ok:        {col:'var(--green)', bg:'#042818',  icon:'🟡', label:'OK'},
+      slow:      {col:'var(--yellow)',bg:'#2a1a00',  icon:'🟠', label:'Slow'},
+      very_slow: {col:'var(--red)',   bg:'var(--red-bg)', icon:'🔴', label:'Very slow'},
+      unknown:   {col:'var(--muted)', bg:'var(--bg3)',    icon:'⚪', label:'Unknown'},
+    };
+    const v = vMap[cmp.verdict] || vMap.unknown;
+    h += `<div style="margin-top:8px;padding:7px 9px;border-radius:6px;background:${v.bg};color:${v.col};font-weight:700;display:flex;align-items:center;gap:8px;">
+            <span style="font-size:15px;">${v.icon}</span>
+            <span>VPN speed is <b>${v.label}</b></span>
+            <span style="margin-left:auto;font-weight:600;font-size:10.5px;opacity:.85;">`
+       + (cmp.slowdownPct != null ? `${cmp.slowdownPct > 0 ? '−' : '+'}${Math.abs(cmp.slowdownPct).toFixed(0)}% vs direct`
+                                  : '')
+       + `</span></div>`;
+    const notes = [];
+    if (cmp.latencyOverheadMs != null)
+      notes.push(`Adds ${cmp.latencyOverheadMs.toFixed ? cmp.latencyOverheadMs.toFixed(0) : cmp.latencyOverheadMs} ms latency`);
+    if (cmp.speedRatio != null)
+      notes.push(`Throughput ${(cmp.speedRatio * 100).toFixed(0)}% of direct`);
+    if (cmp.ipChanged === true) notes.push('IP masked ✓');
+    if (cmp.ipChanged === false) notes.push('<span style="color:var(--red);">⚠ IP NOT masked</span>');
+    if (notes.length) {
+      h += `<div style="margin-top:4px;font-size:10px;color:var(--muted);line-height:1.5;">${notes.join(' · ')}</div>`;
+    }
+  } else if (!prx) {
+    h += '<div style="margin-top:8px;padding:7px 9px;border-radius:6px;background:var(--bg3);color:var(--muted);font-size:10.5px;">VPN is disabled — showing direct metrics only. Turn on VPN to compare.</div>';
+  } else if (prx && prx.error) {
+    h += `<div style="margin-top:8px;padding:7px 9px;border-radius:6px;background:var(--red-bg);color:var(--red);font-size:10.5px;">⚠ Proxied probe failed: ${prx.error}</div>`;
+  }
+  return h;
+}
+
+// Initial status + periodic refresh
+refreshVpnStatus();
+setInterval(refreshVpnStatus, 60000);
 
 </script>
 </body>

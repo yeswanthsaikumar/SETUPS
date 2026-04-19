@@ -34,13 +34,17 @@ TRADE_PLANS_HTML = OUTPUT_DIR / "trade_plans_live.html"
 GENERATE_TRADE_PLANS = CLI_DIR / "generate_trade_plans_page.py"
 WEB_JOBS_DIR = OUTPUT_DIR / "web_jobs"
 PERF_TRACKER_JSON = OUTPUT_DIR / "performance_tracker.json"
-# Trade data stored in dedicated folder (not output/) so it survives output/ cleanups
-TRADE_DATA_DIR = ROOT / "trade_data"
+# Trade data stored in dedicated folder (not output/) so it survives output/ cleanups.
+# Honor SETUPS_TRADE_DATA_DIR / SETUPS_CACHE_DIR env vars so tests (and other
+# embeddings) can point the app at a clean directory without editing code.
+_TD_ENV = os.environ.get("SETUPS_TRADE_DATA_DIR", "").strip()
+TRADE_DATA_DIR = Path(_TD_ENV) if _TD_ENV else ROOT / "trade_data"
 TRADE_BOARD_JSON = TRADE_DATA_DIR / "positions.json"
 TRADE_JOURNAL_JSON = TRADE_DATA_DIR / "journal.json"
 TRADE_WATCHLIST_JSON = TRADE_DATA_DIR / "watchlist.json"
 TRADE_BOARD_JSON_LEGACY = OUTPUT_DIR / "trade_board.json"  # kept for migration only
-CACHE_DIR = ROOT / "cache"
+_CD_ENV = os.environ.get("SETUPS_CACHE_DIR", "").strip()
+CACHE_DIR = Path(_CD_ENV) if _CD_ENV else ROOT / "cache"
 REFRESH_CACHE_SCRIPT = ROOT / "scripts" / "refresh_cache.py"
 REFRESH_LOG = OUTPUT_DIR / "cache_refresh.log"
 
@@ -57,8 +61,13 @@ from breakout_alert_engine import (
     check_position_ema5_proximity, EmaProximityAlert,
     send_ema5_telegram_alert, _format_ema5_alert_message,
 )
+from vpn_manager import get_vpn_manager
 
 _mf_provider = MutualFundsProvider(cache_dir=str(ROOT / "cache"), cache_ttl_hours=6)
+
+# ── VPN / Proxy manager (singleton) ────────────────────────────────────────
+# Persisted state lives in trade_data/ so it survives output/ cleanups.
+_vpn = get_vpn_manager(ROOT / "trade_data" / "vpn_config.json")
 
 # ── Breakout Alert Scanner (singleton) ──────────────────────────────────────
 _breakout_scanner = BreakoutScanner(
@@ -820,6 +829,104 @@ def cache_refresh_specific_symbols(symbols: list[str]) -> dict:
         results[sym_clean] = "updated" if updated else "fresh_or_cooldown"
 
     return {"results": results, "count": len(results)}
+
+
+# ── VPN / Proxy Toggle API ────────────────────────────────────────────────────
+# Free-proxy-based outbound routing. Toggle enables/disables routing all
+# outbound HTTP(S) traffic (Yahoo, NSE, yfinance, Groww, …) through a proxy.
+# Providers:
+#   • free   — rotated from public proxy lists (no account needed)
+#   • custom — user-supplied URL, e.g. http://user:pass@host:port
+
+class VpnConfigRequest(BaseModel):
+    provider: Optional[Literal["free", "custom"]] = None
+    custom_proxy_url: Optional[str] = None
+
+
+@app.get("/api/vpn/status")
+def vpn_status() -> dict:
+    """Current VPN/proxy status — enabled flag, provider, active proxy, last test."""
+    return _vpn.status()
+
+
+@app.get("/api/groww/verify")
+def groww_verify(symbol: str = "RELIANCE") -> dict:
+    """End-to-end Groww health check. Returns whether Groww-only mode is on,
+    whether credentials are set, whether the client initialized, and a
+    live LTP probe for the given NSE symbol (default RELIANCE).
+
+    Use this to debug "no data in UI" when GROWW_ONLY mode is enforced.
+    """
+    try:
+        from groww_client import verify_groww_live
+        return verify_groww_live(probe_symbol=symbol.upper())
+    except Exception as e:
+        return {"ok": False, "error": f"{type(e).__name__}: {e}"}
+
+
+@app.post("/api/vpn/toggle")
+def vpn_toggle() -> dict:
+    """Flip VPN enabled state. Picks a fresh free proxy on enable."""
+    try:
+        return _vpn.toggle()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/vpn/enable")
+def vpn_enable() -> dict:
+    try:
+        return _vpn.enable()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/vpn/disable")
+def vpn_disable() -> dict:
+    return _vpn.disable()
+
+
+@app.post("/api/vpn/config")
+def vpn_config(req: VpnConfigRequest) -> dict:
+    """Update provider and/or custom proxy URL."""
+    try:
+        return _vpn.set_config(
+            provider=req.provider,
+            custom_proxy_url=req.custom_proxy_url,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/vpn/rotate")
+def vpn_rotate() -> dict:
+    """Pick a new working free proxy (provider=free only)."""
+    return _vpn.rotate()
+
+
+@app.post("/api/vpn/test")
+def vpn_test() -> dict:
+    """Test current outbound routing — returns external IP seen by api.ipify.org."""
+    return _vpn.test()
+
+
+@app.post("/api/vpn/refresh-pool")
+def vpn_refresh_pool() -> dict:
+    """Force refresh of the free public proxy list."""
+    return _vpn.refresh_free_pool()
+
+
+@app.post("/api/vpn/health")
+def vpn_health() -> dict:
+    """Parallel health check: direct network vs through the VPN proxy.
+
+    Returns latency (ms), download speed (KB/s), external IP, and reachability
+    for the app's own data sources (Yahoo, NSE) for each route plus a
+    comparison summary (slowdown %, verdict, IP-masked flag).
+    """
+    return _vpn.health_check()
 
 
 @app.post("/api/jobs/scan")
@@ -1711,17 +1818,26 @@ def _get_live_price(symbol: str) -> Optional[dict]:
     if not quote:
         quote = _fetch_groww_quote(base)
 
+    # Groww-only gate: for Indian symbols, forbid silent fallback to
+    # geo-blocked Yahoo/NSE. If Groww failed, surface the failure (cache
+    # CSV fallback happens at caller layer, which is fine).
+    try:
+        from groww_client import should_use_non_groww_source
+        _allow_fallback = should_use_non_groww_source(base + ".NS")
+    except Exception:
+        _allow_fallback = True
+
     # 2. During market hours: try NSE (fast for live intraday)
-    if not quote and market_open:
+    if not quote and market_open and _allow_fallback:
         quote = _fetch_live_quote_nse(base)
 
     # 3. Yahoo v8
-    if not quote:
+    if not quote and _allow_fallback:
         ns_sym = base + ".NS"
         quote = _fetch_live_quote_yahoo(ns_sym)
 
     # 4. yfinance fallback
-    if not quote:
+    if not quote and _allow_fallback:
         ns_sym = base + ".NS"
         quote = _fetch_live_quote_yfinance(ns_sym)
 
@@ -2412,9 +2528,35 @@ def trade_board_equity() -> dict:
             # If partials covered full qty, they're already in events
 
     events.sort(key=lambda e: e.get("date", ""))
+
+    # IMPORTANT: LightweightCharts requires strictly ascending, UNIQUE time
+    # values. When multiple exits share a date (e.g. two T3 hits same day, or
+    # a full close + a partial on the same day), we MUST aggregate them into
+    # a single curve point — otherwise the chart silently fails to draw any
+    # line/area (axis still renders, so the bug is easy to miss visually).
+    daily_pl: dict[str, float] = {}
+    daily_symbols: dict[str, list[str]] = {}
+    daily_events: dict[str, list[dict]] = {}
     for ev in events:
-        total += ev["pl"]
-        curve.append({**ev, "cumPl": round(total, 2)})
+        d = ev.get("date") or ""
+        daily_pl[d] = daily_pl.get(d, 0.0) + ev["pl"]
+        daily_symbols.setdefault(d, []).append(ev.get("symbol", ""))
+        daily_events.setdefault(d, []).append(ev)
+
+    for d in sorted(daily_pl.keys()):
+        pl = round(daily_pl[d], 2)
+        total += pl
+        # Keep per-day events for drill-down, but the top-level curve is
+        # date-unique so the frontend chart library is happy.
+        curve.append({
+            "date": d,
+            "pl": pl,
+            "cumPl": round(total, 2),
+            "symbol": ", ".join(sorted(set(s for s in daily_symbols[d] if s))),
+            "status": daily_events[d][-1].get("status", ""),
+            "type": "aggregate" if len(daily_events[d]) > 1 else daily_events[d][0].get("type", "close"),
+            "events": daily_events[d],
+        })
 
     return {"curve": curve, "totalPl": round(total, 2)}
 

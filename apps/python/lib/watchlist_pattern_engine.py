@@ -145,6 +145,11 @@ def fetch_prices(symbol: str, market: str = "india", days: int = 504) -> dict | 
     Fetch OHLCV price history for a symbol.
     Uses start= date to guarantee data up to TODAY (avoids invalid period strings).
     Returns dict with keys: dates, open, high, low, close, volume (all lists).
+
+    Honors GROWW_ONLY mode: for Indian stocks, refuses to call yfinance
+    (which routes via geo-blocked Yahoo). In that case the caller should
+    rely on the local cache CSV (refreshed by scripts/refresh_cache.py via
+    Groww).
     """
     if not HAS_YF or not HAS_PANDAS:
         return None
@@ -161,6 +166,22 @@ def fetch_prices(symbol: str, market: str = "india", days: int = 504) -> dict | 
                 pass  # stale — fall through to re-fetch
             else:
                 return cached
+
+    # Groww-only gate: for Indian stocks, forbid yfinance live fetch here.
+    # Price data must come from the cache CSV (populated by Groww in
+    # refresh_cache.py). This prevents the app from silently hitting
+    # Yahoo/yfinance which is geo-blocked or requires a broken VPN.
+    try:
+        from groww_client import should_use_non_groww_source
+        _allow_yf = should_use_non_groww_source(yf_sym)
+    except Exception:
+        _allow_yf = True
+    if not _allow_yf:
+        logger.info(
+            f"fetch_prices: skipping yfinance for {yf_sym} "
+            f"(GROWW_ONLY mode on). Using cached data only."
+        )
+        return cached  # may be None if no cache existed yet
 
     try:
         # Use start= date so yfinance always returns data up to TODAY
@@ -1010,7 +1031,12 @@ def build_trade_thesis(
 # ── Fundamentals ──────────────────────────────────────────────────────────────
 
 def fetch_fundamentals(symbol: str, market: str = "india") -> dict:
-    """Fetch key fundamental data via yfinance."""
+    """Fetch key fundamental data via yfinance.
+
+    Honors GROWW_ONLY mode: Indian symbols skip yfinance and return cached
+    data if any, otherwise an explicit marker. Use `fundamentals_provider`
+    (Groww-backed) instead for live data.
+    """
     if not HAS_YF:
         return {"error": "yfinance not installed"}
 
@@ -1019,6 +1045,18 @@ def fetch_fundamentals(symbol: str, market: str = "india") -> dict:
     cached = _cache_load(cache_key, _CACHE_TTL_FUND)
     if cached:
         return cached
+
+    try:
+        from groww_client import should_use_non_groww_source
+        _allow_yf = should_use_non_groww_source(yf_sym)
+    except Exception:
+        _allow_yf = True
+    if not _allow_yf:
+        return {
+            "symbol": symbol, "yf_symbol": yf_sym,
+            "error": "groww_only_mode",
+            "_hint": "Set GROWW_ONLY=0 or use fundamentals_provider (Groww).",
+        }
 
     result: dict = {"symbol": symbol, "yf_symbol": yf_sym}
     try:
