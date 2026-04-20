@@ -789,13 +789,13 @@ def _save_industry_cache_to_disk(groups: list[dict]):
     """Persist industry groups to disk for fast startup."""
     try:
         _INDUSTRY_DISK_PATH.parent.mkdir(parents=True, exist_ok=True)
-        # Save without members to keep file small and fast
+        # Strip members to keep file small (~50KB vs ~5MB) for fast load
         lite = []
         for g in groups:
             gc = dict(g)
             gc.pop("members", None)
             lite.append(gc)
-        _INDUSTRY_DISK_PATH.write_text(_json_mod.dumps({"ts": time.time(), "groups": groups}, separators=(',', ':')))
+        _INDUSTRY_DISK_PATH.write_text(_json_mod.dumps({"ts": time.time(), "groups": lite}, separators=(',', ':')))
     except Exception as e:
         print(f"⚠ Failed to save industry disk cache: {e}", flush=True)
 
@@ -816,19 +816,10 @@ def _save_custom_groups(groups: list[dict]) -> None:
     _CUSTOM_GROUPS_PATH.write_text(_json_mod.dumps(groups, indent=2))
 
 
-def _compute_group_metrics(group_name: str, tickers: list[str], sector: str = "") -> dict:
-    """Compute RS, breadth, volume, 52WH metrics for a group of tickers."""
-    from concurrent.futures import ThreadPoolExecutor
-
-    def _load_ticker(sym):
-        rows = _read_ohlcv(sym, days=300)
-        if not rows or len(rows) < 20:
-            return None
-        return (sym, rows)
-
-    # Parallel I/O for all tickers in the group
-    with ThreadPoolExecutor(max_workers=8) as pool:
-        loaded = list(pool.map(_load_ticker, tickers))
+def _compute_group_metrics(group_name: str, tickers: list[str], sector: str = "",
+                           preloaded: dict = None) -> dict:
+    """Compute RS, breadth, volume, 52WH metrics for a group of tickers.
+    If preloaded dict {sym: rows} is passed, skip I/O entirely."""
 
     n = 0
     above_20 = above_50 = above_200 = 0
@@ -840,10 +831,13 @@ def _compute_group_metrics(group_name: str, tickers: list[str], sector: str = ""
     vol_ratios = []
     members = []
 
-    for item in loaded:
-        if item is None:
+    for sym in tickers:
+        if preloaded is not None:
+            rows = preloaded.get(sym)
+        else:
+            rows = _read_ohlcv(sym, days=300)
+        if not rows or len(rows) < 20:
             continue
-        sym, rows = item
         closes = [r["close"] for r in rows]
         volumes = [r["volume"] for r in rows]
         n += 1
@@ -969,6 +963,7 @@ def _do_compute_industry_groups() -> list[dict]:
     """Actually compute all industry groups and update cache."""
     global _INDUSTRY_CACHE, _INDUSTRY_CACHE_TS
     import time as _t
+    t0 = _t.time()
 
     try:
         sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python" / "lib"))
@@ -987,18 +982,32 @@ def _do_compute_industry_groups() -> list[dict]:
         if industry not in industry_sectors:
             industry_sectors[industry] = sector
 
-    from concurrent.futures import ThreadPoolExecutor
-
-    def _calc(item):
-        ind, tickers = item
-        return _compute_group_metrics(ind, tickers, industry_sectors.get(ind, ""))
-
     groups_to_compute = [(ind, tks) for ind, tks in industry_tickers.items() if len(tks) >= 2]
 
-    with ThreadPoolExecutor(max_workers=8) as pool:
-        results = list(pool.map(_calc, groups_to_compute))
+    # Collect ALL unique tickers across all groups and bulk-load in one parallel pass
+    all_syms = set()
+    for _, tks in groups_to_compute:
+        all_syms.update(tks)
 
-    results = [r for r in results if r.get("stockCount", 0) >= 2]
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _load_one(sym):
+        rows = _read_ohlcv(sym, days=300)
+        return (sym, rows) if rows and len(rows) >= 20 else (sym, None)
+
+    preloaded: dict = {}
+    with ThreadPoolExecutor(max_workers=12) as pool:
+        for sym, rows in pool.map(_load_one, all_syms):
+            if rows:
+                preloaded[sym] = rows
+
+    # Now compute metrics for each group — pure CPU, no I/O
+    results = []
+    for ind, tickers in groups_to_compute:
+        r = _compute_group_metrics(ind, tickers, industry_sectors.get(ind, ""), preloaded=preloaded)
+        if r.get("stockCount", 0) >= 2:
+            results.append(r)
+
     results.sort(key=lambda x: -(x.get("rsScore") or 0))
 
     for i, r in enumerate(results):
@@ -1007,6 +1016,8 @@ def _do_compute_industry_groups() -> list[dict]:
     _INDUSTRY_CACHE = {"groups": results}
     _INDUSTRY_CACHE_TS = _t.time()
     _save_industry_cache_to_disk(results)
+    elapsed = _t.time() - t0
+    print(f"✅ Industry groups computed: {len(results)} groups, {len(preloaded)} tickers in {elapsed:.1f}s", flush=True)
     return results
 
 
