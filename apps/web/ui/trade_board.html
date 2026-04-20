@@ -2532,10 +2532,14 @@ function renderClosedTable() {
     }
     // P&L%: based on total capital deployed (entry * qty)
     const pp = e > 0 && qty > 0 ? (pl / (e * qty)) * 100 : 0;
-    const sl = p.sl || p.stop_loss || e, risk = Math.max(.01, e - sl);
-    const totalRiskAmt = risk * qty;
+    const sl = p.sl || p.stop_loss || e, risk = Math.abs(e - sl) || 0;
+    // For partial positions, R:R should use only the exited quantity's risk
+    const riskQty = isPartialOpen ? partials.reduce((s, pe) => s + pe.quantity, 0) : qty;
+    const totalRiskAmt = risk * riskQty;
     const rr = totalRiskAmt > 0.01 ? (pl / totalRiskAmt).toFixed(1) + 'R' : '—';
-    const days = p.entry_date && p.exit_date ? Math.floor((new Date(p.exit_date) - new Date(p.entry_date)) / 86400000) : '—';
+    // Holding time: for partial positions without exit_date, use last partial exit date
+    const effectiveExitDate = p.exit_date || (hasPartials ? partials[partials.length - 1].date : null);
+    const days = p.entry_date && effectiveExitDate ? Math.floor((new Date(effectiveExitDate) - new Date(p.entry_date)) / 86400000) : '—';
     const c = pl >= 0 ? 'pos-color' : 'neg-color';
     const stCls = isPartialOpen ? 'bg-partial' : p.status === 'T3_HIT' ? 'bg-t3' : p.status === 'SL_HIT' ? 'bg-sl' : 'bg-closed';
     const partialCount = partials.length;

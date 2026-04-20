@@ -765,7 +765,43 @@ import json as _json_mod
 _CUSTOM_GROUPS_PATH = TRADE_DATA_DIR / "custom_groups.json"
 _INDUSTRY_CACHE: dict = {}
 _INDUSTRY_CACHE_TS: float = 0
-_INDUSTRY_CACHE_TTL = 120  # seconds
+_INDUSTRY_CACHE_TTL = 600  # seconds (10 min — data doesn't change fast)
+_INDUSTRY_DISK_PATH = TRADE_DATA_DIR / "industry_groups_cache.json"
+
+
+def _load_industry_cache_from_disk():
+    """Load industry groups from disk cache on startup for instant first load."""
+    global _INDUSTRY_CACHE, _INDUSTRY_CACHE_TS
+    try:
+        if _INDUSTRY_DISK_PATH.exists():
+            data = _json_mod.loads(_INDUSTRY_DISK_PATH.read_text())
+            ts = data.get("ts", 0)
+            groups = data.get("groups", [])
+            if groups:
+                _INDUSTRY_CACHE = {"groups": groups}
+                _INDUSTRY_CACHE_TS = ts
+                print(f"✅ Loaded {len(groups)} industry groups from disk cache", flush=True)
+    except Exception as e:
+        print(f"⚠ Failed to load industry disk cache: {e}", flush=True)
+
+
+def _save_industry_cache_to_disk(groups: list[dict]):
+    """Persist industry groups to disk for fast startup."""
+    try:
+        _INDUSTRY_DISK_PATH.parent.mkdir(parents=True, exist_ok=True)
+        # Save without members to keep file small and fast
+        lite = []
+        for g in groups:
+            gc = dict(g)
+            gc.pop("members", None)
+            lite.append(gc)
+        _INDUSTRY_DISK_PATH.write_text(_json_mod.dumps({"ts": time.time(), "groups": groups}, separators=(',', ':')))
+    except Exception as e:
+        print(f"⚠ Failed to save industry disk cache: {e}", flush=True)
+
+
+# Load from disk on module import (instant first request)
+_load_industry_cache_from_disk()
 
 
 def _load_custom_groups() -> list[dict]:
@@ -782,6 +818,18 @@ def _save_custom_groups(groups: list[dict]) -> None:
 
 def _compute_group_metrics(group_name: str, tickers: list[str], sector: str = "") -> dict:
     """Compute RS, breadth, volume, 52WH metrics for a group of tickers."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _load_ticker(sym):
+        rows = _read_ohlcv(sym, days=300)
+        if not rows or len(rows) < 20:
+            return None
+        return (sym, rows)
+
+    # Parallel I/O for all tickers in the group
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        loaded = list(pool.map(_load_ticker, tickers))
+
     n = 0
     above_20 = above_50 = above_200 = 0
     at_52wh = 0
@@ -792,10 +840,10 @@ def _compute_group_metrics(group_name: str, tickers: list[str], sector: str = ""
     vol_ratios = []
     members = []
 
-    for sym in tickers:
-        rows = _read_ohlcv(sym, days=300)
-        if not rows or len(rows) < 20:
+    for item in loaded:
+        if item is None:
             continue
+        sym, rows = item
         closes = [r["close"] for r in rows]
         volumes = [r["volume"] for r in rows]
         n += 1
@@ -877,12 +925,50 @@ def _compute_group_metrics(group_name: str, tickers: list[str], sector: str = ""
 
 
 def _compute_all_industry_groups() -> list[dict]:
-    """Compute metrics for all industry groups. Cached for _INDUSTRY_CACHE_TTL seconds."""
+    """Compute metrics for all industry groups. Cached for _INDUSTRY_CACHE_TTL seconds.
+    Uses stale-while-revalidate: returns stale cache immediately and refreshes in background.
+    On cold start, loads from disk cache for instant response."""
     global _INDUSTRY_CACHE, _INDUSTRY_CACHE_TS
     import time as _t
     now = _t.time()
     if _INDUSTRY_CACHE and (now - _INDUSTRY_CACHE_TS) < _INDUSTRY_CACHE_TTL:
         return _INDUSTRY_CACHE.get("groups", [])
+
+    # Have stale cache (memory or disk-loaded) — return it and refresh in background
+    if _INDUSTRY_CACHE:
+        _bg_refresh_industry_groups()
+        return _INDUSTRY_CACHE.get("groups", [])
+
+    # No cache at all — must compute synchronously
+    return _do_compute_industry_groups()
+
+
+_INDUSTRY_BG_LOCK = threading.Lock()
+_INDUSTRY_BG_RUNNING = False
+
+
+def _bg_refresh_industry_groups():
+    """Trigger a background refresh of industry groups cache."""
+    global _INDUSTRY_BG_RUNNING
+    if _INDUSTRY_BG_RUNNING:
+        return
+    def _run():
+        global _INDUSTRY_BG_RUNNING
+        try:
+            _do_compute_industry_groups()
+        finally:
+            _INDUSTRY_BG_RUNNING = False
+    with _INDUSTRY_BG_LOCK:
+        if _INDUSTRY_BG_RUNNING:
+            return
+        _INDUSTRY_BG_RUNNING = True
+    threading.Thread(target=_run, daemon=True).start()
+
+
+def _do_compute_industry_groups() -> list[dict]:
+    """Actually compute all industry groups and update cache."""
+    global _INDUSTRY_CACHE, _INDUSTRY_CACHE_TS
+    import time as _t
 
     try:
         sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python" / "lib"))
@@ -909,7 +995,7 @@ def _compute_all_industry_groups() -> list[dict]:
 
     groups_to_compute = [(ind, tks) for ind, tks in industry_tickers.items() if len(tks) >= 2]
 
-    with ThreadPoolExecutor(max_workers=4) as pool:
+    with ThreadPoolExecutor(max_workers=8) as pool:
         results = list(pool.map(_calc, groups_to_compute))
 
     results = [r for r in results if r.get("stockCount", 0) >= 2]
@@ -919,7 +1005,8 @@ def _compute_all_industry_groups() -> list[dict]:
         r["rsRank"] = i + 1
 
     _INDUSTRY_CACHE = {"groups": results}
-    _INDUSTRY_CACHE_TS = now
+    _INDUSTRY_CACHE_TS = _t.time()
+    _save_industry_cache_to_disk(results)
     return results
 
 
