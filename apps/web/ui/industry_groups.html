@@ -91,7 +91,7 @@
         .modal-stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
 
         /* RS CHART */
-        .rs-chart{width:100%;height:180px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:16px;position:relative;overflow:hidden}
+        .rs-chart{width:100%;height:260px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:16px;position:relative;overflow:hidden}
         .rs-chart canvas{width:100%;height:100%}
 
         /* CUSTOM TAB */
@@ -153,6 +153,7 @@
 
     <div class="stats-bar" id="stats-bar"></div>
 
+    <div id="stale-warning" style="display:none;background:#422006;color:#fbbf24;padding:6px 14px;border-radius:6px;font-size:11px;margin-bottom:8px;font-weight:600"></div>
     <div id="groups-loading" class="loading"><div class="spinner"></div> Loading industry groups...</div>
     <div class="table-wrap" id="table-wrap" style="display:none">
         <table id="groups-table">
@@ -229,6 +230,18 @@ async function fetchGroups() {
         populateSectorFilter();
         filterGroups();
         renderStats();
+        // Show staleness warning if cache is old
+        const ageMin = data.cacheAgeSec ? Math.round(data.cacheAgeSec / 60) : null;
+        const staleEl = document.getElementById('stale-warning');
+        if (staleEl) {
+            if (ageMin !== null && ageMin > 30) {
+                const ageStr = ageMin > 60 ? Math.round(ageMin/60) + 'h ' + (ageMin%60) + 'm' : ageMin + 'm';
+                staleEl.innerHTML = '⚠️ Data is ' + ageStr + ' old. Refreshing in background…';
+                staleEl.style.display = '';
+            } else {
+                staleEl.style.display = 'none';
+            }
+        }
         document.getElementById('groups-loading').style.display = 'none';
         document.getElementById('table-wrap').style.display = '';
     } catch(e) {
@@ -383,92 +396,178 @@ function drawRSChart(rsLine) {
     const canvas = document.getElementById('rs-chart-canvas');
     if (!canvas || !rsLine.length) return;
     const ctx = canvas.getContext('2d');
+
+    // HiDPI support for crisp rendering
+    const dpr = window.devicePixelRatio || 1;
     const W = canvas.parentElement.clientWidth;
-    const H = 176;
-    canvas.width = W; canvas.height = H;
+    const H = 252;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, W, H);
 
-    const pad = {t:16, b:20, l:8, r:8};
+    const pad = {t: 28, b: 32, l: 44, r: 16};
     const cW = W - pad.l - pad.r;
     const cH = H - pad.t - pad.b;
 
     const values = rsLine.map(r => r.rs);
-    const min = Math.min(...values) - 0.5;
-    const max = Math.max(...values) + 0.5;
-    const xStep = cW / (values.length - 1);
+    const dates = rsLine.map(r => r.date || '');
+    const dataMin = Math.min(...values);
+    const dataMax = Math.max(...values);
+    const range = dataMax - dataMin || 1;
+    const min = dataMin - range * 0.08;
+    const max = dataMax + range * 0.08;
+    const xStep = cW / Math.max(1, values.length - 1);
+    const toX = i => pad.l + i * xStep;
+    const toY = v => pad.t + cH - ((v - min) / (max - min)) * cH;
 
-    // Grid lines
-    ctx.strokeStyle = '#1a2840';
-    ctx.lineWidth = 0.5;
-    for (let i = 0; i < 4; i++) {
-        const y = pad.t + (cH / 3) * i;
+    // Background
+    ctx.fillStyle = '#080e1a';
+    ctx.fillRect(0, 0, W, H);
+
+    // Y-axis grid + labels
+    const yTicks = 5;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i <= yTicks; i++) {
+        const v = min + (max - min) * (i / yTicks);
+        const y = toY(v);
+        ctx.strokeStyle = '#111b2e';
+        ctx.lineWidth = 0.5;
         ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+        ctx.fillStyle = '#4a5568';
+        ctx.font = '10px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.fillText(v.toFixed(1), pad.l - 6, y);
     }
 
-    // Reference line at 100
-    const y100 = pad.t + cH - ((100 - min) / (max - min)) * cH;
+    // Reference line at 100 (baseline)
+    const y100 = toY(100);
     if (y100 > pad.t && y100 < H - pad.b) {
-        ctx.strokeStyle = '#334155';
-        ctx.setLineDash([3,3]);
+        ctx.save();
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
         ctx.beginPath(); ctx.moveTo(pad.l, y100); ctx.lineTo(W - pad.r, y100); ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.fillStyle = '#475569';
-        ctx.font = '9px -apple-system, sans-serif';
-        ctx.fillText('100', W - pad.r - 20, y100 - 3);
+        ctx.restore();
+        ctx.fillStyle = '#64748b';
+        ctx.textAlign = 'left';
+        ctx.font = 'bold 9px -apple-system, sans-serif';
+        ctx.fillText('Nifty = 100', W - pad.r - 62, y100 - 6);
     }
 
-    // Gradient fill
-    const grad = ctx.createLinearGradient(0, pad.t, 0, H - pad.b);
-    const lastVal = values[values.length-1];
-    if (lastVal >= 100) {
-        grad.addColorStop(0, 'rgba(34,197,94,.15)');
-        grad.addColorStop(1, 'rgba(34,197,94,0)');
-    } else {
-        grad.addColorStop(0, 'rgba(239,68,68,.1)');
-        grad.addColorStop(1, 'rgba(239,68,68,0)');
+    // X-axis date labels
+    ctx.fillStyle = '#4a5568';
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const labelInterval = Math.max(1, Math.floor(values.length / 6));
+    for (let i = 0; i < values.length; i += labelInterval) {
+        const d = dates[i];
+        if (d) ctx.fillText(d.slice(5), toX(i), H - pad.b + 6);
     }
+    if (dates.length > 1) {
+        ctx.textAlign = 'right';
+        ctx.fillText(dates[dates.length - 1].slice(5), toX(values.length - 1), H - pad.b + 6);
+    }
+
+    // Gradient fill under RS line
+    const lastVal = values[values.length - 1];
+    const isUp = lastVal >= 100;
+    const baseColor = isUp ? [34, 197, 94] : [239, 68, 68];
+    const grad = ctx.createLinearGradient(0, pad.t, 0, H - pad.b);
+    grad.addColorStop(0, `rgba(${baseColor.join(',')}, 0.18)`);
+    grad.addColorStop(0.6, `rgba(${baseColor.join(',')}, 0.06)`);
+    grad.addColorStop(1, `rgba(${baseColor.join(',')}, 0)`);
     ctx.beginPath();
-    values.forEach((v, i) => {
-        const x = pad.l + i * xStep;
-        const y = pad.t + cH - ((v - min) / (max - min)) * cH;
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    });
-    ctx.lineTo(pad.l + (values.length-1) * xStep, H - pad.b);
+    for (let i = 0; i < values.length; i++) {
+        const x = toX(i), y = toY(values[i]);
+        if (i === 0) { ctx.moveTo(x, y); continue; }
+        const px = toX(i - 1), py = toY(values[i - 1]);
+        const cpx = (px + x) / 2;
+        ctx.bezierCurveTo(cpx, py, cpx, y, x, y);
+    }
+    ctx.lineTo(toX(values.length - 1), H - pad.b);
     ctx.lineTo(pad.l, H - pad.b);
     ctx.closePath();
     ctx.fillStyle = grad;
     ctx.fill();
 
-    // RS line
-    const lineColor = lastVal >= 100 ? '#22c55e' : '#ef4444';
-    ctx.strokeStyle = lineColor;
-    ctx.lineWidth = 2;
-    ctx.lineJoin = 'round';
+    // Glow effect
+    const lineColor = isUp ? '#22c55e' : '#ef4444';
+    ctx.save();
+    ctx.strokeStyle = isUp ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.25)';
+    ctx.lineWidth = 6;
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.filter = 'blur(4px)';
     ctx.beginPath();
-    values.forEach((v, i) => {
-        const x = pad.l + i * xStep;
-        const y = pad.t + cH - ((v - min) / (max - min)) * cH;
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    });
+    for (let i = 0; i < values.length; i++) {
+        const x = toX(i), y = toY(values[i]);
+        if (i === 0) { ctx.moveTo(x, y); continue; }
+        const px = toX(i - 1), py = toY(values[i - 1]);
+        ctx.bezierCurveTo((px + x) / 2, py, (px + x) / 2, y, x, y);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // RS Line (main) — smooth bezier
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (let i = 0; i < values.length; i++) {
+        const x = toX(i), y = toY(values[i]);
+        if (i === 0) { ctx.moveTo(x, y); continue; }
+        const px = toX(i - 1), py = toY(values[i - 1]);
+        ctx.bezierCurveTo((px + x) / 2, py, (px + x) / 2, y, x, y);
+    }
     ctx.stroke();
 
-    // End dot
-    const lastX = pad.l + (values.length-1) * xStep;
-    const lastY = pad.t + cH - ((lastVal - min) / (max - min)) * cH;
-    ctx.beginPath();
-    ctx.arc(lastX, lastY, 3, 0, Math.PI*2);
-    ctx.fillStyle = lineColor;
-    ctx.fill();
+    // End dot with ring
+    const lastX = toX(values.length - 1);
+    const lastY = toY(lastVal);
+    ctx.beginPath(); ctx.arc(lastX, lastY, 6, 0, Math.PI * 2);
+    ctx.fillStyle = isUp ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(lastX, lastY, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = lineColor; ctx.fill();
+    ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.5; ctx.stroke();
 
-    // Labels
-    ctx.fillStyle = '#64748b';
-    ctx.font = '10px -apple-system, sans-serif';
-    ctx.fillText('RS vs Nifty', pad.l + 4, pad.t + 10);
-    ctx.fillText(rsLine[0]?.date || '', pad.l, H - 4);
-    ctx.fillText(rsLine[rsLine.length-1]?.date || '', W - pad.r - 65, H - 4);
+    // Value label at end
     ctx.fillStyle = lineColor;
+    ctx.font = 'bold 12px -apple-system, sans-serif';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+    ctx.fillText(lastVal.toFixed(1), lastX - 10, lastY - 10);
+
+    // Title
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('RS vs Nifty (120d)', pad.l + 2, 6);
+
+    // Change badge
+    const firstVal = values[0] || 100;
+    const changePct = ((lastVal / firstVal - 1) * 100).toFixed(1);
+    const changeStr = (parseFloat(changePct) >= 0 ? '+' : '') + changePct + '%';
     ctx.font = 'bold 11px -apple-system, sans-serif';
-    ctx.fillText(lastVal?.toFixed(1), lastX - 28, lastY - 8);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = parseFloat(changePct) >= 0 ? '#22c55e' : '#ef4444';
+    ctx.fillText(changeStr, W - pad.r - 2, 6);
+
+    // Tooltip on hover
+    canvas._rsLine = rsLine;
+    canvas._chartP = { pad, cW, values };
+    if (!canvas._hasListener) {
+        canvas._hasListener = true;
+        canvas.addEventListener('mousemove', function(e) {
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const p = this._chartP; if (!p) return;
+            const rl = this._rsLine; if (!rl) return;
+            const idx = Math.round((mx - p.pad.l) / (p.cW / Math.max(1, p.values.length - 1)));
+            if (idx < 0 || idx >= rl.length) { canvas.title = ''; return; }
+            const pt = rl[idx];
+            canvas.title = pt.date + '\nRS: ' + pt.rs.toFixed(1) + '  |  Group: ' + ((pt.groupReturn||0)>=0?'+':'') + (pt.groupReturn||0).toFixed(1) + '%  |  Nifty: ' + ((pt.niftyReturn||0)>=0?'+':'') + (pt.niftyReturn||0).toFixed(1) + '%';
+        });
+    }
 }
 
 function closeModal() {

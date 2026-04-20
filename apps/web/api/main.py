@@ -817,9 +817,10 @@ def _save_custom_groups(groups: list[dict]) -> None:
 
 
 def _compute_group_metrics(group_name: str, tickers: list[str], sector: str = "",
-                           preloaded: dict = None) -> dict:
-    """Compute RS, breadth, volume, 52WH metrics for a group of tickers.
-    If preloaded dict {sym: rows} is passed, skip I/O entirely."""
+                           preloaded: dict = None, nifty_returns: dict = None) -> dict:
+    """Compute RS (vs Nifty), breadth, volume, 52WH metrics for a group of tickers.
+    If preloaded dict {sym: rows} is passed, skip I/O entirely.
+    If nifty_returns {'r5':..., 'r20':..., 'r60':...} is passed, RS is true vs Nifty."""
 
     n = 0
     above_20 = above_50 = above_200 = 0
@@ -874,6 +875,17 @@ def _compute_group_metrics(group_name: str, tickers: list[str], sector: str = ""
             ret_60d_list.append((last / closes[-61] - 1) * 100)
 
         day_chg = round((closes[-1] / closes[-2] - 1) * 100, 2) if len(closes) >= 2 else 0
+        # Guard against stale data: if last 2 bars are > 5 calendar days apart,
+        # day_chg is meaningless (gap between e.g. last Wednesday and this Monday).
+        if len(rows) >= 2:
+            from datetime import datetime as _dt
+            try:
+                d1 = _dt.strptime(rows[-1]["date"][:10], "%Y-%m-%d")
+                d2 = _dt.strptime(rows[-2]["date"][:10], "%Y-%m-%d")
+                if (d1 - d2).days > 5:
+                    day_chg = 0.0  # stale gap — don't show misleading %
+            except Exception:
+                pass
         members.append({
             "symbol": sym,
             "close": round(last, 2),
@@ -905,6 +917,20 @@ def _compute_group_metrics(group_name: str, tickers: list[str], sector: str = ""
 
     rs_score = round(avg_ret_20d * 0.4 + avg_ret_60d * 0.3 + (pct_50 - 50) * 0.3, 2)
 
+    # True Relative Strength vs Nifty: excess return over benchmark
+    # rs_vs_nifty is positive when group outperforms Nifty, negative when it lags
+    if nifty_returns:
+        nifty_r5 = nifty_returns.get("r5", 0) or 0
+        nifty_r20 = nifty_returns.get("r20", 0) or 0
+        nifty_r60 = nifty_returns.get("r60", 0) or 0
+        excess_5d = avg_ret_5d - nifty_r5
+        excess_20d = avg_ret_20d - nifty_r20
+        excess_60d = avg_ret_60d - nifty_r60
+        # Weighted excess return — weight medium-term more (20d/60d)
+        rs_score = round(excess_5d * 0.15 + excess_20d * 0.45 + excess_60d * 0.40, 2)
+    else:
+        excess_5d = excess_20d = excess_60d = 0.0
+
     return {
         "group": group_name, "sector": sector, "stockCount": n,
         "pctAbove20ma": pct_20, "pctAbove50ma": pct_50, "pctAbove200ma": pct_200,
@@ -913,6 +939,7 @@ def _compute_group_metrics(group_name: str, tickers: list[str], sector: str = ""
         "avgVolRatio": avg_vr, "volExpandingPct": round(vol_expanding / n * 100, 1),
         "volPattern": vol_pattern,
         "avgRet5d": avg_ret_5d, "avgRet20d": avg_ret_20d, "avgRet60d": avg_ret_60d,
+        "excessRet5d": round(excess_5d, 2), "excessRet20d": round(excess_20d, 2), "excessRet60d": round(excess_60d, 2),
         "rsScore": rs_score,
         "members": sorted(members, key=lambda m: -(m.get("dayChangePct") or 0)),
     }
@@ -1001,10 +1028,22 @@ def _do_compute_industry_groups() -> list[dict]:
             if rows:
                 preloaded[sym] = rows
 
+    # Compute Nifty's returns for true RS-vs-benchmark calculation
+    nifty_returns = None
+    nifty_rows = _read_ohlcv("^NSEI", days=300)
+    if nifty_rows and len(nifty_rows) >= 61:
+        nc = [r["close"] for r in nifty_rows]
+        nifty_returns = {
+            "r5":  (nc[-1] / nc[-6] - 1) * 100  if len(nc) >= 6  else 0,
+            "r20": (nc[-1] / nc[-21] - 1) * 100 if len(nc) >= 21 else 0,
+            "r60": (nc[-1] / nc[-61] - 1) * 100 if len(nc) >= 61 else 0,
+        }
+
     # Now compute metrics for each group — pure CPU, no I/O
     results = []
     for ind, tickers in groups_to_compute:
-        r = _compute_group_metrics(ind, tickers, industry_sectors.get(ind, ""), preloaded=preloaded)
+        r = _compute_group_metrics(ind, tickers, industry_sectors.get(ind, ""),
+                                   preloaded=preloaded, nifty_returns=nifty_returns)
         if r.get("stockCount", 0) >= 2:
             results.append(r)
 
@@ -1030,7 +1069,10 @@ def get_industry_groups(min_stocks: int = 2) -> dict:
         gc = dict(g)
         gc.pop("members", None)
         lite.append(gc)
-    return {"groups": lite, "total": len(lite), "timestamp": time.time()}
+    # Include cache age so frontend can show staleness warning
+    cache_age = round(time.time() - _INDUSTRY_CACHE_TS) if _INDUSTRY_CACHE_TS else None
+    return {"groups": lite, "total": len(lite), "timestamp": time.time(),
+            "cachedAt": _INDUSTRY_CACHE_TS, "cacheAgeSec": cache_age}
 
 
 @app.get("/api/industry-groups/{group_name}")
@@ -1040,6 +1082,30 @@ def get_industry_group_detail(group_name: str) -> dict:
     groups = _compute_all_industry_groups()
     for g in groups:
         if g.get("group") == decoded:
+            # If loaded from disk cache (no members), compute this group on-the-fly
+            if not g.get("members"):
+                try:
+                    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python" / "lib"))
+                    import nse_taxonomy
+                    nse_taxonomy._SECTOR_MAP, nse_taxonomy._INDUSTRY_MAP = nse_taxonomy._build_maps()
+                    taxonomy = nse_taxonomy.load_taxonomy()
+                    tickers = [t for t, (sec, ind) in taxonomy.items() if ind == decoded]
+                    if tickers:
+                        sector = g.get("sector", "")
+                        # Pass Nifty returns for true RS-vs-benchmark calc
+                        nifty_rows = _read_ohlcv("^NSEI", days=300)
+                        nifty_returns = None
+                        if nifty_rows and len(nifty_rows) >= 61:
+                            nc = [r["close"] for r in nifty_rows]
+                            nifty_returns = {
+                                "r5":  (nc[-1] / nc[-6] - 1) * 100  if len(nc) >= 6  else 0,
+                                "r20": (nc[-1] / nc[-21] - 1) * 100 if len(nc) >= 21 else 0,
+                                "r60": (nc[-1] / nc[-61] - 1) * 100 if len(nc) >= 61 else 0,
+                            }
+                        return _compute_group_metrics(decoded, tickers, sector,
+                                                     nifty_returns=nifty_returns)
+                except Exception:
+                    pass
             return g
     raise HTTPException(status_code=404, detail=f"Industry group '{decoded}' not found")
 
@@ -1058,6 +1124,16 @@ def get_industry_group_rs_history(group_name: str, days: int = 120) -> dict:
         raise HTTPException(status_code=404, detail=f"Group '{decoded}' not found")
 
     members = [m["symbol"] for m in target.get("members", [])]
+    # If loaded from disk cache (no members), look up tickers from taxonomy
+    if not members:
+        try:
+            sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python" / "lib"))
+            import nse_taxonomy
+            nse_taxonomy._SECTOR_MAP, nse_taxonomy._INDUSTRY_MAP = nse_taxonomy._build_maps()
+            taxonomy = nse_taxonomy.load_taxonomy()
+            members = [t for t, (sec, ind) in taxonomy.items() if ind == decoded]
+        except Exception:
+            pass
     if not members:
         return {"group": decoded, "rsLine": []}
 
