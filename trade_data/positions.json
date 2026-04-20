@@ -291,8 +291,29 @@
       "exit_date": null,
       "tags": [],
       "partial_exits": []
+    },
+    {
+      "id": "2acd5a53",
+      "symbol": "OMNI",
+      "name": "omni",
+      "entry": 351.0,
+      "quantity": 3000,
+      "remaining_quantity": null,
+      "sl": 330.0,
+      "t1": 0.0,
+      "t2": 0.0,
+      "t3": 0.0,
+      "setup": "BULL_FLAG",
+      "rating": "A",
+      "notes": "ipo stock with 10em bounce",
+      "entry_date": "2026-04-20",
+      "status": "OPEN",
+      "exit_price": null,
+      "exit_date": null,
+      "tags": [],
+      "partial_exits": []
     }
   ],
   "created": "2026-04-14T11:55:48.601550",
-  "lastUpdated": "2026-04-20T12:23:44.449370"
+  "lastUpdated": "2026-04-20T13:40:37.712111"
 }
