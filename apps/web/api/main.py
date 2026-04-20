@@ -1503,10 +1503,11 @@ def _save_board(data: dict) -> None:
 
 # ── Price / Chart helpers ──────────────────────────────────────────────────────
 
-def _read_ohlcv(symbol: str, days: int = 0) -> list[dict]:
+def _read_ohlcv(symbol: str, days: int = 0, market: str = "india") -> list[dict]:
     """Read OHLCV from cache. Returns sorted list of dicts with date/open/high/low/close/volume.
     days=0 means return ALL available data.
-    Prefers unified SYMBOL.csv; falls back to legacy _N.csv files.
+    • market="india"  → prefers SYMBOL.NS.csv, falls back to SYMBOL.csv (legacy).
+    • market="us"     → reads SYMBOL.csv directly (no .NS).
     Triggers a background refresh if data is stale (non-blocking)."""
     base = symbol.upper().replace(".NS", "").replace(".BO", "")
     ns   = base + ".NS"
@@ -1539,7 +1540,10 @@ def _read_ohlcv(symbol: str, days: int = 0) -> list[dict]:
         return dm
 
     date_map: dict[str, dict] = {}
-    for prefix in [ns, base]:
+    # For US symbols (ADRs etc.) skip the .NS prefix entirely so we don't
+    # pick up a same-named Indian stock by accident (e.g. INFY vs INFY.NS).
+    prefixes = [base] if market == "us" else [ns, base]
+    for prefix in prefixes:
         # 1) Try unified single file first
         for fname in [f"{prefix}.csv"]:
             date_map.update(_read_csv(CACHE_DIR / fname))
@@ -1603,15 +1607,16 @@ _IST = _zi.ZoneInfo("Asia/Kolkata")
 
 _live_cache: dict[str, dict] = {}   # symbol -> {price, prevClose, ts, date}
 _live_cache_lock = threading.Lock()
+_nse_fetch_lock = threading.Lock()   # serialize NSE requests to avoid rate-limiting
 _LIVE_TTL_MARKET = 30    # seconds — during market hours
 _LIVE_TTL_OFF = 300      # seconds — outside market hours (5 min, just to get today's close)
 
 # ── Groww API integration ─────────────────────────────────────────────────
 # Uses shared groww_client module for singleton initialization.
 # Env vars: GROWW_API_KEY, GROWW_API_SECRET, GROWW_ACCESS_TOKEN
-_GROWW_API_KEY = os.environ.get("GROWW_API_KEY", "")
-_GROWW_API_SECRET = os.environ.get("GROWW_API_SECRET", "")
-_GROWW_ACCESS_TOKEN = os.environ.get("GROWW_ACCESS_TOKEN", "")
+_GROWW_API_KEY = os.environ.get("GROWW_API_KEY", "").strip().strip("'\"")
+_GROWW_API_SECRET = os.environ.get("GROWW_API_SECRET", "").strip().strip("'\"")
+_GROWW_ACCESS_TOKEN = os.environ.get("GROWW_ACCESS_TOKEN", "").strip().strip("'\"")
 _groww_client = None
 _groww_init_lock = threading.Lock()
 _groww_init_failed = False
@@ -1646,8 +1651,30 @@ def _get_groww_client():
                 from growwapi import GrowwAPI
                 token = _GROWW_ACCESS_TOKEN
                 if not token and _GROWW_API_KEY and _GROWW_API_SECRET:
+                    # Auto-detect TOTP vs approval auth from JWT payload
+                    auth_kwargs = {"secret": _GROWW_API_SECRET}
+                    try:
+                        import base64 as _b64, json as _j
+                        parts = _GROWW_API_KEY.split('.')
+                        if len(parts) == 3:
+                            payload = parts[1] + '=' * (4 - len(parts[1]) % 4)
+                            sub = _j.loads(_j.loads(_b64.b64decode(payload)).get('sub', '{}'))
+                            if 'totp' in sub.get('role', '').lower():
+                                import hmac, hashlib, struct, time as _tm
+                                seed = _GROWW_API_SECRET.strip().upper().replace(' ', '')
+                                missing = len(seed) % 8
+                                if missing:
+                                    seed += '=' * (8 - missing)
+                                key_bytes = _b64.b32decode(seed)
+                                counter = int(_tm.time()) // 30
+                                h = hmac.new(key_bytes, struct.pack('>Q', counter), hashlib.sha1).digest()
+                                o = h[-1] & 0x0F
+                                code = (struct.unpack('>I', h[o:o+4])[0] & 0x7FFFFFFF) % 1000000
+                                auth_kwargs = {"totp": f"{code:06d}"}
+                    except Exception:
+                        pass
                     result = GrowwAPI.get_access_token(
-                        api_key=_GROWW_API_KEY, secret=_GROWW_API_SECRET)
+                        api_key=_GROWW_API_KEY, **auth_kwargs)
                     if isinstance(result, str) and result:
                         token = result
                     elif isinstance(result, dict):
@@ -1666,6 +1693,21 @@ def _get_groww_client():
                 print(f"⚠ Groww API init failed: {e}", flush=True)
                 _groww_init_failed = True
                 return None
+
+
+def _reset_groww_on_auth_error(e: Exception):
+    """If Groww returns forbidden/auth error, reset client so token gets refreshed."""
+    err_str = str(e).lower()
+    if "forbidden" in err_str or "authoris" in err_str or "unauthori" in err_str:
+        try:
+            from groww_client import reset_groww_client
+            reset_groww_client()
+            global _groww_client, _groww_init_failed
+            _groww_client = None
+            _groww_init_failed = False
+            print(f"⚠ Groww auth error — will refresh token: {e}", flush=True)
+        except Exception:
+            pass
 
 
 def _fetch_live_quote_groww(base_symbol: str) -> Optional[dict]:
@@ -1704,8 +1746,8 @@ def _fetch_live_quote_groww(base_symbol: str) -> Optional[dict]:
             except Exception:
                 pass
             return {"price": ltp, "prevClose": float(prev) if prev else None, "source": "groww"}
-    except Exception:
-        pass
+    except Exception as e:
+        _reset_groww_on_auth_error(e)
     return None
 
 
@@ -1728,8 +1770,8 @@ def _fetch_groww_quote(base_symbol: str) -> Optional[dict]:
             close = ohlc.get("close")
             if close and float(close) > 0:
                 return {"price": float(close), "prevClose": None, "source": "groww-ohlc"}
-    except Exception:
-        pass
+    except Exception as e:
+        _reset_groww_on_auth_error(e)
     return None
 
 
@@ -1745,28 +1787,29 @@ def _is_market_open() -> bool:
 def _fetch_live_quote_nse(base_symbol: str) -> Optional[dict]:
     """Fetch live quote from NSE India equity quote API."""
     import requests as _req
-    try:
-        import refresh_cache as _rc
-        session = _rc._get_nse_session()
-        import urllib.parse
-        url = (
-            f"https://www.nseindia.com/api/quote-equity"
-            f"?symbol={urllib.parse.quote(base_symbol)}"
-        )
-        resp = session.get(url, headers={
-            "Accept": "application/json",
-            "Referer": f"https://www.nseindia.com/get-quotes/equity?symbol={urllib.parse.quote(base_symbol)}",
-        }, timeout=8)
-        if not resp.ok:
-            return None
-        data = resp.json()
-        pi = data.get("priceInfo", {})
-        ltp = pi.get("lastPrice")
-        prev = pi.get("previousClose") or pi.get("close")
-        if ltp and ltp > 0:
-            return {"price": float(ltp), "prevClose": float(prev) if prev else None, "source": "nse"}
-    except Exception:
-        pass
+    with _nse_fetch_lock:  # serialize to avoid NSE rate-limiting
+        try:
+            import refresh_cache as _rc
+            session = _rc._get_nse_session()
+            import urllib.parse
+            url = (
+                f"https://www.nseindia.com/api/quote-equity"
+                f"?symbol={urllib.parse.quote(base_symbol)}"
+            )
+            resp = session.get(url, headers={
+                "Accept": "application/json",
+                "Referer": f"https://www.nseindia.com/get-quotes/equity?symbol={urllib.parse.quote(base_symbol)}",
+            }, timeout=8)
+            if not resp.ok:
+                return None
+            data = resp.json()
+            pi = data.get("priceInfo", {})
+            ltp = pi.get("lastPrice")
+            prev = pi.get("previousClose") or pi.get("close")
+            if ltp and ltp > 0:
+                return {"price": float(ltp), "prevClose": float(prev) if prev else None, "source": "nse"}
+        except Exception:
+            pass
     return None
 
 
@@ -1897,7 +1940,7 @@ def _get_current_price(symbol: str) -> Optional[float]:
     return rows[-1]["close"] if rows else None
 
 
-def _get_price_info(symbol: str) -> tuple[Optional[float], Optional[float], Optional[str]]:
+def _get_price_info(symbol: str, market: str = "india") -> tuple[Optional[float], Optional[float], Optional[str]]:
     """
     Returns (cmp, prev_close, last_date) for a symbol.
 
@@ -1906,17 +1949,23 @@ def _get_price_info(symbol: str) -> tuple[Optional[float], Optional[float], Opti
       falling back to CSV cache if APIs fail.
     Always returns the most current price available.
     """
-    rows = _read_ohlcv(symbol, days=5)
+    rows = _read_ohlcv(symbol, days=5, market=market)
     csv_close = rows[-1]["close"] if rows else None
     csv_prev = rows[-2]["close"] if len(rows) >= 2 else None
     csv_date = rows[-1]["date"] if rows else None
+
+    # Skip live-quote fetch for US symbols (Groww/NSE not applicable); use CSV.
+    if market == "us":
+        return csv_close, csv_prev, csv_date
 
     # Try live/latest price (works both during and outside market hours now)
     live = _get_live_price(symbol)
     if live and live.get("price"):
         cmp = live["price"]
         prev = live.get("prevClose") or csv_prev
-        return cmp, prev, csv_date
+        # Use today's date when live price is available so frontend doesn't flag as stale
+        today_str = datetime.now(_IST).strftime("%Y-%m-%d")
+        return cmp, prev, today_str
     else:
         return csv_close, csv_prev, csv_date
 
@@ -2173,10 +2222,11 @@ def _enrich_position_metrics(p: dict) -> dict:
     sym = p.get("symbol", "")
     if not sym:
         return p
-    rows = _read_ohlcv(sym, days=300)  # need ~252 for yearly volume analysis
+    mkt = p.get("market") or "india"
+    rows = _read_ohlcv(sym, days=300, market=mkt)  # need ~252 for yearly volume analysis
     # Inject live price into the latest bar so EMA/metrics reflect current price
     if rows:
-        live = _get_live_price(sym)
+        live = _get_live_price(sym) if mkt != "us" else None
         if live and live.get("price") and live["price"] > 0:
             import datetime as _dtmod
             today_str = _dtmod.datetime.now(_IST).strftime("%Y-%m-%d")
@@ -2318,6 +2368,11 @@ def trade_board_positions_enriched(status: str = "") -> dict:
     with _board_lock:
         data = _load_board()
         positions = list(data.get("positions", []))
+    # Pre-warm live price cache for all open positions
+    open_syms = [p.get("symbol", "") for p in positions if p.get("status") in ("OPEN", "PARTIAL")]
+    for sym in open_syms:
+        if sym:
+            _get_live_price(sym)
     for p in positions:
         entry = p.get("entry", 0) or 0
         qty = p.get("quantity", 1) or 1
@@ -2352,40 +2407,39 @@ def trade_board_positions_enriched(status: str = "") -> dict:
 
 @app.get("/api/trade-board/watchlist/enriched")
 def trade_board_watchlist_enriched() -> dict:
-    """Return watchlist items enriched with 20EMA extension + volume records (parallelized)."""
+    """Return watchlist items enriched with CMP, day-change, return-since-add,
+    cross-market pair, scan signal, 20EMA extension & volume records (parallelized)."""
     from concurrent.futures import ThreadPoolExecutor
     with _watchlist_lock:
         items = _load_watchlist()
     sig_index = _load_scan_signals_index()
 
-    def _enrich_wl(item):
+    # Pre-warm live price cache sequentially — avoids NSE rate-limiting
+    # when ThreadPoolExecutor fires 8 concurrent requests.
+    for item in items:
         sym = item.get("symbol", "")
-        cmp, prev_close, last_date = _get_price_info(sym)
-        if cmp:
-            item["cmp"] = round(cmp, 2)
-            item["lastPriceDate"] = last_date
-        if cmp and prev_close and prev_close > 0:
-            item["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
+        mkt = item.get("market") or "india"
+        if sym and mkt != "us":
+            _get_live_price(sym)
+
+    def _enrich_wl(item):
+        _enrich_watchlist_item_lite(item, sig_index)
+        # Heavy metrics (EMA20, vol records, ADR, RSI, SMA200…)
         _enrich_position_metrics(item)
+        # fundSummary is only exposed via the enriched variant
+        sym = item.get("symbol", "")
         sig = sig_index.get(sym) or sig_index.get(sym + ".NS") or sig_index.get(sym.replace(".NS", ""))
-        if sig:
-            item["scanSetup"] = sig.get("setup", "")
-            item["scanRating"] = sig.get("rating", "")
-            item["scanScore"] = sig.get("rankingScore") or sig.get("score")
-            item["scanEntry"] = sig.get("entry")
-            item["scanSl"] = sig.get("sl")
-            item["rsScore"] = sig.get("rsScore")
-            item["regimeState"] = sig.get("regimeState")
-            item["entryInstruction"] = sig.get("entryInstruction")
+        if sig and sig.get("fundSummary"):
             item["fundSummary"] = sig.get("fundSummary")
-            item["inScan"] = True
-        else:
-            item["inScan"] = False
 
     with ThreadPoolExecutor(max_workers=8) as pool:
         list(pool.map(_enrich_wl, items))
 
-    return {"items": items, "total": len(items)}
+    return {
+        "items": items, "total": len(items),
+        "buckets": WATCHLIST_BUCKETS, "setups": WATCHLIST_SETUPS,
+        "marketOpen": _is_market_open(),
+    }
 
 
 def _calc_rsi(closes: list[float], period: int = 14) -> list[Optional[float]]:
@@ -2966,19 +3020,84 @@ def export_journal():
     )
 
 
-# ── Trade Watchlist ────────────────────────────────────────────────────────────
+# ── Trade Watchlist 2.0 ────────────────────────────────────────────────────────
+# Adds manual categorization (bucket), entry-style setup, cross-market pairing
+# (RS stock ↔ ADR), return-since-add tracking, conviction, tags, and a
+# market-health strip endpoint that powers the top of the Watchlist UI.
 _watchlist_lock = threading.Lock()
+
+WATCHLIST_BUCKETS: list[dict] = [
+    {"slug": "rs_leaders",      "label": "RS Leaders",         "icon": "🏆", "hint": "Outperformers holding up vs market"},
+    {"slug": "adr_pairs",       "label": "ADR Pairs",          "icon": "🌐", "hint": "Indian stock ↔ US ADR cross-listing"},
+    {"slug": "long_term",       "label": "Long-term / SIP",    "icon": "🏛️", "hint": "Multi-year compounders"},
+    {"slug": "sector_rotators", "label": "Sector Rotators",    "icon": "🔄", "hint": "Rotation candidates"},
+    {"slug": "macro_hedge",     "label": "Macro / Hedge",      "icon": "🛡️", "hint": "Gold, defensives, yields"},
+    {"slug": "setup_vcp",       "label": "Setup · VCP",        "icon": "🧲", "hint": "Volatility Contraction"},
+    {"slug": "setup_pullback",  "label": "Setup · Pullback",   "icon": "⤵️", "hint": "Buy on orderly retrace"},
+    {"slug": "setup_breakout",  "label": "Setup · Breakout",   "icon": "🚀", "hint": "Range high break + volume"},
+    {"slug": "setup_range_exp", "label": "Setup · Range Exp.", "icon": "📐", "hint": "Range expansion / trend day"},
+    {"slug": "setup_mean_rev",  "label": "Setup · Mean Rev.",  "icon": "↩️", "hint": "Oversold bounce"},
+    {"slug": "setup_bull_flag", "label": "Setup · Bull Flag",  "icon": "🏁", "hint": "Flag / pennant"},
+    {"slug": "setup_earnings",  "label": "Setup · Earnings",   "icon": "💼", "hint": "Pre / post earnings swing"},
+    {"slug": "setup_ipo_base",  "label": "Setup · IPO Base",   "icon": "🆕", "hint": "First base after listing"},
+    {"slug": "watching",        "label": "Just Watching",      "icon": "👀", "hint": "No setup yet, monitoring"},
+]
+
+WATCHLIST_SETUPS: list[str] = [
+    "VCP", "Pullback", "Breakout", "Range Expansion", "Mean Reversion",
+    "Bull Flag", "Base Building", "Earnings Swing", "IPO Base",
+    "Cup & Handle", "Darvas Box", "Gap-n-Go", "Watching",
+]
+
+# Known India ↔ US ADR cross-listings (NSE symbol → US ADR, and inverse).
+ADR_HINTS: dict[str, dict] = {
+    "INFY":       {"adr_symbol": "INFY", "adr_market": "us"},
+    "WIPRO":      {"adr_symbol": "WIT",  "adr_market": "us"},
+    "HDFCBANK":   {"adr_symbol": "HDB",  "adr_market": "us"},
+    "ICICIBANK":  {"adr_symbol": "IBN",  "adr_market": "us"},
+    "DRREDDY":    {"adr_symbol": "RDY",  "adr_market": "us"},
+    "TATAMOTORS": {"adr_symbol": "TTM",  "adr_market": "us"},
+    "VEDL":       {"adr_symbol": "VEDL", "adr_market": "us"},
+    "MAKEMYTRIP": {"adr_symbol": "MMYT", "adr_market": "us"},
+    "WIT":  {"adr_symbol": "WIPRO",     "adr_market": "india"},
+    "HDB":  {"adr_symbol": "HDFCBANK",  "adr_market": "india"},
+    "IBN":  {"adr_symbol": "ICICIBANK", "adr_market": "india"},
+    "RDY":  {"adr_symbol": "DRREDDY",   "adr_market": "india"},
+    "TTM":  {"adr_symbol": "TATAMOTORS","adr_market": "india"},
+    "MMYT": {"adr_symbol": "MAKEMYTRIP","adr_market": "india"},
+}
+
+
+def _migrate_watchlist_item(raw: dict) -> dict:
+    """Upgrade a v1 watchlist entry to v2 schema (idempotent)."""
+    raw.setdefault("bucket",      "watching")
+    raw.setdefault("market",      "india")
+    raw.setdefault("setup",       raw.get("setup", ""))
+    raw.setdefault("conviction",  3)
+    raw.setdefault("tags",        [])
+    raw.setdefault("add_price",   None)
+    raw.setdefault("add_date",    (raw.get("added_at") or "")[:10] or None)
+    raw.setdefault("pair_symbol", None)
+    raw.setdefault("pair_market", None)
+    raw.setdefault("source",      "manual")   # "manual" | "auto_rs"
+    return raw
+
 
 def _load_watchlist() -> list:
     if not TRADE_WATCHLIST_JSON.exists():
         return []
     try:
-        return json.loads(TRADE_WATCHLIST_JSON.read_text(encoding="utf-8"))
+        raw = json.loads(TRADE_WATCHLIST_JSON.read_text(encoding="utf-8"))
+        if isinstance(raw, list):
+            return [_migrate_watchlist_item(dict(x)) for x in raw]
+        return []
     except Exception:
         return []
 
+
 def _save_watchlist(items: list) -> None:
     TRADE_WATCHLIST_JSON.write_text(json.dumps(items, indent=2, ensure_ascii=False), encoding="utf-8")
+
 
 class WatchlistItem(BaseModel):
     symbol: str
@@ -2986,50 +3105,133 @@ class WatchlistItem(BaseModel):
     notes: str = ""
     alert_price: Optional[float] = None
     setup: str = ""
+    # ── v2 additions ──
+    market: Literal["india", "us"] = "india"
+    bucket: str = "watching"
+    conviction: int = Field(default=3, ge=1, le=5)
+    tags: list[str] = Field(default_factory=list)
+    add_price: Optional[float] = None       # anchor price captured at add-time
+    add_date: Optional[str] = None          # YYYY-MM-DD (auto → today)
+    pair_symbol: Optional[str] = None       # cross-market pair (e.g. ADR)
+    pair_market: Optional[Literal["india", "us"]] = None
+    source: Literal["manual", "auto_rs"] = "manual"  # provenance flag
+
+
+class WatchlistItemUpdate(BaseModel):
+    name: Optional[str] = None
+    notes: Optional[str] = None
+    alert_price: Optional[float] = None
+    setup: Optional[str] = None
+    bucket: Optional[str] = None
+    conviction: Optional[int] = None
+    tags: Optional[list[str]] = None
+    add_price: Optional[float] = None
+    add_date: Optional[str] = None
+    pair_symbol: Optional[str] = None
+    pair_market: Optional[Literal["india", "us"]] = None
+
+
+def _enrich_watchlist_item_lite(item: dict, sig_index: dict) -> None:
+    """Light-weight enrichment (CMP, day-change, return-since-add, pair, scan).
+    Shared between /watchlist and /watchlist/enriched."""
+    sym = item.get("symbol", "")
+    mkt = item.get("market") or "india"
+    cmp, prev_close, last_date = _get_price_info(sym, market=mkt)
+    if cmp:
+        item["cmp"] = round(cmp, 2)
+        item["lastPriceDate"] = last_date
+    if cmp and prev_close and prev_close > 0:
+        item["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
+    ap = item.get("add_price")
+    if cmp and ap and ap > 0:
+        item["returnSinceAddPct"] = round((cmp - ap) / ap * 100, 2)
+        item["returnSinceAddAbs"] = round(cmp - ap, 2)
+    pair_sym = item.get("pair_symbol")
+    if pair_sym:
+        pmkt = item.get("pair_market") or "india"
+        pcmp, pprev, pdate = _get_price_info(pair_sym, market=pmkt)
+        item["pair"] = {
+            "symbol": pair_sym, "market": pmkt,
+            "cmp": round(pcmp, 2) if pcmp else None,
+            "dayChangePct": round((pcmp - pprev) / pprev * 100, 2) if pcmp and pprev else None,
+            "lastPriceDate": pdate,
+        }
+    sig = sig_index.get(sym) or sig_index.get(sym + ".NS") or sig_index.get(sym.replace(".NS", ""))
+    if sig:
+        item["scanSetup"] = sig.get("setup", "")
+        item["scanRating"] = sig.get("rating", "")
+        item["scanScore"] = sig.get("rankingScore") or sig.get("score")
+        item["scanEntry"] = sig.get("entry")
+        item["scanSl"] = sig.get("sl")
+        item["rsScore"] = sig.get("rsScore")
+        item["regimeState"] = sig.get("regimeState")
+        item["entryInstruction"] = sig.get("entryInstruction")
+        item["inScan"] = True
+    else:
+        item["inScan"] = False
+
 
 @app.get("/api/trade-board/watchlist")
 def get_watchlist() -> dict:
     with _watchlist_lock:
         items = _load_watchlist()
-    # Enrich with CMP, day change, and scan signal data
     sig_index = _load_scan_signals_index()
     for item in items:
-        sym = item.get("symbol", "")
-        cmp, prev_close, last_date = _get_price_info(sym)
-        if cmp:
-            item["cmp"] = round(cmp, 2)
-            item["lastPriceDate"] = last_date
-        if cmp and prev_close and prev_close > 0:
-            item["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
-        # Merge scan signal data if available
-        sig = sig_index.get(sym) or sig_index.get(sym + ".NS") or sig_index.get(sym.replace(".NS", ""))
-        if sig:
-            item["scanSetup"] = sig.get("setup", "")
-            item["scanRating"] = sig.get("rating", "")
-            item["scanScore"] = sig.get("rankingScore") or sig.get("score")
-            item["scanEntry"] = sig.get("entry")
-            item["scanSl"] = sig.get("sl")
-            item["rsScore"] = sig.get("rsScore")
-            item["regimeState"] = sig.get("regimeState")
-            item["entryInstruction"] = sig.get("entryInstruction")
-            item["inScan"] = True
-        else:
-            item["inScan"] = False
-    return {"items": items, "total": len(items)}
+        _enrich_watchlist_item_lite(item, sig_index)
+    return {
+        "items": items, "total": len(items),
+        "buckets": WATCHLIST_BUCKETS, "setups": WATCHLIST_SETUPS,
+    }
+
 
 @app.post("/api/trade-board/watchlist")
 def add_watchlist_item(item: WatchlistItem) -> dict:
     with _watchlist_lock:
         items = _load_watchlist()
-        # Check for duplicate
-        if any(i.get("symbol","").upper() == item.symbol.upper() for i in items):
-            raise HTTPException(status_code=409, detail=f"{item.symbol} already in watchlist")
+        sym_u = item.symbol.upper()
+        # Duplicate guard — symbol + market must be unique
+        if any(i.get("symbol","").upper() == sym_u
+               and (i.get("market") or "india") == item.market
+               for i in items):
+            raise HTTPException(status_code=409, detail=f"{item.symbol} ({item.market}) already in watchlist")
         rec = item.model_dump()
+        rec["symbol"] = sym_u
         rec["id"] = str(uuid.uuid4())
         rec["added_at"] = datetime.now().isoformat(timespec="seconds")
+        if not rec.get("add_date"):
+            rec["add_date"] = datetime.now().strftime("%Y-%m-%d")
+        # Auto-capture current price as anchor if not given
+        if rec.get("add_price") in (None, 0, 0.0):
+            cmp, _, _ = _get_price_info(sym_u, market=rec.get("market") or "india")
+            if cmp:
+                rec["add_price"] = round(float(cmp), 2)
+        # Auto-suggest ADR pair if user didn't set one
+        if not rec.get("pair_symbol"):
+            hint = ADR_HINTS.get(sym_u)
+            if hint:
+                rec["pair_symbol"] = hint["adr_symbol"]
+                rec["pair_market"] = hint["adr_market"]
         items.append(rec)
         _save_watchlist(items)
     return {"ok": True, "item": rec}
+
+
+@app.patch("/api/trade-board/watchlist/{item_id}")
+def update_watchlist_item(item_id: str, patch: WatchlistItemUpdate) -> dict:
+    """Edit any editable field (bucket, setup, pair, notes, conviction,
+    add_price, add_date, tags, alert_price, name). Symbol/market are
+    immutable — delete and re-add to change them."""
+    with _watchlist_lock:
+        items = _load_watchlist()
+        for i, it in enumerate(items):
+            if it.get("id") == item_id:
+                changes = {k: v for k, v in patch.model_dump(exclude_unset=True).items()
+                           if v is not None}
+                items[i] = {**it, **changes}
+                _save_watchlist(items)
+                return {"ok": True, "item": items[i]}
+    raise HTTPException(status_code=404, detail="Watchlist item not found")
+
 
 @app.delete("/api/trade-board/watchlist/{item_id}")
 def remove_watchlist_item(item_id: str) -> dict:
@@ -3041,6 +3243,353 @@ def remove_watchlist_item(item_id: str) -> dict:
             raise HTTPException(status_code=404, detail="Watchlist item not found")
         _save_watchlist(items)
     return {"ok": True, "deleted": item_id}
+
+
+@app.get("/api/trade-board/watchlist/categories")
+def watchlist_categories() -> dict:
+    """Canonical bucket + setup vocabulary + ADR pairing hints.
+    The UI pulls from here so both sides stay in lock-step."""
+    return {"buckets": WATCHLIST_BUCKETS, "setups": WATCHLIST_SETUPS, "adr_hints": ADR_HINTS}
+
+
+@app.get("/api/trade-board/watchlist/market-health")
+def watchlist_market_health() -> dict:
+    """Compact market-health snapshot for the top of the Watchlist page.
+    Aggregates Nifty spot + trend + phase, regime from scan bundle, and breadth
+    hit-counts from the latest system summary. Every piece degrades gracefully
+    if its underlying artifact is missing."""
+    out: dict = {"generatedAt": datetime.now().isoformat(timespec="seconds")}
+    # Nifty spot + phase
+    try:
+        prices = _wpe.fetch_market_prices(days=260)
+        if prices:
+            closes = prices.get("close", []) or []
+            dates  = prices.get("dates", []) or []
+            if closes:
+                cur  = closes[-1]
+                prev = closes[-2]  if len(closes) >= 2   else cur
+                d20  = closes[-21] if len(closes) >= 21  else cur
+                d50  = closes[-51] if len(closes) >= 51  else cur
+                d252 = closes[0]
+                out["nifty"] = {
+                    "value":     round(cur, 2),
+                    "changePct": round((cur - prev) / prev * 100, 2) if prev else 0,
+                    "change20d": round((cur - d20) / d20 * 100, 2) if d20 else 0,
+                    "change50d": round((cur - d50) / d50 * 100, 2) if d50 else 0,
+                    "change52w": round((cur - d252) / d252 * 100, 2) if d252 else 0,
+                    "asOf":      dates[-1] if dates else None,
+                }
+            phases = _wpe.detect_market_phases(prices) or []
+            if phases:
+                out["currentPhase"] = phases[-1]
+                out["phaseSummary"] = _wpe._summarize_phases(phases)
+    except Exception as e:
+        out["phaseError"] = str(e)
+    # Regime + breadth from scan artifacts
+    try:
+        bundle = _read_json_if_exists(OUTPUT_DIR / "scan_bundle_india_daily_full_LATEST.json") or {}
+        if isinstance(bundle, dict):
+            out["regime"]     = (bundle.get("meta") or {}).get("regime")
+            out["scanCounts"] = bundle.get("counts")
+    except Exception:
+        pass
+    try:
+        summary = _read_json_if_exists(OUTPUT_DIR / "system_latest_summary.json") or {}
+        for r in summary.get("results", []) or []:
+            if r.get("market") == "india" and r.get("timeframe") == "daily":
+                out["summary"] = {
+                    "hits":            r.get("hits", 0),
+                    "watchlistHits":   r.get("watchlistHits", 0),
+                    "portfolioPicks":  r.get("portfolioPicks", 0),
+                    "setupBreakdown":  (r.get("variationBreakdown") or {}).get("setup", {}),
+                    "ratingBreakdown": (r.get("variationBreakdown") or {}).get("rating", {}),
+                }
+                break
+    except Exception:
+        pass
+    # One-line verdict for the top strip
+    phase = (out.get("currentPhase") or {}).get("type")
+    _reg = out.get("regime")
+    if isinstance(_reg, dict):
+        _reg = _reg.get("state") or _reg.get("label") or ""
+    regime = str(_reg or "").lower()
+    if phase == "decline":
+        verdict = "⚠ Defense mode — Nifty in decline phase"
+    elif phase == "consolidation":
+        verdict = "⏸ Consolidation — wait for leadership / breakouts"
+    elif phase == "recovery":
+        verdict = "✅ Recovery leg — lean into RS leaders"
+    elif "bull" in regime:
+        verdict = "✅ Bullish regime — offense mode"
+    elif "bear" in regime:
+        verdict = "⚠ Bearish regime — defense mode"
+    else:
+        verdict = "⚖ Neutral — selective, setup-dependent"
+    out["verdict"] = verdict
+    return out
+
+
+# ── Automated RS-Leader Detection ─────────────────────────────────────────────
+# Scans every Indian cache file, computes IBD-style Relative Strength vs Nifty
+# 50 for each stock, ranks them, and surfaces the top N. The scan is cached for
+# 30 minutes because it's a pure read over the CSV cache (no network) and
+# stable within a trading session.
+
+_rs_scan_cache: dict = {"ts": 0, "data": None}
+_rs_scan_lock = threading.Lock()
+_RS_SCAN_TTL = 30 * 60  # seconds
+
+
+def _list_india_cache_symbols() -> list[str]:
+    """Return every NSE symbol present in the OHLCV cache (base names, no .NS)."""
+    out: list[str] = []
+    try:
+        for p in CACHE_DIR.glob("*.NS.csv"):
+            out.append(p.stem.replace(".NS", ""))
+    except Exception:
+        pass
+    return sorted(set(out))
+
+
+def _compute_rs_universe(
+    top_n: int = 35,
+    min_price: float = 50.0,
+    min_bars: int = 150,
+    max_symbols: int = 0,  # 0 = all
+) -> dict:
+    """
+    Rank every Indian stock in the cache by IBD-style RS vs Nifty 50.
+    Returns a dict with {top, total_scanned, computed, nifty_asof, generatedAt}.
+    Thread-safe, memoized for _RS_SCAN_TTL seconds.
+    """
+    now = time.time()
+    with _rs_scan_lock:
+        cached = _rs_scan_cache.get("data")
+        if cached and (now - _rs_scan_cache.get("ts", 0)) < _RS_SCAN_TTL \
+                and cached.get("_params") == (top_n, min_price, min_bars, max_symbols):
+            return cached
+
+    # 1. Fetch Nifty benchmark
+    market_prices = _wpe.fetch_market_prices(days=260)
+    if not market_prices or not market_prices.get("close"):
+        raise HTTPException(status_code=503, detail="Could not fetch Nifty50 data for RS benchmark")
+
+    # 2. Universe = all cached NSE symbols (excluding Nifty itself)
+    universe = [s for s in _list_india_cache_symbols() if s.upper() != "^NSEI"]
+    if max_symbols and len(universe) > max_symbols:
+        universe = universe[:max_symbols]
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _score_one(sym: str) -> Optional[dict]:
+        rows = _read_ohlcv(sym, days=260, market="india")
+        if not rows or len(rows) < min_bars:
+            return None
+        last_close = rows[-1]["close"]
+        if last_close < min_price:
+            return None
+        stock_prices = {
+            "close": [r["close"] for r in rows],
+            "dates": [r["date"]  for r in rows],
+        }
+        try:
+            rs = _wpe.compute_rs_score(stock_prices, market_prices)
+        except Exception:
+            return None
+        score = rs.get("rs_score")
+        if score is None:
+            return None
+        # Quick trend filter: price above its 50-day SMA (IBD "Stage-2" lite)
+        closes = stock_prices["close"]
+        sma50 = sum(closes[-50:]) / 50 if len(closes) >= 50 else 0
+        above_sma50 = last_close >= sma50 if sma50 else False
+        # 52-week high proximity
+        hi52 = max(r["high"] for r in rows[-252:]) if len(rows) >= 252 else max(r["high"] for r in rows)
+        pct_from_hi = ((last_close - hi52) / hi52 * 100) if hi52 else 0
+        return {
+            "symbol":       sym,
+            "market":       "india",
+            "rs_score":     score,
+            "rs_label":     rs.get("rs_label"),
+            "rs_color":     rs.get("rs_color"),
+            "excess_pct":   rs.get("weighted_excess_pct"),
+            "period_returns": rs.get("period_returns", {}),
+            "cmp":          round(last_close, 2),
+            "pctFrom52wHigh": round(pct_from_hi, 2),
+            "aboveSma50":   above_sma50,
+            "bars":         len(rows),
+            "lastDate":     rows[-1]["date"],
+        }
+
+    scored: list[dict] = []
+    with ThreadPoolExecutor(max_workers=12) as pool:
+        for res in pool.map(_score_one, universe):
+            if res is not None:
+                scored.append(res)
+
+    # 3. Sort by rs_score desc; tiebreak by excess_pct
+    scored.sort(key=lambda x: (x["rs_score"], x.get("excess_pct") or 0), reverse=True)
+    top = scored[:top_n]
+    # Add rank
+    for i, s in enumerate(top, start=1):
+        s["rank"] = i
+
+    data = {
+        "generatedAt":   datetime.now().isoformat(timespec="seconds"),
+        "top":           top,
+        "top_n":         top_n,
+        "total_scanned": len(universe),
+        "total_computed": len(scored),
+        "min_price":     min_price,
+        "min_bars":      min_bars,
+        "nifty_asof":    (market_prices.get("dates") or [None])[-1],
+        "_params":       (top_n, min_price, min_bars, max_symbols),
+    }
+    with _rs_scan_lock:
+        _rs_scan_cache["data"] = data
+        _rs_scan_cache["ts"]   = now
+    return data
+
+
+@app.get("/api/trade-board/watchlist/rs-leaders/preview")
+def rs_leaders_preview(
+    top: int = 35,
+    min_price: float = 50.0,
+    min_bars: int = 150,
+    refresh: bool = False,
+) -> dict:
+    """
+    Rank every Indian stock in the cache by IBD-style RS vs Nifty 50 and return
+    the top `top` without inserting anything. Use this to preview before
+    auto-populating the watchlist.
+    """
+    if top <= 0 or top > 200:
+        raise HTTPException(status_code=400, detail="top must be between 1 and 200")
+    if refresh:
+        with _rs_scan_lock:
+            _rs_scan_cache["ts"] = 0
+    return _compute_rs_universe(top_n=top, min_price=min_price, min_bars=min_bars)
+
+
+class RsLeaderAutoAddRequest(BaseModel):
+    top:       int = Field(default=35, ge=1, le=100)
+    min_price: float = 50.0
+    min_bars:  int = 150
+    refresh:   bool = False
+    replace_existing_auto: bool = True  # wipe prior auto_rs items first
+
+
+@app.post("/api/trade-board/watchlist/rs-leaders/auto-add")
+def rs_leaders_auto_add(req: RsLeaderAutoAddRequest | None = None) -> dict:
+    """
+    Compute the top-N RS leaders (vs Nifty 50) and insert them into the
+    watchlist with bucket="rs_leaders" and source="auto_rs".
+
+    • Manual entries (source="manual") are NEVER touched.
+    • By default any previously-inserted auto_rs entries are wiped first, so
+      calling this endpoint again gives you a fresh top-N snapshot.
+    • If a symbol already exists as a manual entry, we skip it (no duplicate,
+      no overwrite of your notes/conviction/etc).
+    • Anchor price defaults to the current CMP; ADR pair auto-suggested if
+      known (INFY, WIPRO, HDFCBANK, …).
+    """
+    if req is None:
+        req = RsLeaderAutoAddRequest()
+    if req.refresh:
+        with _rs_scan_lock:
+            _rs_scan_cache["ts"] = 0
+
+    ranking = _compute_rs_universe(
+        top_n=req.top, min_price=req.min_price, min_bars=req.min_bars,
+    )
+    leaders = ranking["top"]
+
+    added: list[dict] = []
+    skipped_manual: list[str] = []
+    removed_auto:  list[str] = []
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    with _watchlist_lock:
+        items = _load_watchlist()
+        # 1. Remove stale auto_rs entries first
+        if req.replace_existing_auto:
+            kept = []
+            for it in items:
+                if it.get("source") == "auto_rs":
+                    removed_auto.append(it.get("symbol", "?"))
+                else:
+                    kept.append(it)
+            items = kept
+        # 2. Insert fresh leaders, skipping any symbol already tracked manually
+        existing_syms = {(it.get("symbol") or "").upper(): it for it in items}
+        for row in leaders:
+            sym_u = row["symbol"].upper()
+            if sym_u in existing_syms:
+                # It's still in the list → either we kept a manual entry or
+                # replace_existing_auto was False and the auto entry is still there.
+                existing = existing_syms[sym_u]
+                if existing.get("source") == "manual":
+                    skipped_manual.append(sym_u)
+                    continue
+                # It's an auto entry we kept — refresh rank tags / score
+                existing["conviction"] = max(3, min(5, int((row["rs_score"] or 50) / 20)))
+                existing["tags"] = list({*existing.get("tags", []),
+                                         "rs_leader", f"rs{row['rs_score']}", f"rank{row['rank']}"})
+                existing["notes"] = f"Auto RS-Leader rank #{row['rank']}  ·  RS {row['rs_score']} {row.get('rs_label','')}"
+                added.append(existing)
+                continue
+            # Fresh insert
+            hint = ADR_HINTS.get(sym_u) or {}
+            rec = {
+                "id":          str(uuid.uuid4()),
+                "symbol":      sym_u,
+                "market":      "india",
+                "name":        "",
+                "bucket":      "rs_leaders",
+                "setup":       "",
+                "conviction":  max(3, min(5, int((row["rs_score"] or 50) / 20))),
+                "tags":        ["rs_leader", f"rs{row['rs_score']}", f"rank{row['rank']}"],
+                "add_price":   row.get("cmp"),
+                "add_date":    today,
+                "added_at":    datetime.now().isoformat(timespec="seconds"),
+                "alert_price": None,
+                "pair_symbol": hint.get("adr_symbol"),
+                "pair_market": hint.get("adr_market"),
+                "notes":       f"Auto RS-Leader rank #{row['rank']}  ·  RS {row['rs_score']} {row.get('rs_label','')}",
+                "source":      "auto_rs",
+                # extra diagnostic fields (preserved in JSON)
+                "rs_score":    row["rs_score"],
+                "rs_rank":     row["rank"],
+                "rs_excess_pct": row.get("excess_pct"),
+            }
+            items.append(rec)
+            added.append(rec)
+        _save_watchlist(items)
+
+    return {
+        "ok":              True,
+        "top":             req.top,
+        "added_count":     len(added),
+        "removed_auto":    removed_auto,
+        "skipped_manual":  skipped_manual,
+        "leaders":         added,
+        "generatedAt":     ranking["generatedAt"],
+        "nifty_asof":      ranking.get("nifty_asof"),
+        "total_scanned":   ranking["total_scanned"],
+        "total_computed":  ranking["total_computed"],
+    }
+
+
+@app.delete("/api/trade-board/watchlist/rs-leaders/auto")
+def rs_leaders_remove_auto() -> dict:
+    """Remove every auto-generated RS-Leader entry (keeps manual entries)."""
+    with _watchlist_lock:
+        items = _load_watchlist()
+        before = len(items)
+        kept   = [it for it in items if it.get("source") != "auto_rs"]
+        removed = [it.get("symbol") for it in items if it.get("source") == "auto_rs"]
+        _save_watchlist(kept)
+    return {"ok": True, "removed_count": before - len(kept), "removed": removed}
 
 
 # ── Market Overview ────────────────────────────────────────────────────────────
