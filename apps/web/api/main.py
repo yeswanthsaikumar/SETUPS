@@ -2275,7 +2275,7 @@ def _compute_board_stats(positions: list[dict]) -> dict:
     for p in positions:
         entry = p.get("entry", 0)
         qty   = p.get("quantity", 1)
-        remaining = p.get("remaining_quantity") or qty
+        remaining = p.get("remaining_quantity") if p.get("remaining_quantity") is not None else qty
         cmp   = p.get("cmp", entry)
         exit_price = p.get("exit_price") or cmp
         sl    = p.get("sl", 0)
@@ -2292,9 +2292,12 @@ def _compute_board_stats(positions: list[dict]) -> dict:
                 open_risk += (entry - sl) * remaining
             day_pl += p.get("dayChangeAmt", 0) or 0
         else:
-            partial_qty_exited = sum(e.get("quantity", 0) for e in p.get("partial_exits", []))
-            exit_qty = qty - partial_qty_exited
-            pl = pos_realized + (exit_price - entry) * exit_qty
+            # Closed position: use realized_pl if available (already includes
+            # partial exits + final close), else compute from exit_price
+            if pos_realized:
+                pl = pos_realized
+            else:
+                pl = (exit_price - entry) * qty
             total_pl += pl
             if status.startswith("T"):
                 locked_profit += pl
@@ -2664,24 +2667,33 @@ def trade_board_positions_enriched(status: str = "") -> dict:
     for p in positions:
         entry = p.get("entry", 0) or 0
         qty = p.get("quantity", 1) or 1
-        remaining = p.get("remaining_quantity") or qty
+        remaining = p.get("remaining_quantity") if p.get("remaining_quantity") is not None else qty
         st = p.get("status", "OPEN")
         if st in ("OPEN", "PARTIAL"):
             cmp, prev_close, last_date = _get_price_info(p.get("symbol", ""))
             if cmp:
                 p["cmp"] = round(cmp, 2)
                 p["gainPct"] = round((cmp - entry) / entry * 100, 2) if entry else 0
-                p["gainAmt"] = round((cmp - entry) * remaining, 2) if entry else 0
+                # Unrealized on remaining + realized from partials
+                unrealized = (cmp - entry) * remaining
+                pos_realized = p.get("realized_pl", 0) or 0
+                p["gainAmt"] = round(unrealized + pos_realized, 2) if entry else 0
                 p["lastPriceDate"] = last_date
             if cmp and prev_close and prev_close > 0:
                 p["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
                 p["dayChangeAmt"] = round((cmp - prev_close) * remaining, 2)
             # Enrich with 20EMA extension + volume records + ADR
             _enrich_position_metrics(p)
-        elif p.get("exit_price") and entry:
-            ep = float(p["exit_price"])
-            p["gainPct"] = round((ep - entry) / entry * 100, 2)
-            p["gainAmt"] = round((ep - entry) * qty, 2)
+        elif entry:
+            # Closed position: use realized_pl if available, else compute from exit_price
+            pos_realized = p.get("realized_pl", 0) or 0
+            ep = float(p.get("exit_price") or entry)
+            if pos_realized:
+                p["gainAmt"] = round(pos_realized, 2)
+                p["gainPct"] = round(pos_realized / (entry * qty) * 100, 2) if entry and qty else 0
+            elif ep:
+                p["gainPct"] = round((ep - entry) / entry * 100, 2)
+                p["gainAmt"] = round((ep - entry) * qty, 2)
     if status:
         positions = [p for p in positions if p.get("status") == status]
     positions.sort(key=lambda p: (

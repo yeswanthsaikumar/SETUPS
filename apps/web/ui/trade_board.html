@@ -1519,11 +1519,22 @@ function updateSbStats(d) {
   document.getElementById('sbOpen').textContent = open.length;
   let dayPl = 0, totalPl = 0, risk = 0;
   for (const p of d.positions || []) {
-    const e = p.entry || 0, qty = p.remaining_quantity || p.quantity || 1, cmp = p.cmp || e, sl = p.sl || e;
+    const e = p.entry || 0, sl = p.sl || e;
     const realizedPl = p.realized_pl || 0;
-    if (p.status === 'OPEN' || p.status === 'PARTIAL') { dayPl += p.dayChangeAmt || 0; totalPl += (cmp - e) * qty + realizedPl; risk += Math.max(0, e - sl) * qty; }
-    else if (p.exit_price) totalPl += (p.exit_price - e) * (p.quantity || 1);
-    else totalPl += realizedPl; // fully exited via partials
+    if (p.status === 'OPEN' || p.status === 'PARTIAL') {
+      const qty = p.remaining_quantity != null ? p.remaining_quantity : (p.quantity || 1);
+      const cmp = p.cmp || e;
+      dayPl += p.dayChangeAmt || 0;
+      totalPl += (cmp - e) * qty + realizedPl;
+      risk += Math.max(0, e - sl) * qty;
+    } else {
+      // Closed: use realized_pl if available (covers partials + final close)
+      if (realizedPl) {
+        totalPl += realizedPl;
+      } else if (p.exit_price) {
+        totalPl += (p.exit_price - e) * (p.quantity || 1);
+      }
+    }
   }
   const fA = v => (v >= 0 ? '+' : '') + '₹' + Math.abs(v).toLocaleString('en-IN', {maximumFractionDigits: 0});
   const cl = v => v >= 0 ? 'pos-color' : 'neg-color';
@@ -1551,12 +1562,18 @@ function renderPositions() {
     return true;
   });
   f.sort((a, b) => {
+    // For gain%, use price gain % (unrealized) — consistent with card display
     const ga = ((a.cmp || a.entry) - a.entry) / (a.entry || 1) * 100;
     const gb = ((b.cmp || b.entry) - b.entry) / (b.entry || 1) * 100;
+    // For total gain amount, include realized P&L from partial exits
+    const remA = a.remaining_quantity != null ? a.remaining_quantity : (a.quantity || 1);
+    const remB = b.remaining_quantity != null ? b.remaining_quantity : (b.quantity || 1);
+    const totalGainA = ((a.cmp || a.entry) - a.entry) * remA + (a.realized_pl || 0);
+    const totalGainB = ((b.cmp || b.entry) - b.entry) * remB + (b.realized_pl || 0);
     const riskA = a.entry && a.sl ? Math.abs(a.entry - a.sl) : 0;
     const riskB = b.entry && b.sl ? Math.abs(b.entry - b.sl) : 0;
-    const rmulA = riskA > 0 ? ((a.cmp || a.entry) - a.entry) / riskA : 0;
-    const rmulB = riskB > 0 ? ((b.cmp || b.entry) - b.entry) / riskB : 0;
+    const rmulA = riskA > 0 ? totalGainA / (riskA * (a.quantity || 1)) : 0;
+    const rmulB = riskB > 0 ? totalGainB / (riskB * (b.quantity || 1)) : 0;
     if (sort === 'gain_desc') return gb - ga;
     if (sort === 'gain_asc') return ga - gb;
     if (sort === 'day_desc') return (b.dayChangePct || 0) - (a.dayChangePct || 0);
@@ -1759,11 +1776,21 @@ function buildHealthBar(p) {
 
 function buildCard(p) {
   const e = p.entry || 0, totalQty = p.quantity || 1, remaining = p.remaining_quantity != null ? p.remaining_quantity : totalQty;
-  const cmp = p.cmp || e, sl = p.sl || e;
-  const gPct = e > 0 ? (cmp - e) / e * 100 : 0;
-  const unrealizedAmt = (cmp - e) * remaining;
+  const isOpen = p.status === 'OPEN' || p.status === 'PARTIAL';
+  const isClosed = !isOpen;
+  // For closed positions, use exit_price as the final price reference
+  const cmp = p.cmp || (isClosed ? (p.exit_price || e) : e), sl = p.sl || e;
   const realizedPl = p.realized_pl || 0;
-  const gAmt = unrealizedAmt + realizedPl;
+  // Gain%: for closed positions with realized_pl, compute from total capital deployed
+  let gPct, gAmt;
+  if (isClosed && realizedPl) {
+    gAmt = realizedPl;
+    gPct = e > 0 && totalQty > 0 ? (realizedPl / (e * totalQty)) * 100 : 0;
+  } else {
+    gPct = e > 0 ? (cmp - e) / e * 100 : 0;
+    const unrealizedAmt = (cmp - e) * remaining;
+    gAmt = unrealizedAmt + realizedPl;
+  }
   const dPct = p.dayChangePct || 0;
   const dAmt = p.dayChangeAmt || 0;
   const st = (p.status || 'OPEN').toLowerCase().replace('_hit', '');
@@ -1771,7 +1798,6 @@ function buildCard(p) {
   const dc = dPct > 0 ? 'gain-pos' : dPct < 0 ? 'gain-neg' : 'gain-neu';
   const ratingCls = p.rating === 'A+' ? 'bg-ap' : p.rating === 'A' ? 'bg-a' : 'bg-b';
   const partialBadge = p.status === 'PARTIAL' ? '<span class="badge bg-partial">' + remaining + '/' + totalQty + ' left</span>' : '';
-  const isOpen = p.status === 'OPEN' || p.status === 'PARTIAL';
   const priceDate = p.lastPriceDate || null;
   const priceIsStale = isOpen && priceDate && _isPriceStale(priceDate);
   const staleBadge = priceIsStale
@@ -2080,13 +2106,21 @@ async function loadDetChart(p, days) {
   if (detChart) { try { detChart.remove(); } catch(e) {} detChart = null; }
   el.innerHTML = '';
   try {
-    const r = await fetch(API + '/api/trade-board/chart/' + p.symbol + '?days=' + days);
+    const r = await fetch(API + '/api/trade-board/chart/' + encodeURIComponent(p.symbol) + '?days=' + days);
+    if (!r.ok) { el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted)">No price data (HTTP ' + r.status + ')</div>'; return; }
     const d = await r.json();
     if (!d.candles || !d.candles.length) { el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted)">No price data</div>'; return; }
+    // Deduplicate candles by date (LightweightCharts requires unique ascending times)
+    const candleMap = new Map();
+    for (const c of d.candles) { const t = (c.date || '').slice(0, 10); if (t) candleMap.set(t, c); }
+    d.candles = Array.from(candleMap.values()).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
     // Store chart metadata for detail info panel
     window._lastChartMeta = d;
+    // Ensure non-zero dimensions — overlay may still be animating
+    const cw = Math.max(el.offsetWidth, 320);
+    const ch = Math.max(el.offsetHeight, 300);
     const chart = LightweightCharts.createChart(el, {
-      width: el.offsetWidth, height: el.offsetHeight,
+      width: cw, height: ch,
       layout: {background: {type: 'Solid', color: '#080e1a'}, textColor: '#8b9dba'},
       grid: {vertLines: {color: '#0f1928'}, horzLines: {color: '#0f1928'}},
       crosshair: {mode: LightweightCharts.CrosshairMode.Normal},
@@ -2118,20 +2152,27 @@ async function loadDetChart(p, days) {
     if (p.t2) cs.createPriceLine({price: p.t2, color: '#06b6d4', lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: 'T2'});
     if (p.t3) cs.createPriceLine({price: p.t3, color: '#f59e0b', lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: 'T3'});
     chart.timeScale().fitContent();
-    new ResizeObserver(() => chart.applyOptions({width: el.offsetWidth, height: el.offsetHeight})).observe(el);
+    new ResizeObserver(() => { const rw = el.offsetWidth; const rh = el.offsetHeight; if (rw > 0 && rh > 0) chart.applyOptions({width: rw, height: rh}); }).observe(el);
     detChart = chart;
     // Update info with chart metadata
     updateDetInfo(p);
-  } catch(e) { el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted)">Error loading chart</div>'; }
+  } catch(e) { console.error('loadDetChart error:', e); el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted)">Error loading chart: ' + (e.message || e) + '</div>'; }
 }
 
 function updateDetInfo(p) {
   const e = p.entry || 0, totalQty = p.quantity || 1, remaining = p.remaining_quantity != null ? p.remaining_quantity : totalQty;
-  const cmp = p.cmp || e, sl = p.sl || e;
-  const gPct = e > 0 ? (cmp - e) / e * 100 : 0;
-  const unrealizedAmt = (cmp - e) * remaining;
+  const isDetOpen = p.status === 'OPEN' || p.status === 'PARTIAL';
+  const cmp = p.cmp || (!isDetOpen ? (p.exit_price || e) : e), sl = p.sl || e;
   const realizedPl = p.realized_pl || 0;
-  const gAmt = unrealizedAmt + realizedPl;
+  let gPct, gAmt, unrealizedAmt = 0;
+  if (!isDetOpen && realizedPl) {
+    gAmt = realizedPl;
+    gPct = e > 0 && totalQty > 0 ? (realizedPl / (e * totalQty)) * 100 : 0;
+  } else {
+    gPct = e > 0 ? (cmp - e) / e * 100 : 0;
+    unrealizedAmt = (cmp - e) * remaining;
+    gAmt = unrealizedAmt + realizedPl;
+  }
   const risk = Math.max(0, e - sl), riskT = risk * remaining, dPct = p.dayChangePct || 0;
   const fp = v => v >= 0 ? '<span class="pos-color">+' + v.toFixed(2) + '%</span>' : '<span class="neg-color">' + v.toFixed(2) + '%</span>';
   const fa = v => v >= 0 ? '<span class="pos-color">+₹' + Math.abs(v).toLocaleString('en-IN', {maximumFractionDigits: 0}) + '</span>' : '<span class="neg-color">-₹' + Math.abs(v).toLocaleString('en-IN', {maximumFractionDigits: 0}) + '</span>';
@@ -2310,6 +2351,13 @@ function openUpdateModal(id) {
   document.getElementById('uSl').value = p.sl || '';
   document.getElementById('uEntry').value = p.entry || '';
   document.getElementById('uQty').value = p.quantity || 1;
+  // Disable qty if partial exits exist to prevent desync
+  const hasPartials = (p.partial_exits || []).length > 0;
+  const qtyEl = document.getElementById('uQty');
+  if (qtyEl) {
+    qtyEl.disabled = hasPartials;
+    qtyEl.title = hasPartials ? 'Cannot change quantity — ' + (p.partial_exits||[]).length + ' partial exit(s) recorded' : '';
+  }
   document.getElementById('uNotes').value = p.notes || '';
   const t1El = document.getElementById('uT1'); if (t1El) t1El.value = p.t1 || '';
   const t2El = document.getElementById('uT2'); if (t2El) t2El.value = p.t2 || '';
@@ -2351,8 +2399,11 @@ async function submitUpdate() {
   if (!isNaN(sl)) body.sl = sl;
   const entry = parseFloat(document.getElementById('uEntry').value);
   if (!isNaN(entry)) body.entry = entry;
-  const qty = parseInt(document.getElementById('uQty').value);
-  if (!isNaN(qty) && qty > 0) body.quantity = qty;
+  const qtyField = document.getElementById('uQty');
+  if (qtyField && !qtyField.disabled) {
+    const qty = parseInt(qtyField.value);
+    if (!isNaN(qty) && qty > 0) body.quantity = qty;
+  }
   const notes = document.getElementById('uNotes').value;
   if (notes !== undefined) body.notes = notes;  // always send notes (can be cleared)
   // Add targets if available in form
@@ -2437,15 +2488,24 @@ function renderEqChart(curve) {
   chart.timeScale().fitContent();
   new ResizeObserver(() => chart.applyOptions({width: el.offsetWidth})).observe(el);
   eqChart = chart;
-  const wins = curve.filter(c => c.pl > 0), losses = curve.filter(c => c.pl < 0);
-  if (curve.length) {
+  // Compute per-trade stats from positions (not daily-aggregated curve) for accuracy
+  const closedPos = positions.filter(p => p.status !== 'OPEN' && p.status !== 'T1_HIT' && p.status !== 'T2_HIT');
+  const tradePls = closedPos.map(p => {
+    const e = p.entry || 0, qty = p.quantity || 1;
+    const isPartialOpen = p.status === 'PARTIAL';
+    const partials = p.partial_exits || [];
+    if (isPartialOpen) return (p.realized_pl || partials.reduce((s, pe) => s + (pe.price - e) * pe.quantity, 0));
+    return p.realized_pl ? p.realized_pl : ((p.exit_price || e) - e) * qty;
+  });
+  const tradeWins = tradePls.filter(pl => pl > 0), tradeLosses = tradePls.filter(pl => pl < 0);
+  if (tradePls.length) {
     document.getElementById('perfGrid').style.display = 'grid';
-    document.getElementById('csWR').textContent = ((wins.length / curve.length) * 100).toFixed(0) + '%';
-    document.getElementById('csAW').textContent = wins.length ? '+₹' + Math.round(wins.reduce((s, c) => s + c.pl, 0) / wins.length).toLocaleString('en-IN') : '—';
-    document.getElementById('csAL').textContent = losses.length ? '-₹' + Math.round(Math.abs(losses.reduce((s, c) => s + c.pl, 0) / losses.length)).toLocaleString('en-IN') : '—';
-    const aw = wins.length ? wins.reduce((s, c) => s + c.pl, 0) / wins.length : 0;
-    const al = losses.length ? Math.abs(losses.reduce((s, c) => s + c.pl, 0) / losses.length) : 0;
-    const wr = wins.length / curve.length;
+    document.getElementById('csWR').textContent = ((tradeWins.length / tradePls.length) * 100).toFixed(0) + '%';
+    document.getElementById('csAW').textContent = tradeWins.length ? '+₹' + Math.round(tradeWins.reduce((s, v) => s + v, 0) / tradeWins.length).toLocaleString('en-IN') : '—';
+    document.getElementById('csAL').textContent = tradeLosses.length ? '-₹' + Math.round(Math.abs(tradeLosses.reduce((s, v) => s + v, 0) / tradeLosses.length)).toLocaleString('en-IN') : '—';
+    const aw = tradeWins.length ? tradeWins.reduce((s, v) => s + v, 0) / tradeWins.length : 0;
+    const al = tradeLosses.length ? Math.abs(tradeLosses.reduce((s, v) => s + v, 0) / tradeLosses.length) : 0;
+    const wr = tradeWins.length / tradePls.length;
     const exp = al > 0 ? ((wr * aw - (1 - wr) * al) / al).toFixed(2) + 'R' : '—';
     document.getElementById('csEX').textContent = exp;
     document.getElementById('csEX').className = 'perf-v ' + (parseFloat(exp) > 0 ? 'pos-color' : 'neg-color');
@@ -2453,26 +2513,43 @@ function renderEqChart(curve) {
 }
 
 function renderClosedTable() {
-  const closed = positions.filter(p => p.status !== 'OPEN' && p.status !== 'PARTIAL' && p.status !== 'T1_HIT' && p.status !== 'T2_HIT');
+  // Include PARTIAL positions (they have booked partial exits) alongside fully closed ones
+  const closed = positions.filter(p => p.status !== 'OPEN' && p.status !== 'T1_HIT' && p.status !== 'T2_HIT');
   document.getElementById('closedTbody').innerHTML = closed.map(p => {
     const e = p.entry || 0, qty = p.quantity || 1;
     const exit = p.exit_price || e;
     const realizedPl = p.realized_pl || 0;
-    const pl = realizedPl || (exit - e) * qty;
-    const pp = e > 0 ? (exit - e) / e * 100 : 0;
+    const partials = p.partial_exits || [];
+    const hasPartials = partials.length > 0;
+    const isPartialOpen = p.status === 'PARTIAL';
+    // For PARTIAL (still open) positions, only show realized P&L from partial exits
+    // For fully closed positions, use realized_pl or compute from exit_price
+    let pl;
+    if (isPartialOpen) {
+      pl = realizedPl || partials.reduce((s, pe) => s + (pe.price - e) * pe.quantity, 0);
+    } else {
+      pl = realizedPl ? realizedPl : (exit - e) * qty;
+    }
+    // P&L%: based on total capital deployed (entry * qty)
+    const pp = e > 0 && qty > 0 ? (pl / (e * qty)) * 100 : 0;
     const sl = p.sl || p.stop_loss || e, risk = Math.max(.01, e - sl);
-    const rr = pl > 0 ? (pl / (risk * qty)).toFixed(1) + 'R' : '—';
+    const totalRiskAmt = risk * qty;
+    const rr = totalRiskAmt > 0.01 ? (pl / totalRiskAmt).toFixed(1) + 'R' : '—';
     const days = p.entry_date && p.exit_date ? Math.floor((new Date(p.exit_date) - new Date(p.entry_date)) / 86400000) : '—';
     const c = pl >= 0 ? 'pos-color' : 'neg-color';
-    const stCls = p.status === 'T3_HIT' ? 'bg-t3' : p.status === 'SL_HIT' ? 'bg-sl' : 'bg-closed';
-    const partialCount = (p.partial_exits || []).length;
-    const partialBadge = partialCount ? ' <span style="font-size:9px;color:var(--purple)">' + partialCount + ' partials</span>' : '';
+    const stCls = isPartialOpen ? 'bg-partial' : p.status === 'T3_HIT' ? 'bg-t3' : p.status === 'SL_HIT' ? 'bg-sl' : 'bg-closed';
+    const partialCount = partials.length;
+    const partialBadge = partialCount ? ' <span style="font-size:9px;color:var(--purple)">' + partialCount + ' partial' + (partialCount > 1 ? 's' : '') + (isPartialOpen ? ' (open)' : '') + '</span>' : '';
+    // For partial-open positions, show avg partial exit price; otherwise show exit_price
+    const partialAvgExit = hasPartials ? partials.reduce((s, pe) => s + pe.price * pe.quantity, 0) / partials.reduce((s, pe) => s + pe.quantity, 0) : 0;
+    const displayExit = isPartialOpen ? (partialAvgExit || e) : exit;
+    const statusLabel = isPartialOpen ? 'PARTIAL' : (p.status || '').replace('_HIT', ' ✓');
     return '<tr><td><b>' + p.symbol + '</b>' + partialBadge + '</td><td><span class="badge bg-setup">' + (p.setup || '—') + '</span></td>' +
-      '<td>₹' + e.toLocaleString('en-IN') + '</td><td>₹' + exit.toLocaleString('en-IN') + '</td>' +
+      '<td>₹' + e.toLocaleString('en-IN') + '</td><td>₹' + displayExit.toLocaleString('en-IN') + '</td>' +
       '<td class="' + c + '">' + (pl >= 0 ? '+' : '') + '₹' + Math.abs(pl).toLocaleString('en-IN', {maximumFractionDigits: 0}) + '</td>' +
       '<td class="' + c + '">' + (pp >= 0 ? '+' : '') + pp.toFixed(2) + '%</td>' +
       '<td style="color:var(--cyan)">' + rr + '</td><td>' + days + 'd</td>' +
-      '<td><span class="badge ' + stCls + '">' + (p.status || '').replace('_HIT', ' ✓') + '</span></td></tr>';
+      '<td><span class="badge ' + stCls + '">' + statusLabel + '</span></td></tr>';
   }).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:18px">No closed trades</td></tr>';
 }
 

@@ -125,38 +125,50 @@ def _generate_totp(secret_seed: str) -> Optional[str]:
 
 
 def _exchange_token() -> Optional[str]:
-    """Exchange API key + secret for an access token. Returns token string or None."""
-    try:
-        from growwapi import GrowwAPI
-        auth_type = _detect_auth_type()
+    """Exchange API key + secret for an access token. Returns token string or None.
 
-        if auth_type == 'totp':
-            # Generate TOTP from the secret seed
-            totp_code = _generate_totp(_GROWW_API_SECRET)
-            if not totp_code:
-                print("⚠ Could not generate TOTP code from secret", flush=True)
-                return None
-            print(f"🔐 Using TOTP auth (code generated)", flush=True)
-            result = GrowwAPI.get_access_token(
-                api_key=_GROWW_API_KEY,
-                totp=totp_code,
-            )
-        else:
-            # Approval-based auth
-            print(f"🔐 Using approval-based auth", flush=True)
-            result = GrowwAPI.get_access_token(
-                api_key=_GROWW_API_KEY,
-                secret=_GROWW_API_SECRET,
-            )
+    Retries up to 3 times with backoff on transient connection errors.
+    """
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        try:
+            from growwapi import GrowwAPI
+            auth_type = _detect_auth_type()
 
-        if isinstance(result, str) and result:
-            return result
-        elif isinstance(result, dict):
-            return (result.get("accessToken")
-                    or result.get("access_token")
-                    or result.get("token", "")) or None
-    except Exception as e:
-        print(f"⚠ Groww token exchange failed: {type(e).__name__}: {e}", flush=True)
+            if auth_type == 'totp':
+                # Generate TOTP from the secret seed
+                totp_code = _generate_totp(_GROWW_API_SECRET)
+                if not totp_code:
+                    print("⚠ Could not generate TOTP code from secret", flush=True)
+                    return None
+                print(f"🔐 Using TOTP auth (code generated)", flush=True)
+                result = GrowwAPI.get_access_token(
+                    api_key=_GROWW_API_KEY,
+                    totp=totp_code,
+                )
+            else:
+                # Approval-based auth
+                print(f"🔐 Using approval-based auth", flush=True)
+                result = GrowwAPI.get_access_token(
+                    api_key=_GROWW_API_KEY,
+                    secret=_GROWW_API_SECRET,
+                )
+
+            if isinstance(result, str) and result:
+                return result
+            elif isinstance(result, dict):
+                return (result.get("accessToken")
+                        or result.get("access_token")
+                        or result.get("token", "")) or None
+        except (ConnectionError, ConnectionResetError, OSError) as e:
+            print(f"⚠ Groww token exchange attempt {attempt}/{max_retries} failed: {type(e).__name__}: {e}", flush=True)
+            if attempt < max_retries:
+                time.sleep(2 ** attempt)  # 2s, 4s backoff
+                continue
+            return None
+        except Exception as e:
+            print(f"⚠ Groww token exchange failed: {type(e).__name__}: {e}", flush=True)
+            return None
     return None
 
 
