@@ -147,7 +147,7 @@
       "name": "gujalkali",
       "entry": 653.78,
       "quantity": 2000,
-      "remaining_quantity": null,
+      "remaining_quantity": 1000,
       "sl": 690.0,
       "t1": 0.0,
       "t2": 0.0,
@@ -156,11 +156,19 @@
       "rating": "A+",
       "notes": "",
       "entry_date": "2026-04-15",
-      "status": "OPEN",
+      "status": "PARTIAL",
       "exit_price": null,
       "exit_date": null,
       "tags": [],
-      "partial_exits": []
+      "partial_exits": [
+        {
+          "date": "2026-04-20",
+          "quantity": 1000,
+          "price": 731.27,
+          "reason": "T2_HIT"
+        }
+      ],
+      "realized_pl": 77490.0
     },
     {
       "id": "f32395f2",
@@ -315,5 +323,5 @@
     }
   ],
   "created": "2026-04-14T11:55:48.601550",
-  "lastUpdated": "2026-04-20T13:40:37.712111"
+  "lastUpdated": "2026-04-20T14:50:41.651184"
 }

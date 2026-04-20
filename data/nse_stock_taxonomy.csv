@@ -1,1361 +1,2652 @@
 nse_ticker,sector,industry,notes
-360ONE,Financials,Wealth Management,
-3MINDIA,Cap Goods,Specialty Materials,
-4THAND,Consumer,Tobacco,
-5PAISA,Financials,Stock Broking,
-AADHARHFC,Financials,Housing Finance,
-AADINATH,Textiles,Textile Processing,
-AARTI,Chemicals,Specialty Chemicals,
-AARTIDRUGS,Pharma,Pharma API,
-AARTIIND,Chemicals,Specialty Chemicals - Pharma,
-AARTISURF,Chemicals,Specialty Chemicals,
-AAVAS,Financials,Housing Finance,
-AAVIN,FMCG,FMCG - Dairy,
-ABB,Cap Goods,Automation & Drives,
-ABBOTINDIA,Pharma,Pharma Formulations,
-ABCAPITAL,Financials,NBFC,
-ABCOTS,Textiles,Cotton / Agri,
-ABFRL,Textiles,Apparel Retail,Aditya Birla Fashion Retail
-ABHIINV,Metals,Steel - Sponge Iron,
-ABHISHEK,Metals,Steel,
-ABIRLANUVO,Consumer,Diversified Consumer,
-ABSLAMC,Financials,Asset Management,
-ABSLI,Financials,Insurance,
-ACCELYA,IT,Airline IT,
-ACCIND,Infra,Cement,
-ACI,Cap Goods,Engineering,
-ACMESOLAR,Renewable,Solar IPP,
-ADANIAIRPORT,Infra,Airports,
-ADANIENSOL,Renewable,Solar IPP,
-ADANIENT,Infra,Diversified Infra,
-ADANIGAS,Energy,Gas Distribution,
-ADANIGREEN,Renewable,Renewable Energy,
-ADANIPORTS,Infra,Ports & Logistics,
-ADANIPOWER,Energy,Power Generation,
-ADANITRANS,Energy,Power Transmission,
-ADVAIT,Electronics,Electronic Components,
-AEGASIND,Energy,City Gas Distribution,
-AEGISLOG,Chemicals,Specialty Chemicals,
-AEROFLEX,Electronics,Electronic Components,
-AERONEU,Defense,Aerospace & Defense,
-AETHER,Chemicals,Specialty Chemicals,
-AFCONS,Infra,Construction EPC,
-AFFLE,Internet,AdTech,
-AGANORA,Pharma,Pharma Formulations,
-AGROPHOS,Chemicals,Agri Chemicals & Fertilisers,
-AHLUCONT,Packaging,Packaging - Containers,
-AIAENG,Cap Goods,Cutting Tools,
-AJANTPHARM,Pharma,Pharma Formulations,
-AJMERA,RealEstate,Real Estate - Residential,
-AKASAAIR,Consumer,Aviation,
-AKUMS,Pharma,Pharma Contract Mfg,
-AKZOINDIA,Consumer,Paints,
-ALEMBICPHARM,Pharma,Formulations,
-ALIVUS,Pharma,Healthcare Services,
-ALKEM,Pharma,Formulations,
-ALKYL,Chemicals,Specialty Chemicals,
-ALKYLAMINE,Chemicals,Specialty Chemicals,
-ALLCARGO,Shipping,Logistics,
-ALOKIND,Textiles,Textiles - Fabric,
-ALUCAST,Metals,Aluminium Die Casting,
-AMARA,Auto,Batteries,
-AMARON,Auto,Auto Batteries,
-AMBER,Electronics,Electronic Components,
-AMBUJACEM,Infra,Cement,
-AMJLAND,RealEstate,Real Estate - Residential,
-AMTEK,Metals,Metal Forgings & Castings,
-ANAND,Auto,Auto Components,
-ANANDRATHI,Financials,Capital Markets,
-ANANTRAJ,RealEstate,Commercial RE,
-ANCHOR,Consumer,Consumer Electricals,
-ANDHRAPER,Consumer,Paper,
-ANGELBRKG,Financials,Stock Broking,
-ANGELONE,Financials,Stock Broking,
-ANUP,Cap Goods,Engineering,
-ANURAS,Agri,Seeds,
-APAR,Cap Goods,Conductors,
-APARINDS,Cables,Cables & Wires,
-APCOTEXIND,Chemicals,Specialty Chemicals,
-APEX,Packaging,Packaging - Laminates,
-APL,Metals,Steel Pipes,
-APLAPOLLO,Metals,Steel Pipes,
-APOLLO,Defense,Defense,
-APOLLOHOSP,Pharma,Hospitals,Major hospital chain
-APOLLOPHARM,Pharma,Pharmacy Retail,
-APOLLOPIPE,Infra,CPVC/PVC Pipes,
-APOLLOPIPES,Infra,Pipes & Fittings,
-APOLLOTYRE,Auto,Tyres,
-APTUS,Financials,Housing Finance,
-ARIHANTCAP,Financials,Stock Broking,
-ARISINFRA,Infra,Construction Materials,
-AROHAN,Financials,Microfinance,
-ARVIND,Textiles,Textiles - Apparel,
-ARVINDSMRT,RealEstate,Real Estate - Residential,
-ARVSMART,RealEstate,Residential RE,
-ASAHIINDIA,Auto,Auto Ancillaries,
-ASAHISONGI,Chemicals,Specialty Chemicals,
-ASHIRVAD,Infra,Plastic Pipes,
-ASHOKA,Infra,Roads & Highways,
-ASHOKLEY,Auto,Auto OEM - CV,
-ASIANENE,Cables,Cables,
-ASIANPAINT,Consumer,Paints,
-ASIANTILES,Consumer,Tiles,
-ASK,Financials,Wealth Management,
+LAKSHMI,Agri,Agri,
+LT,Agri,Agri,
+SRIKALAHASTHI,Agri,Agri,
+SUGARIND,Agri,Agri,
+GAEL,Agri,Agri Processing,
+KOTHARIPRO,Agri,Agri Processing,
+VIPPY,Agri,Agri Processing,
+SGMART,Agri,Agri Products,
+SUPRAGRI,Agri,Agri Products,
 ASTECLIFE,Agri,Agro Chemicals,
-ASTER,Pharma,Hospitals,
-ASTERDM,Pharma,Hospitals,
-ASTRA,Defense,Defense,
-ASTRAL,Infra,Pipes & Fittings,
-ASTRAZEN,Pharma,Formulations,
-ATAM,Chemicals,Industrial Gases,
-ATGL,Energy,Gas Distribution,
-ATHERENERG,Renewable,EV Ecosystem,
-ATUL,Chemicals,Specialty Chemicals,
-AUBANK,Banking,Small Finance Banks,
-AURIONPRO,IT,Fintech Software,
-AUROPHARMA,Pharma,Pharma API,
-AURUM,RealEstate,Real Estate - Residential,
-AUTOEQ,Auto,Auto Ancillaries,
-AVAADA,Renewable,Solar Energy,
-AVADHSUGAR,Sugar,Sugar,
-AVALON,Electronics,Electronic Components,
+GODREJAGRO,Agri,Agro Chemicals,
+HERANBA,Agri,Agro Chemicals,
+INSECTICID,Agri,Agro Chemicals,
+PIIND,Agri,Agro Chemicals,
+SHARDACROP,Agri,Agro Chemicals,
 AVANTIFEED,Agri,Aquaculture / Shrimp Feed,
-AVENUSEMART,Consumer,Retail,Avenue Supermarts
+WATERBASE,Agri,Aquaculture / Shrimp Feed,
+GOKUL,Agri,Edible Oils,
+RUCHI,Agri,Edible Oils,
+WSFL,Agri,Edible Oils,
+PATANJALI,Agri,FMCG - Foods,
+PATANJALIFO,Agri,FMCG - Foods,
+CHAMBAL,Agri,Fertilisers,
+FACT,Agri,Fertilisers,
+IFFCO,Agri,Fertilisers,
+NFL,Agri,Fertilisers,
+SHRIRAMFRT,Agri,Fertilisers,
+COROMANDEL,Agri,Fertilisers & Agro Chem,
+RCF,Agri,Fertilizers,
+TIRUPATIFL,Agri,Flour Milling,
+SAKTHI,Agri,Food Products,
+VENKYS,Agri,Poultry & Agri,
+CHAMAN,Agri,Rice,
+LTFOODS,Agri,Rice,
+KRBL,Agri,Rice / Agri,
+ANURAS,Agri,Seeds,
+KSCL,Agri,Seeds & Agri,
+MCLEODRUS,Agri,Tea Plantations,
+PKTEA,Agri,Tea Plantations,
+BORORENEW,Auto,Auto,
+ASAHIINDIA,Auto,Auto Ancillaries,
+ASKAUTOLTD,Auto,Auto Ancillaries,auto:name_rule
+ATULAUTO,Auto,Auto Ancillaries,auto:name_rule
+AUTOAXLES,Auto,Auto Ancillaries,auto:name_rule
+AUTOEQ,Auto,Auto Ancillaries,
+AUTOIND,Auto,Auto Ancillaries,auto:name_rule
 AVL,Auto,Auto Ancillaries,
-AXISBANK,Banking,Private Banks,
-AXISCADES,IT,Engineering Services,
+BFUTILITIE,Auto,Auto Ancillaries,
+BHARAT1,Auto,Auto Ancillaries,
+BOSCH,Auto,Auto Ancillaries,
+BREMBO,Auto,Auto Ancillaries,
+ENDURANCE,Auto,Auto Ancillaries,
+FIEM,Auto,Auto Ancillaries,
+GABRIEL,Auto,Auto Ancillaries,
+IGARASHI,Auto,Auto Ancillaries,
+JAMNA,Auto,Auto Ancillaries,
+JAMNAAUTO,Auto,Auto Ancillaries,
+JKTYRE,Auto,Auto Ancillaries,auto:name_rule
+JMT,Auto,Auto Ancillaries,
+JYOTIRES,Auto,Auto Ancillaries,
+LUMAXTECH,Auto,Auto Ancillaries,
+MINDA,Auto,Auto Ancillaries,
+MINDAIND,Auto,Auto Ancillaries,
+MOTHERSON,Auto,Auto Ancillaries,
+NDRAUTO,Auto,Auto Ancillaries,auto:name_rule
+OMAXAUTO,Auto,Auto Ancillaries,auto:name_rule
+PRICOL,Auto,Auto Ancillaries,
+PRICOLLTD,Auto,Auto Ancillaries,
+PRITIKAUTO,Auto,Auto Ancillaries,auto:name_rule
+RACL,Auto,Auto Ancillaries,
+RICOAUTO,Auto,Auto Ancillaries,auto:name_rule
+SAMVARDHANA,Auto,Auto Ancillaries,
+SETCO,Auto,Auto Ancillaries,
+SHIVAMAUTO,Auto,Auto Ancillaries,auto:name_rule
+SONACOMS,Auto,Auto Ancillaries,
+SONAMLTD,Auto,Auto Ancillaries,
+SPAL,Auto,Auto Ancillaries,
+STYRENIX,Auto,Auto Ancillaries,auto:name_rule
+SUBROS,Auto,Auto Ancillaries,
+SUPRAJIT,Auto,Auto Ancillaries,
+TALBROAUTO,Auto,Auto Ancillaries,auto:name_rule
+TIINDIA,Auto,Auto Ancillaries,
+TIMETECHNO,Auto,Auto Ancillaries,
+UNIPARTS,Auto,Auto Ancillaries,
+UNO MINDA,Auto,Auto Ancillaries,
+UNOMINDA,Auto,Auto Ancillaries,
+VARROC,Auto,Auto Ancillaries,
+WABCO,Auto,Auto Ancillaries,
+WHEELS,Auto,Auto Ancillaries,
+ZF,Auto,Auto Ancillaries,
+AMARON,Auto,Auto Batteries,
+EXIDEIND,Auto,Auto Batteries,
+ANAND,Auto,Auto Components,
+GREAVES,Auto,Auto Components,
+JMTAUTOLTD,Auto,Auto Components,
+KPIL,Auto,Auto Components,
+SANDHAR,Auto,Auto Components,
+RICO,Auto,Auto Die Casting,
+LUMAXIND,Auto,Auto Lighting,
 BAJAJ-AUTO,Auto,Auto OEM - 2W,
 BAJAJAUT,Auto,Auto OEM - 2W,
-BAJAJCON,FMCG,FMCG - Personal Care,
-BAJAJCONS,Consumer,FMCG,
-BAJAJELEC,Consumer,Consumer Electronics,
-BAJAJELECTR,Consumer,Consumer Electricals,
-BAJAJFINSV,Financials,Insurance & Finance,
-BAJAJHFL,Financials,Housing Finance,
-BAJFINANCE,Financials,Consumer Finance,
-BALAJIAM,Consumer,Snacks,
-BALAJITELE,Consumer,Broadcasting,
-BALAMINES,Consumer,Food Products,
-BALASORE,Metals,Steel,
-BALKRISIND,Auto,Tyres,
-BALRAMCHIN,Packaging,Sugar,
-BANDHANBNK,Banking,Small Finance Banks,
-BANKBARODA,Banking,PSU Banks,
-BANKINDIA,Banking,PSU Banks,
-BARBEQUE,Consumer,Restaurants,
-BASF,Chemicals,Specialty Chemicals,
-BATA,Consumer,Footwear,
-BATAINDIA,Consumer,Footwear,
-BAYER,Chemicals,Specialty Chemicals - Agri,
-BDSL,Defense,Defense,
-BECTORFOOD,Consumer,Food Products,
-BEL,Defense,Defense Electronics,
-BEML,Cap Goods,Heavy Engineering - Defense,
-BEPL,Chemicals,Specialty Chemicals,
-BERGEPAINT,Consumer,Paints,
-BFUTILITIE,Auto,Auto Ancillaries,
-BHAGERIA,Chemicals,Specialty Chemicals - Dyes,
-BHAGYANGR,Infra,Roads & Highways,
-BHARAT,Cap Goods,Engineering,
-BHARAT1,Auto,Auto Ancillaries,
-BHARATFORG,Metals,Metal Forgings & Castings,
-BHARTIARTL,Telecom,Telecom Services,
-BHEL,Cap Goods,Power Equipment,
-BHELPSG,Cap Goods,Power Equipment,
-BHFIN,Financials,Consumer Finance,
-BIGBLOC,RealEstate,Building Materials,
-BIKAJI,FMCG,FMCG - Foods,
-BIOCON,Pharma,Pharma API,
-BIRLACORP,Infra,Cement,
-BIRLACORPN,Infra,Cement,
-BIRLAMONEY,Financials,Wealth Management,
-BIRLASOFT,IT,IT Services,
-BIRLATELE,Telecom,Telecom Services,
-BLISSGVS,Pharma,Pharma Formulations,
-BLUE,Consumer,Air Conditioning,
-BLUEBLOOD,Pharma,Pharma API,
-BLUEDART,Shipping,Express Logistics,
-BLUESTAR,Consumer,Air Conditioners,
-BOMBAYDY,Textiles,Home Textiles,
-BOMBDYING,Textiles,Textiles - Processing,
-BORORENEW,Auto,Auto,
-BOROSIL,Consumer,Scientific Glassware,
-BOSCH,Auto,Auto Ancillaries,
-BPCL,Energy,Oil Refining,
-BREMBO,Auto,Auto Ancillaries,
-BRIGADE,RealEstate,Real Estate - Residential,
-BRITANNIA,FMCG,FMCG - Foods,
-BSE,Financials,Capital Markets,
-BSNL,Telecom,Telecom Services,
-BSOFT,IT,IT Services,
-BURNPUR,Metals,Sponge Iron,
-CABINDIA,Cables,Cables & Wires,
-CAIRN,Energy,Oil Exploration,
-CAMLIN,Chemicals,Specialty Chemicals,
-CAMPUS,Consumer,Footwear,
-CAMS,Financials,Financial Technology,
-CAMSONBIO,Pharma,Healthcare Services,
-CANBK,Banking,PSU Banks,
-CANFINHOME,Financials,Housing Finance,
-CAPITALSFB,Banking,Small Finance Banks,
-CAPLIPOINT,Pharma,Formulations,
-CARBORUNIV,Cap Goods,Cutting Tools,
-CARERATING,Financials,Credit Rating,
-CARRARO,Auto,Metal Forgings & Castings,
-CARTRADE,Internet,Automotive Marketplace,
-CASTROL,Energy,Petroleum Products,
-CCL,FMCG,FMCG - Beverages,
-CDSL,Financials,Financial Technology,
-CEATLTD,Auto,Tyres,
-CEIGALL,Infra,Roads & Highways,
-CELLO,Consumer,Plastics & Furniture,
-CENTRALBK,Banking,PSU Banks,
-CENTRALBNK,Banking,PSU Banks,
-CENTUM,Electronics,Electronic Components,
-CENTURYPLY,Consumer,Building Materials,Century Plywood
-CENTURYTEX,RealEstate,Residential RE,
-CERA,Consumer,Sanitaryware,
-CESC,Energy,Power Generation,
-CGPOWER,Cap Goods,Electrical Equipment,
-CHALET,Consumer,Hotels,
-CHAMAN,Agri,Rice,
-CHAMBAL,Agri,Fertilisers,
-CHEMCON,Chemicals,Specialty Chemicals,
-CHENNPETRO,Energy,Oil Refining,
-CHOICEIN,Financials,Stock Broking,
-CHOLAFIN,Financials,Vehicle Finance,
-CHOLAHLDNG,Financials,Insurance & Finance,
-CIEINDIA,Auto,Metal Forgings & Castings,
-CIPLA,Pharma,Pharma Formulations,
-CLEAN,Chemicals,Specialty Chemicals,
-CMSINFO,IT,IT Services,
-COALINDIA,Energy,Coal & Mining,
-COASTCORP,Shipping,Logistics,
-COCHINSHIP,Defense,Shipbuilding,
-COFORGE,IT,IT Services,
-COLORMASTER,Chemicals,Specialty Chemicals - Dyes,
-COLPAL,FMCG,FMCG - Personal Care,
-COMSYN,Chemicals,Specialty Chemicals,
-CONCOR,Shipping,Rail Logistics,
-CONCORD,Pharma,Hospitals,
-COROMANDEL,Agri,Fertilisers & Agro Chem,
-CRAFTSMAN,Auto,Metal Forgings & Castings,
-CREAMBELL,Consumer,Ice Cream,
-CREDITACC,Financials,Microfinance,
-CREMICAP,Consumer,Ice Cream,
-CREST,Cap Goods,Pumps,
-CRISIL,Financials,Financial Technology,
-CROMPTON,Consumer,Consumer Electricals,
-CSBBANK,Banking,Private Banks,
-CSTLTD,Metals,Steel,
-CUMI,Cap Goods,Abrasives,
-CUMMINSIND,Cap Goods,Engines & Compressors,
-CYIENT,IT,Engineering Services,
-DABUR,FMCG,FMCG - Personal Care,
-DALMIACE,Infra,Cement,
-DALMIACEM,Infra,Cement,
-DALMIACEMB,Infra,Cement,
-DALMIASUG,Sugar,Sugar,
-DATACUBE,Defense,Defense Electronics,
-DATAMATICS,IT,IT Services,
-DATAPATTNS,Defense,Defense Electronics,
-DBCORP,Banking,Regional Banks,
-DBOL,Financials,Capital Markets,
-DBREALTY,RealEstate,Real Estate - Residential,
-DBSTOCKBRO,Financials,Stock Broking,
-DCBBANK,Banking,Regional Banks,
-DCI,Infra,Construction,
-DCMSHRIRAM,Chemicals,Agri Chemicals & Fertilisers,
-DCW,Chemicals,Specialty Chemicals - Alkali,
-DCWLTD,Chemicals,Chlor-Alkali,
-DEEDEV,Cap Goods,Industrial Piping & Pressure Vessels,
-DEEPAKFERT,Chemicals,Agri Chemicals & Fertilisers,
-DEEPAKNITR,Chemicals,Specialty Chemicals,
-DEEPAKNTR,Chemicals,Specialty Chemicals,
-DEEPINDS,Chemicals,Specialty Chemicals,
-DELHIVERY,Shipping,Logistics,
-DELTACORP,Consumer,Gaming & Casinos,
-DENORA,Chemicals,Specialty Chemicals,
-DENSATECH,Chemicals,Industrial Gases,
-DEVYANI,FMCG,QSR,
-DFM,Consumer,Food Products,
-DHAMPUR,Sugar,Sugar,
-DHAMPURSUG,Sugar,Sugar,
-DHANU,Chemicals,Specialty Chemicals - Agri,
-DHANUKA,Chemicals,Specialty Chemicals - Agri,
-DHARANI,Sugar,Sugar,
-DISHTV,Consumer,DTH,
-DIVI,Pharma,API & Bulk Drugs,
-DIVISLAB,Pharma,Pharma Formulations,
-DIXON,Consumer,Consumer Electronics,
-DLF,RealEstate,Real Estate - Residential,
-DMART,Consumer,Retail,Avenue Supermarts - retail
-DMCC,Chemicals,Specialty Chemicals,
-DODLA,Consumer,Dairy,
-DOLLAR,Textiles,Textiles - Innerwear,
-DPABHUSHAN,Consumer,Jewellery,
-DRLALPATH,Pharma,Diagnostics,
-DRONEACHARYA,Defense,Drones,
-DRREDDY,Pharma,Pharma Formulations,
-DRREDDYS,Pharma,Formulations,
-DSPIM,Financials,Wealth Management,
-DTDC,Infra,Logistics,
-DTIL,Infra,Logistics,
-DWARKESH,Sugar,Sugar,
-DYNAMATECH,Defense,Aerospace & Defense,
-EASEMYTRIP,Internet,Travel & Hospitality,
-ECLERX,IT,BPO / KPO,
 EICHERMOT,Auto,Auto OEM - 2W,
-EID,Sugar,Sugar,
-EIDPARRY,Sugar,Sugar,
-EIHOTEL,Consumer,Hotels,
-EKART,Infra,Logistics,
-ELCIDSIMP,Defense,Defense,
-ELCOMPCORP,Electronics,Electronic Components,
-ELCOMPONENT,Defense,Defense Electronics,
-ELDECO,RealEstate,Residential RE,
-ELECTHERM,Metals,Steel,
-ELGI,Cap Goods,Compressors,
-ELGIEQUIP,Cap Goods,Compressors,
-ELIN,Electronics,Electronic Components,
-ELIXIR,Pharma,Pharma API,
-ELMEASURE,Cables,Energy Meters,Energy meters
-EMAMI,Consumer,FMCG,
-EMAMILTD,FMCG,FMCG - Personal Care,
-EMBASSY,RealEstate,REIT,
-EMCURE,Pharma,Pharma Formulations,
-EMGDELTA,Infra,EPC & Construction,
-EMKAY,Financials,Stock Broking,
-EMMBI,Packaging,Packaging - Films,
-ENCUBE,Pharma,Pharma Contract Mfg,CDMO pharmaceutical
-ENDURANCE,Auto,Auto Ancillaries,
-ENTERO,Pharma,Pharma Distribution,
-EPIGRAL,Chemicals,Specialty Chemicals - Alkali,
-EPL,Packaging,Packaging - Laminates,
-EQUINOX,IT,Data Centers,
-EQUITASBNK,Banking,Small Finance Banks,
-ERIS,Pharma,Pharma Formulations,
-EROS,Consumer,Media & Entertainment,
-EROSMEDIA,Consumer,Media & Entertainment,
-ESAB,Cap Goods,Engineering,
-ESABINDIA,Cap Goods,Welding Equipment,
-ESAFSFB,Banking,Small Finance Banks,
-ESCORIT,Shipping,Shipping,
-ESCORTS,Auto,Auto OEM - 4W,
-ESGL,Shipping,Shipping,
-ETHNIX,Textiles,Apparel Retail,
-EXIDEIND,Auto,Auto Batteries,
-EXPERION,RealEstate,Residential RE,
-FACORALL,Metals,Aluminium,
-FACT,Agri,Fertilisers,
-FAIRCHEM,Chemicals,Specialty Chemicals,
-FEDERALBNK,Banking,Private Banks,
-FEVICOL,Consumer,Adhesives,
-FIEM,Auto,Auto Ancillaries,
-FILATEX,Packaging,Packaging - Films,Filatex India films
-FINCABLES,Financials,NBFC,
-FINEORG,Chemicals,Specialty Chemicals,
-FINEOTEX,Chemicals,Specialty Chemicals,
-FINOLEX,Cables,Cables & Wires,
-FLUOROCHEM,Chemicals,Specialty Chemicals - Fluorine,
-FORCEMOT,Auto,Auto OEM - CV,
-FORTIS,Pharma,Hospitals,
-FOSECOIND,Metals,Foundry Chemicals,
-FSL,Electronics,Semiconductors,
-FSS,IT,Fintech Software,
-FUSION,Financials,Microfinance,
-GABRIEL,Auto,Auto Ancillaries,
-GAEL,Agri,Agri Processing,
-GAIL,Energy,Gas Distribution,
-GALAXYSURF,Chemicals,Specialty Chemicals,
-GALLANTT,Metals,Steel - Structural,
-GANDHAR,Chemicals,Specialty Chemicals,
-GANESHA,Textiles,Technical Textiles,
-GARMENTSIND,Textiles,Garments,
-GARUDA,Consumer,Aviation,
-GARWARE,Textiles,Textiles - Technical,
-GATI,Infra,Logistics,
-GE SHIPPING,Shipping,Shipping,
-GENUS,Cables,Energy Meters,Smart metering solutions
-GEOJITFSL,Financials,Stock Broking,
-GEPIL,Cap Goods,Industrial Gases,
-GESHIP,Shipping,Shipping,
-GHCL,Chemicals,Specialty Chemicals - Alkali,
-GICRE,Financials,Reinsurance,
-GILLETTE,FMCG,FMCG - Personal Care,
-GIPCL,Energy,Power Generation,
-GLAND,Pharma,Pharma API,
-GLAXO,Pharma,Pharma Formulations,
-GLENMARK,Pharma,Pharma Formulations,
-GLOBUSSPR,Consumer,Spirits,
-GMBREW,FMCG,FMCG - Beverages,
-GMDC,Metals,Coal & Minerals,
-GMDCLTD,Metals,Iron Ore,
-GMRINFRA,Infra,Airports,
-GNA,Auto,Metal Forgings & Castings,
-GNFC,Chemicals,Agro Chemicals,
-GOA,Cap Goods,Shipbuilding,
-GOCLCORP,Defense,Defense - Explosives,
-GODAVARIB,Infra,Irrigation,
-GODFREY,Consumer,Tobacco,
-GODFRYPHLP,FMCG,Cigarettes,
-GODIGIT,Financials,Non-Life Insurance,
-GODREJAGRO,Agri,Agro Chemicals,
-GODREJAP,Consumer,Home Appliances,
-GODREJCP,FMCG,FMCG - Personal Care,
-GODREJFIN,Financials,NBFC,
-GODREJIND,Consumer,Adhesives & Chemicals,
-GODREJPROP,RealEstate,Real Estate - Residential,
-GOKALDAS,Textiles,Textiles - Apparel,
-GOKEX,Textiles,Cotton / Agri,
-GOKUL,Agri,Edible Oils,
-GOLDBEES,Metals,Gold ETF,
-GOLDENKA,Renewable,Solar Modules,
-GOLDI,Renewable,Solar Panels,
-GOLDIAM,Consumer,Jewellery,
-GOVAL,Metals,Steel,
-GPIL,Metals,Steel - Sponge Iron,
-GPPL,Infra,Ports & Logistics,
-GPT,Cap Goods,Railway Sleepers,
-GRANULES,Pharma,API & Bulk Drugs,
-GRAPHITE,Metals,Graphite Electrodes,
-GRASIM,Textiles,Textiles - Viscose,
-GRAVITA,Metals,Metal & Mining,
-GREAVES,Auto,Auto Components,
-GREAVESCOT,Auto,Engines & Compressors,
-GREENKO,Renewable,Solar IPP,
-GREENLAMIND,Consumer,Plywood & Laminates,
-GREENPANEL,Consumer,Building Materials,Green Panel
-GREENPOWER,Renewable,Power Integrated,
-GRINDMASTER,Cap Goods,Grinders & Machines,
-GRINDWELL,Cap Goods,Cutting Tools,Abrasives and cutting tools
-GRMOVER,Consumer,E-Commerce,
-GROWW,Financials,Stock Broking,
-GRSE,Defense,Shipbuilding,
-GRUH,Financials,Housing Finance,
-GSPL,Energy,Gas Distribution,
-GTLINFRA,Telecom,Telecom Infrastructure,
-GTPL,Telecom,Cable TV & Broadband,
-GUJALKALI,Chemicals,Specialty Chemicals - Alkali,
-GUJARATGAS,Energy,Gas Distribution,
-GUJFLUORO,Chemicals,Specialty Chemicals - Fluorine,
-GUJGAS,Energy,City Gas Distribution,
-GUJGASLTD,Energy,City Gas Distribution,
-GUJNREGAS,Energy,Gas Distribution,
-GUJRATGAS,Energy,City Gas Distribution,
-GVK,Infra,Airports,
-GVKPIL,Infra,Ports,
-HAL,Defense,Aerospace & Defense,
-HALONIX,Consumer,Lighting & Fixtures,
-HAPPSTMNDS,IT,IT Services,
-HARIOM,Metals,Steel,
-HATHWAY,Telecom,Cable TV & Broadband,
-HATSUN,Consumer,Dairy,
-HAVELLS,Cap Goods,Electrical Equipment,
-HAWKINS,Consumer,Pressure Cookers,
-HBLPOWER,Auto,Batteries,
-HCALPIPES,Cap Goods,Pipes,
-HCG,Pharma,Hospitals,
-HCLINFOSYS,IT,IT Services,
-HCLTECH,IT,IT Services,
-HDFCAMC,Financials,Asset Management,
-HDFCBANK,Banking,Private Banks,
-HDFCLIFE,Financials,Life Insurance,
-HEALTHCARE,Pharma,Hospitals,
-HEALTHSPRING,Pharma,Healthcare IT,
-HEALTHSRC,Pharma,Diagnostics,
-HEG,Metals,Graphite Electrodes,Graphite electrode manufacturer
-HEIDELBERG,Infra,Cement,
-HEMIPROP,Chemicals,Specialty Chemicals,
-HERANBA,Agri,Agro Chemicals,
-HERITGFOOD,Consumer,Dairy,
 HERO,Auto,Auto OEM - 2W,
 HEROHONDA,Auto,Auto OEM - 2W,
 HEROMOTOCO,Auto,Auto OEM - 2W,
-HESTER,Pharma,Veterinary & Animal Health,
-HEXAWARE,IT,IT Services,
-HFCL,Cables,Optical Fiber Cables,
-HG INFRA,Infra,Road EPC,
-HGINFRA,Infra,Roads & Highways,
-HIKAL,Chemicals,Specialty Chemicals - Pharma,
-HIMALAYA,Consumer,FMCG - Ayurveda,
-HIMATSEIDE,Textiles,Textiles - Technical,
-HINDALCO,Metals,Aluminium,
-HINDALCOIND,Metals,Aluminium,
-HINDCOPPER,Metals,Copper Mining,
+KINETIC,Auto,Auto OEM - 2W,
+MAHSCOOTER,Auto,Auto OEM - 2W,
+ROYALENF,Auto,Auto OEM - 2W,
+TVSMOTOR,Auto,Auto OEM - 2W,
+TVSMOTORS,Auto,Auto OEM - 2W,
+ESCORTS,Auto,Auto OEM - 4W,
+M&M,Auto,Auto OEM - 4W,
+MARUTI,Auto,Auto OEM - 4W,
+TATAMOTORS,Auto,Auto OEM - 4W,
+TTMT,Auto,Auto OEM - 4W,
+ASHOKLEY,Auto,Auto OEM - CV,
+FORCEMOT,Auto,Auto OEM - CV,
+SML,Auto,Auto OEM - CV,
+STARBUS,Auto,Auto OEM - CV,
+OLARIDER,Auto,Auto OEM - EV,
+TATAMOTR,Auto,Auto OEM - EV,
+KERNEX,Auto,Auto Safety Systems,
+AMARA,Auto,Batteries,
+HBLPOWER,Auto,Batteries,
+SCHAEFFLER,Auto,Bearings,
+SKFINDIA,Auto,Bearings,
+TIMKEN,Auto,Bearings,
+SMLISUZU,Auto,Commercial Vehicles,
+TATAMOTOR,Auto,Diversified Vehicles,
+OLA,Auto,Electric Vehicles,
+GREAVESCOT,Auto,Engines & Compressors,
+UCALFUEL,Auto,Fuel Systems,
+CARRARO,Auto,Metal Forgings & Castings,
+CIEINDIA,Auto,Metal Forgings & Castings,
+CRAFTSMAN,Auto,Metal Forgings & Castings,
+GNA,Auto,Metal Forgings & Castings,
+JBMA,Auto,Metal Forgings & Castings,
+MAHINDCIE,Auto,Metal Forgings & Castings,
+MAHINDRACIE,Auto,Metal Forgings & Castings,
+SANSERA,Auto,Metal Forgings & Castings,
+SHRIPISTON,Auto,Metal Forgings & Castings,
+SUNDRMFAST,Auto,Metal Forgings & Castings,
 HINDMOTORS,Auto,Passenger Vehicles,
-HINDOILEXP,Energy,Oil & Gas,
-HINDPETRO,Energy,Oil Refining,
-HINDPOW,Metals,Ferro Alloys,
-HINDUCOPPER,Metals,Copper,
-HINDUNILVR,FMCG,FMCG - Personal Care,
-HINDUSTAN,Chemicals,Industrial Gases,
-HINDWARE,Consumer,Sanitaryware,
-HINDZINC,Metals,Zinc & Lead,
-HISAR,Metals,Steel,
-HISARMET,Metals,Steel,
-HISARMETAL,Metals,Steel - Sponge Iron,
-HITECHCORP,Cap Goods,Electrical Equipment,
-HLEGLAS,Consumer,Glassware,
-HNDFDS,FMCG,FMCG - Foods,
-HOMEFIRST,Financials,Housing Finance,
-HONASA,FMCG,FMCG - Personal Care,
-HONAUT,Cap Goods,Automation,
-HPCL,Energy,Oil Refining,
-HSCL,Cap Goods,Heavy Structures,
-HSIL,Consumer,Sanitaryware,
-HUHTAMAKI,Packaging,Packaging - Laminates,
 HYUNDAI,Auto,Passenger Vehicles,
-IBREALEST,RealEstate,Commercial RE,
-IBULHSGFIN,Financials,Housing Finance,
-ICICIBANK,Banking,Private Banks,
-ICICIGI,Financials,Non-Life Insurance,
-ICICILOMBRD,Financials,Insurance,
-ICICIPRAMC,Financials,Asset Management,
-ICICIPRU,Financials,Life Insurance,
-ICICISEC,Financials,Stock Broking,
-ICIL,Textiles,Textiles - Fabric,
-ICRA,Financials,Credit Rating,
+SWARAJENG,Auto,Tractors,
+VST,Auto,Tractors,
+APOLLOTYRE,Auto,Tyres,
+BALKRISIND,Auto,Tyres,
+CEATLTD,Auto,Tyres,
+MRF,Auto,Tyres,
+BANKBARODA,Banking,PSU Banks,
+BANKINDIA,Banking,PSU Banks,
+CANBK,Banking,PSU Banks,
+CENTRALBK,Banking,PSU Banks,
+CENTRALBNK,Banking,PSU Banks,
 IDBI,Banking,PSU Banks,
-IDEA,Telecom,Telecom Services,
-IDEAFORGE,Defense,Drones,
+INDIANB,Banking,PSU Banks,
+IOB,Banking,PSU Banks,
+MAHABANK,Banking,PSU Banks,
+PNB,Banking,PSU Banks,
+SBIN,Banking,PSU Banks,
+UCO,Banking,PSU Banks,
+UNIONBANK,Banking,PSU Banks,
+AXISBANK,Banking,Private Banks,
+CSBBANK,Banking,Private Banks,
+FEDERALBNK,Banking,Private Banks,
+HDFCBANK,Banking,Private Banks,
+ICICIBANK,Banking,Private Banks,
 IDFC,Banking,Private Banks,
 IDFCFIRSTB,Banking,Private Banks,
-IFFCO,Agri,Fertilisers,
-IFGL,Metals,Refractories,
-IGARASHI,Auto,Auto Ancillaries,
-IGL,Energy,Gas Distribution,
-IGPL,Chemicals,Industrial Gases,
-IIFL,Financials,NBFC,
-IIFLSEC,Financials,Stock Broking,
-INDEGENE,IT,Healthcare IT,
-INDHOTELS,Consumer,Hotels,
-INDIABULL,RealEstate,Real Estate - Residential,
-INDIABULLS,RealEstate,Residential RE,
-INDIACEM,Infra,Cement,
-INDIAGLYCO,Chemicals,Specialty Chemicals,
-INDIAGLYCOL,Chemicals,Specialty Chemicals,
-INDIAGRID,Energy,Power Transmission,
-INDIAMART,Internet,B2B Marketplace,
-INDIANB,Banking,PSU Banks,
-INDIASHLTR,Financials,Housing Finance,
-INDIGO,Chemicals,Specialty Chemicals,
-INDIGOPNTS,Consumer,Paints,
-INDIGRID,Infra,Power Transmission InvIT,
-INDOCO,Pharma,Formulations,
-INDOTECH,Cables,Cables & Wires,
-INDOTHAI,Banking,Regional Banks,
-INDUS,Telecom,Telecom Infrastructure,
 INDUSINDBK,Banking,Private Banks,
-INFIBEAM,Internet,Fintech,
-INFOSYS,IT,IT Services,
-INFY,IT,IT Services,
-INNVENTMED,Pharma,Medical Devices,
-INOX,Consumer,Multiplex,
-INOXAIR,Cap Goods,Industrial Gases,
-INOXINDIA,Cap Goods,Cryogenic Equipment,
-INOXLEIS,Consumer,Multiplex,
-INOXLEISUR,Consumer,Multiplex,
-INOXWIND,Energy,Wind Energy,
-INSECTICID,Agri,Agro Chemicals,
-INTELLECT,IT,IT Products,
-INTERGLOBE,Consumer,Aviation,
-INVENTURUS,IT,Healthcare IT,
-IOB,Banking,PSU Banks,
-IOC,Energy,Oil Refining,
-IOLCP,Chemicals,Specialty Chemicals,
-ION,IT,E-Governance,
-IPCALAB,Pharma,Pharma Formulations,
-IRB,Infra,Roads & Highways,
-IRCON,Infra,Railway Construction,
-IRCTC,Internet,Travel & Hospitality,
-IREDA,Financials,Power Finance,
-IRFC,Infra,Railway Finance,
-ISGEC,Cap Goods,Heavy Engineering,
-ISMT,Metals,Steel Pipes,
-ITC,FMCG,FMCG - Foods,
-ITCHOTELS,Consumer,Hotels,
-IXIGO,Internet,Travel Tech,
-JAGSNPHARM,Pharma,Pharma API,
-JAIBALAJI,Metals,Steel,
-JAIINFRA,Infra,Infra,
-JAISWAL,Metals,Steel,
-JAISWALNIC,Metals,Steel,
-JAMNA,Auto,Auto Ancillaries,
-JAMNAAUTO,Auto,Auto Ancillaries,
-JANA,Banking,Small Finance Banks,
-JANATA,Banking,Regional Banks,
-JAYAGROGN,Chemicals,Specialty Chemicals - Agri,
-JB,Pharma,Formulations,
-JBCHEPHARM,Pharma,Pharma Formulations,
-JBMA,Auto,Metal Forgings & Castings,
-JCHAC,Consumer,Air Conditioners,
-JETFREIGHT,Shipping,Logistics,
-JINDALPOLY,Packaging,Packaging - Films,
-JINDALSAW,Metals,Steel Pipes,
-JINDALSTEL,Metals,Steel,
-JKBANK,Banking,Regional Banks,
-JKCEMENT,Infra,Cement,
-JKIL,Infra,Cement,
-JKPAPER,Packaging,Paper & Packaging,
-JMFINANCIL,Financials,Wealth Management,
-JMT,Auto,Auto Ancillaries,
-JMTAUTOLTD,Auto,Auto Components,
-JOJALGOLD,Consumer,Jewellery,
-JPASSOCIAT,Infra,EPC & Construction,
-JPOLYINVST,Financials,Investment Companies,
-JPPOWER,Energy,Power Generation,
-JSFB,Banking,Small Finance Banks,
-JSHL,Metals,Steel,
-JSL,Metals,Steel,
-JSPL,Metals,Steel,
-JSW,Infra,Ports,
-JSWCEM,Infra,Cement,
-JSWENERGY,Energy,Power Generation,
-JSWESL,Energy,Power,
-JSWHL,Metals,Metals,
-JSWISPL,Metals,Steel,
-JSWREALTY,RealEstate,Residential RE,
-JSWSTEEL,Metals,Steel,
-JTLINFRA,Metals,Steel Pipes,
-JUBILANT,Consumer,Diversified Consumer,
-JUBILANTIND,Chemicals,Specialty Chemicals,
-JUBLFOOD,FMCG,QSR,
-JUBLPHARMA,Pharma,Pharma API - CDMO,
-JUSTDIAL,Internet,Local Search,
-JYOTHY,Consumer,Personal Care,
-JYOTHYLAB,FMCG,FMCG - Personal Care,
-JYOTICNC,Cap Goods,Machine Tools,
-JYOTIRES,Auto,Auto Ancillaries,
-JYOTISTRUC,Cap Goods,Power Towers,
-KAJARIA,Consumer,Tiles,
-KAJARIACER,Consumer,Tiles,
-KAKATCEM,Infra,Cement,
-KALINDEE,Cap Goods,Rail Electrification,
-KALPATPOWR,Energy,Power Transmission,
-KALYANI,Metals,Metal Forgings & Castings,
-KALYANKJIL,Consumer,Gold Jewelry,
-KANSAINER,Packaging,Packaging,
-KARNATKABANK,Banking,Regional Banks,
-KARURVYSYA,Banking,Regional Banks,
-KAYNES,Electronics,Electronic Components,
-KDDL,Consumer,Jewelry & Watches,
-KEC,Cap Goods,Power T&D,
-KECIL,Cap Goods,Engineering,
-KECINTL,Cap Goods,Power T&D,
-KECL,Cap Goods,Power Transmission,
-KEI,Cables,Cables & Wires,
-KENERGY,Renewable,Renewable,
-KENNAMETAL,Cap Goods,Cutting Tools,
-KERNEX,Auto,Auto Safety Systems,
-KESORAMIND,Infra,Cement,
-KEYSTONE,RealEstate,Residential RE,
-KFINTECH,Financials,Financial Technology,
-KHADIM,Consumer,Footwear,
-KICL,Chemicals,Specialty Chemicals,
-KIMS,Pharma,Hospitals,
-KINETIC,Auto,Auto OEM - 2W,
-KIOCL,Metals,Iron Ore & Mining,
-KIRIIND,Renewable,Green Hydrogen,
-KIRILOSENG,Cap Goods,Pumps & Compressors,
-KIRILOSKAR,Cap Goods,Pumps & Compressors,
-KIRLOSBROS,Cap Goods,Pumps,
-KIRLOSENG,Cap Goods,Pumps & Compressors,
-KIRLOSKAR,Cap Goods,Pumps & Compressors,
-KITEX,Textiles,Textiles - Apparel,
-KMEW,Cap Goods,Engineering,
-KMSUGAR,Sugar,Sugar,
-KNR,Infra,Roads & Highways,
-KNRCON,Infra,Roads & Highways,
-KOLTEPATIL,RealEstate,Real Estate - Residential,
 KOTAK,Banking,Private Banks,
 KOTAKBANK,Banking,Private Banks,
-KOTHARIPRO,Agri,Agri Processing,
-KPCL,Energy,Power Generation,
-KPIL,Auto,Auto Components,
-KPIT,IT,IT Engineering,
-KPITTECH,IT,IT Services,
-KPR,Textiles,Garments,
-KPRMILL,Textiles,Textiles - Spinning,KPR Mill spinning
-KRBL,Agri,Rice / Agri,
-KRN,Cap Goods,Heat Exchangers,
-KRSNAA,Pharma,Diagnostics,
-KSB,Cap Goods,Pumps & Compressors,
-KSCL,Agri,Seeds & Agri,
+RBLBANK,Banking,Private Banks,
+YESBANK,Banking,Private Banks,
+DBCORP,Banking,Regional Banks,
+DCBBANK,Banking,Regional Banks,
+INDOTHAI,Banking,Regional Banks,
+JANATA,Banking,Regional Banks,
+JKBANK,Banking,Regional Banks,
+KARNATKABANK,Banking,Regional Banks,
+KARURVYSYA,Banking,Regional Banks,
 KTKBANK,Banking,Regional Banks,
-KUANTUMGLO,Consumer,Packaging,
-KWALITY,Consumer,Dairy,
-L&T,Infra,EPC & Construction,
-LAKSHMI,Agri,Agri,
 LAKSHMIBANK,Banking,Regional Banks,
 LAKSHVIL,Banking,Regional Banks,
 LAKSHVILAS,Banking,Regional Banks,
-LALPATHLAB,Pharma,Diagnostics,
+NAINITALBNK,Banking,Regional Banks,
+SARASWATCO,Banking,Regional Banks,
+SBCL,Banking,Regional Banks,
+SOUTHBNK,Banking,Regional Banks,
+TMBBANK,Banking,Regional Banks,
+TVSHLTD,Banking,Regional Banks,
+AUBANK,Banking,Small Finance Banks,
+BANDHANBNK,Banking,Small Finance Banks,
+CAPITALSFB,Banking,Small Finance Banks,
+EQUITASBNK,Banking,Small Finance Banks,
+ESAFSFB,Banking,Small Finance Banks,
+JANA,Banking,Small Finance Banks,
+JSFB,Banking,Small Finance Banks,
+SURYODAY,Banking,Small Finance Banks,
+UJJIVAN,Banking,Small Finance Banks,
+UJJIVANSFB,Banking,Small Finance Banks,
+UTKARSHBNK,Banking,Small Finance Banks,
+AROGRANITE,Building Materials,Building Materials,auto:name_rule
+ASIANENE,Cables,Cables,
+MESCAB,Cables,Cables,
+PARAMOUNT,Cables,Cables,
+RRKABEL,Cables,Cables,
+STERLITEIND,Cables,Cables,
+WELCABLE,Cables,Cables,
+APARINDS,Cables,Cables & Wires,
+CABINDIA,Cables,Cables & Wires,
+FINOLEX,Cables,Cables & Wires,
+INDOTECH,Cables,Cables & Wires,
+KEI,Cables,Cables & Wires,
+POLYCAB,Cables,Cables & Wires,
+PRECWIRE,Cables,Cables & Wires,
+RR,Cables,Cables & Wires,
+SPECTRUM,Cables,Cables & Wires,
+SUMEETINDS,Cables,Cables & Wires,
+ELMEASURE,Cables,Energy Meters,Energy meters
+GENUS,Cables,Energy Meters,Smart metering solutions
+SECURE,Cables,Energy Meters,Energy metering
+HFCL,Cables,Optical Fiber Cables,
+OPTIEMUS,Cables,Optical Fiber Cables,
+STLTECH,Cables,Optical Fiber Cables,
+VINDHYATEL,Cables,Optical Fibre,
+CUMI,Cap Goods,Abrasives,
+HONAUT,Cap Goods,Automation,
+ABB,Cap Goods,Automation & Drives,
+SIEMENS,Cap Goods,Automation & Drives,
+ELGI,Cap Goods,Compressors,
+ELGIEQUIP,Cap Goods,Compressors,
+APAR,Cap Goods,Conductors,
+SANGHVI,Cap Goods,Cranes,
+INOXINDIA,Cap Goods,Cryogenic Equipment,
+AIAENG,Cap Goods,Cutting Tools,
+CARBORUNIV,Cap Goods,Cutting Tools,
+GRINDWELL,Cap Goods,Cutting Tools,Abrasives and cutting tools
+KENNAMETAL,Cap Goods,Cutting Tools,
+WENDT,Cap Goods,Cutting Tools,
+PATELENG,Cap Goods,EPC,
+POWMECH,Cap Goods,EPC,
 LARSEN,Cap Goods,EPC & Engineering,
-LATENTVIEW,IT,Data Analytics,
-LAURUS,Pharma,Pharma API,
-LAURUSLABS,Pharma,API & Bulk Drugs,
-LEEHOLIDAY,Consumer,Hotels,
-LEHAR,Consumer,Footwear,
-LEMERITE,Financials,Investment Companies,
-LEMONTRE,Consumer,Hotels,
-LENSKART,Consumer,Eyewear Retail,
-LGBBROSLTD,Textiles,Textiles - Fabric,
-LGEINDIA,Consumer,Consumer Electronics,
-LIBERTY,Consumer,Footwear,
-LICHSGFIN,Financials,Housing Finance,
-LICI,Financials,Insurance,
-LIKHITHA,Infra,Pipeline EPC,
+CGPOWER,Cap Goods,Electrical Equipment,
+HAVELLS,Cap Goods,Electrical Equipment,
+HITECHCORP,Cap Goods,Electrical Equipment,
+POWERINDIA,Cap Goods,Electrical Equipment,
+SCHNEIDER,Cap Goods,Electrical Equipment,
+ACI,Cap Goods,Engineering,
+ANUP,Cap Goods,Engineering,
+BHARAT,Cap Goods,Engineering,
+ESAB,Cap Goods,Engineering,
+KECIL,Cap Goods,Engineering,
+KMEW,Cap Goods,Engineering,
+MWL,Cap Goods,Engineering,
+RIIL,Cap Goods,Engineering,
+TRIVENIENG,Cap Goods,Engineering,
+WALCHAND,Cap Goods,Engineering,
+CUMMINSIND,Cap Goods,Engines & Compressors,
+RITEFIL,Cap Goods,Filtration,
+GRINDMASTER,Cap Goods,Grinders & Machines,
+PAHARPUR,Cap Goods,Heat Exchange & Boilers,
+TECHNO,Cap Goods,Heat Exchange & Boilers,
+THERMAX,Cap Goods,Heat Exchange & Boilers,
+KRN,Cap Goods,Heat Exchangers,
+ISGEC,Cap Goods,Heavy Engineering,
+BEML,Cap Goods,Heavy Engineering - Defense,
+HSCL,Cap Goods,Heavy Structures,
+GEPIL,Cap Goods,Industrial Gases,
+INOXAIR,Cap Goods,Industrial Gases,
+DEEDEV,Cap Goods,Industrial Piping & Pressure Vessels,
+JYOTICNC,Cap Goods,Machine Tools,
+LOKESHMACH,Cap Goods,Machine Tools,
+MACPOWER,Cap Goods,Machine Tools,
+MOLD,Cap Goods,Moldtek,
+HCALPIPES,Cap Goods,Pipes,
+TEXMOPIPES,Cap Goods,Pipes,
+BHEL,Cap Goods,Power Equipment,
+BHELPSG,Cap Goods,Power Equipment,
+POWERMECH,Cap Goods,Power Plant EPC,
+TDPOWERSYS,Cap Goods,Power Systems,
+KEC,Cap Goods,Power T&D,
+KECINTL,Cap Goods,Power T&D,
+JYOTISTRUC,Cap Goods,Power Towers,
+SKIPPER,Cap Goods,Power Towers,
+KECL,Cap Goods,Power Transmission,
+PIXTRANS,Cap Goods,Power Transmission,
+CREST,Cap Goods,Pumps,
+KIRLOSBROS,Cap Goods,Pumps,
+ROTO,Cap Goods,Pumps,
+KIRILOSENG,Cap Goods,Pumps & Compressors,
+KIRILOSKAR,Cap Goods,Pumps & Compressors,
+KIRLOSENG,Cap Goods,Pumps & Compressors,
+KIRLOSKAR,Cap Goods,Pumps & Compressors,
+KSB,Cap Goods,Pumps & Compressors,
+KALINDEE,Cap Goods,Rail Electrification,
+NRAIL,Cap Goods,Rails,
+TEXRAIL,Cap Goods,Railway Equipment,
+GPT,Cap Goods,Railway Sleepers,
+GOA,Cap Goods,Shipbuilding,
+MDL,Cap Goods,Shipbuilding,
+3MINDIA,Cap Goods,Specialty Materials,
+TIIL,Cap Goods,Textile Machinery,
+VOLTAMP,Cap Goods,Transformers,
+TRIVENIGR,Cap Goods,Turbines,
+PROSTARM,Cap Goods,UPS & Power,
+RPSGVENT,Cap Goods,Ventilation Equipment,
+SUNTECKINS,Cap Goods,Water Tech,
+ESABINDIA,Cap Goods,Welding Equipment,
+VIKAS,Cap Goods,Wires,
+JSWCEMENT,Cement,Cement,auto:name_rule
+STARCEMENT,Cement,Cement,auto:name_rule
+AGROPHOS,Chemicals,Agri Chemicals & Fertilisers,
+DCMSHRIRAM,Chemicals,Agri Chemicals & Fertilisers,
+DEEPAKFERT,Chemicals,Agri Chemicals & Fertilisers,
+PARADEEP,Chemicals,Agri Chemicals & Fertilisers,
+TATACHEM,Chemicals,Agri Chemicals & Fertilisers,
+GNFC,Chemicals,Agro Chemicals,
+CHAMBLFERT,Chemicals,Agrochemicals,auto:name_rule
+MADRASFERT,Chemicals,Agrochemicals,auto:name_rule
+OSWALSEEDS,Chemicals,Agrochemicals,auto:name_rule
+PCBL,Chemicals,Carbon Black,
+AKSHARCHEM,Chemicals,Chemicals,auto:name_rule
+BHAGCHEM,Chemicals,Chemicals,auto:name_rule
+BIOFILCHEM,Chemicals,Chemicals,auto:name_rule
+BODALCHEM,Chemicals,Chemicals,auto:name_rule
+BOMDYEING,Chemicals,Chemicals,auto:name_rule
+CHEMBOND,Chemicals,Chemicals,auto:name_rule
+CHEMBONDCH,Chemicals,Chemicals,auto:name_rule
+CHEMFAB,Chemicals,Chemicals,auto:name_rule
+CHEMPLASTS,Chemicals,Chemicals,auto:name_rule
+FAIRCHEMOR,Chemicals,Chemicals,auto:name_rule
+JGCHEM,Chemicals,Chemicals,auto:name_rule
+KANORICHEM,Chemicals,Chemicals,auto:name_rule
+KHAICHEM,Chemicals,Chemicals,auto:name_rule
+PUNJABCHEM,Chemicals,Chemicals,auto:name_rule
+RELCHEMQ,Chemicals,Chemicals,auto:name_rule
+TECILCHEM,Chemicals,Chemicals,auto:name_rule
+DCWLTD,Chemicals,Chlor-Alkali,
+ATAM,Chemicals,Industrial Gases,
+DENSATECH,Chemicals,Industrial Gases,
+HINDUSTAN,Chemicals,Industrial Gases,
+IGPL,Chemicals,Industrial Gases,
+LINDE,Chemicals,Industrial Gases,
+KAMOPAINTS,Chemicals,Paints & Coatings,auto:name_rule
+MANAKCOAT,Chemicals,Paints & Coatings,auto:name_rule
+FINPIPE,Chemicals,Plastics & Pipes,auto:name_rule
+GANDHITUBE,Chemicals,Plastics & Pipes,auto:name_rule
+HARIOMPIPE,Chemicals,Plastics & Pipes,auto:name_rule
+SCODATUBES,Chemicals,Plastics & Pipes,auto:name_rule
+TOKYOPLAST,Chemicals,Plastics & Pipes,auto:name_rule
+TPLPLASTEH,Chemicals,Plastics & Pipes,auto:name_rule
+VENUSPIPES,Chemicals,Plastics & Pipes,auto:name_rule
+AARTI,Chemicals,Specialty Chemicals,
+AARTISURF,Chemicals,Specialty Chemicals,
+AEGISLOG,Chemicals,Specialty Chemicals,
+AETHER,Chemicals,Specialty Chemicals,
+ALKYL,Chemicals,Specialty Chemicals,
+ALKYLAMINE,Chemicals,Specialty Chemicals,
+APCOTEXIND,Chemicals,Specialty Chemicals,
+ASAHISONGI,Chemicals,Specialty Chemicals,
+ATUL,Chemicals,Specialty Chemicals,
+BASF,Chemicals,Specialty Chemicals,
+BEPL,Chemicals,Specialty Chemicals,
+CAMLIN,Chemicals,Specialty Chemicals,
+CHEMCON,Chemicals,Specialty Chemicals,
+CLEAN,Chemicals,Specialty Chemicals,
+COMSYN,Chemicals,Specialty Chemicals,
+DEEPAKNITR,Chemicals,Specialty Chemicals,
+DEEPAKNTR,Chemicals,Specialty Chemicals,
+DEEPINDS,Chemicals,Specialty Chemicals,
+DENORA,Chemicals,Specialty Chemicals,
+DMCC,Chemicals,Specialty Chemicals,
+FAIRCHEM,Chemicals,Specialty Chemicals,
+FINEORG,Chemicals,Specialty Chemicals,
+FINEOTEX,Chemicals,Specialty Chemicals,
+GALAXYSURF,Chemicals,Specialty Chemicals,
+GANDHAR,Chemicals,Specialty Chemicals,
+HEMIPROP,Chemicals,Specialty Chemicals,
+INDIAGLYCO,Chemicals,Specialty Chemicals,
+INDIAGLYCOL,Chemicals,Specialty Chemicals,
+INDIGO,Chemicals,Specialty Chemicals,
+IOLCP,Chemicals,Specialty Chemicals,
+JUBILANTIND,Chemicals,Specialty Chemicals,
+KICL,Chemicals,Specialty Chemicals,
 LINCOLN,Chemicals,Specialty Chemicals,
 LINCOLNCAP,Chemicals,Specialty Chemicals,
-LINDE,Chemicals,Industrial Gases,
-LLOYDS,Consumer,Consumer Appliances,
-LLOYDSENT,Metals,Steel,
-LLOYDSME,Metals,Steel,
-LOKESHMACH,Cap Goods,Machine Tools,
-LOTUSEYE,Pharma,Eye Hospitals,
-LOVABLE,Consumer,Innerwear & Hosiery,
-LT,Agri,Agri,
-LTF,Financials,Consumer Finance,
-LTFOODS,Agri,Rice,
-LTI,IT,IT Services,
-LTIM,IT,IT Services,
-LTTS,IT,IT Engineering,
-LUMAXIND,Auto,Auto Lighting,
-LUMAXTECH,Auto,Auto Ancillaries,
-LUPIN,Pharma,Pharma Formulations,
-LUX,Textiles,Textiles - Innerwear,
-LUXIND,Textiles,Textiles - Innerwear,
 LXCHEM,Chemicals,Specialty Chemicals,
-M&M,Auto,Auto OEM - 4W,
-M&MFIN,Financials,Vehicle Finance,
-MACPOWER,Cap Goods,Machine Tools,
-MACROTECH,RealEstate,Real Estate - Residential,
-MAHABANK,Banking,PSU Banks,
-MAHESHWARI,Shipping,Shipping,
-MAHGL,Energy,City Gas Distribution,
-MAHINDCIE,Auto,Metal Forgings & Castings,
-MAHINDHOLIDAY,Consumer,Travel & Tourism,
-MAHINDRACIE,Auto,Metal Forgings & Castings,
-MAHLIFE,RealEstate,Real Estate - Residential,
-MAHLOG,Shipping,Logistics,
-MAHSCOOTER,Auto,Auto OEM - 2W,
-MAKEMYTRIP,Internet,Travel Tech,
-MANAKSIA,Metals,Steel,
-MANAKSTEEL,Metals,Steel,
-MANALIPETC,Metals,Steel Pipes,
-MANAPPURAM,Financials,Gold Loans,
-MANCREDIT,Financials,NBFC,
-MANGLAM,Metals,Steel Wires,
-MANGLMCEM,Infra,Cement,
-MANKIND,Pharma,Pharma Formulations,
-MANOMAY,Textiles,Textiles,
-MANYAVAR,Textiles,Apparel Retail,
-MAPMYINDIA,Internet,Digital Maps,
-MARICO,FMCG,FMCG - Personal Care,
-MARKSANS,Pharma,Formulations,
-MARUTI,Auto,Auto OEM - 4W,
-MASTEK,IT,IT Services,
-MAWANASUG,Sugar,Sugar,
-MAXFIN,Financials,NBFC,
-MAXHEALTH,Pharma,Hospitals,
-MAXLIFE,Financials,Life Insurance,
-MAZDOCK,Defense,Shipbuilding,
-MCDOWELL-N,FMCG,FMCG - Beverages,
-MCLEODRUS,Agri,Tea Plantations,
-MCX,Financials,Capital Markets,
-MCXINDIA,Financials,Commodities Exchange,
-MDL,Cap Goods,Shipbuilding,
-MEDANTA,Pharma,Hospitals,
-MEDKART,Pharma,Generic Pharma Retail,
-MEDPLUS,Pharma,Pharmacy Retail,
-MEGASTAR,Consumer,Entertainment,
-MESCAB,Cables,Cables,
-METRO,Consumer,Footwear,
-METROBRAND,Consumer,Footwear,
-METROPOLIS,Pharma,Diagnostics,
-MFSL,Financials,Insurance & Finance,
-MGEL,Metals,Metal & Mining,
-MGL,Energy,Gas Distribution,
-MIDHANI,Defense,Aerospace Alloys,
-MINDA,Auto,Auto Ancillaries,
-MINDAIND,Auto,Auto Ancillaries,
-MINDSPACE,RealEstate,REIT,
-MIRC,Consumer,Consumer Electronics,
-MIRCELECTR,Consumer,Electronics,
-MISHRA,Metals,Specialty Metals,
-MKTGCD,Packaging,Packaging,
-MMTC,Metals,Metal Trading,
-MOBIKWIK,Internet,Fintech,
-MOFSL,Financials,Wealth Management,
-MOIL,Metals,Manganese Mining,
-MOLD,Cap Goods,Moldtek,
-MOLD-TEK,Packaging,Packaging - Rigid,
-MOLDTEK,Packaging,Packaging - Containers,
-MOLDTKPAC,Packaging,Rigid Packaging,
-MOSCHIP,Electronics,Semiconductors,
-MOSDOH,Energy,Renewable,
-MOTHERSON,Auto,Auto Ancillaries,
-MOTILALOFS,Financials,Wealth Management,
-MPHASIS,IT,IT Services,
-MRF,Auto,Tyres,
-MRPL,Energy,Oil Refining,
-MSTCLTD,Metals,Metal & Mining,
-MTAR,Defense,Aerospace & Defense,
-MTARTECH,Defense,Aerospace & Defense,
-MUKANDFIN,Metals,Steel,
-MUTHOOTCAP,Financials,Gold Loans,
-MUTHOOTFIN,Financials,Gold Loans,
-MWL,Cap Goods,Engineering,
-NAGAFERT,Defense,Defense - Explosives,
-NAHAREXP,Textiles,Textiles - Spinning,
-NAHARSPING,Textiles,Textiles - Spinning,
-NAINITALBNK,Banking,Regional Banks,
-NALCO,Metals,Aluminium,
-NARAYANA,Pharma,Hospitals,
 NARMADA,Chemicals,Specialty Chemicals,
-NATCO,Pharma,Formulations,
-NATCOPHARM,Pharma,Pharma Formulations,
-NATHPULP,Consumer,Paper & Pulp,
-NATIONALUM,Metals,Aluminium,
-NAUKRI,Internet,Online Recruitment,
-NAVINFIN,Financials,Microfinance,
 NAVINFLUOR,Chemicals,Specialty Chemicals,
-NAZARA,Internet,Gaming,
-NBCC,Infra,Govt Construction,
-NCC,Infra,Construction EPC,
-NCLIND,Chemicals,Specialty Chemicals - Alkali,
-NDLVENTURE,Financials,Investment Companies,
-NDTV,Consumer,TV Broadcasting,
-NELCAST,Metals,Metal Forgings & Castings,
 NEOGEN,Chemicals,Specialty Chemicals,
-NESCO,RealEstate,Commercial RE,
-NESTLEIND,FMCG,FMCG - Foods,
-NETSOL,IT,IT Services,
-NETWEB,IT,IT Services,
-NETWORK18,Consumer,Media & Entertainment,
-NEULANDLAB,Pharma,API & Bulk Drugs,
-NEWGEN,IT,IT Services,
-NEXUS,RealEstate,REIT,
-NFL,Agri,Fertilisers,
-NHLIND,Pharma,Hospitals,
-NHPC,Energy,Power Generation,
-NIACINDIA,Financials,Non-Life Insurance,
-NIACL,Financials,Non-Life Insurance,
-NIARE,Financials,Reinsurance,
-NIFTYMET,Metals,Steel,
-NIINSYS,IT,IT Services,
-NIIT,IT,IT Education,
-NIITMTS,IT,IT Training,
-NIITNX,IT,IT Services,
-NIITTECH,IT,IT Services,
-NIKHILAD,Textiles,Technical Textiles,
-NILE,Metals,Metal & Mining,
-NILKAMAL,Consumer,Plastics & Furniture,
-NINSYS,IT,IT Services,
-NIPPONAMC,Financials,Asset Management,
-NIPPONSEIMC,Financials,Asset Management,
-NITIN,Textiles,Yarn & Fabric,
-NITINSPIN,Textiles,Textiles - Spinning,
-NITIRAJ,Textiles,Textiles - Fabric,
-NITISHK,Consumer,Tiles,
-NLCINDIA,Energy,Power Generation,
-NMDC,Metals,Metal & Mining,
-NMSPACK,Packaging,Packaging - Rigid,
-NMSWORKS,Textiles,Textiles,
 NOCIL,Chemicals,Specialty Chemicals,
-NOVARTIS,Pharma,Formulations,
-NPCIL,Energy,Nuclear Power,
-NPTC,Energy,Power Generation,
-NRAIL,Cap Goods,Rails,
-NSDL,Financials,Financial Technology,
-NSLNISP,Metals,Steel,
-NTPC,Energy,Power Generation,
-NUCLEUS,IT,IT Products,
-NUVAMA,Financials,Wealth Management,
-NUVOCO,Infra,Cement,
-NXTDIGITAL,Telecom,Cable TV,
-NYKAA,Internet,Beauty & Fashion Retail,
-OBEROIREAL,RealEstate,Residential RE,
-OBEROIRLTY,RealEstate,Residential RE,
-OCCL,Metals,Refractories,
-OFSS,IT,IT Services,
-OIL,Energy,Oil & Gas,
-OILINDIA,Energy,Oil Exploration,
-OLA,Auto,Electric Vehicles,
-OLARIDER,Auto,Auto OEM - EV,
-OLECTRA,Renewable,EV Vehicles,
-OMAXE,RealEstate,Residential RE,
-ONELIFECAP,Financials,Capital Markets,
-ONGC,Energy,Oil & Gas,
-ONMOBILE,IT,IT Products,
-OPTIEMUS,Cables,Optical Fiber Cables,
-ORICONENT,Packaging,Packaging - Containers,
-ORIENTBELL,Consumer,Tiles,
-ORIENTELC,Financials,Insurance,
-ORIENTELEC,Consumer,Consumer Electricals,
-ORIENTGREEN,Renewable,Wind Energy,
-ORIENTINS,Financials,Non-Life Insurance,
-OWM,Textiles,Woolen Mills,
-PAGEIND,Textiles,Textiles - Innerwear,
-PAGES,Textiles,Apparel Retail,
-PAHARPUR,Cap Goods,Heat Exchange & Boilers,
-PANACEA,Pharma,Pharma Packaging,
-PARABDRUGS,Pharma,Pharma API,
-PARADEEP,Chemicals,Agri Chemicals & Fertilisers,
-PARAG,Consumer,Dairy,
-PARAMOUNT,Cables,Cables,
-PARAS,Defense,Defense,
-PASHUPATI,Textiles,Cotton / Agri,
-PATANJALI,Agri,FMCG - Foods,
-PATANJALIFO,Agri,FMCG - Foods,
-PATEL,Infra,EPC & Construction,
-PATELENG,Cap Goods,EPC,
-PAUSHAKLTD,Chemicals,Specialty Chemicals - Fluorine,
-PAYTM,Internet,Fintech,
-PCBL,Chemicals,Carbon Black,
-PCJEWELLER,Consumer,Jewellery,
-PERSISTENT,IT,IT Services,
-PETRONET,Energy,Gas Distribution,
-PFC,Financials,Power Finance,
-PFCINDIA,Financials,Power Finance,
-PFIZER,Pharma,Pharma Formulations,
-PFOCUS,Pharma,Pharma Formulations,
-PGEL,Electronics,Electronic Components,
-PGHH,FMCG,FMCG - Personal Care,
-PHILIPCARB,Metals,Graphite Electrodes,
-PHILIPSBV,Consumer,Healthcare Equipment,
-PHOENIXLTD,RealEstate,Real Estate - Commercial,
-PI,Chemicals,Specialty Chemicals - Agri,
-PIDILITIND,Consumer,Adhesives & Chemicals,
-PIIND,Agri,Agro Chemicals,
-PIRAMALPHA,Pharma,Pharma Formulations,
-PIXTRANS,Cap Goods,Power Transmission,
-PKTEA,Agri,Tea Plantations,
-PLASTIBLEN,Infra,Pipes & Fittings,
-PMI,Renewable,EV Vehicles,
-PNB,Banking,PSU Banks,
-PNBHOUSING,Financials,Housing Finance,
-PNC,Infra,Roads & Highways,
-PNCINFRA,Infra,Roads & Highways,
-POLICYBZR,Internet,Insurance Technology,
-POLYCAB,Cables,Cables & Wires,
-POLYMED,Pharma,Medical Devices,
-POLYPLEX,Packaging,Packaging - Films,
-POWERGRID,Energy,Power Transmission,
-POWERGRIDINVIT,Infra,Power InvIT,
-POWERINDIA,Cap Goods,Electrical Equipment,
-POWERMECH,Cap Goods,Power Plant EPC,
-POWMECH,Cap Goods,EPC,
-PRABHAT,Consumer,Dairy,
-PRAJIND,Sugar,Ethanol & Sugar,
-PRATAAP,Consumer,Snacks,
-PRECWIRE,Cables,Cables & Wires,
-PREMIER,Defense,Defense,
-PREMIERENE,Renewable,Renewable Energy,
-PREMIERENRG,Renewable,Solar Modules,
-PREMIERPOL,Packaging,Packaging - Plastics,
-PRESTIGE,RealEstate,Real Estate - Residential,
-PRICOL,Auto,Auto Ancillaries,
-PRICOLLTD,Auto,Auto Ancillaries,
-PRINCEPIPE,Metals,Steel Pipes,
-PRISMJOHNSN,Infra,Cement,
-PRIVISCL,Financials,Investment Companies,
-PROSTARM,Cap Goods,UPS & Power,
-PRSMJOHNSN,FMCG,FMCG - Foods,
-PRUDENT,Financials,Wealth Management,
-PSPPROJECT,Infra,EPC & Construction,
-PTCIND,Energy,Power Trading,
-PURAVANK,RealEstate,Residential RE,
-PURAVANKARA,RealEstate,Real Estate - Residential,
-PVRINOX,Consumer,Multiplex,
-QUESS,IT,Staffing,
-QUICKHEAL,IT,Cybersecurity,
-RACL,Auto,Auto Ancillaries,
-RADICO,FMCG,FMCG - Beverages,
-RAIL,Infra,Infra,
-RAILTEL,Telecom,Telecom Infrastructure,
-RAILVIKAS,Infra,Railway Construction,
-RAINBOW,Pharma,Hospitals,
-RAJESHEXPO,Consumer,Jewellery,
-RALLIS,Chemicals,Specialty Chemicals - Agri,
-RAMAKRISHNA,Metals,Copper Products,
-RAMASTEEL,Metals,Steel,
-RAMCOCEM,Infra,Cement,
-RAMCOIND,IT,IT Products,
-RAMSARUP,Metals,Steel,
-RATEGAIN,Internet,Travel Tech,
-RATHI,Metals,Steel,
-RATNA,Metals,Steel,
-RATNAMANI,Metals,Steel Pipes,
-RATTANINDIA,Renewable,Renewable Energy,
-RAYMOND,Textiles,Textiles - Apparel,
-RBLBANK,Banking,Private Banks,
-RCF,Agri,Fertilizers,
-RECLTD,Financials,Power Finance,
-REGEN,Renewable,Wind Energy,
-RELAXO,Consumer,Footwear,
-RELIANCE,Energy,Oil & Gas,
-RENUKA,Sugar,Sugar,
-REPCO,Financials,Housing Finance,
-REPPRO,Financials,Stock Broking,
-RICO,Auto,Auto Die Casting,
-RIIL,Cap Goods,Engineering,
-RITEFIL,Cap Goods,Filtration,
-RITES,Infra,Railway Consultancy,
-ROHLTD,Metals,Iron & Steel,
 ROSSARI,Chemicals,Specialty Chemicals,
-ROSSELL,Defense,Defense Aerospace,
-ROTO,Cap Goods,Pumps,
-ROUTE,IT,IT Services,
-ROYALENF,Auto,Auto OEM - 2W,
-RPOWER,Energy,Power Generation,
-RPSGVENT,Cap Goods,Ventilation Equipment,
-RR,Cables,Cables & Wires,
-RRKABEL,Cables,Cables,
-RSWM,Textiles,Textiles - Spinning,
-RTNL,Metals,Steel,
-RUBYMILLS,Textiles,Textiles - Fabric,
-RUCHI,Agri,Edible Oils,
-RUPA,Textiles,Textiles - Innerwear,
-RVNL,Infra,Railway Construction,
-SABTN,Energy,City Gas Distribution,
-SADBHAV,Infra,Infra,
-SAFEXPRESS,Infra,Logistics,
-SAGILITY,IT,BPO & KPO,
-SAHANA,Packaging,Packaging,
-SAHASRA,Electronics,Electronic Manufacturing,
-SAIL,Metals,Steel,
-SAILIFE,Pharma,Healthcare Services,
-SAKAR,Pharma,Pharma Formulations,
-SAKSOFT,IT,IT Services,
-SAKTHI,Agri,Food Products,
-SALONA,Textiles,Textiles,
-SAMHI,Consumer,Hotels,
-SAMMAANCAP,Financials,Capital Markets,
-SAMVARDHANA,Auto,Auto Ancillaries,
-SANDHAR,Auto,Auto Components,
-SANDUMA,Metals,Metal & Mining,
-SANGAMIND,Textiles,Textiles - Fabric,
-SANGHI,Infra,Cement,
-SANGHIIND,Infra,Cement,
-SANGHVI,Cap Goods,Cranes,
-SANGHVIMOV,Infra,Cranes & Lifting,
-SANOFI,Pharma,Pharma Formulations,
-SANSERA,Auto,Metal Forgings & Castings,
-SAPPHIRE,FMCG,QSR,
-SAPPHIREF,Consumer,QSR,
+SOLUTIONK,Chemicals,Specialty Chemicals,
+SRF,Chemicals,Specialty Chemicals,
+SUDARSCHEM,Chemicals,Specialty Chemicals,
+TRANSPEK,Chemicals,Specialty Chemicals,
+VINATI,Chemicals,Specialty Chemicals,
+VINATIORGA,Chemicals,Specialty Chemicals,
+BAYER,Chemicals,Specialty Chemicals - Agri,
+DHANU,Chemicals,Specialty Chemicals - Agri,
+DHANUKA,Chemicals,Specialty Chemicals - Agri,
+JAYAGROGN,Chemicals,Specialty Chemicals - Agri,
+PI,Chemicals,Specialty Chemicals - Agri,
+RALLIS,Chemicals,Specialty Chemicals - Agri,
+SUMICHEM,Chemicals,Specialty Chemicals - Agri,
+UPL,Chemicals,Specialty Chemicals - Agri,
+DCW,Chemicals,Specialty Chemicals - Alkali,
+EPIGRAL,Chemicals,Specialty Chemicals - Alkali,
+GHCL,Chemicals,Specialty Chemicals - Alkali,
+GUJALKALI,Chemicals,Specialty Chemicals - Alkali,
+NCLIND,Chemicals,Specialty Chemicals - Alkali,
+TATACHEMICAL,Chemicals,Specialty Chemicals - Alkali,
+BHAGERIA,Chemicals,Specialty Chemicals - Dyes,
+COLORMASTER,Chemicals,Specialty Chemicals - Dyes,
+FLUOROCHEM,Chemicals,Specialty Chemicals - Fluorine,
+GUJFLUORO,Chemicals,Specialty Chemicals - Fluorine,
+PAUSHAKLTD,Chemicals,Specialty Chemicals - Fluorine,
+AARTIIND,Chemicals,Specialty Chemicals - Pharma,
+HIKAL,Chemicals,Specialty Chemicals - Pharma,
+FEVICOL,Consumer,Adhesives,
+GODREJIND,Consumer,Adhesives & Chemicals,
+PIDILITIND,Consumer,Adhesives & Chemicals,
+BLUESTAR,Consumer,Air Conditioners,
+JCHAC,Consumer,Air Conditioners,
+VOLTAS,Consumer,Air Conditioners,
+BLUE,Consumer,Air Conditioning,
+SYMPHONY,Consumer,Air Coolers,
+WONDERLA,Consumer,Amusement Parks,
+TRENT,Consumer,Apparel Retail,
+AKASAAIR,Consumer,Aviation,
+GARUDA,Consumer,Aviation,
+INTERGLOBE,Consumer,Aviation,
+SOUTHWEST,Consumer,Aviation,
+SPICEJET,Consumer,Aviation,
+VBLLTD,Consumer,Beverages,
+BALAJITELE,Consumer,Broadcasting,
+CENTURYPLY,Consumer,Building Materials,Century Plywood
+GREENPANEL,Consumer,Building Materials,Green Panel
+VSTIND,Consumer,Cigarettes,
+LLOYDS,Consumer,Consumer Appliances,
+WHIRLPOOL,Consumer,Consumer Appliances,
+ANCHOR,Consumer,Consumer Electricals,
+BAJAJELECTR,Consumer,Consumer Electricals,
+CROMPTON,Consumer,Consumer Electricals,
+ORIENTELEC,Consumer,Consumer Electricals,
+VGUARD,Consumer,Consumer Electricals,
+BAJAJELEC,Consumer,Consumer Electronics,
+DIXON,Consumer,Consumer Electronics,
+LGEINDIA,Consumer,Consumer Electronics,
+MIRC,Consumer,Consumer Electronics,
+DISHTV,Consumer,DTH,
+TATASKY,Consumer,DTH,
+DODLA,Consumer,Dairy,
+HATSUN,Consumer,Dairy,
+HERITGFOOD,Consumer,Dairy,
+KWALITY,Consumer,Dairy,
+PARAG,Consumer,Dairy,
+PRABHAT,Consumer,Dairy,
+ABIRLANUVO,Consumer,Diversified Consumer,
+JUBILANT,Consumer,Diversified Consumer,
+GRMOVER,Consumer,E-Commerce,
+KEEPLEARN,Consumer,Education,auto:name_rule
+ZEELEARN,Consumer,Education,auto:name_rule
+MIRCELECTR,Consumer,Electronics,
+MEGASTAR,Consumer,Entertainment,
+LENSKART,Consumer,Eyewear Retail,
+BAJAJCONS,Consumer,FMCG,
+EMAMI,Consumer,FMCG,
+HIMALAYA,Consumer,FMCG - Ayurveda,
+BALAMINES,Consumer,Food Products,
+BECTORFOOD,Consumer,Food Products,
+DFM,Consumer,Food Products,
 SAPPHIREFD,Consumer,Food Products,
 SAPPHIREFOO,Consumer,Food Products,
-SARASWATCO,Banking,Regional Banks,
-SARDAEN,Metals,Steel,
+TASTY,Consumer,Food Products,
+BATA,Consumer,Footwear,
+BATAINDIA,Consumer,Footwear,
+CAMPUS,Consumer,Footwear,
+KHADIM,Consumer,Footwear,
+LEHAR,Consumer,Footwear,
+LIBERTY,Consumer,Footwear,
+METRO,Consumer,Footwear,
+METROBRAND,Consumer,Footwear,
+RELAXO,Consumer,Footwear,
+DELTACORP,Consumer,Gaming & Casinos,
+DIAMONDYD,Consumer,Gems & Jewellery,auto:name_rule
+LYPSAGEMS,Consumer,Gems & Jewellery,auto:name_rule
+HLEGLAS,Consumer,Glassware,
+KALYANKJIL,Consumer,Gold Jewelry,
+SENCO,Consumer,Gold Jewelry,
+THANGAMAYL,Consumer,Gold Jewelry,
+PHILIPSBV,Consumer,Healthcare Equipment,
+GODREJAP,Consumer,Home Appliances,
+VENTIVE,Consumer,Hospitality,
+CHALET,Consumer,Hotels,
+EIHOTEL,Consumer,Hotels,
+INDHOTELS,Consumer,Hotels,
+ITCHOTELS,Consumer,Hotels,
+LEEHOLIDAY,Consumer,Hotels,
+LEMONTRE,Consumer,Hotels,
+SAMHI,Consumer,Hotels,
+TAJGVK,Consumer,Hotels,
+BRIGHOTEL,Consumer,Hotels & Restaurants,auto:name_rule
+EIHAHOTELS,Consumer,Hotels & Restaurants,auto:name_rule
+INDHOTEL,Consumer,Hotels & Restaurants,auto:name_rule
+KAMATHOTEL,Consumer,Hotels & Restaurants,auto:name_rule
+PARKHOTELS,Consumer,Hotels & Restaurants,auto:name_rule
+TGBHOTELS,Consumer,Hotels & Restaurants,auto:name_rule
+CREAMBELL,Consumer,Ice Cream,
+CREMICAP,Consumer,Ice Cream,
+VADILALIND,Consumer,Ice Cream,
+LOVABLE,Consumer,Innerwear & Hosiery,
+DPABHUSHAN,Consumer,Jewellery,
+GOLDIAM,Consumer,Jewellery,
+JOJALGOLD,Consumer,Jewellery,
+PCJEWELLER,Consumer,Jewellery,
+RAJESHEXPO,Consumer,Jewellery,
+SKYGOLD,Consumer,Jewellery,
+TARA,Consumer,Jewellery,
+THEJEWELS,Consumer,Jewellery,
+VAIBHAVGBL,Consumer,Jewellery,
+KDDL,Consumer,Jewelry & Watches,
+TITAN,Consumer,Jewelry & Watches,
+HALONIX,Consumer,Lighting & Fixtures,
+EROS,Consumer,Media & Entertainment,
+EROSMEDIA,Consumer,Media & Entertainment,
+NETWORK18,Consumer,Media & Entertainment,
+SUNTV,Consumer,Media & Entertainment,
+TV18BRDCST,Consumer,Media & Entertainment,
+TVTODAY,Consumer,Media & Entertainment,
+ZEEL,Consumer,Media & Entertainment,
+INOX,Consumer,Multiplex,
+INOXLEIS,Consumer,Multiplex,
+INOXLEISUR,Consumer,Multiplex,
+PVRINOX,Consumer,Multiplex,
+TIPS,Consumer,Music,
 SAREGAMA,Consumer,Music & Media,
-SASKEN,IT,IT Engineering,
+TIPSINDLTD,Consumer,Music & Media,
+KUANTUMGLO,Consumer,Packaging,
+AKZOINDIA,Consumer,Paints,
+ASIANPAINT,Consumer,Paints,
+BERGEPAINT,Consumer,Paints,
+INDIGOPNTS,Consumer,Paints,
+SHALPAINTS,Consumer,Paints,
+ANDHRAPER,Consumer,Paper,
 SATIA,Consumer,Paper,
+SHREYANS,Consumer,Paper,
+STARPAPL,Consumer,Paper,
+TNPL,Consumer,Paper,
+WESPAPER,Consumer,Paper,
+NATHPULP,Consumer,Paper & Pulp,
+JYOTHY,Consumer,Personal Care,
+CELLO,Consumer,Plastics & Furniture,
+NILKAMAL,Consumer,Plastics & Furniture,
+TUPPERWARE,Consumer,Plastics & Furniture,
+GREENLAMIND,Consumer,Plywood & Laminates,
+HAWKINS,Consumer,Pressure Cookers,
+TTK,Consumer,Pressure Cookers,
+SAPPHIREF,Consumer,QSR,
+BARBEQUE,Consumer,Restaurants,
+SPECIALITY,Consumer,Restaurants,
+AKSHOPTFBR,Consumer,Retail,auto:name_rule
+AVENUSEMART,Consumer,Retail,Avenue Supermarts
+DMART,Consumer,Retail,Avenue Supermarts - retail
+PATELRMART,Consumer,Retail,auto:name_rule
+RETAIL,Consumer,Retail,auto:name_rule
+SHOPSTOP,Consumer,Retail,
+SMARTLINK,Consumer,Retail,auto:name_rule
+SMARTWORKS,Consumer,Retail,auto:name_rule
+SPENCERS,Consumer,Retail,
+USHAMART,Consumer,Retail,auto:name_rule
+V2RETAIL,Consumer,Retail,auto:name_rule
+VMART,Consumer,Retail,V-Mart Retail
+SHOPERSTOP,Consumer,Retail Fashion,
+CERA,Consumer,Sanitaryware,
+HINDWARE,Consumer,Sanitaryware,
+HSIL,Consumer,Sanitaryware,
+BOROSIL,Consumer,Scientific Glassware,
+BALAJIAM,Consumer,Snacks,
+PRATAAP,Consumer,Snacks,
+GLOBUSSPR,Consumer,Spirits,
+NDTV,Consumer,TV Broadcasting,
+ASIANTILES,Consumer,Tiles,
+KAJARIA,Consumer,Tiles,
+KAJARIACER,Consumer,Tiles,
+NITISHK,Consumer,Tiles,
+ORIENTBELL,Consumer,Tiles,
+SOMANY,Consumer,Tiles,
+SOMANYCERA,Consumer,Tiles,
+4THAND,Consumer,Tobacco,
+GODFREY,Consumer,Tobacco,
+MAHINDHOLIDAY,Consumer,Travel & Tourism,
+YATRA,Consumer,Travel & Tourism,
+TITANBYK,Consumer,Watches & Jewellery,
+SULAVIN,Consumer,Wine,
+AERONEU,Defense,Aerospace & Defense,
+DYNAMATECH,Defense,Aerospace & Defense,
+HAL,Defense,Aerospace & Defense,
+MTAR,Defense,Aerospace & Defense,
+MTARTECH,Defense,Aerospace & Defense,
+SOLARIND,Defense,Aerospace & Defense,
+MIDHANI,Defense,Aerospace Alloys,
+ZODIAC,Defense,Aerospace Components,
+APOLLO,Defense,Defense,
+ASTRA,Defense,Defense,
+BDSL,Defense,Defense,
+ELCIDSIMP,Defense,Defense,
+PARAS,Defense,Defense,
+PREMIER,Defense,Defense,
+ZEN,Defense,Defense,
+SOLARBOMB,Defense,Defense - Ammunition,
+GOCLCORP,Defense,Defense - Explosives,
+NAGAFERT,Defense,Defense - Explosives,
+ROSSELL,Defense,Defense Aerospace,
+BEL,Defense,Defense Electronics,
+DATACUBE,Defense,Defense Electronics,
+DATAPATTNS,Defense,Defense Electronics,
+ELCOMPONENT,Defense,Defense Electronics,
+DRONEACHARYA,Defense,Drones,
+IDEAFORGE,Defense,Drones,
+COCHINSHIP,Defense,Shipbuilding,
+GRSE,Defense,Shipbuilding,
+MAZDOCK,Defense,Shipbuilding,
+ADVAIT,Electronics,Electronic Components,
+AEROFLEX,Electronics,Electronic Components,
+AMBER,Electronics,Electronic Components,
+AVALON,Electronics,Electronic Components,
+CENTUM,Electronics,Electronic Components,
+ELCOMPCORP,Electronics,Electronic Components,
+ELIN,Electronics,Electronic Components,
+KAYNES,Electronics,Electronic Components,
+PGEL,Electronics,Electronic Components,
+SGIL,Electronics,Electronic Components,
+SYRMA,Electronics,Electronic Components,
+SAHASRA,Electronics,Electronic Manufacturing,
+FSL,Electronics,Semiconductors,
+MOSCHIP,Electronics,Semiconductors,
+SPEL,Electronics,Semiconductors,
+AEGASIND,Energy,City Gas Distribution,
+GUJGAS,Energy,City Gas Distribution,
+GUJGASLTD,Energy,City Gas Distribution,
+GUJRATGAS,Energy,City Gas Distribution,
+MAHGL,Energy,City Gas Distribution,
+SABTN,Energy,City Gas Distribution,
+BHARATCOAL,Energy,Coal,auto:name_rule
+COALINDIA,Energy,Coal & Mining,
+ADANIGAS,Energy,Gas Distribution,
+ATGL,Energy,Gas Distribution,
+GAIL,Energy,Gas Distribution,
+GSPL,Energy,Gas Distribution,
+GUJARATGAS,Energy,Gas Distribution,
+GUJNREGAS,Energy,Gas Distribution,
+IGL,Energy,Gas Distribution,
+MGL,Energy,Gas Distribution,
+PETRONET,Energy,Gas Distribution,
+NPCIL,Energy,Nuclear Power,
+GULFOILLUB,Energy,Oil & Gas,auto:name_rule
+HINDOILEXP,Energy,Oil & Gas,
+OIL,Energy,Oil & Gas,
+OILCOUNTUB,Energy,Oil & Gas,auto:name_rule
+ONGC,Energy,Oil & Gas,
+RELIANCE,Energy,Oil & Gas,
+CAIRN,Energy,Oil Exploration,
+OILINDIA,Energy,Oil Exploration,
+BPCL,Energy,Oil Refining,
+CHENNPETRO,Energy,Oil Refining,
+HINDPETRO,Energy,Oil Refining,
+HPCL,Energy,Oil Refining,
+IOC,Energy,Oil Refining,
+MRPL,Energy,Oil Refining,
+CASTROL,Energy,Petroleum Products,
+SPLPETRO,Energy,Petroleum Products,
+JSWESL,Energy,Power,
+ADANIPOWER,Energy,Power Generation,
+CESC,Energy,Power Generation,
+ENERGYDEV,Energy,Power Generation,auto:name_rule
+GENUSPOWER,Energy,Power Generation,auto:name_rule
+GIPCL,Energy,Power Generation,
+GKENERGY,Energy,Power Generation,auto:name_rule
+HONDAPOWER,Energy,Power Generation,auto:name_rule
+INDOWIND,Energy,Power Generation,auto:name_rule
+IRMENERGY,Energy,Power Generation,auto:name_rule
+JPPOWER,Energy,Power Generation,
+JSWENERGY,Energy,Power Generation,
+KPCL,Energy,Power Generation,
+NHPC,Energy,Power Generation,
+NLCINDIA,Energy,Power Generation,
+NPTC,Energy,Power Generation,
+NTPC,Energy,Power Generation,
+QPOWER,Energy,Power Generation,auto:name_rule
+RPOWER,Energy,Power Generation,
+RTNPOWER,Energy,Power Generation,auto:name_rule
+SJVN,Energy,Power Generation,
+SOLARINDS,Energy,Power Generation,auto:name_rule
+SOLARWORLD,Energy,Power Generation,auto:name_rule
+SWSOLAR,Energy,Power Generation,auto:name_rule
+TATAPOWER,Energy,Power Generation,
+TORNTPOWER,Energy,Power Generation,
+UTLSOLAR,Energy,Power Generation,auto:name_rule
+WEBELSOLAR,Energy,Power Generation,auto:name_rule
+WINDMACHIN,Energy,Power Generation,auto:name_rule
+PTCIND,Energy,Power Trading,
+ADANITRANS,Energy,Power Transmission,
+INDIAGRID,Energy,Power Transmission,
+KALPATPOWR,Energy,Power Transmission,
+POWERGRID,Energy,Power Transmission,
+MOSDOH,Energy,Renewable,
+INOXWIND,Energy,Wind Energy,
+GODFRYPHLP,FMCG,Cigarettes,
+CCL,FMCG,FMCG - Beverages,
+GMBREW,FMCG,FMCG - Beverages,
+MCDOWELL-N,FMCG,FMCG - Beverages,
+RADICO,FMCG,FMCG - Beverages,
+TATACONSUM,FMCG,FMCG - Beverages,Tea and beverages
+TILIND,FMCG,FMCG - Beverages,
+UBL,FMCG,FMCG - Beverages,
+UNITDSPR,FMCG,FMCG - Beverages,
+VARUN,FMCG,FMCG - Beverages,
+VBL,FMCG,FMCG - Beverages,Varun beverages - PepsiCo bottler
+AAVIN,FMCG,FMCG - Dairy,
+ADFFOODS,FMCG,FMCG - Foods,auto:name_rule
+BIKAJI,FMCG,FMCG - Foods,
+BRITANNIA,FMCG,FMCG - Foods,
+COFFEEDAY,FMCG,FMCG - Foods,auto:name_rule
+FOODSIN,FMCG,FMCG - Foods,auto:name_rule
+GROBTEA,FMCG,FMCG - Foods,auto:name_rule
+HNDFDS,FMCG,FMCG - Foods,
+INCREDIBLE,FMCG,FMCG - Foods,auto:name_rule
+ITC,FMCG,FMCG - Foods,
+JAYSREETEA,FMCG,FMCG - Foods,auto:name_rule
+NESTLEIND,FMCG,FMCG - Foods,
+PROTEAN,FMCG,FMCG - Foods,auto:name_rule
+PRSMJOHNSN,FMCG,FMCG - Foods,
+TATACOFFEE,FMCG,FMCG - Foods,
+TRAVELFOOD,FMCG,FMCG - Foods,
+UNITEDTEA,FMCG,FMCG - Foods,auto:name_rule
+ZYDUSWELL,FMCG,FMCG - Foods,
+BAJAJCON,FMCG,FMCG - Personal Care,
+COLPAL,FMCG,FMCG - Personal Care,
+DABUR,FMCG,FMCG - Personal Care,
+EMAMILTD,FMCG,FMCG - Personal Care,
+GILLETTE,FMCG,FMCG - Personal Care,
+GODREJCP,FMCG,FMCG - Personal Care,
+HINDUNILVR,FMCG,FMCG - Personal Care,
+HONASA,FMCG,FMCG - Personal Care,
+JYOTHYLAB,FMCG,FMCG - Personal Care,
+MARICO,FMCG,FMCG - Personal Care,
+PGHH,FMCG,FMCG - Personal Care,
+DEVYANI,FMCG,QSR,
+JUBLFOOD,FMCG,QSR,
+SAPPHIRE,FMCG,QSR,
+WESTLIFE,FMCG,QSR,
+ANDHRSUGAR,FMCG,Sugar,auto:name_rule
+MAGADSUGAR,FMCG,Sugar,auto:name_rule
+ABSLAMC,Financials,Asset Management,
+HDFCAMC,Financials,Asset Management,
+ICICIPRAMC,Financials,Asset Management,
+NIPPONAMC,Financials,Asset Management,
+NIPPONSEIMC,Financials,Asset Management,
+SBIMF,Financials,Asset Management,
+UTIAMC,Financials,Asset Management,
+ANANDRATHI,Financials,Capital Markets,
+BSE,Financials,Capital Markets,
+DBOL,Financials,Capital Markets,
+MCX,Financials,Capital Markets,
+ONELIFECAP,Financials,Capital Markets,
+SAMMAANCAP,Financials,Capital Markets,
+MCXINDIA,Financials,Commodities Exchange,
+BAJFINANCE,Financials,Consumer Finance,
+BHFIN,Financials,Consumer Finance,
+LTF,Financials,Consumer Finance,
+CARERATING,Financials,Credit Rating,
+ICRA,Financials,Credit Rating,
+CAMS,Financials,Financial Technology,
+CDSL,Financials,Financial Technology,
+CRISIL,Financials,Financial Technology,
+KFINTECH,Financials,Financial Technology,
+NSDL,Financials,Financial Technology,
+MANAPPURAM,Financials,Gold Loans,
+MUTHOOTCAP,Financials,Gold Loans,
+MUTHOOTFIN,Financials,Gold Loans,
+STARHEALTH,Financials,Health Insurance,
+AADHARHFC,Financials,Housing Finance,
+AAVAS,Financials,Housing Finance,
+APTUS,Financials,Housing Finance,
+BAJAJHFL,Financials,Housing Finance,
+CANFINHOME,Financials,Housing Finance,
+GRUH,Financials,Housing Finance,
+HOMEFIRST,Financials,Housing Finance,
+IBULHSGFIN,Financials,Housing Finance,
+INDIASHLTR,Financials,Housing Finance,
+LICHSGFIN,Financials,Housing Finance,
+PNBHOUSING,Financials,Housing Finance,
+REPCO,Financials,Housing Finance,
+ABSLI,Financials,Insurance,
+ICICILOMBRD,Financials,Insurance,
+LICI,Financials,Insurance,
+ORIENTELC,Financials,Insurance,
+BAJAJFINSV,Financials,Insurance & Finance,
+CHOLAHLDNG,Financials,Insurance & Finance,
+MFSL,Financials,Insurance & Finance,
+JPOLYINVST,Financials,Investment Companies,
+LEMERITE,Financials,Investment Companies,
+NDLVENTURE,Financials,Investment Companies,
+PRIVISCL,Financials,Investment Companies,
+SBC,Financials,Investment Companies,
+TEAMGTY,Financials,Investment Companies,
+HDFCLIFE,Financials,Life Insurance,
+ICICIPRU,Financials,Life Insurance,
+MAXLIFE,Financials,Life Insurance,
+SBILIFE,Financials,Life Insurance,
+AROHAN,Financials,Microfinance,
+CREDITACC,Financials,Microfinance,
+FUSION,Financials,Microfinance,
+NAVINFIN,Financials,Microfinance,
 SATIN,Financials,Microfinance,
+SPANDANA,Financials,Microfinance,
+ABCAPITAL,Financials,NBFC,
+BANKA,Financials,NBFC,auto:name_rule
+DHANBANK,Financials,NBFC,auto:name_rule
+FINCABLES,Financials,NBFC,
+GODREJFIN,Financials,NBFC,
+IIFL,Financials,NBFC,
+INDBANK,Financials,NBFC,auto:name_rule
+J&KBANK,Financials,NBFC,auto:name_rule
+KEYFINSERV,Financials,NBFC,auto:name_rule
+MANCREDIT,Financials,NBFC,
+MAXFIN,Financials,NBFC,
+SBFC,Financials,NBFC,
+SOUTHBANK,Financials,NBFC,auto:name_rule
+SUNDARMFIN,Financials,NBFC,
+TATAINVEST,Financials,NBFC,
+TFCILTD,Financials,NBFC,
+TMKFINANCE,Financials,NBFC,
+UCOBANK,Financials,NBFC,auto:name_rule
+GODIGIT,Financials,Non-Life Insurance,
+ICICIGI,Financials,Non-Life Insurance,
+NIACINDIA,Financials,Non-Life Insurance,
+NIACL,Financials,Non-Life Insurance,
+ORIENTINS,Financials,Non-Life Insurance,
+IREDA,Financials,Power Finance,
+PFC,Financials,Power Finance,
+PFCINDIA,Financials,Power Finance,
+RECLTD,Financials,Power Finance,
+GICRE,Financials,Reinsurance,
+NIARE,Financials,Reinsurance,
+5PAISA,Financials,Stock Broking,
+ANGELBRKG,Financials,Stock Broking,
+ANGELONE,Financials,Stock Broking,
+ARIHANTCAP,Financials,Stock Broking,
+CHOICEIN,Financials,Stock Broking,
+DBSTOCKBRO,Financials,Stock Broking,
+EMKAY,Financials,Stock Broking,
+GEOJITFSL,Financials,Stock Broking,
+GROWW,Financials,Stock Broking,
+ICICISEC,Financials,Stock Broking,
+IIFLSEC,Financials,Stock Broking,
+REPPRO,Financials,Stock Broking,
+SMCGLOBAL,Financials,Stock Broking,
+SMIFS,Financials,Stock Broking,
+ZERODHA,Financials,Stock Broking,
+CHOLAFIN,Financials,Vehicle Finance,
+M&MFIN,Financials,Vehicle Finance,
+SCUF,Financials,Vehicle Finance,
+SHRIRAMFIN,Financials,Vehicle Finance,
+STFC,Financials,Vehicle Finance,
+360ONE,Financials,Wealth Management,
+ASK,Financials,Wealth Management,
+BIRLAMONEY,Financials,Wealth Management,
+DSPIM,Financials,Wealth Management,
+JMFINANCIL,Financials,Wealth Management,
+MOFSL,Financials,Wealth Management,
+MOTILALOFS,Financials,Wealth Management,
+NUVAMA,Financials,Wealth Management,
+PRUDENT,Financials,Wealth Management,
+ACCELYA,IT,Airline IT,
+SAGILITY,IT,BPO & KPO,
+ECLERX,IT,BPO / KPO,
+QUICKHEAL,IT,Cybersecurity,
+LATENTVIEW,IT,Data Analytics,
+EQUINOX,IT,Data Centers,
+ION,IT,E-Governance,
+AXISCADES,IT,Engineering Services,
+CYIENT,IT,Engineering Services,
+TATAELXSI,IT,Engineering Services,
+TATATECH,IT,Engineering Services,
+SIS,IT,Facility Management,
+AURIONPRO,IT,Fintech Software,
+FSS,IT,Fintech Software,
+INDEGENE,IT,Healthcare IT,
+INVENTURUS,IT,Healthcare IT,
+NIIT,IT,IT Education,
+KPIT,IT,IT Engineering,
+LTTS,IT,IT Engineering,
+SASKEN,IT,IT Engineering,
+INTELLECT,IT,IT Products,
+NUCLEUS,IT,IT Products,
+ONMOBILE,IT,IT Products,
+RAMCOIND,IT,IT Products,
+SUBEX,IT,IT Products,
+ALANKIT,IT,IT Services,auto:name_rule
+BIRLASOFT,IT,IT Services,
+BSOFT,IT,IT Services,
+CMSINFO,IT,IT Services,
+COFORGE,IT,IT Services,
+CYBERMEDIA,IT,IT Services,auto:name_rule
+CYBERTECH,IT,IT Services,auto:name_rule
+DATAMATICS,IT,IT Services,
+DEVIT,IT,IT Services,auto:name_rule
+HAPPSTMNDS,IT,IT Services,
+HCLINFOSYS,IT,IT Services,
+HCLTECH,IT,IT Services,
+HEXAWARE,IT,IT Services,
+INFOSYS,IT,IT Services,
+INFY,IT,IT Services,
+KPITTECH,IT,IT Services,
+LTI,IT,IT Services,
+LTIM,IT,IT Services,
+MASTEK,IT,IT Services,
+MCLOUD,IT,IT Services,auto:name_rule
+MPHASIS,IT,IT Services,
+NETSOL,IT,IT Services,
+NETWEB,IT,IT Services,
+NEWGEN,IT,IT Services,
+NIINSYS,IT,IT Services,
+NIITNX,IT,IT Services,
+NIITTECH,IT,IT Services,
+NINSYS,IT,IT Services,
+OFSS,IT,IT Services,
+PERSISTENT,IT,IT Services,
+ROUTE,IT,IT Services,
+RSSOFTWARE,IT,IT Services,auto:name_rule
+SAKSOFT,IT,IT Services,
+SECURKLOUD,IT,IT Services,
+SONATSOFTW,IT,IT Services,
+SUMIT,IT,IT Services,auto:name_rule
+TANLA,IT,IT Services,
+TCS,IT,IT Services,
+TECHM,IT,IT Services,
+TRIGYN,IT,IT Services,
+UNIINFO,IT,IT Services,
+VAKRANGEE,IT,IT Services,
+WAKEFIT,IT,IT Services,auto:name_rule
+WIPRO,IT,IT Services,
+XCHANGING,IT,IT Services,
+ZENSAR,IT,IT Services,
+ZENSARTECH,IT,IT Services,
+NIITMTS,IT,IT Training,
+QUESS,IT,Staffing,
+TEAMLEASE,IT,Staffing,
+ADANIAIRPORT,Infra,Airports,
+GMRINFRA,Infra,Airports,
+GVK,Infra,Airports,
+APOLLOPIPE,Infra,CPVC/PVC Pipes,
+ACCIND,Infra,Cement,
+AMBUJACEM,Infra,Cement,
+BIRLACORP,Infra,Cement,
+BIRLACORPN,Infra,Cement,
+DALMIACE,Infra,Cement,
+DALMIACEM,Infra,Cement,
+DALMIACEMB,Infra,Cement,
+HEIDELBERG,Infra,Cement,
+INDIACEM,Infra,Cement,
+JKCEMENT,Infra,Cement,
+JKIL,Infra,Cement,
+JSWCEM,Infra,Cement,
+KAKATCEM,Infra,Cement,
+KESORAMIND,Infra,Cement,
+MANGLMCEM,Infra,Cement,
+NUVOCO,Infra,Cement,
+PRISMJOHNSN,Infra,Cement,
+RAMCOCEM,Infra,Cement,
+SANGHI,Infra,Cement,
+SANGHIIND,Infra,Cement,
 SAURASHCEM,Infra,Cement,
 SAURASHTRA,Infra,Cement,
-SBC,Financials,Investment Companies,
-SBCL,Banking,Regional Banks,
-SBFC,Financials,NBFC,
-SBILIFE,Financials,Life Insurance,
-SBIMF,Financials,Asset Management,
-SBIN,Banking,PSU Banks,
-SCHAEFFLER,Auto,Bearings,
-SCHNEIDER,Cap Goods,Electrical Equipment,
-SCI,Shipping,Shipping,
-SCUF,Financials,Vehicle Finance,
-SEACOAST,Shipping,Shipping,
-SEAMECLTD,Shipping,Shipping Services,
-SECURE,Cables,Energy Meters,Energy metering
-SECURKLOUD,IT,IT Services,
-SENCO,Consumer,Gold Jewelry,
-SENORES,Pharma,Pharma Formulations,
-SEQUENT,Pharma,Pharma API,
-SESHAPAPER,Packaging,Paper & Packaging,
-SETCO,Auto,Auto Ancillaries,
-SGIL,Electronics,Electronic Components,
-SGMART,Agri,Agri Products,
-SHALPAINTS,Consumer,Paints,
-SHARDACROP,Agri,Agro Chemicals,
-SHILPAMED,Pharma,Medical Devices,
-SHIVAUM,Textiles,Textiles,
-SHOPERSTOP,Consumer,Retail Fashion,
-SHOPSTOP,Consumer,Retail,
 SHREECEM,Infra,Cement,
-SHREERENUKA,Sugar,Sugar,
-SHREYANS,Consumer,Paper,
-SHREYAS,Shipping,Shipping & Logistics,
-SHRIPISTON,Auto,Metal Forgings & Castings,
-SHRIRAMFIN,Financials,Vehicle Finance,
-SHRIRAMFRT,Agri,Fertilisers,
-SHRIRAMPPS,Metals,Steel Wires,
+STAR,Infra,Cement,
+STARCMT,Infra,Cement,
+ULTRACEMCO,Infra,Cement,
+SNOWMAN,Infra,Cold Chain Logistics,
+DCI,Infra,Construction,
+TEXINFRA,Infra,Construction,
+ABINFRA,Infra,Construction - Infra,auto:name_rule
+GRINFRA,Infra,Construction - Infra,auto:name_rule
+HILINFRA,Infra,Construction - Infra,auto:name_rule
+JSWINFRA,Infra,Construction - Infra,auto:name_rule
+MANINFRA,Infra,Construction - Infra,auto:name_rule
+MBLINFRA,Infra,Construction - Infra,auto:name_rule
+NILAINFRA,Infra,Construction - Infra,auto:name_rule
+OMINFRAL,Infra,Construction - Infra,auto:name_rule
+RPPINFRA,Infra,Construction - Infra,auto:name_rule
+RUCHINFRA,Infra,Construction - Infra,auto:name_rule
+SPMLINFRA,Infra,Construction - Infra,auto:name_rule
+TRANSRAILL,Infra,Construction - Infra,auto:name_rule
+AFCONS,Infra,Construction EPC,
+NCC,Infra,Construction EPC,
+ARISINFRA,Infra,Construction Materials,
+SANGHVIMOV,Infra,Cranes & Lifting,
+ADANIENT,Infra,Diversified Infra,
+VA,Infra,EPC,
+EMGDELTA,Infra,EPC & Construction,
+JPASSOCIAT,Infra,EPC & Construction,
+L&T,Infra,EPC & Construction,
+PATEL,Infra,EPC & Construction,
+PSPPROJECT,Infra,EPC & Construction,
+TORNTPIPER,Infra,Gas Pipelines,
+NBCC,Infra,Govt Construction,
+JAIINFRA,Infra,Infra,
+RAIL,Infra,Infra,
+SADBHAV,Infra,Infra,
+GODAVARIB,Infra,Irrigation,
+DTDC,Infra,Logistics,
+DTIL,Infra,Logistics,
+EKART,Infra,Logistics,
+GATI,Infra,Logistics,
+SAFEXPRESS,Infra,Logistics,
+TCIEXP,Infra,Logistics,
+TLGLOBAL,Infra,Logistics,
+LIKHITHA,Infra,Pipeline EPC,
+APOLLOPIPES,Infra,Pipes & Fittings,
+ASTRAL,Infra,Pipes & Fittings,
+PLASTIBLEN,Infra,Pipes & Fittings,
+ASHIRVAD,Infra,Plastic Pipes,
+SKIL,Infra,Port & Infra,
+GVKPIL,Infra,Ports,
+JSW,Infra,Ports,
+ADANIPORTS,Infra,Ports & Logistics,
+GPPL,Infra,Ports & Logistics,
+POWERGRIDINVIT,Infra,Power InvIT,
+INDIGRID,Infra,Power Transmission InvIT,
+IRCON,Infra,Railway Construction,
+RAILVIKAS,Infra,Railway Construction,
+RVNL,Infra,Railway Construction,
+RITES,Infra,Railway Consultancy,
+TITAGARH,Infra,Railway Equipment,
+IRFC,Infra,Railway Finance,
+HG INFRA,Infra,Road EPC,
+ASHOKA,Infra,Roads & Highways,
+BHAGYANGR,Infra,Roads & Highways,
+CEIGALL,Infra,Roads & Highways,
+HGINFRA,Infra,Roads & Highways,
+IRB,Infra,Roads & Highways,
+KNR,Infra,Roads & Highways,
+KNRCON,Infra,Roads & Highways,
+PNC,Infra,Roads & Highways,
+PNCINFRA,Infra,Roads & Highways,
+SPML,Infra,Water EPC,
+SIEVERT,Infra,Water Treatment,
+WABAG,Infra,Water Treatment,
+AFFLE,Internet,AdTech,
+CARTRADE,Internet,Automotive Marketplace,
+INDIAMART,Internet,B2B Marketplace,
+TBOTECH,Internet,B2B Marketplace,
+NYKAA,Internet,Beauty & Fashion Retail,
+MAPMYINDIA,Internet,Digital Maps,
+INFIBEAM,Internet,Fintech,
+MOBIKWIK,Internet,Fintech,
+PAYTM,Internet,Fintech,
+SWIGGY,Internet,Food Delivery,
+ZOMATO,Internet,Food Delivery,
+NAZARA,Internet,Gaming,
+POLICYBZR,Internet,Insurance Technology,
+JUSTDIAL,Internet,Local Search,
+NAUKRI,Internet,Online Recruitment,
+EASEMYTRIP,Internet,Travel & Hospitality,
+IRCTC,Internet,Travel & Hospitality,
+IXIGO,Internet,Travel Tech,
+MAKEMYTRIP,Internet,Travel Tech,
+RATEGAIN,Internet,Travel Tech,
+GMRAIRPORT,Logistics,Logistics,auto:name_rule
+OMFREIGHT,Logistics,Logistics,auto:name_rule
+UMAEXPORTS,Logistics,Logistics,auto:name_rule
+BAGFILMS,Media,Media & Entertainment,auto:name_rule
+DNAMEDIA,Media,Media & Entertainment,auto:name_rule
+HTMEDIA,Media,Media & Entertainment,auto:name_rule
+INFOMEDIA,Media,Media & Entertainment,auto:name_rule
+MEDIASSIST,Media,Media & Entertainment,auto:name_rule
+NEXTMEDIA,Media,Media & Entertainment,auto:name_rule
+RAMANEWS,Media,Media & Entertainment,auto:name_rule
+TIPSFILMS,Media,Media & Entertainment,auto:name_rule
+FACORALL,Metals,Aluminium,
+HINDALCO,Metals,Aluminium,
+HINDALCOIND,Metals,Aluminium,
+NALCO,Metals,Aluminium,
+NATIONALUM,Metals,Aluminium,
+ALUCAST,Metals,Aluminium Die Casting,
+GMDC,Metals,Coal & Minerals,
+HINDUCOPPER,Metals,Copper,
+STERLITE,Metals,Copper,
+HINDCOPPER,Metals,Copper Mining,
+RAMAKRISHNA,Metals,Copper Products,
+VEDANTA,Metals,Diversified Metals,
+VEDL,Metals,Diversified Metals,
+HINDPOW,Metals,Ferro Alloys,
+FOSECOIND,Metals,Foundry Chemicals,
+GOLDTECH,Metals,Gold & Precious Metals,auto:name_rule
+RBZJEWEL,Metals,Gold & Precious Metals,auto:name_rule
+SHANTIGOLD,Metals,Gold & Precious Metals,auto:name_rule
+SILVERTUC,Metals,Gold & Precious Metals,auto:name_rule
+GOLDBEES,Metals,Gold ETF,
+TIRUPATI,Metals,Graphite,
+GRAPHITE,Metals,Graphite Electrodes,
+HEG,Metals,Graphite Electrodes,Graphite electrode manufacturer
+PHILIPCARB,Metals,Graphite Electrodes,
+ROHLTD,Metals,Iron & Steel,
+GMDCLTD,Metals,Iron Ore,
+KIOCL,Metals,Iron Ore & Mining,
+MOIL,Metals,Manganese Mining,
+GRAVITA,Metals,Metal & Mining,
+MGEL,Metals,Metal & Mining,
+MSTCLTD,Metals,Metal & Mining,
+NILE,Metals,Metal & Mining,
+NMDC,Metals,Metal & Mining,
+SANDUMA,Metals,Metal & Mining,
+AMTEK,Metals,Metal Forgings & Castings,
+BHARATFORG,Metals,Metal Forgings & Castings,
+KALYANI,Metals,Metal Forgings & Castings,
+NELCAST,Metals,Metal Forgings & Castings,
+MMTC,Metals,Metal Trading,
+JSWHL,Metals,Metals,
+DIAMINESQ,Metals,Mining,auto:name_rule
+ORISSAMINE,Metals,Mining,auto:name_rule
+ADROITINFO,Metals,Non-Ferrous Metals,auto:name_rule
+EVERESTIND,Metals,Non-Ferrous Metals,auto:name_rule
+GPTINFRA,Metals,Non-Ferrous Metals,auto:name_rule
+JTEKTINDIA,Metals,Non-Ferrous Metals,auto:name_rule
+KRITINUT,Metals,Non-Ferrous Metals,auto:name_rule
+MOHITIND,Metals,Non-Ferrous Metals,auto:name_rule
+PATINTLOG,Metals,Non-Ferrous Metals,auto:name_rule
+PLATIND,Metals,Non-Ferrous Metals,auto:name_rule
+TINNARUBR,Metals,Non-Ferrous Metals,auto:name_rule
+IFGL,Metals,Refractories,
+OCCL,Metals,Refractories,
+MISHRA,Metals,Specialty Metals,
+BURNPUR,Metals,Sponge Iron,
+ABHISHEK,Metals,Steel,
+BALASORE,Metals,Steel,
+BALUFORGE,Metals,Steel,auto:name_rule
+CSTLTD,Metals,Steel,
+ELECTHERM,Metals,Steel,
+GANGAFORGE,Metals,Steel,auto:name_rule
+GOVAL,Metals,Steel,
+HAPPYFORGE,Metals,Steel,auto:name_rule
+HARIOM,Metals,Steel,
+HISAR,Metals,Steel,
+HISARMET,Metals,Steel,
+JAIBALAJI,Metals,Steel,
+JAISWAL,Metals,Steel,
+JAISWALNIC,Metals,Steel,
+JINDALSTEL,Metals,Steel,
+JSHL,Metals,Steel,
+JSL,Metals,Steel,
+JSPL,Metals,Steel,
+JSWISPL,Metals,Steel,
+JSWSTEEL,Metals,Steel,
+LLOYDSENT,Metals,Steel,
+LLOYDSME,Metals,Steel,
+MANAKSIA,Metals,Steel,
+MANAKSTEEL,Metals,Steel,
+MUKANDFIN,Metals,Steel,
+NIFTYMET,Metals,Steel,
+NSLNISP,Metals,Steel,
+RAMASTEEL,Metals,Steel,
+RAMSARUP,Metals,Steel,
+RATHI,Metals,Steel,
+RATNA,Metals,Steel,
+RKFORGE,Metals,Steel,auto:name_rule
+RTNL,Metals,Steel,
+SAIL,Metals,Steel,
+SARDAEN,Metals,Steel,
+SHAHALLOYS,Metals,Steel,auto:name_rule
 SHYAM,Metals,Steel,
 SHYAMMETL,Metals,Steel,
 SHYAMSTEEL,Metals,Steel,
-SIEMENS,Cap Goods,Automation & Drives,
-SIEVERT,Infra,Water Treatment,
-SIGNATURE,RealEstate,Residential RE,
-SIMBHAOLI,Sugar,Sugar,
-SIS,IT,Facility Management,
-SIYARAM,Textiles,Suiting & Fabric,
-SJVN,Energy,Power Generation,
-SKFINDIA,Auto,Bearings,
-SKIL,Infra,Port & Infra,
-SKIPPER,Cap Goods,Power Towers,
-SKYGOLD,Consumer,Jewellery,
-SMCGLOBAL,Financials,Stock Broking,
-SMIFS,Financials,Stock Broking,
-SML,Auto,Auto OEM - CV,
-SMLISUZU,Auto,Commercial Vehicles,
-SMRUTHIORG,Pharma,Pharma API,
-SMSPHARMA,Pharma,Pharma API,
-SMVD,Packaging,Packaging,
-SNOWMAN,Infra,Cold Chain Logistics,
-SOBHA,RealEstate,Real Estate - Residential,
-SOLARA,Pharma,Pharma Formulations,
-SOLARBOMB,Defense,Defense - Ammunition,
-SOLARIND,Defense,Aerospace & Defense,
-SOLUTIONK,Chemicals,Specialty Chemicals,
-SOMANY,Consumer,Tiles,
-SOMANYCERA,Consumer,Tiles,
-SONACOMS,Auto,Auto Ancillaries,
-SONAMLTD,Auto,Auto Ancillaries,
-SONATSOFTW,IT,IT Services,
-SOUTHBNK,Banking,Regional Banks,
-SOUTHWEST,Consumer,Aviation,
-SPAL,Auto,Auto Ancillaries,
-SPANDANA,Financials,Microfinance,
-SPARC,Pharma,Drug Discovery,
-SPECIALITY,Consumer,Restaurants,
-SPECTRUM,Cables,Cables & Wires,
-SPEL,Electronics,Semiconductors,
-SPENCERS,Consumer,Retail,
-SPENTEX,Textiles,Yarn & Fabric,
-SPICEJET,Consumer,Aviation,
-SPLPETRO,Energy,Petroleum Products,
-SPML,Infra,Water EPC,
-SPORTKING,Textiles,Textiles - Synthetic,
-SRF,Chemicals,Specialty Chemicals,
-SRIKALAHASTHI,Agri,Agri,
-SRPL,Metals,Steel - Sponge Iron,
-SSWL,Metals,Steel - Wheels,
-STAR,Infra,Cement,
-STARBUS,Auto,Auto OEM - CV,
-STARCMT,Infra,Cement,
-STARHEALTH,Financials,Health Insurance,
-STARPAPL,Consumer,Paper,
-STEELCAS,Metals,Steel Tubes,
-STERLITE,Metals,Copper,
-STERLITEIND,Cables,Cables,
-STFC,Financials,Vehicle Finance,
-STLTECH,Cables,Optical Fiber Cables,
-STRIDES,Pharma,Pharma Formulations,
-STYLAMIND,Textiles,Textiles - Home,
-STYLEBAAZA,Textiles,Apparel Retail,
-SUBEX,IT,IT Products,
-SUBROS,Auto,Auto Ancillaries,
-SUDARSCHEM,Chemicals,Specialty Chemicals,
-SUGARIND,Agri,Agri,
-SULAVIN,Consumer,Wine,
-SUMEETINDS,Cables,Cables & Wires,
-SUMICHEM,Chemicals,Specialty Chemicals - Agri,
-SUNDARMFIN,Financials,NBFC,
-SUNDRMFAST,Auto,Metal Forgings & Castings,
+STEELCITY,Metals,Steel,auto:name_rule
+STEELXIND,Metals,Steel,auto:name_rule
 SUNFLAG,Metals,Steel,
-SUNPHARMA,Pharma,Pharma Formulations,
-SUNTECK,RealEstate,Real Estate - Residential,
-SUNTECKINS,Cap Goods,Water Tech,
-SUNTECKREAL,RealEstate,Residential RE,
-SUNTV,Consumer,Media & Entertainment,
-SUPRAGRI,Agri,Agri Products,
-SUPRAJIT,Auto,Auto Ancillaries,
+TATAMET,Metals,Steel,
+TATASTEEL,Metals,Steel,
+VISAKAIND,Metals,Steel,
+VISASTEEL,Metals,Steel,auto:name_rule
+ABHIINV,Metals,Steel - Sponge Iron,
+GPIL,Metals,Steel - Sponge Iron,
+HISARMETAL,Metals,Steel - Sponge Iron,
+SRPL,Metals,Steel - Sponge Iron,
+GALLANTT,Metals,Steel - Structural,
+TIGL,Metals,Steel - Structural,
+SSWL,Metals,Steel - Wheels,
+APL,Metals,Steel Pipes,
+APLAPOLLO,Metals,Steel Pipes,
+ISMT,Metals,Steel Pipes,
+JINDALSAW,Metals,Steel Pipes,
+JTLINFRA,Metals,Steel Pipes,
+MANALIPETC,Metals,Steel Pipes,
+PRINCEPIPE,Metals,Steel Pipes,
+RATNAMANI,Metals,Steel Pipes,
+SURYA,Metals,Steel Pipes,
+TATAMETALI,Metals,Steel Pipes,
+WELCORP,Metals,Steel Pipes,
+WELSPUNSP,Metals,Steel Pipes,
+STEELCAS,Metals,Steel Tubes,
+MANGLAM,Metals,Steel Wires,
+SHRIRAMPPS,Metals,Steel Wires,
+USHA,Metals,Steel Wires,
+TINPLATE,Metals,Tinplate,
+HINDZINC,Metals,Zinc & Lead,
+20MICRONS,Chemicals,Specialty Minerals,manual
+21STCENMGM,Financials,Asset Management,manual
+3IINFOLTD,Financials,Investment Holding,manual
+3PLAND,Other,Other,unclassified
+63MOONS,Financials,Fintech,manual
+AAATECH,Other,Other,unclassified
+AARNAV,Other,Other,unclassified
+AARON,Other,Other,unclassified
+AARTECH,Other,Other,unclassified
+AARTIPHARM,Pharma,Pharma API,manual
+AARVI,Other,Other,unclassified
+ABDL,Other,Other,unclassified
+ABLBL,Other,Other,unclassified
+ABREL,Other,Other,unclassified
+ACC,Cement,Cement,manual
+ACCURACY,Other,Other,unclassified
+ACE,Cap Goods,Cranes,manual
+ACEINTEG,IT,IT Services,manual
+ACL,Other,Other,unclassified
+ACUTAAS,Other,Other,unclassified
+ADL,Cap Goods,Industrial Equipment,manual
+ADOR,Cap Goods,Welding Equipment,manual
+ADSL,Other,Other,unclassified
+ADVANCE,Other,Other,unclassified
+ADVANIHOTR,Consumer,Hotels,manual
+ADVENTHTL,Other,Other,unclassified
+ADVENZYMES,Pharma,Enzymes,manual
+AEGISVOPAK,Energy,Oil & Gas - Storage,manual
+AEPL,Other,Other,unclassified
+AEQUS,Cap Goods,Aerospace Components,manual
+AEROENTER,Other,Other,unclassified
+AFFORDABLE,Other,Other,unclassified
+AFSL,Financials,NBFC,manual
+AGARIND,Other,Other,unclassified
+AGARWALEYE,Other,Other,unclassified
+AGI,Other,Other,unclassified
+AGIIL,Other,Other,unclassified
+AHCL,Other,Other,unclassified
+AHLADA,Other,Other,unclassified
+AHLEAST,Other,Other,unclassified
+AIIL,Other,Other,unclassified
+AIRAN,Other,Other,unclassified
+AIROLAM,Other,Other,unclassified
+AJAXENGG,Cap Goods,Industrial Equipment,manual
+AJOONI,Other,Other,unclassified
+AKASH,Other,Other,unclassified
+AKG,Other,Other,unclassified
+AKI,Other,Other,unclassified
+AKSHAR,Other,Other,unclassified
+ALBERTDAVD,Pharma,Pharma Formulations,manual
+ALEMBICLTD,Other,Other,unclassified
+ALGOQUANT,IT,IT - Fintech,manual
+ALICON,Other,Other,unclassified
+ALKALI,Chemicals,Chlor-Alkali,manual
+ALLDIGI,Other,Other,unclassified
+ALLTIME,Other,Other,unclassified
+ALMONDZ,Other,Other,unclassified
+ALOKINDS,Other,Other,unclassified
+ALPA,Other,Other,unclassified
+ALPHAGEO,Other,Other,unclassified
+AMAGI,Other,Other,unclassified
+AMANTA,Other,Other,unclassified
+AMBICAAGAR,Other,Other,unclassified
+AMBIKCO,Other,Other,unclassified
+AMDIND,Other,Other,unclassified
+AMNPLST,Other,Other,unclassified
+AMRUTANJAN,Pharma,OTC Pharma,manual
+ANDHRAPAP,Paper,Paper,manual
+ANIKINDS,Other,Other,unclassified
+ANMOL,Other,Other,unclassified
+ANTELOPUS,Other,Other,unclassified
+ANTGRAPHIC,Other,Other,unclassified
+ANTHEM,Other,Other,unclassified
+ANUHPHR,Pharma,Pharma Formulations,manual
+APCL,Other,Other,unclassified
+APLLTD,Other,Other,unclassified
+APOLSINHOT,Other,Other,unclassified
+APTECHT,Other,Other,unclassified
+AQYLON,Other,Other,unclassified
+ARCHIDPLY,Building Materials,Plywood,manual
+ARCHIES,Other,Other,unclassified
+ARE&M,Other,Other,unclassified
+ARENTERP,Other,Other,unclassified
+ARFIN,Financials,NBFC,auto:enhanced_heuristic
+ARIES,Other,Other,unclassified
+ARIHANTSUP,Other,Other,unclassified
+ARIS,Other,Other,unclassified
+ARKADE,RealEstate,Real Estate - Residential,manual
+ARMANFIN,Financials,NBFC,manual
+ARROWGREEN,Other,Other,unclassified
+ARSSBL,Other,Other,unclassified
+ARTEMISMED,Pharma,Hospitals,manual
+ARTNIRMAN,Other,Other,unclassified
+ARVINDFASN,Other,Other,unclassified
+ASAHISONG,Other,Other,unclassified
+ASAL,Other,Other,unclassified
+ASALCBR,Other,Other,unclassified
+ASHAPURMIN,Metals,Mining,manual
+ASHIANA,Other,Other,unclassified
+ASHIMASYN,Other,Other,unclassified
+ASHOKAMET,Metals,Non-Ferrous Metals,manual
+ASIANHOTNR,Consumer,Hotels,manual
+ASMS,Other,Other,unclassified
+ASPINWALL,Other,Other,unclassified
+ASTEC,Other,Other,unclassified
+ASTRAMICRO,Electronics,Electronic Components,manual
+ASTRON,Other,Other,unclassified
+ATALREAL,RealEstate,Real Estate - Residential,manual
+ATL,Other,Other,unclassified
+ATLANTAA,Other,Other,unclassified
+ATLANTAELE,Other,Other,unclassified
+ATLASCYCLE,Other,Other,unclassified
+AVANTEL,Electronics,Defence Electronics,manual
+AVG,Other,Other,unclassified
+AVONMORE,Metals,Mining,auto:enhanced_heuristic
+AVROIND,Other,Other,unclassified
+AVTNPL,Other,Other,unclassified
+AWFIS,Consumer,Co-working Spaces,manual
+AWHCL,Other,Other,unclassified
+AWL,Agri,Agri - Warehousing,manual
+AYE,Other,Other,unclassified
+AYMSYNTEX,Textiles,Synthetic Textiles,manual
+AZAD,Other,Other,unclassified
+BAFNAPH,Other,Other,unclassified
+BAIDFIN,Financials,NBFC,auto:enhanced_heuristic
+BAJAJHCARE,Pharma,OTC Pharma,manual
+BAJAJHIND,Other,Other,unclassified
+BAJAJHLDNG,Financials,Investment Holding,manual
+BAJAJINDEF,Other,Other,unclassified
+BAJEL,Other,Other,unclassified
+BALAJEE,Other,Other,unclassified
+BALAXI,Other,Other,unclassified
+BALKRISHNA,Auto,Tyres,manual
+BALMLAWRIE,Packaging,Packaging - Barrels,manual
+BANARBEADS,Other,Other,unclassified
+BANARISUG,FMCG,Sugar,manual
+BANCOINDIA,Other,Other,unclassified
+BANG,Other,Other,unclassified
+BANSALWIRE,Cables,Wires,manual
+BANSWRAS,Textiles,Synthetic Textiles,manual
+BASML,Other,Other,unclassified
+BAYERCROP,Chemicals,Agrochemicals,manual
+BBL,FMCG,Alcoholic Beverages,manual
+BBOX,Other,Other,unclassified
+BBTC,FMCG,FMCG - Beverages,manual
+BBTCL,Other,Other,unclassified
+BCLIND,Other,Other,unclassified
+BCONCEPTS,Other,Other,unclassified
+BDL,Defence,Aerospace & Defense,manual
+BEARDSELL,Building Materials,Insulation,manual
+BELLACASA,Building Materials,Tiles,manual
+BELRISE,Other,Other,unclassified
+BETA,Other,Other,unclassified
+BFINVEST,Financials,Investment Holding,manual
+BHANDARI,Other,Other,unclassified
+BHARATGEAR,Other,Other,unclassified
+BHARATRAS,Other,Other,unclassified
+BHARATSE,Other,Other,unclassified
+BHARATWIRE,Cables,Wires,manual
+BHARTIHEXA,Other,Other,unclassified
+BIL,Other,Other,unclassified
+BIRLACABLE,Cables,Cables,manual
+BIRLANU,Other,Other,unclassified
+BLACKBUCK,Logistics,Fleet Tech,manual
+BLAL,Other,Other,unclassified
+BLKASHYAP,Other,Other,unclassified
+BLS,Other,Other,unclassified
+BLSE,Other,Other,unclassified
+BLUECOAST,Other,Other,unclassified
+BLUEJET,Chemicals,Specialty Chemicals,manual
+BLUESTARCO,Consumer,Air Conditioning,manual
+BLUESTONE,Consumer,Retail - Jewellery,manual
+BLUSPRING,Other,Other,unclassified
+BMWVENTLTD,Other,Other,unclassified
+BOROLTD,Consumer,Consumer Electronics,manual
+BOROSCI,Cap Goods,Glassware,manual
+BOSCH-HCIL,Other,Other,unclassified
+BOSCHLTD,Auto,Auto Ancillaries,manual
+BPL,Consumer,Consumer Electronics,manual
+BRNL,Other,Other,unclassified
+BROOKS,Other,Other,unclassified
+BSHSL,Other,Other,unclassified
+BSL,Other,Other,unclassified
+BTML,Other,Other,unclassified
+BUILDPRO,Other,Other,unclassified
+BUTTERFLY,FMCG,Kitchen Appliances,manual
+BVCL,Other,Other,unclassified
+BYKE,Other,Other,unclassified
+CALSOFT,IT,IT Services,manual
+CAMLINFINE,Chemicals,Fine Chemicals,manual
+CANHLIFE,Other,Other,unclassified
+CANTABIL,Consumer,Retail - Apparel,manual
+CAPACITE,Infra,Construction - Buildings,manual
+CAPILLARY,IT,IT - SaaS,manual
+CARYSIL,Consumer,Kitchen & Bath,manual
+CASTROLIND,Energy,Lubricants,manual
+CCAVENUE,IT,IT - Fintech,manual
+CCCL,Other,Other,unclassified
+CCHHL,Other,Other,unclassified
+CEINSYS,Other,Other,unclassified
+CELEBRITY,Other,Other,unclassified
+CEMPRO,Other,Other,unclassified
+CENTENKA,Other,Other,unclassified
+CENTEXT,Other,Other,unclassified
+CENTRUM,Other,Other,unclassified
+CEWATER,Other,Other,unclassified
+CGCL,Other,Other,unclassified
+CHEVIOT,Other,Other,unclassified
+CIFL,Other,Other,unclassified
+CIGNITITEC,IT,IT Services,manual
+CINELINE,Other,Other,unclassified
+CINEVISTA,Other,Other,unclassified
+CLEANMAX,Energy,Renewable Energy,manual
+CLSEL,Other,Other,unclassified
+CNL,Other,Other,unclassified
+COHANCE,Other,Other,unclassified
+COMPUSOFT,IT,IT Services,manual
+CONCORDBIO,Pharma,Pharma API,manual
+CONFIPET,Energy,Oil & Gas - Services,manual
+CONTROLPR,Other,Other,unclassified
+CORALFINAC,Other,Other,unclassified
+CORDSCABLE,Cables,Cables & Wires,auto:enhanced_heuristic
+CORONA,Other,Other,unclassified
+COSMOFIRST,Chemicals,Specialty Films,manual
+COUNCODOS,Other,Other,unclassified
+CPCAP,Other,Other,unclassified
+CPEDU,Other,Other,unclassified
+CPPLUS,Electronics,Security & Surveillance,manual
+CRAMC,Other,Other,unclassified
+CREATIVEYE,Other,Other,unclassified
+CRIZAC,Other,Other,unclassified
+CROWN,Other,Other,unclassified
+CSLFINANCE,Financials,NBFC,manual
+CTE,Other,Other,unclassified
+CUB,Banking,Private Banks,manual
+CUBEXTUB,Other,Other,unclassified
+CUPID,Consumer,Healthcare Products,manual
+CYIENTDLM,Other,Other,unclassified
+DALBHARAT,Cement,Cement,manual
+DAMCAPITAL,Financials,Capital Markets,manual
+DAMODARIND,Other,Other,unclassified
+DANGEE,Other,Other,unclassified
+DAVANGERE,FMCG,Sugar,manual
+DBEIL,Other,Other,unclassified
+DBL,Infra,Roads,manual
+DCAL,Other,Other,unclassified
+DCM,Other,Other,unclassified
+DCMNVL,Other,Other,unclassified
+DCMSIL,Chemicals,Silicone,manual
+DCMSRIND,Other,Other,unclassified
+DCXINDIA,Other,Other,unclassified
+DDEVPLSTIK,Other,Other,unclassified
+DECCANCE,Cement,Cement,manual
+DELPHIFX,Other,Other,unclassified
+DELTAMAGNT,Other,Other,unclassified
+DEN,Media,Cable TV,manual
+DENTA,Other,Other,unclassified
+DEVX,Consumer,Co-working Spaces,manual
+DGCONTENT,Media,Digital Media,manual
+DHARMAJ,Other,Other,unclassified
+DHRUV,Other,Other,unclassified
+DHUNINV,Other,Other,unclassified
+DIACABS,Cables,Cables,manual
+DICIND,Chemicals,Specialty Chemicals,manual
+DIFFNKG,Other,Other,unclassified
+DIGIDRIVE,IT,IT Services,manual
+DIGISPICE,IT,IT Services,manual
+DIGITIDE,IT,IT Services,manual
+DIGJAMLMTD,Other,Other,unclassified
+DIVGIITTS,Auto,Auto Ancillaries,manual
+DLINKINDIA,Other,Other,unclassified
+DOLATALGO,IT,IT - Fintech,manual
+DOLPHIN,Other,Other,unclassified
+DOMS,Consumer,Stationery,manual
+DONEAR,Other,Other,unclassified
+DPSCLTD,Other,Other,unclassified
+DPWIRES,Cables,Wires,manual
+DRCSYSTEMS,IT,IT Services,manual
+DREAMFOLKS,Consumer,Airport Lounges,manual
+DREDGECORP,Infra,Dredging,manual
+DSFCL,Other,Other,unclassified
+DSSL,Other,Other,unclassified
+DUCON,Other,Other,unclassified
+DVL,Other,Other,unclassified
+DYCL,Other,Other,unclassified
+DYNPRO,Other,Other,unclassified
+EBGNG,Other,Other,unclassified
+ECOSMOBLTY,Other,Other,unclassified
+EDELWEISS,Financials,NBFC,manual
+EFCIL,Other,Other,unclassified
+EIEL,Other,Other,unclassified
+EIFFL,Other,Other,unclassified
+EIMCOELECO,Cap Goods,Electrical Equipment,manual
+EKC,Other,Other,unclassified
+ELDEHSG,Other,Other,unclassified
+ELECON,Cap Goods,Gears & Drives,manual
+ELECTCAST,Cap Goods,Castings,manual
+ELGIRUBCO,Chemicals,Rubber,manual
+ELLEN,Other,Other,unclassified
+EMAMIPAP,Paper,Paper,manual
+EMAMIREAL,RealEstate,Real Estate - Residential,manual
+EMIL,Other,Other,unclassified
+EMMVEE,Packaging,Packaging,manual
+EMSLIMITED,Other,Other,unclassified
+EMUDHRA,IT,IT Security,manual
+ENGINERSIN,Other,Other,unclassified
+ENIL,Media,Radio,manual
+ENRIN,Other,Other,unclassified
+EPACK,Packaging,Packaging,manual
+EPACKPEB,Infra,Pre-Engineered Buildings,manual
+ESSARSHPNG,Shipping,Shipping,manual
+ESSENTIA,Other,Other,unclassified
+ESTER,Chemicals,Specialty Films,manual
+ETERNAL,Other,Other,unclassified
+ETHOSLTD,Consumer,Luxury - Watches,manual
+EUREKAFORB,Cap Goods,Pharma Equipment,manual
+EUROBOND,Other,Other,unclassified
+EUROPRATIK,Other,Other,unclassified
+EUROTEXIND,Textiles,Home Textiles,manual
+EVEREADY,FMCG,Batteries,manual
+EXCEL,Chemicals,Specialty Chemicals,manual
+EXCELINDUS,Textiles,Apparel Export,manual
+EXCELSOFT,IT,IT Services,manual
+EXICOM,Energy,EV Charging,manual
+EXPLEOSOL,Other,Other,unclassified
+EXXARO,Other,Other,unclassified
+FABTECH,Other,Other,unclassified
+FCL,Other,Other,unclassified
+FCSSOFT,Other,Other,unclassified
+FDC,Pharma,Pharma Formulations,manual
+FEDFINA,Financials,NBFC,manual
+FIEMIND,Auto,Auto Ancillaries,manual
+FILATFASH,Consumer,Retail - Apparel,manual
+FINKURVE,Other,Other,unclassified
+FINOPB,Financials,Payments,manual
+FIRSTCRY,IT,E-Commerce,manual
+FISCHER,Cap Goods,Fasteners,manual
+FIVESTAR,Financials,NBFC,manual
+FLAIR,Consumer,Stationery,manual
+FLEXITUFF,Other,Other,unclassified
+FMGOETZE,Auto,Auto Ancillaries,manual
+FMNL,Other,Other,unclassified
+FOCUS,Other,Other,unclassified
+FRACTAL,IT,IT - Analytics,manual
+GALAPREC,Other,Other,unclassified
+GANECOS,Other,Other,unclassified
+GANESHBE,Other,Other,unclassified
+GANESHCP,Other,Other,unclassified
+GANESHHOU,Other,Other,unclassified
+GANGESSECU,Other,Other,unclassified
+GARFIBRES,Textiles,Glass Fiber,manual
+GATECH,Other,Other,unclassified
+GATECHDVR,Other,Other,unclassified
+GATEWAY,Logistics,Logistics,manual
+GAUDIUMIVF,Pharma,Hospitals - IVF,manual
+GAYAHWS,Other,Other,unclassified
+GEECEE,Other,Other,unclassified
+GEEKAYWIRE,Cables,Wires,manual
+GENCON,Other,Other,unclassified
+GENESYS,Other,Other,unclassified
+GFLLIMITED,Other,Other,unclassified
+GHCLTEXTIL,Textiles,Cotton Textiles,manual
+GICHSGFIN,Financials,Housing Finance,manual
+GILLANDERS,Other,Other,unclassified
+GINNIFILA,Other,Other,unclassified
+GKSL,Other,Other,unclassified
+GKWLIMITED,Other,Other,unclassified
+GLOBAL,Other,Other,unclassified
+GLOBALE,Other,Other,unclassified
+GLOBALVECT,Other,Other,unclassified
+GLOBE,Other,Other,unclassified
+GLOBECIVIL,Infra,Construction - EPC,manual
+GLOSTERLTD,Textiles,Jute,manual
+GLOTTIS,IT,IT Services,manual
+GMMPFAUDLR,Other,Other,unclassified
+GMRP&UI,Other,Other,unclassified
+GOACARBON,Energy,Carbon,manual
+GOCOLORS,Consumer,Retail - Apparel,manual
+GOKULAGRO,Other,Other,unclassified
+GOODLUCK,Metals,Steel,manual
+GOPAL,Agri,Agri Products,manual
+GREENLAM,Building Materials,Laminates,manual
+GREENPLY,Building Materials,Plywood,manual
+GRPLTD,Other,Other,unclassified
+GRWRHITECH,Other,Other,unclassified
+GSFC,Chemicals,Fertilizers,manual
+GSLSU,Other,Other,unclassified
+GSS,Other,Other,unclassified
+GTECJAINX,Other,Other,unclassified
+GTL,Other,Other,unclassified
+GUFICBIO,Pharma,Pharma Formulations,manual
+GUJAPOLLO,Other,Other,unclassified
+GUJRAFFIA,Other,Other,unclassified
+GUJTHEM,Other,Other,unclassified
+GULFPETRO,Energy,Oil & Gas,manual
+GULPOLY,Chemicals,Polymers,manual
+GVPTECH,IT,IT Services,manual
+GVT&D,Other,Other,unclassified
+HALDER,Other,Other,unclassified
+HARRMALAYA,Other,Other,unclassified
+HARSHA,Other,Other,unclassified
+HAVISHA,Other,Other,unclassified
+HBLENGINE,Cap Goods,Engines,manual
+HBSL,Other,Other,unclassified
+HCC,Infra,Construction - EPC,manual
+HCL-INSYS,Other,Other,unclassified
+HDBFS,Financials,NBFC,manual
+HEADSUP,Other,Other,unclassified
+HECPROJECT,Infra,Construction - EPC,manual
+HESTERBIO,Pharma,Veterinary Pharma,manual
+HEXATRADEX,Other,Other,unclassified
+HEXT,Other,Other,unclassified
+HGM,Other,Other,unclassified
+HGS,Other,Other,unclassified
+HILTON,Other,Other,unclassified
+HINDCOMPOS,Metals,Composites,manual
+HINDCON,Other,Other,unclassified
+HINDWAREAP,Other,Other,unclassified
+HIRECT,Other,Other,unclassified
+HITECH,Other,Other,unclassified
+HLVLTD,FMCG,FMCG - Personal Care,manual
+HMAAGRO,Other,Other,unclassified
+HMVL,Media,Print Media,manual
+HPAL,Other,Other,unclassified
+HPIL,Other,Other,unclassified
+HPL,Other,Other,unclassified
+HUBTOWN,RealEstate,Real Estate - Residential,manual
+HUDCO,Financials,DFI - Housing,manual
+HYBRIDFIN,Financials,NBFC,manual
+IBULLSLTD,Other,Other,unclassified
+ICEMAKE,Other,Other,unclassified
+ICICIAMC,Financials,Asset Management,manual
+ICICIPRULI,Financials,Life Insurance,manual
+IEX,Financials,Exchange,manual
+IFBAGRO,Agri,Agri Equipment,manual
+IFBIND,Consumer,Home Appliances,manual
+IFCI,Financials,DFI,manual
+IFGLEXPOR,Other,Other,unclassified
+IGCL,Other,Other,unclassified
+IGIL,Other,Other,unclassified
+IIFLCAPS,Financials,Capital Markets,manual
+IITL,Other,Other,unclassified
+IKIO,Electronics,LED Lighting,manual
+IKS,IT,IT Services,manual
+IMAGICAA,Consumer,Theme Parks,manual
+IMFA,Metals,Ferro Alloys,manual
+IMPAL,Auto,Auto Ancillaries,manual
+INA,Energy,Oil & Gas,manual
+INDGN,Other,Other,unclassified
+INDIANCARD,Other,Other,unclassified
+INDIANHUME,Other,Other,unclassified
+INDIQUBE,RealEstate,Real Estate - Commercial,manual
+INDNIPPON,Financials,Asset Management,manual
+INDOAMIN,Other,Other,unclassified
+INDOBORAX,Chemicals,Inorganic Chemicals,manual
+INDOFARM,Agri,Agri Products,auto:enhanced_heuristic
+INDORAMA,Other,Other,unclassified
+INDOSTAR,Financials,NBFC,manual
+INDOUS,Other,Other,unclassified
+INDRAMEDCO,Other,Other,unclassified
+INDTERRAIN,Other,Other,unclassified
+INFOBEAN,IT,IT Services,manual
+INGERRAND,Cap Goods,Compressors,manual
+INNOVACAP,Other,Other,unclassified
+INNOVANA,Other,Other,unclassified
+INOXGREEN,Energy,Renewable Energy,manual
+INTENTECH,Other,Other,unclassified
+INTERARCH,Infra,Pre-Engineered Buildings,manual
+INTLCONV,Other,Other,unclassified
+INVENTURE,Financials,Investment Holding,auto:enhanced_heuristic
+IONEXCHANG,Chemicals,Water Treatment,manual
+IPL,Other,Other,unclassified
+IRIS,Other,Other,unclassified
+IRISDOREME,Other,Other,unclassified
+ISFT,Other,Other,unclassified
+ISHANCH,Other,Other,unclassified
+ITDC,Consumer,Hotels - PSU,manual
+ITI,Telecom,Telecom Equipment,manual
+IVALUE,IT,IT Distribution,manual
+IVC,Other,Other,unclassified
+IVP,Other,Other,unclassified
+JAGRAN,Media,Print Media,manual
+JAICORPLTD,Other,Other,unclassified
+JAINREC,Other,Other,unclassified
+JAIPURKURT,Other,Other,unclassified
+JARO,Other,Other,unclassified
+JASH,Other,Other,unclassified
+JAYBARMARU,Other,Other,unclassified
+JAYKAY,Other,Other,unclassified
+JAYNECOIND,Auto,Auto Ancillaries,manual
+JHS,Other,Other,unclassified
+JINDALPHOT,Other,Other,unclassified
+JINDRILL,Other,Other,unclassified
+JINDWORLD,Other,Other,unclassified
+JIOFIN,Financials,Diversified Financial,manual
+JISLDVREQS,Other,Other,unclassified
+JISLJALEQS,Other,Other,unclassified
+JKIPL,Other,Other,unclassified
+JKLAKSHMI,Other,Other,unclassified
+JLHL,Other,Other,unclassified
+JMA,Other,Other,unclassified
+JNKINDIA,Other,Other,unclassified
+JOCIL,Agri,Agri Products,manual
+JSLL,Other,Other,unclassified
+JTLIND,Other,Other,unclassified
+JUBLCPL,Other,Other,unclassified
+JUBLINGREA,Other,Other,unclassified
+JUNIPER,Other,Other,unclassified
+JWL,Other,Other,unclassified
+KABRAEXTRU,Other,Other,unclassified
+KALAMANDIR,Consumer,Retail - Apparel,manual
+KALPATARU,Other,Other,unclassified
+KALYANIFRG,Other,Other,unclassified
+KAMDHENU,Other,Other,unclassified
+KANANIIND,Other,Other,unclassified
+KANPRPLA,Other,Other,unclassified
+KARMAENG,Other,Other,unclassified
+KAUSHALYA,Other,Other,unclassified
+KAYA,Other,Other,unclassified
+KCP,Other,Other,unclassified
+KCPSUGIND,FMCG,Sugar,manual
+KELLTONTEC,IT,IT Services,manual
+KHAITANLTD,Other,Other,unclassified
+KHANDSE,Other,Other,unclassified
+KILITCH,Pharma,Pharma Formulations,manual
+KINGFA,Other,Other,unclassified
+KIRIINDUS,Chemicals,Dyes & Pigments,manual
+KIRLOSIND,Other,Other,unclassified
+KIRLPNU,Other,Other,unclassified
+KKCL,Other,Other,unclassified
+KNAGRI,Agri,Agri Products,auto:enhanced_heuristic
+KOHINOOR,Other,Other,unclassified
+KOKUYOCMLN,Other,Other,unclassified
+KOPRAN,Other,Other,unclassified
+KOTARISUG,FMCG,Sugar,manual
+KOTHARIPET,Other,Other,unclassified
+KOTYARK,Other,Other,unclassified
+KPEL,Other,Other,unclassified
+KPIGREEN,Other,Other,unclassified
+KREBSBIO,Pharma,Biotech,manual
+KRIDHANINF,Other,Other,unclassified
+KRISHANA,Other,Other,unclassified
+KRISHIVAL,Other,Other,unclassified
+KRISHNADEF,Defence,Aerospace & Defense,manual
+KRITI,Other,Other,unclassified
+KRITIKA,Other,Other,unclassified
+KRONOX,Chemicals,Specialty Chemicals,manual
+KROSS,Auto,Auto Ancillaries,manual
+KRYSTAL,Infra,Construction - Buildings,manual
+KSHINTL,Other,Other,unclassified
+KSL,Other,Other,unclassified
+KSOLVES,IT,IT Services,manual
+KUANTUM,Other,Other,unclassified
+KWIL,Other,Other,unclassified
+LAGNAM,Other,Other,unclassified
+LAL,Other,Other,unclassified
+LAMBODHARA,Other,Other,unclassified
+LANDMARK,Other,Other,unclassified
+LAOPALA,Building Materials,Glassware,manual
+LASA,Other,Other,unclassified
+LATTEYS,Other,Other,unclassified
+LAXMIDENTL,Other,Other,unclassified
+LAXMIINDIA,Other,Other,unclassified
+LEMONTREE,Consumer,Hotels,manual
+LFIC,Other,Other,unclassified
+LGHL,Other,Other,unclassified
+LIBAS,Other,Other,unclassified
+LIBERTSHOE,Consumer,Footwear,auto:enhanced_heuristic
+LINC,Other,Other,unclassified
+LINDEINDIA,Chemicals,Industrial Gases,manual
+LLOYDSENGG,Cap Goods,Engineering,auto:enhanced_heuristic
+LMW,Cap Goods,Textile Machinery,manual
+LODHA,RealEstate,Real Estate - Residential,manual
+LORDSCHLO,Other,Other,unclassified
+LOTUSDEV,Other,Other,unclassified
+LPDC,Other,Other,unclassified
+LTM,Other,Other,unclassified
+MADHAV,Other,Other,unclassified
+MADHUCON,Infra,Construction - EPC,manual
+MAGNUM,Other,Other,unclassified
+MAHAPEXLTD,Other,Other,unclassified
+MAHEPC,Other,Other,unclassified
+MAHSEAMLES,Metals,Steel - Tubes,manual
+MAITHANALL,Metals,Ferro Alloys,manual
+MALLCOM,Other,Other,unclassified
+MAMATA,Other,Other,unclassified
+MANBA,Auto,Auto Ancillaries,manual
+MANINDS,Cap Goods,Industrial Equipment,manual
+MANORAMA,Other,Other,unclassified
+MANORG,Other,Other,unclassified
+MANUGRAPH,Other,Other,unclassified
+MARALOVER,Textiles,Cotton Textiles,manual
+MARATHON,RealEstate,Real Estate - Residential,manual
+MARINE,Shipping,Shipping,manual
+MARKOLINES,Other,Other,unclassified
+MARSONS,Other,Other,unclassified
+MASFIN,Financials,NBFC,manual
+MASKINVEST,Financials,Investment Holding,auto:enhanced_heuristic
+MASTERTR,Other,Other,unclassified
+MATRIMONY,Consumer,Internet - Matchmaking,manual
+MAXESTATES,RealEstate,Real Estate - Commercial,manual
+MAXIND,Other,Other,unclassified
+MAYURUNIQ,Other,Other,unclassified
+MAZDA,Auto,Auto Ancillaries,manual
+MBAPL,Other,Other,unclassified
+MBEL,Other,Other,unclassified
+MCLEODRUSS,Other,Other,unclassified
+MEESHO,IT,E-Commerce,manual
+MEIL,Other,Other,unclassified
+MENONBE,Other,Other,unclassified
+MFML,Other,Other,unclassified
+MHLXMIRU,Other,Other,unclassified
+MHRIL,Other,Other,unclassified
+MICEL,Other,Other,unclassified
+MIDWESTLTD,Other,Other,unclassified
+MINDACORP,Other,Other,unclassified
+MINDTECK,IT,IT Services,manual
+MIRZAINT,Other,Other,unclassified
+MITCON,Other,Other,unclassified
+MITTAL,Other,Other,unclassified
+MKPL,Other,Other,unclassified
+MMFL,Other,Other,unclassified
+MMP,Other,Other,unclassified
+MODINATUR,Other,Other,unclassified
+MODIRUBBER,Chemicals,Rubber,auto:enhanced_heuristic
+MODIS,Other,Other,unclassified
+MODISONLTD,Other,Other,unclassified
+MODTHREAD,Textiles,Thread,manual
+MOKSH,Other,Other,unclassified
+MOL,Other,Other,unclassified
+MOLDTECH,Cap Goods,Tooling,manual
+MONARCH,Other,Other,unclassified
+MONEYBOXX,Financials,NBFC,manual
+MONTECARLO,Infra,Construction - EPC,manual
+MOTISONS,Other,Other,unclassified
+MOTOGENFIN,Financials,NBFC,manual
+MPSLTD,IT,IT - BPO,manual
+MSPL,Other,Other,unclassified
+MSUMI,Other,Other,unclassified
+MTNL,Telecom,Telecom - PSU,manual
+MUFIN,Financials,NBFC,manual
+MUFTI,Consumer,Retail - Apparel,manual
+MUKANDLTD,Metals,Steel - Specialty,manual
+MUKKA,Agri,Seafood,manual
+MUKTAARTS,Other,Other,unclassified
+MUNJALAU,Auto,Auto Ancillaries - 2W,manual
+MUNJALSHOW,Auto,Auto Ancillaries - 2W,manual
+MURUDCERA,Building Materials,Tiles,manual
+MUTHOOTMF,Financials,NBFC - Microfinance,manual
+MVGJL,Other,Other,unclassified
+NACLIND,Chemicals,Chlor-Alkali,manual
+NAGREEKCAP,Other,Other,unclassified
+NAGREEKEXP,Other,Other,unclassified
+NAHARCAP,Other,Other,unclassified
+NAHARINDUS,Textiles,Cotton Textiles,manual
+NAHARPOLY,Textiles,Synthetic Textiles,manual
+NAM-INDIA,Other,Other,unclassified
+NATCAPSUQ,Other,Other,unclassified
+NATHBIOGEN,Pharma,Biotech,manual
+NAVA,Metals,Mining,manual
+NAVKARCORP,Other,Other,unclassified
+NAVKARURB,Other,Other,unclassified
+NAVNETEDUL,Other,Other,unclassified
+NBIFIN,Financials,NBFC,manual
+NDGL,Other,Other,unclassified
+NDL,Other,Other,unclassified
+NECCLTD,Other,Other,unclassified
+NECLIFE,Pharma,Pharma Formulations,manual
+NELCO,Electronics,Satellite Communication,manual
+NEPHROPLUS,Pharma,Dialysis,manual
+NGIL,Other,Other,unclassified
+NGLFINE,Other,Other,unclassified
+NH,Other,Other,unclassified
+NIBE,Other,Other,unclassified
+NIBL,Other,Other,unclassified
+NIITLTD,Other,Other,unclassified
+NILASPACES,Other,Other,unclassified
+NIPPOBATRY,Electronics,Batteries,manual
+NIRAJ,Other,Other,unclassified
+NITCO,Other,Other,unclassified
+NIVABUPA,Financials,Health Insurance,manual
+NKIND,Other,Other,unclassified
+NOIDATOLL,Infra,Roads & Toll,manual
+NORTHARC,Financials,NBFC,manual
+NOVAAGRI,Agri,Agri Products,auto:enhanced_heuristic
+NPST,Other,Other,unclassified
+NRBBEARING,Auto,Bearings,manual
+NRL,Other,Other,unclassified
+NSIL,Other,Other,unclassified
+NTPCGREEN,Energy,Renewable Energy,manual
+NURECA,Pharma,Medical Devices,manual
+OAL,Other,Other,unclassified
+OBCL,Other,Other,unclassified
+OCCLLTD,Other,Other,unclassified
+ODIGMA,Other,Other,unclassified
+OLAELEC,Auto,EV,manual
+OMNI,Other,Other,unclassified
+ONEPOINT,Other,Other,unclassified
+ONESOURCE,Other,Other,unclassified
+ONWARDTEC,IT,IT Services,manual
+ORBTEXP,Other,Other,unclassified
+ORCHASP,Other,Other,unclassified
+ORIENTALTL,Other,Other,unclassified
+ORIENTCEM,Cement,Cement,manual
+ORIENTCER,Building Materials,Tiles,manual
+ORIENTHOT,Consumer,Hotels,manual
+ORIENTLTD,Other,Other,unclassified
+ORIENTPPR,Paper,Paper,manual
+ORIENTTECH,Other,Other,unclassified
+ORKLAINDIA,Other,Other,unclassified
+OSIAHYPER,Other,Other,unclassified
+OSWALAGRO,Agri,Agri Products,manual
+OSWALGREEN,Other,Other,unclassified
+OSWALPUMPS,Cap Goods,Pumps & Valves,auto:enhanced_heuristic
+PACEDIGITK,Other,Other,unclassified
+PAISALO,Financials,NBFC,manual
+PAKKA,Packaging,Packaging - Paper,manual
+PALASHSECU,Other,Other,unclassified
+PALREDTEC,IT,IT Services,manual
+PANACEABIO,Pharma,Pharma API,manual
+PANAMAPET,Other,Other,unclassified
+PANSARI,Other,Other,unclassified
+PAR,Other,Other,unclassified
+PARACABLES,Cables,Cables,manual
+PARAGMILK,FMCG,FMCG - Dairy,manual
+PARKHOSPS,Pharma,Hospitals,manual
+PARSVNATH,RealEstate,Real Estate - Residential,manual
+PASUPTAC,Other,Other,unclassified
+PAVNAIND,Other,Other,unclassified
+PDSL,Other,Other,unclassified
+PEARLPOLY,Packaging,Packaging - Films,manual
+PENIND,Other,Other,unclassified
+PENINLAND,Other,Other,unclassified
+PFS,Financials,NBFC - Infra,manual
+PGHL,Other,Other,unclassified
+PGIL,Other,Other,unclassified
+PICCADIL,FMCG,FMCG - Foods,manual
+PIGL,Other,Other,unclassified
+PILANIINVS,Financials,Investment Holding,manual
+PILITA,Other,Other,unclassified
+PIONEEREMB,Textiles,Embroidery,manual
+PIRAMALFIN,Financials,NBFC,manual
+PITTIENG,Cap Goods,Electrical Equipment,manual
+PLAZACABLE,Cables,Cables,manual
+PNBGILTS,Financials,Gilts,manual
+PNGJL,Other,Other,unclassified
+PNGSREVA,Other,Other,unclassified
+POCL,Other,Other,unclassified
+PODDARMENT,Other,Other,unclassified
+POKARNA,Building Materials,Granite & Quartz,manual
+PONNIERODE,Other,Other,unclassified
+POONAWALLA,Financials,NBFC,manual
+PPAP,Auto,Auto Ancillaries,manual
+PPL,Other,Other,unclassified
+PRABHA,Other,Other,unclassified
+PRAENG,Other,Other,unclassified
+PRAKASH,Other,Other,unclassified
+PRAKASHSTL,Metals,Steel,manual
+PRAXIS,Other,Other,unclassified
+PRECAM,Other,Other,unclassified
+PREMEXPLN,Other,Other,unclassified
+PRIMESECU,Other,Other,unclassified
+PRIMO,Other,Other,unclassified
+PRITI,Other,Other,unclassified
+PROZONER,Other,Other,unclassified
+PRUDMOULI,Other,Other,unclassified
+PSB,Other,Other,unclassified
+PTC,Energy,Power Trading,manual
+PTCIL,Other,Other,unclassified
+PTL,Other,Other,unclassified
+PURVA,RealEstate,Real Estate - Residential,manual
+PVP,Other,Other,unclassified
+PVSL,Other,Other,unclassified
+PWL,Other,Other,unclassified
+PYRAMID,Other,Other,unclassified
+QUADFUTURE,Other,Other,unclassified
+RACE,Other,Other,unclassified
+RACLGEAR,Other,Other,unclassified
+RADAAN,Other,Other,unclassified
+RADHIKAJWE,Other,Other,unclassified
+RADIANTCMS,Other,Other,unclassified
+RADIOCITY,Media,Radio,manual
+RAIN,Energy,Carbon & Petroleum Coke,manual
+RAJMET,Metals,Steel,manual
+RAJOOENG,Other,Other,unclassified
+RAJRATAN,Auto,Auto Ancillaries,manual
+RAJSREESUG,FMCG,Sugar,manual
+RAJTV,Other,Other,unclassified
+RAMAPHO,Other,Other,unclassified
+RAMCOSYS,IT,IT Services,manual
+RAMKY,Other,Other,unclassified
+RAMRAT,Other,Other,unclassified
+RANASUG,FMCG,Sugar,manual
+RANEHOLDIN,Financials,Investment Holding,manual
+RATNAVEER,Metals,Steel,manual
+RAYMONDLSL,Other,Other,unclassified
+RAYMONDREL,Other,Other,unclassified
+RBA,Other,Other,unclassified
+REDINGTON,IT,IT Distribution,manual
+REDTAPE,Consumer,Footwear,manual
+REFEX,Energy,Power Trading,manual
+REGAAL,Other,Other,unclassified
+REGENCERAM,Building Materials,Tiles,manual
+RELIABLE,Other,Other,unclassified
+RELIGARE,Financials,Diversified Financial,manual
+RELTD,Other,Other,unclassified
+REMSONSIND,Other,Other,unclassified
+REPCOHOME,Other,Other,unclassified
+REPL,Other,Other,unclassified
+REPRO,Consumer,Printing,manual
+RESPONIND,Other,Other,unclassified
+RGL,Other,Other,unclassified
+RHETAN,Other,Other,unclassified
+RHIM,Other,Other,unclassified
+RHL,Other,Other,unclassified
+RISHABH,Other,Other,unclassified
+RITCO,Other,Other,unclassified
+RKDL,Other,Other,unclassified
+RKEC,Infra,Construction - EPC,manual
+RKSWAMY,Other,Other,unclassified
+RMDRIP,Other,Other,unclassified
+RML,Other,Other,unclassified
+ROLEXRINGS,Auto,Bearings,manual
+ROML,Other,Other,unclassified
+ROSSELLIND,Chemicals,Specialty Chemicals,manual
+ROSSTECH,Other,Other,unclassified
+RPEL,Other,Other,unclassified
+RPGLIFE,Other,Other,unclassified
+RPPL,Other,Other,unclassified
+RPTECH,IT,IT Distribution,manual
+RSL,Other,Other,unclassified
+RSYSTEMS,IT,IT Services,manual
+RTNINDIA,Other,Other,unclassified
+RUBFILA,Other,Other,unclassified
+RUBICON,Other,Other,unclassified
+RUCHIRA,Chemicals,Paper Chemicals,manual
+RUDRA,Other,Other,unclassified
+RUSHIL,Building Materials,MDF Board,manual
+RUSTOMJEE,RealEstate,Real Estate - Residential,manual
+RVHL,Other,Other,unclassified
+RVTH,Other,Other,unclassified
+SAATVIKGL,Other,Other,unclassified
+SADBHIN,Other,Other,unclassified
+SADHNANIQ,Other,Other,unclassified
+SAFARI,Consumer,Luggage,manual
+SAGARDEEP,Other,Other,unclassified
+SAGCEM,Cement,Cement,manual
+SAHYADRI,Agri,Agri Products,manual
+SAKHTISUG,FMCG,Sugar,manual
+SAKUMA,Other,Other,unclassified
+SALASAR,Other,Other,unclassified
+SALZERELEC,Cap Goods,Electrical Equipment,manual
+SAMBHAAV,Other,Other,unclassified
+SAMBHV,Other,Other,unclassified
+SAMPANN,Other,Other,unclassified
+SANATHAN,Other,Other,unclassified
+SANDESH,Media,Print Media,manual
+SANOFICONR,Pharma,Pharma MNC,manual
+SANSTAR,Pharma,Pharma Excipients,manual
+SARLAPOLY,Packaging,Packaging - Films,manual
+SARVESHWAR,Agri,Rice,manual
+SASTASUNDR,Other,Other,unclassified
+SBGLP,Other,Other,unclassified
+SBICARD,Financials,Credit Cards,manual
+SCHAND,Other,Other,unclassified
+SCILAL,Other,Other,unclassified
+SDBL,Other,Other,unclassified
+SECMARK,Financials,Compliance Tech,manual
+SEDEMAC,Other,Other,unclassified
+SEJALLTD,Other,Other,unclassified
+SELMC,Other,Other,unclassified
+SEMAC,Other,Other,unclassified
+SEPC,Infra,Construction - EPC,manual
+SERVOTECH,Electronics,LED & Solar,manual
+SETL,Other,Other,unclassified
+SFL,Other,Other,unclassified
+SGFIN,Financials,NBFC,auto:enhanced_heuristic
+SGL,Other,Other,unclassified
+SHADOWFAX,Logistics,Last Mile Delivery,manual
+SHAH,Other,Other,unclassified
+SHAILY,Other,Other,unclassified
+SHAKTIPUMP,Cap Goods,Pumps & Valves,auto:enhanced_heuristic
+SHALBY,Pharma,Hospitals,manual
+SHANKARA,Other,Other,unclassified
+SHANTI,Other,Other,unclassified
+SHANTIGEAR,Other,Other,unclassified
+SHARDAMOTR,Auto,Auto Ancillaries,manual
+SHAREINDIA,Financials,Stock Broking,manual
+SHEKHAWATI,Other,Other,unclassified
+SHEMAROO,Media,Entertainment,manual
+SHILCTECH,Other,Other,unclassified
+SHIVALIK,Other,Other,unclassified
+SHIVAMILLS,Other,Other,unclassified
+SHIVATEX,Other,Other,unclassified
+SHK,Other,Other,unclassified
+SHRADHA,Other,Other,unclassified
+SHREDIGCEM,Cement,Cement,manual
+SHREEJISPG,Other,Other,unclassified
+SHREEPUSHK,Other,Other,unclassified
+SHREERAMA,Other,Other,unclassified
+SHREYANIND,Other,Other,unclassified
+SHRINGARMS,Other,Other,unclassified
+SHYAMCENT,Other,Other,unclassified
+SHYAMTEL,Other,Other,unclassified
+SIGACHI,Pharma,Pharma Excipients,manual
+SIGIND,Other,Other,unclassified
+SIGMA,Other,Other,unclassified
+SIGMAADV,Other,Other,unclassified
+SIGNPOST,Other,Other,unclassified
+SIKKO,Other,Other,unclassified
+SIL,Other,Other,unclassified
+SILGO,Other,Other,unclassified
+SILINV,Other,Other,unclassified
+SILLYMONKS,Other,Other,unclassified
+SIMPLEXINF,Infra,Construction - EPC,manual
+SINCLAIR,Consumer,Hotels,manual
+SINDHUTRAD,Other,Other,unclassified
+SINGERIND,Consumer,Consumer Durables,manual
+SINTERCOM,Other,Other,unclassified
+SIRCA,Building Materials,Wood Finishes,manual
+SIYSIL,Other,Other,unclassified
+SJS,Other,Other,unclassified
+SKFINDUS,Auto,Bearings,manual
+SKMEGGPROD,Other,Other,unclassified
+SMLMAH,Other,Other,unclassified
+SMLT,Other,Other,unclassified
+SOFTTECH,IT,IT Services,manual
+SOLEX,Other,Other,unclassified
+SOMICONVEY,Other,Other,unclassified
+SOTL,Other,Other,unclassified
+SPCENET,Other,Other,unclassified
+SPIC,Chemicals,Fertilizers,manual
+SPLIL,Other,Other,unclassified
+SRD,Other,Other,unclassified
+SREEL,Other,Other,unclassified
+SRGHFL,Other,Other,unclassified
+SRHHYPOLTD,Other,Other,unclassified
+SRM,Other,Other,unclassified
+SRTL,Other,Other,unclassified
+SSDL,Other,Other,unclassified
+STALLION,Other,Other,unclassified
+STANLEY,Other,Other,unclassified
+STARTECK,Other,Other,unclassified
+STCINDIA,Trading,Trading - PSU,manual
+STEL,Other,Other,unclassified
+STERTOOLS,Other,Other,unclassified
+STLNETWORK,Telecom,Fiber & Cables,manual
+STOVEKRAFT,FMCG,Kitchen Appliances,manual
+STUDDS,Auto,Auto Ancillaries,manual
+STYL,Other,Other,unclassified
+SUBEXLTD,IT,IT Services,manual
+SUDARCOLOR,Chemicals,Paints & Coatings,manual
+SUDEEPPHRM,Other,Other,unclassified
+SUKHJITS,Other,Other,unclassified
+SULA,FMCG,Alcoholic Beverages,manual
+SUMMITSEC,Other,Other,unclassified
+SUNCLAY,Other,Other,unclassified
+SUNDARAM,Other,Other,unclassified
+SUNDRMBRAK,Auto,Auto Ancillaries,manual
+SUNDROP,FMCG,FMCG - Edible Oil,manual
+SUPERSPIN,Other,Other,unclassified
+SURAJEST,Other,Other,unclassified
+SURAJLTD,Metals,Steel - Tubes,manual
+SURAKSHA,Other,Other,unclassified
+SURANASOL,Other,Other,unclassified
+SURANAT&P,Other,Other,unclassified
+SURYALAXMI,Other,Other,unclassified
+SURYAROSNI,Other,Other,unclassified
+SUTLEJTEX,Textiles,Yarn & Fiber,manual
+SUVIDHAA,Other,Other,unclassified
+SUYOG,Other,Other,unclassified
+SVLL,Other,Other,unclassified
+SWANCORP,Other,Other,unclassified
+SWELECTES,Cap Goods,Switchgear,manual
+SYNCOMF,Other,Other,unclassified
+SYNGENE,Pharma,CRAMS,manual
+SYSTMTXC,IT,IT Services,manual
+TAINWALCHM,Chemicals,Specialty Chemicals,manual
+TARACHAND,Other,Other,unclassified
+TARAPUR,Other,Other,unclassified
+TARC,RealEstate,Real Estate - Residential,manual
+TARIL,Other,Other,unclassified
+TARSONS,Pharma,Lab Equipment,manual
+TASTYBITE,FMCG,FMCG - Foods,manual
+TATACAP,Other,Other,unclassified
+TATVA,Other,Other,unclassified
+TBOTEK,Other,Other,unclassified
+TBZ,Consumer,Retail - Jewellery,manual
+TCC,Other,Other,unclassified
+TCPLPACK,Packaging,Packaging - Containers,manual
+TECHNOE,Other,Other,unclassified
+TEGA,Cap Goods,Mining Equipment,manual
+TEJASNET,Telecom,Telecom Equipment,manual
+TEMBO,Other,Other,unclassified
+TENNIND,Other,Other,unclassified
+TERASOFT,IT,IT Services,manual
+TFL,Other,Other,unclassified
+THEINVEST,Financials,Investment Holding,auto:enhanced_heuristic
+THEJO,Other,Other,unclassified
+THELEELA,Other,Other,unclassified
+THEMISMED,Other,Other,unclassified
+THOMASCOOK,Other,Other,unclassified
+THOMASCOTT,Other,Other,unclassified
+TI,Other,Other,unclassified
+TICL,Other,Other,unclassified
+TIGERLOGS,Other,Other,unclassified
+TIL,Other,Other,unclassified
+TIPSMUSIC,Other,Other,unclassified
+TIRUMALCHM,Other,Other,unclassified
+TMB,Other,Other,unclassified
+TMCV,Other,Other,unclassified
+TMPV,Other,Other,unclassified
+TNPETRO,Other,Other,unclassified
+TNTELE,Other,Other,unclassified
+TOLINS,Other,Other,unclassified
+TOTAL,Other,Other,unclassified
+TOUCHWOOD,Other,Other,unclassified
+TPHQ,Other,Other,unclassified
+TRACXN,Other,Other,unclassified
+TREJHARA,Other,Other,unclassified
+TREL,Other,Other,unclassified
+TRF,Other,Other,unclassified
+TRITURBINE,Other,Other,unclassified
+TRU,Other,Other,unclassified
+TRUALT,Other,Other,unclassified
+TSFINV,Other,Other,unclassified
+TTKHLTCARE,Other,Other,unclassified
+TTKPRESTIG,Other,Other,unclassified
+TVSELECT,Other,Other,unclassified
+TVSSRICHAK,Other,Other,unclassified
+UCAL,Other,Other,unclassified
+UDS,Other,Other,unclassified
+UEL,Other,Other,unclassified
+UFBL,Other,Other,unclassified
+UFO,Other,Other,unclassified
+UGROCAP,Other,Other,unclassified
+UMIYA-MRO,Other,Other,unclassified
+UNIDT,Other,Other,unclassified
+UNIECOM,Other,Other,unclassified
+UNIENTER,Other,Other,unclassified
+UNIMECH,Other,Other,unclassified
+UNITECH,Other,Other,unclassified
+UNITEDPOLY,Other,Other,unclassified
+UNIVASTU,Other,Other,unclassified
+UNIVCABLES,Cables,Cables & Wires,auto:enhanced_heuristic
+URAVIDEF,Other,Other,unclassified
+URBANCO,Other,Other,unclassified
+URJA,Other,Other,unclassified
+UYFINCORP,Other,Other,unclassified
+VAISHALI,Other,Other,unclassified
+VALIANTORG,Other,Other,unclassified
+VARDHACRLC,Other,Other,unclassified
+VASCONEQ,Other,Other,unclassified
+VASWANI,Other,Other,unclassified
+VCL,Other,Other,unclassified
+VEEDOL,Other,Other,unclassified
+VENKEYS,Other,Other,unclassified
+VERANDA,Other,Other,unclassified
+VERTOZ,Other,Other,unclassified
+VESUVIUS,Other,Other,unclassified
+VETO,Other,Other,unclassified
+VGL,Other,Other,unclassified
+VHL,Other,Other,unclassified
+VIDHIING,Other,Other,unclassified
+VIDYAWIRES,Other,Other,unclassified
+VIKASECO,Other,Other,unclassified
+VIKASLIFE,Other,Other,unclassified
+VIKRAMSOLR,Other,Other,unclassified
+VIKRAN,Other,Other,unclassified
+VINCOFE,Other,Other,unclassified
+VINNY,Other,Other,unclassified
+VINYLINDIA,Other,Other,unclassified
+VIPCLOTHNG,Other,Other,unclassified
+VIPIND,Other,Other,unclassified
+VIRINCHI,Other,Other,unclassified
+VISHNU,Other,Other,unclassified
+VISHWARAJ,Other,Other,unclassified
+VITAL,Other,Other,unclassified
+VIVIDHA,Other,Other,unclassified
+VIYASH,Other,Other,unclassified
+VLEGOV,Other,Other,unclassified
+VLSFINANCE,Other,Other,unclassified
+VMM,Other,Other,unclassified
+VMSTMT,Other,Other,unclassified
+VPRPL,Other,Other,unclassified
+VRAJ,Other,Other,unclassified
+VRLLOG,Other,Other,unclassified
+VSSL,Other,Other,unclassified
+VSTL,Other,Other,unclassified
+VSTTILLERS,Other,Other,unclassified
+VTL,Other,Other,unclassified
+WAAREERTL,Other,Other,unclassified
+WALCHANNAG,Other,Other,unclassified
+WCIL,Other,Other,unclassified
+WEALTH,Other,Other,unclassified
+WEIZMANIND,Other,Other,unclassified
+WEL,Other,Other,unclassified
+WELENT,Other,Other,unclassified
+WELINV,Other,Other,unclassified
+WELSPUNLIV,Other,Other,unclassified
+WEWIN,Other,Other,unclassified
+WEWORK,Other,Other,unclassified
+WILLAMAGOR,Other,Other,unclassified
+WIPL,Other,Other,unclassified
+WORTHPERI,Other,Other,unclassified
+WSI,Other,Other,unclassified
+WSTCSTPAPR,Other,Other,unclassified
+XELPMOC,Other,Other,unclassified
+XTGLOBAL,Other,Other,unclassified
+YASHO,Other,Other,unclassified
+YUKEN,Other,Other,unclassified
+ZAGGLE,Other,Other,unclassified
+ZENITHEXPO,Other,Other,unclassified
+ZENITHSTL,Other,Other,unclassified
+ZENTEC,Other,Other,unclassified
+ZFCVINDIA,Other,Other,unclassified
+ZODIACLOTH,Other,Other,unclassified
+ZOTA,Other,Other,unclassified
+ZUARI,Other,Other,unclassified
+ZUARIIND,Other,Other,unclassified
+KANSAINER,Packaging,Packaging,
+MKTGCD,Packaging,Packaging,
+SAHANA,Packaging,Packaging,
+SMVD,Packaging,Packaging,
+AHLUCONT,Packaging,Packaging - Containers,
+MOLDTEK,Packaging,Packaging - Containers,
+ORICONENT,Packaging,Packaging - Containers,
+EMMBI,Packaging,Packaging - Films,
+FILATEX,Packaging,Packaging - Films,Filatex India films
+JINDALPOLY,Packaging,Packaging - Films,
+POLYPLEX,Packaging,Packaging - Films,
+UFLEX,Packaging,Packaging - Films,
+XPROINDIA,Packaging,Packaging - Films,
+APEX,Packaging,Packaging - Laminates,
+EPL,Packaging,Packaging - Laminates,
+HUHTAMAKI,Packaging,Packaging - Laminates,
+PREMIERPOL,Packaging,Packaging - Plastics,
 SUPREME,Packaging,Packaging - Plastics,
 SUPREMEIND,Packaging,Packaging - Plastics,
-SUPRIYA,Pharma,Pharma API,
-SURYA,Metals,Steel Pipes,
-SURYODAY,Banking,Small Finance Banks,
-SUTLEJ,Textiles,Textiles - Spinning,
-SUTURA,Pharma,Medical Devices,
+MOLD-TEK,Packaging,Packaging - Rigid,
+NMSPACK,Packaging,Packaging - Rigid,
+JKPAPER,Packaging,Paper & Packaging,
+SESHAPAPER,Packaging,Paper & Packaging,
+MOLDTKPAC,Packaging,Rigid Packaging,
+BALRAMCHIN,Packaging,Sugar,
+GENUSPAPER,Paper,Paper,auto:name_rule
+MALUPAPER,Paper,Paper,auto:name_rule
+PDMJEPAPER,Paper,Paper,auto:name_rule
+STARPAPER,Paper,Paper,auto:name_rule
+DIVI,Pharma,API & Bulk Drugs,
+GRANULES,Pharma,API & Bulk Drugs,
+LAURUSLABS,Pharma,API & Bulk Drugs,
+NEULANDLAB,Pharma,API & Bulk Drugs,
 SUVEN,Pharma,API & Bulk Drugs,
-SUVENPHAR,Pharma,Drug Discovery - CDMO,
-SUVENPHARM,Pharma,Pharma API,
+VIMTALABS,Pharma,CRO & Testing Labs,
+DRLALPATH,Pharma,Diagnostics,
+HEALTHSRC,Pharma,Diagnostics,
+KRSNAA,Pharma,Diagnostics,
+LALPATHLAB,Pharma,Diagnostics,
+METROPOLIS,Pharma,Diagnostics,
 SUVRDP,Pharma,Diagnostics,
-SUZLON,Renewable,Wind Energy,
-SWARAJENG,Auto,Tractors,
-SWIGGY,Internet,Food Delivery,
-SYMPHONY,Consumer,Air Coolers,
-SYRMA,Electronics,Electronic Components,
-TAICHI,Textiles,Technical Textiles,
-TAJGVK,Consumer,Hotels,
-TANLA,IT,IT Services,
-TARA,Consumer,Jewellery,
-TASTY,Consumer,Food Products,
-TATACHEM,Chemicals,Agri Chemicals & Fertilisers,
-TATACHEMICAL,Chemicals,Specialty Chemicals - Alkali,
-TATACOFFEE,FMCG,FMCG - Foods,
-TATACOMM,Telecom,Telecom Services,
-TATACONSUM,FMCG,FMCG - Beverages,Tea and beverages
-TATAELXSI,IT,Engineering Services,
-TATAHOUSING,RealEstate,Residential RE,
-TATAINVEST,Financials,NBFC,
-TATAMET,Metals,Steel,
-TATAMETALI,Metals,Steel Pipes,
-TATAMOTOR,Auto,Diversified Vehicles,
-TATAMOTORS,Auto,Auto OEM - 4W,
-TATAMOTR,Auto,Auto OEM - EV,
-TATAPOWER,Energy,Power Generation,
-TATASKY,Consumer,DTH,
-TATASTEEL,Metals,Steel,
-TATATECH,IT,Engineering Services,
-TBOTECH,Internet,B2B Marketplace,
-TCI,Shipping,Road Logistics,
-TCIEXP,Infra,Logistics,
-TCIL,Shipping,Shipping,
-TCS,IT,IT Services,
-TDPOWERSYS,Cap Goods,Power Systems,
-TEAMGTY,Financials,Investment Companies,
-TEAMLEASE,IT,Staffing,
-TECHM,IT,IT Services,
-TECHNO,Cap Goods,Heat Exchange & Boilers,
-TEJAS,Telecom,Optical Networking,
-TEXINFRA,Infra,Construction,
-TEXMOPIPES,Cap Goods,Pipes,
-TEXRAIL,Cap Goods,Railway Equipment,
-TFCILTD,Financials,NBFC,
 TGSOLS,Pharma,Diagnostics,
-THANGAMAYL,Consumer,Gold Jewelry,
-THEJEWELS,Consumer,Jewellery,
-THERMAX,Cap Goods,Heat Exchange & Boilers,
 THYROCARE,Pharma,Diagnostics,
-TIGL,Metals,Steel - Structural,
-TIIL,Cap Goods,Textile Machinery,
-TIINDIA,Auto,Auto Ancillaries,
-TILIND,FMCG,FMCG - Beverages,
-TIMETECHNO,Auto,Auto Ancillaries,
-TIMKEN,Auto,Bearings,
-TINPLATE,Metals,Tinplate,
-TIPS,Consumer,Music,
-TIPSINDLTD,Consumer,Music & Media,
-TIRUPATI,Metals,Graphite,
-TIRUPATIFL,Agri,Flour Milling,
-TITAGARH,Infra,Railway Equipment,
-TITAN,Consumer,Jewelry & Watches,
-TITANBYK,Consumer,Watches & Jewellery,
-TLGLOBAL,Infra,Logistics,
-TMBBANK,Banking,Regional Banks,
-TMKFINANCE,Financials,NBFC,
-TNPL,Consumer,Paper,
-TORNTPHARM,Pharma,Formulations,
-TORNTPHRM,Pharma,Formulations,
-TORNTPIPER,Infra,Gas Pipelines,
-TORNTPOWER,Energy,Power Generation,
-TRANSPEK,Chemicals,Specialty Chemicals,
-TRANSWORLD,Shipping,Shipping,
-TRAVELFOOD,FMCG,FMCG - Foods,
-TRENT,Consumer,Apparel Retail,
-TRIDENT,Textiles,Textiles - Home,
-TRIGYN,IT,IT Services,
-TRIVENI,Sugar,Sugar,
-TRIVENIENG,Cap Goods,Engineering,
-TRIVENIGR,Cap Goods,Turbines,
-TTK,Consumer,Pressure Cookers,
-TTML,Telecom,Telecom Services,
-TTMT,Auto,Auto OEM - 4W,
-TUPPERWARE,Consumer,Plastics & Furniture,
-TV18BRDCST,Consumer,Media & Entertainment,
-TVSHLTD,Banking,Regional Banks,
-TVSMOTOR,Auto,Auto OEM - 2W,
-TVSMOTORS,Auto,Auto OEM - 2W,
-TVTODAY,Consumer,Media & Entertainment,
-UBL,FMCG,FMCG - Beverages,
-UCALFUEL,Auto,Fuel Systems,
-UCO,Banking,PSU Banks,
-UFLEX,Packaging,Packaging - Films,
-UGARSUGAR,Sugar,Sugar,
-UJJIVAN,Banking,Small Finance Banks,
-UJJIVANSFB,Banking,Small Finance Banks,
-ULTRACEMCO,Infra,Cement,
-UNIINFO,IT,IT Services,
-UNIONBANK,Banking,PSU Banks,
-UNIPARTS,Auto,Auto Ancillaries,
-UNITDSPR,FMCG,FMCG - Beverages,
-UNO MINDA,Auto,Auto Ancillaries,
-UNOMINDA,Auto,Auto Ancillaries,
-UPL,Chemicals,Specialty Chemicals - Agri,
-USHA,Metals,Steel Wires,
-UTIAMC,Financials,Asset Management,
-UTKARSHBNK,Banking,Small Finance Banks,
-UTTAMSUGAR,Sugar,Sugar,
-VA,Infra,EPC,
-VADILALIND,Consumer,Ice Cream,
-VAIBHAVGBL,Consumer,Jewellery,
-VAKRANGEE,IT,IT Services,
-VARDHMAN,Textiles,Textiles - Spinning,
-VARROC,Auto,Auto Ancillaries,
-VARUN,FMCG,FMCG - Beverages,
-VBL,FMCG,FMCG - Beverages,Varun beverages - PepsiCo bottler
-VBLLTD,Consumer,Beverages,
-VEDANT,Textiles,Apparel Retail,
-VEDANTA,Metals,Diversified Metals,
-VEDL,Metals,Diversified Metals,
-VENKYS,Agri,Poultry & Agri,
-VENTIVE,Consumer,Hospitality,
-VENUSREM,Pharma,Pharma API,
-VETOQUINOL,Pharma,Veterinary,
-VGUARD,Consumer,Consumer Electricals,
 VIJAYA,Pharma,Diagnostics,
 VIJAYADIAG,Pharma,Diagnostics,
 VIJAYALAB,Pharma,Diagnostics,
-VIKAS,Cap Goods,Wires,
-VIMTALABS,Pharma,CRO & Testing Labs,
-VINATI,Chemicals,Specialty Chemicals,
-VINATIORGA,Chemicals,Specialty Chemicals,
-VINDHYATEL,Cables,Optical Fibre,
-VIPPY,Agri,Agri Processing,
-VISAKAIND,Metals,Steel,
+SPARC,Pharma,Drug Discovery,
+SUVENPHAR,Pharma,Drug Discovery - CDMO,
+LOTUSEYE,Pharma,Eye Hospitals,
 VISIONCARE,Pharma,Eye Hospitals,
-VMART,Consumer,Retail,V-Mart Retail
-VOLTAMP,Cap Goods,Transformers,
-VOLTAS,Consumer,Air Conditioners,
-VST,Auto,Tractors,
-VSTIND,Consumer,Cigarettes,
-WAAREEENER,Renewable,Solar Panels,
-WABAG,Infra,Water Treatment,
-WABCO,Auto,Auto Ancillaries,
-WALCHAND,Cap Goods,Engineering,
-WATERBASE,Agri,Aquaculture / Shrimp Feed,
-WEBSOL,Renewable,Solar Panels,
-WELCABLE,Cables,Cables,
-WELCORP,Metals,Steel Pipes,
-WELSPUN,Textiles,Home Textiles,
-WELSPUNIND,Textiles,Textiles - Home,
-WELSPUNSP,Metals,Steel Pipes,
-WENDT,Cap Goods,Cutting Tools,
-WESPAPER,Consumer,Paper,
-WESTLIFE,FMCG,QSR,
-WHEELS,Auto,Auto Ancillaries,
-WHIRLPOOL,Consumer,Consumer Appliances,
-WINDLAS,Pharma,Pharma Contract Mfg,
-WINDWORLD,Renewable,Renewable,
-WIPRO,IT,IT Services,
+ALEMBICPHARM,Pharma,Formulations,
+ALKEM,Pharma,Formulations,
+ASTRAZEN,Pharma,Formulations,
+CAPLIPOINT,Pharma,Formulations,
+DRREDDYS,Pharma,Formulations,
+INDOCO,Pharma,Formulations,
+JB,Pharma,Formulations,
+MARKSANS,Pharma,Formulations,
+NATCO,Pharma,Formulations,
+NOVARTIS,Pharma,Formulations,
+TORNTPHARM,Pharma,Formulations,
+TORNTPHRM,Pharma,Formulations,
 WOCKHARDT,Pharma,Formulations,
-WOCKPHARMA,Pharma,Pharma Formulations,
-WONDERLA,Consumer,Amusement Parks,
-WSFL,Agri,Edible Oils,
-XCHANGING,IT,IT Services,
-XPRESSBEES,Shipping,Last Mile Logistics,
-XPROINDIA,Packaging,Packaging - Films,
+MEDKART,Pharma,Generic Pharma Retail,
+HEALTHSPRING,Pharma,Healthcare IT,
+ALIVUS,Pharma,Healthcare Services,
+CAMSONBIO,Pharma,Healthcare Services,
+SAILIFE,Pharma,Healthcare Services,
+APOLLOHOSP,Pharma,Hospitals,Major hospital chain
+ASTER,Pharma,Hospitals,
+ASTERDM,Pharma,Hospitals,
+CONCORD,Pharma,Hospitals,
+FORTIS,Pharma,Hospitals,
+HCG,Pharma,Hospitals,
+HEALTHCARE,Pharma,Hospitals,
+KIMS,Pharma,Hospitals,
+MAXHEALTH,Pharma,Hospitals,
+MEDANTA,Pharma,Hospitals,
+NARAYANA,Pharma,Hospitals,
+NHLIND,Pharma,Hospitals,
+RAINBOW,Pharma,Hospitals,
 YATHARTH,Pharma,Hospitals,
-YATRA,Consumer,Travel & Tourism,
-YESBANK,Banking,Private Banks,
-ZEEL,Consumer,Media & Entertainment,
-ZEN,Defense,Defense,
-ZENSAR,IT,IT Services,
-ZENSARTECH,IT,IT Services,
-ZERODHA,Financials,Stock Broking,
-ZF,Auto,Auto Ancillaries,
-ZODIAC,Defense,Aerospace Components,
-ZOMATO,Internet,Food Delivery,
+INNVENTMED,Pharma,Medical Devices,
+POLYMED,Pharma,Medical Devices,
+SHILPAMED,Pharma,Medical Devices,
+SUTURA,Pharma,Medical Devices,
+AAREYDRUGS,Pharma,Pharma,auto:name_rule
+BALPHARMA,Pharma,Pharma,auto:name_rule
+GPTHEALTH,Pharma,Pharma,auto:name_rule
+HALEOSLABS,Pharma,Pharma,auto:name_rule
+INDSWFTLAB,Pharma,Pharma,auto:name_rule
+LYKALABS,Pharma,Pharma,auto:name_rule
+MEDICAMEQ,Pharma,Pharma,auto:name_rule
+MEDICO,Pharma,Pharma,auto:name_rule
+MOREPENLAB,Pharma,Pharma,auto:name_rule
+ORCHPHARMA,Pharma,Pharma,auto:name_rule
+PINELABS,Pharma,Pharma,auto:name_rule
+PPLPHARMA,Pharma,Pharma,auto:name_rule
+UNICHEMLAB,Pharma,Pharma,auto:name_rule
+VALIANTLAB,Pharma,Pharma,auto:name_rule
+VINEETLAB,Pharma,Pharma,auto:name_rule
+VIVIMEDLAB,Pharma,Pharma,auto:name_rule
+ZIMLAB,Pharma,Pharma,auto:name_rule
+AARTIDRUGS,Pharma,Pharma API,
+AUROPHARMA,Pharma,Pharma API,
+BIOCON,Pharma,Pharma API,
+BLUEBLOOD,Pharma,Pharma API,
+ELIXIR,Pharma,Pharma API,
+GLAND,Pharma,Pharma API,
+JAGSNPHARM,Pharma,Pharma API,
+LAURUS,Pharma,Pharma API,
+PARABDRUGS,Pharma,Pharma API,
+SEQUENT,Pharma,Pharma API,
+SMRUTHIORG,Pharma,Pharma API,
+SMSPHARMA,Pharma,Pharma API,
+SUPRIYA,Pharma,Pharma API,
+SUVENPHARM,Pharma,Pharma API,
+VENUSREM,Pharma,Pharma API,
+JUBLPHARMA,Pharma,Pharma API - CDMO,
+AKUMS,Pharma,Pharma Contract Mfg,
+ENCUBE,Pharma,Pharma Contract Mfg,CDMO pharmaceutical
+WINDLAS,Pharma,Pharma Contract Mfg,
+ENTERO,Pharma,Pharma Distribution,
+ABBOTINDIA,Pharma,Pharma Formulations,
+AGANORA,Pharma,Pharma Formulations,
+AJANTPHARM,Pharma,Pharma Formulations,
+BLISSGVS,Pharma,Pharma Formulations,
+CIPLA,Pharma,Pharma Formulations,
+DIVISLAB,Pharma,Pharma Formulations,
+DRREDDY,Pharma,Pharma Formulations,
+EMCURE,Pharma,Pharma Formulations,
+ERIS,Pharma,Pharma Formulations,
+GLAXO,Pharma,Pharma Formulations,
+GLENMARK,Pharma,Pharma Formulations,
+IPCALAB,Pharma,Pharma Formulations,
+JBCHEPHARM,Pharma,Pharma Formulations,
+LUPIN,Pharma,Pharma Formulations,
+MANKIND,Pharma,Pharma Formulations,
+NATCOPHARM,Pharma,Pharma Formulations,
+PFIZER,Pharma,Pharma Formulations,
+PFOCUS,Pharma,Pharma Formulations,
+PIRAMALPHA,Pharma,Pharma Formulations,
+SAKAR,Pharma,Pharma Formulations,
+SANOFI,Pharma,Pharma Formulations,
+SENORES,Pharma,Pharma Formulations,
+SOLARA,Pharma,Pharma Formulations,
+STRIDES,Pharma,Pharma Formulations,
+SUNPHARMA,Pharma,Pharma Formulations,
+WOCKPHARMA,Pharma,Pharma Formulations,
 ZYDUSLIFE,Pharma,Pharma Formulations,
-ZYDUSWELL,FMCG,FMCG - Foods,
+PANACEA,Pharma,Pharma Packaging,
+APOLLOPHARM,Pharma,Pharmacy Retail,
+MEDPLUS,Pharma,Pharmacy Retail,
+VETOQUINOL,Pharma,Veterinary,
+HESTER,Pharma,Veterinary & Animal Health,
+BIGBLOC,RealEstate,Building Materials,
+ANANTRAJ,RealEstate,Commercial RE,
+IBREALEST,RealEstate,Commercial RE,
+NESCO,RealEstate,Commercial RE,
+EMBASSY,RealEstate,REIT,
+MINDSPACE,RealEstate,REIT,
+NEXUS,RealEstate,REIT,
+PHOENIXLTD,RealEstate,Real Estate - Commercial,
+AJMERA,RealEstate,Real Estate - Residential,
+AMJLAND,RealEstate,Real Estate - Residential,
+ARVINDSMRT,RealEstate,Real Estate - Residential,
+AURUM,RealEstate,Real Estate - Residential,
+BRIGADE,RealEstate,Real Estate - Residential,
+DBREALTY,RealEstate,Real Estate - Residential,
+DLF,RealEstate,Real Estate - Residential,
+GODREJPROP,RealEstate,Real Estate - Residential,
+INDIABULL,RealEstate,Real Estate - Residential,
+KOLTEPATIL,RealEstate,Real Estate - Residential,
+MACROTECH,RealEstate,Real Estate - Residential,
+MAHLIFE,RealEstate,Real Estate - Residential,
+PRESTIGE,RealEstate,Real Estate - Residential,
+PURAVANKARA,RealEstate,Real Estate - Residential,
+SOBHA,RealEstate,Real Estate - Residential,
+SUNTECK,RealEstate,Real Estate - Residential,
+SUPERHOUSE,RealEstate,Real Estate - Residential,auto:name_rule
+ARVSMART,RealEstate,Residential RE,
+CENTURYTEX,RealEstate,Residential RE,
+ELDECO,RealEstate,Residential RE,
+EXPERION,RealEstate,Residential RE,
+INDIABULLS,RealEstate,Residential RE,
+JSWREALTY,RealEstate,Residential RE,
+KEYSTONE,RealEstate,Residential RE,
+OBEROIREAL,RealEstate,Residential RE,
+OBEROIRLTY,RealEstate,Residential RE,
+OMAXE,RealEstate,Residential RE,
+PURAVANK,RealEstate,Residential RE,
+SIGNATURE,RealEstate,Residential RE,
+SUNTECKREAL,RealEstate,Residential RE,
+TATAHOUSING,RealEstate,Residential RE,
+ATHERENERG,Renewable,EV Ecosystem,
+OLECTRA,Renewable,EV Vehicles,
+PMI,Renewable,EV Vehicles,
+KIRIIND,Renewable,Green Hydrogen,
+GREENPOWER,Renewable,Power Integrated,
+KENERGY,Renewable,Renewable,
+WINDWORLD,Renewable,Renewable,
+ADANIGREEN,Renewable,Renewable Energy,
+PREMIERENE,Renewable,Renewable Energy,
+RATTANINDIA,Renewable,Renewable Energy,
+AVAADA,Renewable,Solar Energy,
+ACMESOLAR,Renewable,Solar IPP,
+ADANIENSOL,Renewable,Solar IPP,
+GREENKO,Renewable,Solar IPP,
+GOLDENKA,Renewable,Solar Modules,
+PREMIERENRG,Renewable,Solar Modules,
+GOLDI,Renewable,Solar Panels,
+WAAREEENER,Renewable,Solar Panels,
+WEBSOL,Renewable,Solar Panels,
+ORIENTGREEN,Renewable,Wind Energy,
+REGEN,Renewable,Wind Energy,
+SUZLON,Renewable,Wind Energy,
+BLUEDART,Shipping,Express Logistics,
+XPRESSBEES,Shipping,Last Mile Logistics,
+ALLCARGO,Shipping,Logistics,
+COASTCORP,Shipping,Logistics,
+DELHIVERY,Shipping,Logistics,
+JETFREIGHT,Shipping,Logistics,
+MAHLOG,Shipping,Logistics,
+CONCOR,Shipping,Rail Logistics,
+TCI,Shipping,Road Logistics,
+ESCORIT,Shipping,Shipping,
+ESGL,Shipping,Shipping,
+GE SHIPPING,Shipping,Shipping,
+GESHIP,Shipping,Shipping,
+MAHESHWARI,Shipping,Shipping,
+SCI,Shipping,Shipping,
+SEACOAST,Shipping,Shipping,
+TCIL,Shipping,Shipping,
+TRANSWORLD,Shipping,Shipping,
+SHREYAS,Shipping,Shipping & Logistics,
+SEAMECLTD,Shipping,Shipping Services,
+PRAJIND,Sugar,Ethanol & Sugar,
+AVADHSUGAR,Sugar,Sugar,
+DALMIASUG,Sugar,Sugar,
+DHAMPUR,Sugar,Sugar,
+DHAMPURSUG,Sugar,Sugar,
+DHARANI,Sugar,Sugar,
+DWARKESH,Sugar,Sugar,
+EID,Sugar,Sugar,
+EIDPARRY,Sugar,Sugar,
+KMSUGAR,Sugar,Sugar,
+MAWANASUG,Sugar,Sugar,
+RENUKA,Sugar,Sugar,
+SHREERENUKA,Sugar,Sugar,
+SIMBHAOLI,Sugar,Sugar,
+TRIVENI,Sugar,Sugar,
+UGARSUGAR,Sugar,Sugar,
+UTTAMSUGAR,Sugar,Sugar,
+NXTDIGITAL,Telecom,Cable TV,
+GTPL,Telecom,Cable TV & Broadband,
+HATHWAY,Telecom,Cable TV & Broadband,
+TEJAS,Telecom,Optical Networking,
+INDUSTOWER,Telecom,Telecom,auto:name_rule
+GTLINFRA,Telecom,Telecom Infrastructure,
+INDUS,Telecom,Telecom Infrastructure,
+RAILTEL,Telecom,Telecom Infrastructure,
+BHARTIARTL,Telecom,Telecom Services,
+BIRLATELE,Telecom,Telecom Services,
+BSNL,Telecom,Telecom Services,
+IDEA,Telecom,Telecom Services,
+TATACOMM,Telecom,Telecom Services,
+TTML,Telecom,Telecom Services,
+ABFRL,Textiles,Apparel Retail,Aditya Birla Fashion Retail
+ETHNIX,Textiles,Apparel Retail,
+MANYAVAR,Textiles,Apparel Retail,
+PAGES,Textiles,Apparel Retail,
+STYLEBAAZA,Textiles,Apparel Retail,
+VEDANT,Textiles,Apparel Retail,
+ABCOTS,Textiles,Cotton / Agri,
+GOKEX,Textiles,Cotton / Agri,
+PASHUPATI,Textiles,Cotton / Agri,
+GARMENTSIND,Textiles,Garments,
+KPR,Textiles,Garments,
+BOMBAYDY,Textiles,Home Textiles,
+WELSPUN,Textiles,Home Textiles,
+SIYARAM,Textiles,Suiting & Fabric,
+GANESHA,Textiles,Technical Textiles,
+NIKHILAD,Textiles,Technical Textiles,
+TAICHI,Textiles,Technical Textiles,
+AADINATH,Textiles,Textile Processing,
+MANOMAY,Textiles,Textiles,
+NMSWORKS,Textiles,Textiles,
+SALONA,Textiles,Textiles,
+SHIVAUM,Textiles,Textiles,
+ARVIND,Textiles,Textiles - Apparel,
+GOKALDAS,Textiles,Textiles - Apparel,
+KITEX,Textiles,Textiles - Apparel,
+RAYMOND,Textiles,Textiles - Apparel,
+ALOKIND,Textiles,Textiles - Fabric,
+ICIL,Textiles,Textiles - Fabric,
+LGBBROSLTD,Textiles,Textiles - Fabric,
+NITIRAJ,Textiles,Textiles - Fabric,
+RUBYMILLS,Textiles,Textiles - Fabric,
+SANGAMIND,Textiles,Textiles - Fabric,
+STYLAMIND,Textiles,Textiles - Home,
+TRIDENT,Textiles,Textiles - Home,
+WELSPUNIND,Textiles,Textiles - Home,
+DOLLAR,Textiles,Textiles - Innerwear,
+LUX,Textiles,Textiles - Innerwear,
+LUXIND,Textiles,Textiles - Innerwear,
+PAGEIND,Textiles,Textiles - Innerwear,
+RUPA,Textiles,Textiles - Innerwear,
+BOMBDYING,Textiles,Textiles - Processing,
+KPRMILL,Textiles,Textiles - Spinning,KPR Mill spinning
+NAHAREXP,Textiles,Textiles - Spinning,
+NAHARSPING,Textiles,Textiles - Spinning,
+NITINSPIN,Textiles,Textiles - Spinning,
+RSWM,Textiles,Textiles - Spinning,
+SUTLEJ,Textiles,Textiles - Spinning,
+VARDHMAN,Textiles,Textiles - Spinning,
+SPORTKING,Textiles,Textiles - Synthetic,
+GARWARE,Textiles,Textiles - Technical,
+HIMATSEIDE,Textiles,Textiles - Technical,
+GRASIM,Textiles,Textiles - Viscose,
+OWM,Textiles,Woolen Mills,
+NITIN,Textiles,Yarn & Fabric,
+SPENTEX,Textiles,Yarn & Fabric,

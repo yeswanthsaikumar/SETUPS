@@ -26,6 +26,7 @@ CLI_DIR = ROOT / "apps" / "python" / "cli"
 PY_LIB_DIR = ROOT / "apps" / "python" / "lib"
 UI_INDEX = ROOT / "apps" / "web" / "ui" / "index.html"
 TRADE_BOARD_UI = ROOT / "apps" / "web" / "ui" / "trade_board.html"
+INDUSTRY_GROUPS_UI = ROOT / "apps" / "web" / "ui" / "industry_groups.html"
 SECTOR_MACRO_HTML = OUTPUT_DIR / "sector_macro_analysis.html"
 GENERATE_SECTOR_MACRO = CLI_DIR / "generate_sector_macro_page.py"
 BREADTH_HTML = OUTPUT_DIR / "market_breadth.html"
@@ -746,6 +747,293 @@ def start_breadth_job() -> dict:
     command = [sys.executable, str(GENERATE_BREADTH)]
     job = _submit_job("scan", command)
     return {"job": job, "message": "Market breadth dashboard regeneration started"}
+
+
+@app.get("/groups")
+def industry_groups_page() -> FileResponse:
+    """Serve the Industry Groups RS & Rotation UI page."""
+    if not INDUSTRY_GROUPS_UI.exists():
+        raise HTTPException(status_code=404, detail="Industry groups UI not found")
+    return FileResponse(INDUSTRY_GROUPS_UI)
+
+
+# ── Industry Groups API ──────────────────────────────────────────────────────
+# Provides live industry-level RS ranking, breadth, 52WH counts, volume profiles,
+# custom group management, and group detail drilldown.
+
+import json as _json_mod
+_CUSTOM_GROUPS_PATH = TRADE_DATA_DIR / "custom_groups.json"
+_INDUSTRY_CACHE: dict = {}
+_INDUSTRY_CACHE_TS: float = 0
+_INDUSTRY_CACHE_TTL = 120  # seconds
+
+
+def _load_custom_groups() -> list[dict]:
+    try:
+        return _json_mod.loads(_CUSTOM_GROUPS_PATH.read_text()) if _CUSTOM_GROUPS_PATH.exists() else []
+    except Exception:
+        return []
+
+
+def _save_custom_groups(groups: list[dict]) -> None:
+    _CUSTOM_GROUPS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _CUSTOM_GROUPS_PATH.write_text(_json_mod.dumps(groups, indent=2))
+
+
+def _compute_group_metrics(group_name: str, tickers: list[str], sector: str = "") -> dict:
+    """Compute RS, breadth, volume, 52WH metrics for a group of tickers."""
+    n = 0
+    above_20 = above_50 = above_200 = 0
+    at_52wh = 0
+    vol_expanding = 0
+    ret_5d_list = []
+    ret_20d_list = []
+    ret_60d_list = []
+    vol_ratios = []
+    members = []
+
+    for sym in tickers:
+        rows = _read_ohlcv(sym, days=300)
+        if not rows or len(rows) < 20:
+            continue
+        closes = [r["close"] for r in rows]
+        volumes = [r["volume"] for r in rows]
+        n += 1
+        last = closes[-1]
+
+        if len(closes) >= 20:
+            ma20 = sum(closes[-20:]) / 20
+            if last > ma20: above_20 += 1
+        if len(closes) >= 50:
+            ma50 = sum(closes[-50:]) / 50
+            if last > ma50: above_50 += 1
+        if len(closes) >= 200:
+            ma200 = sum(closes[-200:]) / 200
+            if last > ma200: above_200 += 1
+
+        high_52w = max(closes[-252:]) if len(closes) >= 252 else max(closes)
+        pct_from_52wh = round((last / high_52w - 1) * 100, 2) if high_52w > 0 else 0
+        if last >= high_52w * 0.95:
+            at_52wh += 1
+
+        if len(volumes) >= 50:
+            avg_vol = sum(volumes[-50:]) / 50
+            recent_vol = sum(volumes[-5:]) / 5 if len(volumes) >= 5 else volumes[-1]
+            if avg_vol > 0:
+                vr = recent_vol / avg_vol
+                vol_ratios.append(vr)
+                if vr > 1.2: vol_expanding += 1
+
+        if len(closes) >= 6:
+            ret_5d_list.append((last / closes[-6] - 1) * 100)
+        if len(closes) >= 21:
+            ret_20d_list.append((last / closes[-21] - 1) * 100)
+        if len(closes) >= 61:
+            ret_60d_list.append((last / closes[-61] - 1) * 100)
+
+        day_chg = round((closes[-1] / closes[-2] - 1) * 100, 2) if len(closes) >= 2 else 0
+        members.append({
+            "symbol": sym,
+            "close": round(last, 2),
+            "dayChangePct": day_chg,
+            "pctFrom52wHigh": pct_from_52wh,
+            "volRatio": round(vol_ratios[-1], 2) if vol_ratios and vol_ratios[-1] == (recent_vol / avg_vol if avg_vol > 0 else 1) else None,
+        })
+
+    if n == 0:
+        return {"group": group_name, "sector": sector, "stockCount": 0}
+
+    pct_20 = round(above_20 / n * 100, 1)
+    pct_50 = round(above_50 / n * 100, 1)
+    pct_200 = round(above_200 / n * 100, 1)
+    breadth_score = round(pct_20 * 0.3 + pct_50 * 0.4 + pct_200 * 0.3, 1)
+    avg_vr = round(sum(vol_ratios) / len(vol_ratios), 2) if vol_ratios else 1.0
+    avg_ret_5d = round(sum(ret_5d_list) / len(ret_5d_list), 2) if ret_5d_list else 0
+    avg_ret_20d = round(sum(ret_20d_list) / len(ret_20d_list), 2) if ret_20d_list else 0
+    avg_ret_60d = round(sum(ret_60d_list) / len(ret_60d_list), 2) if ret_60d_list else 0
+
+    if avg_vr >= 1.3 and avg_ret_20d > 0:
+        vol_pattern = "ACCUMULATION"
+    elif avg_vr >= 1.3 and avg_ret_20d < -2:
+        vol_pattern = "DISTRIBUTION"
+    elif avg_vr < 0.8:
+        vol_pattern = "DRY"
+    else:
+        vol_pattern = "NEUTRAL"
+
+    rs_score = round(avg_ret_20d * 0.4 + avg_ret_60d * 0.3 + (pct_50 - 50) * 0.3, 2)
+
+    return {
+        "group": group_name, "sector": sector, "stockCount": n,
+        "pctAbove20ma": pct_20, "pctAbove50ma": pct_50, "pctAbove200ma": pct_200,
+        "breadthScore": breadth_score, "at52wHighCount": at_52wh,
+        "pct52wHigh": round(at_52wh / n * 100, 1),
+        "avgVolRatio": avg_vr, "volExpandingPct": round(vol_expanding / n * 100, 1),
+        "volPattern": vol_pattern,
+        "avgRet5d": avg_ret_5d, "avgRet20d": avg_ret_20d, "avgRet60d": avg_ret_60d,
+        "rsScore": rs_score,
+        "members": sorted(members, key=lambda m: -(m.get("dayChangePct") or 0)),
+    }
+
+
+def _compute_all_industry_groups() -> list[dict]:
+    """Compute metrics for all industry groups. Cached for _INDUSTRY_CACHE_TTL seconds."""
+    global _INDUSTRY_CACHE, _INDUSTRY_CACHE_TS
+    import time as _t
+    now = _t.time()
+    if _INDUSTRY_CACHE and (now - _INDUSTRY_CACHE_TS) < _INDUSTRY_CACHE_TTL:
+        return _INDUSTRY_CACHE.get("groups", [])
+
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python" / "lib"))
+        import nse_taxonomy
+        nse_taxonomy._SECTOR_MAP, nse_taxonomy._INDUSTRY_MAP = nse_taxonomy._build_maps()
+        taxonomy = nse_taxonomy.load_taxonomy()
+    except Exception:
+        return []
+
+    industry_tickers: dict[str, list[str]] = {}
+    industry_sectors: dict[str, str] = {}
+    for ticker, (sector, industry) in taxonomy.items():
+        if sector == "Other" and industry == "Other":
+            continue
+        industry_tickers.setdefault(industry, []).append(ticker)
+        if industry not in industry_sectors:
+            industry_sectors[industry] = sector
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _calc(item):
+        ind, tickers = item
+        return _compute_group_metrics(ind, tickers, industry_sectors.get(ind, ""))
+
+    groups_to_compute = [(ind, tks) for ind, tks in industry_tickers.items() if len(tks) >= 2]
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        results = list(pool.map(_calc, groups_to_compute))
+
+    results = [r for r in results if r.get("stockCount", 0) >= 2]
+    results.sort(key=lambda x: -(x.get("rsScore") or 0))
+
+    for i, r in enumerate(results):
+        r["rsRank"] = i + 1
+
+    _INDUSTRY_CACHE = {"groups": results}
+    _INDUSTRY_CACHE_TS = now
+    return results
+
+
+@app.get("/api/industry-groups")
+def get_industry_groups(min_stocks: int = 2) -> dict:
+    groups = _compute_all_industry_groups()
+    filtered = [g for g in groups if g.get("stockCount", 0) >= min_stocks]
+    lite = []
+    for g in filtered:
+        gc = dict(g)
+        gc.pop("members", None)
+        lite.append(gc)
+    return {"groups": lite, "total": len(lite), "timestamp": time.time()}
+
+
+@app.get("/api/industry-groups/{group_name}")
+def get_industry_group_detail(group_name: str) -> dict:
+    import urllib.parse
+    decoded = urllib.parse.unquote(group_name)
+    groups = _compute_all_industry_groups()
+    for g in groups:
+        if g.get("group") == decoded:
+            return g
+    raise HTTPException(status_code=404, detail=f"Industry group '{decoded}' not found")
+
+
+@app.get("/api/industry-groups/{group_name}/rs-history")
+def get_industry_group_rs_history(group_name: str, days: int = 120) -> dict:
+    import urllib.parse
+    decoded = urllib.parse.unquote(group_name)
+    groups = _compute_all_industry_groups()
+    target = None
+    for g in groups:
+        if g.get("group") == decoded:
+            target = g
+            break
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Group '{decoded}' not found")
+
+    members = [m["symbol"] for m in target.get("members", [])]
+    if not members:
+        return {"group": decoded, "rsLine": []}
+
+    nifty_rows = _read_ohlcv("^NSEI", days=days + 50)
+    nifty_map = {r["date"]: r["close"] for r in nifty_rows} if nifty_rows else {}
+
+    all_dates: dict[str, list[float]] = {}
+    for sym in members[:30]:
+        rows = _read_ohlcv(sym, days=days + 50)
+        if not rows or len(rows) < 20:
+            continue
+        base_close = rows[0]["close"]
+        for r in rows:
+            d = r["date"]
+            normed = (r["close"] / base_close) * 100
+            all_dates.setdefault(d, []).append(normed)
+
+    if not all_dates:
+        return {"group": decoded, "rsLine": []}
+
+    sorted_dates = sorted(all_dates.keys())
+    if len(sorted_dates) > days:
+        sorted_dates = sorted_dates[-days:]
+
+    nifty_base = nifty_map.get(sorted_dates[0], 100) if nifty_map else 100
+    rs_line = []
+    for d in sorted_dates:
+        group_avg = sum(all_dates[d]) / len(all_dates[d])
+        nifty_normed = (nifty_map.get(d, nifty_base) / nifty_base) * 100 if nifty_base > 0 else 100
+        rs_val = round(group_avg / nifty_normed * 100, 2) if nifty_normed > 0 else 100
+        rs_line.append({"date": d, "rs": rs_val, "groupReturn": round(group_avg - 100, 2), "niftyReturn": round(nifty_normed - 100, 2)})
+
+    return {"group": decoded, "rsLine": rs_line}
+
+
+@app.get("/api/custom-groups")
+def list_custom_groups() -> dict:
+    return {"groups": _load_custom_groups()}
+
+
+@app.post("/api/custom-groups")
+def create_custom_group(body: dict) -> dict:
+    name = body.get("name", "").strip()
+    tickers = body.get("tickers", [])
+    if not name or not tickers:
+        raise HTTPException(status_code=400, detail="name and tickers required")
+    groups = _load_custom_groups()
+    if any(g["name"] == name for g in groups):
+        raise HTTPException(status_code=409, detail=f"Group '{name}' already exists")
+    group = {"name": name, "tickers": [t.upper() for t in tickers], "created": datetime.now().isoformat()}
+    groups.append(group)
+    _save_custom_groups(groups)
+    return {"ok": True, "group": group}
+
+
+@app.delete("/api/custom-groups/{name}")
+def delete_custom_group(name: str) -> dict:
+    import urllib.parse
+    decoded = urllib.parse.unquote(name)
+    groups = _load_custom_groups()
+    groups = [g for g in groups if g["name"] != decoded]
+    _save_custom_groups(groups)
+    return {"ok": True}
+
+
+@app.get("/api/custom-groups/{name}/metrics")
+def custom_group_metrics(name: str) -> dict:
+    import urllib.parse
+    decoded = urllib.parse.unquote(name)
+    groups = _load_custom_groups()
+    target = next((g for g in groups if g["name"] == decoded), None)
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Custom group '{decoded}' not found")
+    return _compute_group_metrics(decoded, target["tickers"], "Custom")
 
 
 @app.get("/trades")
