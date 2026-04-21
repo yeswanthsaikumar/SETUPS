@@ -1,0 +1,2076 @@
+nse_ticker,theme_key,theme_name
+20MICRONS,metals,Metals & Mining
+21STCENMGM,capital_markets,Capital Markets & Exchanges
+360ONE,capital_markets,Capital Markets & Exchanges
+3IINFOLTD,it_services,IT Services
+3IINFOLTD,new_age_tech,New-Age Tech (Internet/Fintech)
+5PAISA,capital_markets,Capital Markets & Exchanges
+63MOONS,it_services,IT Services
+63MOONS,new_age_tech,New-Age Tech (Internet/Fintech)
+AAATECH,new_age_tech,New-Age Tech (Internet/Fintech)
+AADHARHFC,nbfc,NBFC — Retail & Diversified
+AAREYDRUGS,cdmo_pharma,CDMO / CRAMS Pharma
+AAREYDRUGS,branded_pharma,Branded Formulations Pharma
+AARNAV,discretionary,Premium Consumer Discretionary
+AARON,capex,Broad Capital Goods Cycle
+AARTECH,capex,Broad Capital Goods Cycle
+AARTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+AARTIDRUGS,cdmo_pharma,CDMO / CRAMS Pharma
+AARTIDRUGS,branded_pharma,Branded Formulations Pharma
+AARTIIND,specialty_chem,Specialty Chemicals
+AARTIPHARM,cdmo_pharma,CDMO / CRAMS Pharma
+AARTIPHARM,branded_pharma,Branded Formulations Pharma
+AARTISURF,specialty_chem,Specialty Chemicals
+AAVAS,nbfc,NBFC — Retail & Diversified
+ABB,renewables,Renewables & Clean Energy
+ABB,capex,Broad Capital Goods Cycle
+ABBOTINDIA,cdmo_pharma,CDMO / CRAMS Pharma
+ABBOTINDIA,branded_pharma,Branded Formulations Pharma
+ABCAPITAL,nbfc,NBFC — Retail & Diversified
+ABCOTS,discretionary,Premium Consumer Discretionary
+ABFRL,discretionary,Premium Consumer Discretionary
+ABLBL,discretionary,Premium Consumer Discretionary
+ABREL,realty,Real Estate
+ABSLAMC,capital_markets,Capital Markets & Exchanges
+ACC,cement,Cement
+ACCELYA,it_services,IT Services
+ACCURACY,logistics,Logistics & Supply Chain
+ACI,specialty_chem,Specialty Chemicals
+ACL,cement,Cement
+ACMESOLAR,renewables,Renewables & Clean Energy
+ACUTAAS,cdmo_pharma,CDMO / CRAMS Pharma
+ACUTAAS,branded_pharma,Branded Formulations Pharma
+ADANIENT,metals,Metals & Mining
+ADANIGREEN,renewables,Renewables & Clean Energy
+ADANIPORTS,logistics,Logistics & Supply Chain
+ADL,discretionary,Premium Consumer Discretionary
+ADOR,capex,Broad Capital Goods Cycle
+ADROITINFO,it_services,IT Services
+ADROITINFO,new_age_tech,New-Age Tech (Internet/Fintech)
+ADSL,it_services,IT Services
+ADSL,new_age_tech,New-Age Tech (Internet/Fintech)
+ADVAIT,semis,Semiconductors & Electronics Manufacturing
+ADVAIT,capex,Broad Capital Goods Cycle
+ADVANCE,specialty_chem,Specialty Chemicals
+ADVANCE,rural_agri,Rural & Agri
+ADVANIHOTR,discretionary,Premium Consumer Discretionary
+ADVENTHTL,discretionary,Premium Consumer Discretionary
+ADVENZYMES,new_age_tech,New-Age Tech (Internet/Fintech)
+AEPL,ev,Electric Vehicles
+AEPL,semis,Semiconductors & Electronics Manufacturing
+AEPL,capex,Broad Capital Goods Cycle
+AEQUS,defense,Defense & Aerospace
+AEROENTER,metals,Metals & Mining
+AEROFLEX,metals,Metals & Mining
+AETHER,specialty_chem,Specialty Chemicals
+AFFLE,it_services,IT Services
+AFFORDABLE,capex,Broad Capital Goods Cycle
+AGARIND,specialty_chem,Specialty Chemicals
+AGARWALEYE,hospitals,Hospitals & Healthcare Services
+AGI,renewables,Renewables & Clean Energy
+AGIIL,realty,Real Estate
+AGROPHOS,specialty_chem,Specialty Chemicals
+AGROPHOS,rural_agri,Rural & Agri
+AHCL,cdmo_pharma,CDMO / CRAMS Pharma
+AHCL,branded_pharma,Branded Formulations Pharma
+AHLADA,discretionary,Premium Consumer Discretionary
+AHLEAST,discretionary,Premium Consumer Discretionary
+AIRAN,it_services,IT Services
+AIROLAM,discretionary,Premium Consumer Discretionary
+AJANTPHARM,cdmo_pharma,CDMO / CRAMS Pharma
+AJANTPHARM,branded_pharma,Branded Formulations Pharma
+AJMERA,realty,Real Estate
+AJOONI,new_age_tech,New-Age Tech (Internet/Fintech)
+AKI,discretionary,Premium Consumer Discretionary
+AKSHAR,discretionary,Premium Consumer Discretionary
+AKSHARCHEM,specialty_chem,Specialty Chemicals
+AKUMS,cdmo_pharma,CDMO / CRAMS Pharma
+AKUMS,branded_pharma,Branded Formulations Pharma
+ALBERTDAVD,cdmo_pharma,CDMO / CRAMS Pharma
+ALBERTDAVD,branded_pharma,Branded Formulations Pharma
+ALEMBICLTD,realty,Real Estate
+ALGOQUANT,new_age_tech,New-Age Tech (Internet/Fintech)
+ALICON,ev,Electric Vehicles
+ALIVUS,cdmo_pharma,CDMO / CRAMS Pharma
+ALIVUS,branded_pharma,Branded Formulations Pharma
+ALKALI,specialty_chem,Specialty Chemicals
+ALKEM,cdmo_pharma,CDMO / CRAMS Pharma
+ALKEM,branded_pharma,Branded Formulations Pharma
+ALKYLAMINE,specialty_chem,Specialty Chemicals
+ALLCARGO,logistics,Logistics & Supply Chain
+ALLDIGI,new_age_tech,New-Age Tech (Internet/Fintech)
+ALLTIME,discretionary,Premium Consumer Discretionary
+ALMONDZ,capital_markets,Capital Markets & Exchanges
+ALOKINDS,discretionary,Premium Consumer Discretionary
+ALPA,cdmo_pharma,CDMO / CRAMS Pharma
+ALPA,branded_pharma,Branded Formulations Pharma
+AMAGI,it_services,IT Services
+AMANTA,cdmo_pharma,CDMO / CRAMS Pharma
+AMANTA,branded_pharma,Branded Formulations Pharma
+AMBER,semis,Semiconductors & Electronics Manufacturing
+AMBER,discretionary,Premium Consumer Discretionary
+AMBIKCO,discretionary,Premium Consumer Discretionary
+AMBUJACEM,cement,Cement
+AMJLAND,realty,Real Estate
+AMNPLST,specialty_chem,Specialty Chemicals
+AMRUTANJAN,specialty_chem,Specialty Chemicals
+AMRUTANJAN,cdmo_pharma,CDMO / CRAMS Pharma
+AMRUTANJAN,branded_pharma,Branded Formulations Pharma
+ANANDRATHI,capital_markets,Capital Markets & Exchanges
+ANANTRAJ,realty,Real Estate
+ANANTRAJ,data_center,Data Center & Digital Infra
+ANDHRSUGAR,specialty_chem,Specialty Chemicals
+ANGELONE,capital_markets,Capital Markets & Exchanges
+ANMOL,metals,Metals & Mining
+ANTELOPUS,oil_upstream,Oil & Gas — Upstream
+ANUHPHR,cdmo_pharma,CDMO / CRAMS Pharma
+ANUHPHR,branded_pharma,Branded Formulations Pharma
+ANUP,capex,Broad Capital Goods Cycle
+ANURAS,specialty_chem,Specialty Chemicals
+APARINDS,semis,Semiconductors & Electronics Manufacturing
+APARINDS,capex,Broad Capital Goods Cycle
+APCL,cement,Cement
+APL,metals,Metals & Mining
+APLAPOLLO,metals,Metals & Mining
+APLLTD,cdmo_pharma,CDMO / CRAMS Pharma
+APLLTD,branded_pharma,Branded Formulations Pharma
+APOLLO,defense,Defense & Aerospace
+APOLLOHOSP,hospitals,Hospitals & Healthcare Services
+APOLSINHOT,discretionary,Premium Consumer Discretionary
+APTECHT,discretionary,Premium Consumer Discretionary
+APTECHT,new_age_tech,New-Age Tech (Internet/Fintech)
+APTUS,nbfc,NBFC — Retail & Diversified
+ARCHIDPLY,specialty_chem,Specialty Chemicals
+ARCHIDPLY,discretionary,Premium Consumer Discretionary
+ARCHIES,discretionary,Premium Consumer Discretionary
+ARE&M,ev,Electric Vehicles
+ARENTERP,metals,Metals & Mining
+ARFIN,metals,Metals & Mining
+ARIES,specialty_chem,Specialty Chemicals
+ARIES,rural_agri,Rural & Agri
+ARIHANTCAP,capital_markets,Capital Markets & Exchanges
+ARIHANTSUP,realty,Real Estate
+ARKADE,ev,Electric Vehicles
+ARKADE,realty,Real Estate
+AROGRANITE,discretionary,Premium Consumer Discretionary
+ARROWGREEN,renewables,Renewables & Clean Energy
+ARROWGREEN,new_age_tech,New-Age Tech (Internet/Fintech)
+ARSSBL,capital_markets,Capital Markets & Exchanges
+ARTEMISMED,hospitals,Hospitals & Healthcare Services
+ARTNIRMAN,realty,Real Estate
+ARVIND,discretionary,Premium Consumer Discretionary
+ARVINDFASN,discretionary,Premium Consumer Discretionary
+ARVSMART,realty,Real Estate
+ASAHIINDIA,ev,Electric Vehicles
+ASAHISONG,specialty_chem,Specialty Chemicals
+ASAL,ev,Electric Vehicles
+ASHAPURMIN,metals,Metals & Mining
+ASHIANA,realty,Real Estate
+ASHIMASYN,discretionary,Premium Consumer Discretionary
+ASHOKAMET,metals,Metals & Mining
+ASHOKLEY,ev,Electric Vehicles
+ASIANHOTNR,discretionary,Premium Consumer Discretionary
+ASIANPAINT,discretionary,Premium Consumer Discretionary
+ASIANTILES,discretionary,Premium Consumer Discretionary
+ASKAUTOLTD,ev,Electric Vehicles
+ASMS,it_services,IT Services
+ASPINWALL,logistics,Logistics & Supply Chain
+ASTEC,specialty_chem,Specialty Chemicals
+ASTEC,rural_agri,Rural & Agri
+ASTERDM,hospitals,Hospitals & Healthcare Services
+ASTRAMICRO,defense,Defense & Aerospace
+ASTRAZEN,cdmo_pharma,CDMO / CRAMS Pharma
+ASTRAZEN,branded_pharma,Branded Formulations Pharma
+ATALREAL,new_age_tech,New-Age Tech (Internet/Fintech)
+ATALREAL,realty,Real Estate
+ATAM,capex,Broad Capital Goods Cycle
+ATGL,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+ATHERENERG,ev,Electric Vehicles
+ATLANTAELE,ev,Electric Vehicles
+ATLANTAELE,capex,Broad Capital Goods Cycle
+ATLASCYCLE,discretionary,Premium Consumer Discretionary
+ATUL,specialty_chem,Specialty Chemicals
+AUBANK,small_fin_banks,Small Finance & Microfinance
+AURIONPRO,it_services,IT Services
+AUROPHARMA,cdmo_pharma,CDMO / CRAMS Pharma
+AUROPHARMA,branded_pharma,Branded Formulations Pharma
+AURUM,it_services,IT Services
+AURUM,new_age_tech,New-Age Tech (Internet/Fintech)
+AUTOAXLES,ev,Electric Vehicles
+AUTOIND,ev,Electric Vehicles
+AVADHSUGAR,fmcg_staples,FMCG Staples
+AVALON,semis,Semiconductors & Electronics Manufacturing
+AVALON,capex,Broad Capital Goods Cycle
+AVALON,new_age_tech,New-Age Tech (Internet/Fintech)
+AVANTEL,defense,Defense & Aerospace
+AVG,logistics,Logistics & Supply Chain
+AVL,discretionary,Premium Consumer Discretionary
+AVROIND,discretionary,Premium Consumer Discretionary
+AVTNPL,fmcg_staples,FMCG Staples
+AWL,fmcg_staples,FMCG Staples
+AXISBANK,private_banks,Private Banks
+AXISCADES,defense,Defense & Aerospace
+AXISCADES,new_age_tech,New-Age Tech (Internet/Fintech)
+AYMSYNTEX,discretionary,Premium Consumer Discretionary
+AZAD,capex,Broad Capital Goods Cycle
+BAFNAPH,cdmo_pharma,CDMO / CRAMS Pharma
+BAFNAPH,branded_pharma,Branded Formulations Pharma
+BAJAJ-AUTO,ev,Electric Vehicles
+BAJAJCON,fmcg_staples,FMCG Staples
+BAJAJELEC,ev,Electric Vehicles
+BAJAJELEC,discretionary,Premium Consumer Discretionary
+BAJAJFINSV,nbfc,NBFC — Retail & Diversified
+BAJAJHCARE,cdmo_pharma,CDMO / CRAMS Pharma
+BAJAJHCARE,branded_pharma,Branded Formulations Pharma
+BAJAJHFL,nbfc,NBFC — Retail & Diversified
+BAJAJHIND,fmcg_staples,FMCG Staples
+BAJAJINDEF,capex,Broad Capital Goods Cycle
+BAJEL,capex,Broad Capital Goods Cycle
+BAJFINANCE,nbfc,NBFC — Retail & Diversified
+BALAMINES,specialty_chem,Specialty Chemicals
+BALAXI,cdmo_pharma,CDMO / CRAMS Pharma
+BALAXI,branded_pharma,Branded Formulations Pharma
+BALPHARMA,cdmo_pharma,CDMO / CRAMS Pharma
+BALPHARMA,branded_pharma,Branded Formulations Pharma
+BALRAMCHIN,fmcg_staples,FMCG Staples
+BANARBEADS,discretionary,Premium Consumer Discretionary
+BANARISUG,fmcg_staples,FMCG Staples
+BANCOINDIA,ev,Electric Vehicles
+BANDHANBNK,private_banks,Private Banks
+BANDHANBNK,small_fin_banks,Small Finance & Microfinance
+BANG,discretionary,Premium Consumer Discretionary
+BANKBARODA,psu_banks,PSU Banks
+BANKINDIA,psu_banks,PSU Banks
+BANSALWIRE,metals,Metals & Mining
+BANSWRAS,discretionary,Premium Consumer Discretionary
+BASF,specialty_chem,Specialty Chemicals
+BASML,discretionary,Premium Consumer Discretionary
+BATAINDIA,discretionary,Premium Consumer Discretionary
+BAYERCROP,specialty_chem,Specialty Chemicals
+BAYERCROP,rural_agri,Rural & Agri
+BBL,capex,Broad Capital Goods Cycle
+BBOX,it_services,IT Services
+BCONCEPTS,discretionary,Premium Consumer Discretionary
+BDL,defense,Defense & Aerospace
+BDL,psu_capex,PSU Capex Beneficiaries
+BEARDSELL,capex,Broad Capital Goods Cycle
+BEL,defense,Defense & Aerospace
+BEL,semis,Semiconductors & Electronics Manufacturing
+BEL,psu_capex,PSU Capex Beneficiaries
+BELLACASA,discretionary,Premium Consumer Discretionary
+BELRISE,ev,Electric Vehicles
+BEML,defense,Defense & Aerospace
+BEML,railways,Railways & Metro Capex
+BEPL,specialty_chem,Specialty Chemicals
+BERGEPAINT,discretionary,Premium Consumer Discretionary
+BETA,cdmo_pharma,CDMO / CRAMS Pharma
+BETA,branded_pharma,Branded Formulations Pharma
+BHAGCHEM,specialty_chem,Specialty Chemicals
+BHAGCHEM,rural_agri,Rural & Agri
+BHAGERIA,specialty_chem,Specialty Chemicals
+BHAGYANGR,metals,Metals & Mining
+BHANDARI,discretionary,Premium Consumer Discretionary
+BHARATCOAL,metals,Metals & Mining
+BHARATFORG,ev,Electric Vehicles
+BHARATGEAR,ev,Electric Vehicles
+BHARATRAS,specialty_chem,Specialty Chemicals
+BHARATRAS,rural_agri,Rural & Agri
+BHARATSE,ev,Electric Vehicles
+BHARATWIRE,metals,Metals & Mining
+BHEL,ev,Electric Vehicles
+BHEL,renewables,Renewables & Clean Energy
+BHEL,psu_capex,PSU Capex Beneficiaries
+BHEL,capex,Broad Capital Goods Cycle
+BIGBLOC,cement,Cement
+BIL,discretionary,Premium Consumer Discretionary
+BIOCON,cdmo_pharma,CDMO / CRAMS Pharma
+BIOCON,branded_pharma,Branded Formulations Pharma
+BIOFILCHEM,cdmo_pharma,CDMO / CRAMS Pharma
+BIOFILCHEM,branded_pharma,Branded Formulations Pharma
+BIRLACORPN,cement,Cement
+BIRLAMONEY,capital_markets,Capital Markets & Exchanges
+BIRLANU,discretionary,Premium Consumer Discretionary
+BLACKBUCK,logistics,Logistics & Supply Chain
+BLISSGVS,cdmo_pharma,CDMO / CRAMS Pharma
+BLISSGVS,branded_pharma,Branded Formulations Pharma
+BLS,discretionary,Premium Consumer Discretionary
+BLSE,it_services,IT Services
+BLUECOAST,discretionary,Premium Consumer Discretionary
+BLUEDART,logistics,Logistics & Supply Chain
+BLUEJET,cdmo_pharma,CDMO / CRAMS Pharma
+BLUEJET,branded_pharma,Branded Formulations Pharma
+BLUESTARCO,discretionary,Premium Consumer Discretionary
+BLUESTONE,discretionary,Premium Consumer Discretionary
+BMWVENTLTD,metals,Metals & Mining
+BODALCHEM,specialty_chem,Specialty Chemicals
+BOMDYEING,discretionary,Premium Consumer Discretionary
+BOROLTD,discretionary,Premium Consumer Discretionary
+BORORENEW,renewables,Renewables & Clean Energy
+BOROSIL,renewables,Renewables & Clean Energy
+BOSCH-HCIL,discretionary,Premium Consumer Discretionary
+BOSCHLTD,ev,Electric Vehicles
+BPCL,psu_capex,PSU Capex Beneficiaries
+BPCL,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+BPL,semis,Semiconductors & Electronics Manufacturing
+BPL,discretionary,Premium Consumer Discretionary
+BRIGADE,realty,Real Estate
+BRIGHOTEL,discretionary,Premium Consumer Discretionary
+BRITANNIA,fmcg_staples,FMCG Staples
+BROOKS,cdmo_pharma,CDMO / CRAMS Pharma
+BROOKS,branded_pharma,Branded Formulations Pharma
+BSE,capital_markets,Capital Markets & Exchanges
+BSHSL,fmcg_staples,FMCG Staples
+BSL,discretionary,Premium Consumer Discretionary
+BSOFT,it_services,IT Services
+BURNPUR,cement,Cement
+BUTTERFLY,discretionary,Premium Consumer Discretionary
+BVCL,cement,Cement
+BYKE,discretionary,Premium Consumer Discretionary
+CALSOFT,it_services,IT Services
+CAMLINFINE,specialty_chem,Specialty Chemicals
+CAMPUS,discretionary,Premium Consumer Discretionary
+CAMS,capital_markets,Capital Markets & Exchanges
+CAMS,it_services,IT Services
+CANBK,psu_banks,PSU Banks
+CANFINHOME,nbfc,NBFC — Retail & Diversified
+CANHLIFE,life_insurance,Life Insurance
+CANTABIL,discretionary,Premium Consumer Discretionary
+CAPILLARY,new_age_tech,New-Age Tech (Internet/Fintech)
+CAPITALSFB,small_fin_banks,Small Finance & Microfinance
+CAPLIPOINT,cdmo_pharma,CDMO / CRAMS Pharma
+CAPLIPOINT,branded_pharma,Branded Formulations Pharma
+CARERATING,capital_markets,Capital Markets & Exchanges
+CARRARO,ev,Electric Vehicles
+CARTRADE,discretionary,Premium Consumer Discretionary
+CARTRADE,new_age_tech,New-Age Tech (Internet/Fintech)
+CARYSIL,discretionary,Premium Consumer Discretionary
+CCCL,realty,Real Estate
+CCHHL,discretionary,Premium Consumer Discretionary
+CCL,fmcg_staples,FMCG Staples
+CDSL,capital_markets,Capital Markets & Exchanges
+CEINSYS,it_services,IT Services
+CEINSYS,new_age_tech,New-Age Tech (Internet/Fintech)
+CELEBRITY,discretionary,Premium Consumer Discretionary
+CELLO,discretionary,Premium Consumer Discretionary
+CENTENKA,discretionary,Premium Consumer Discretionary
+CENTEXT,metals,Metals & Mining
+CENTRALBK,psu_banks,PSU Banks
+CENTUM,defense,Defense & Aerospace
+CENTUM,semis,Semiconductors & Electronics Manufacturing
+CENTURYPLY,discretionary,Premium Consumer Discretionary
+CERA,discretionary,Premium Consumer Discretionary
+CGPOWER,capex,Broad Capital Goods Cycle
+CHALET,discretionary,Premium Consumer Discretionary
+CHAMBLFERT,specialty_chem,Specialty Chemicals
+CHAMBLFERT,rural_agri,Rural & Agri
+CHEMBOND,specialty_chem,Specialty Chemicals
+CHEMBOND,new_age_tech,New-Age Tech (Internet/Fintech)
+CHEMBONDCH,specialty_chem,Specialty Chemicals
+CHEMCON,specialty_chem,Specialty Chemicals
+CHEMFAB,semis,Semiconductors & Electronics Manufacturing
+CHEMFAB,specialty_chem,Specialty Chemicals
+CHEMPLASTS,specialty_chem,Specialty Chemicals
+CHENNPETRO,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+CHEVIOT,ev,Electric Vehicles
+CHOLAFIN,nbfc,NBFC — Retail & Diversified
+CIEINDIA,ev,Electric Vehicles
+CIEINDIA,it_services,IT Services
+CIGNITITEC,it_services,IT Services
+CIGNITITEC,new_age_tech,New-Age Tech (Internet/Fintech)
+CINEVISTA,ev,Electric Vehicles
+CINEVISTA,realty,Real Estate
+CIPLA,cdmo_pharma,CDMO / CRAMS Pharma
+CIPLA,branded_pharma,Branded Formulations Pharma
+CLEAN,specialty_chem,Specialty Chemicals
+CLEAN,new_age_tech,New-Age Tech (Internet/Fintech)
+CLSEL,fmcg_staples,FMCG Staples
+CNL,new_age_tech,New-Age Tech (Internet/Fintech)
+COALINDIA,psu_capex,PSU Capex Beneficiaries
+COALINDIA,metals,Metals & Mining
+COCHINSHIP,defense,Defense & Aerospace
+COCHINSHIP,psu_capex,PSU Capex Beneficiaries
+COFFEEDAY,discretionary,Premium Consumer Discretionary
+COFORGE,it_services,IT Services
+COHANCE,cdmo_pharma,CDMO / CRAMS Pharma
+COHANCE,branded_pharma,Branded Formulations Pharma
+COLPAL,fmcg_staples,FMCG Staples
+COMPUSOFT,discretionary,Premium Consumer Discretionary
+CONCOR,railways,Railways & Metro Capex
+CONCOR,psu_capex,PSU Capex Beneficiaries
+CONCOR,logistics,Logistics & Supply Chain
+CONCORDBIO,cdmo_pharma,CDMO / CRAMS Pharma
+CONCORDBIO,branded_pharma,Branded Formulations Pharma
+CONCORDBIO,new_age_tech,New-Age Tech (Internet/Fintech)
+CONFIPET,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+COROMANDEL,specialty_chem,Specialty Chemicals
+COROMANDEL,rural_agri,Rural & Agri
+CORONA,cdmo_pharma,CDMO / CRAMS Pharma
+CORONA,branded_pharma,Branded Formulations Pharma
+COUNCODOS,realty,Real Estate
+CPEDU,discretionary,Premium Consumer Discretionary
+CPEDU,new_age_tech,New-Age Tech (Internet/Fintech)
+CPPLUS,capex,Broad Capital Goods Cycle
+CPPLUS,new_age_tech,New-Age Tech (Internet/Fintech)
+CRAFTSMAN,ev,Electric Vehicles
+CRAMC,capital_markets,Capital Markets & Exchanges
+CREDITACC,small_fin_banks,Small Finance & Microfinance
+CRIZAC,discretionary,Premium Consumer Discretionary
+CROMPTON,ev,Electric Vehicles
+CROMPTON,specialty_chem,Specialty Chemicals
+CROMPTON,discretionary,Premium Consumer Discretionary
+CROWN,capex,Broad Capital Goods Cycle
+CSBBANK,private_banks,Private Banks
+CTE,it_services,IT Services
+CTE,new_age_tech,New-Age Tech (Internet/Fintech)
+CUB,private_banks,Private Banks
+CUBEXTUB,metals,Metals & Mining
+CUMMINSIND,capex,Broad Capital Goods Cycle
+CUPID,fmcg_staples,FMCG Staples
+CYBERTECH,it_services,IT Services
+CYBERTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+CYIENT,it_services,IT Services
+CYIENTDLM,defense,Defense & Aerospace
+CYIENTDLM,semis,Semiconductors & Electronics Manufacturing
+DABUR,fmcg_staples,FMCG Staples
+DALBHARAT,cement,Cement
+DALMIASUG,fmcg_staples,FMCG Staples
+DAMCAPITAL,capital_markets,Capital Markets & Exchanges
+DAMODARIND,discretionary,Premium Consumer Discretionary
+DATAMATICS,it_services,IT Services
+DATAPATTNS,defense,Defense & Aerospace
+DAVANGERE,fmcg_staples,FMCG Staples
+DBOL,fmcg_staples,FMCG Staples
+DBREALTY,realty,Real Estate
+DBSTOCKBRO,capital_markets,Capital Markets & Exchanges
+DCAL,cdmo_pharma,CDMO / CRAMS Pharma
+DCAL,branded_pharma,Branded Formulations Pharma
+DCBBANK,private_banks,Private Banks
+DCI,it_services,IT Services
+DCI,new_age_tech,New-Age Tech (Internet/Fintech)
+DCM,it_services,IT Services
+DCMNVL,discretionary,Premium Consumer Discretionary
+DCMSIL,discretionary,Premium Consumer Discretionary
+DCMSRIND,fmcg_staples,FMCG Staples
+DCW,specialty_chem,Specialty Chemicals
+DCXINDIA,defense,Defense & Aerospace
+DCXINDIA,semis,Semiconductors & Electronics Manufacturing
+DDEVPLSTIK,ev,Electric Vehicles
+DDEVPLSTIK,specialty_chem,Specialty Chemicals
+DECCANCE,cement,Cement
+DEEDEV,ev,Electric Vehicles
+DEEDEV,capex,Broad Capital Goods Cycle
+DEEPAKFERT,specialty_chem,Specialty Chemicals
+DEEPAKFERT,rural_agri,Rural & Agri
+DEEPAKNTR,specialty_chem,Specialty Chemicals
+DELHIVERY,logistics,Logistics & Supply Chain
+DELTACORP,discretionary,Premium Consumer Discretionary
+DELTAMAGNT,capex,Broad Capital Goods Cycle
+DEVIT,ev,Electric Vehicles
+DEVIT,it_services,IT Services
+DEVIT,new_age_tech,New-Age Tech (Internet/Fintech)
+DEVX,ev,Electric Vehicles
+DEVYANI,ev,Electric Vehicles
+DEVYANI,discretionary,Premium Consumer Discretionary
+DHAMPURSUG,fmcg_staples,FMCG Staples
+DHANBANK,private_banks,Private Banks
+DHANUKA,specialty_chem,Specialty Chemicals
+DHANUKA,new_age_tech,New-Age Tech (Internet/Fintech)
+DHANUKA,rural_agri,Rural & Agri
+DHARMAJ,specialty_chem,Specialty Chemicals
+DHARMAJ,rural_agri,Rural & Agri
+DIACABS,semis,Semiconductors & Electronics Manufacturing
+DIACABS,capex,Broad Capital Goods Cycle
+DIAMINESQ,specialty_chem,Specialty Chemicals
+DIFFNKG,capex,Broad Capital Goods Cycle
+DIGIDRIVE,discretionary,Premium Consumer Discretionary
+DIGISPICE,it_services,IT Services
+DIGISPICE,new_age_tech,New-Age Tech (Internet/Fintech)
+DIGITIDE,it_services,IT Services
+DIGJAMLMTD,discretionary,Premium Consumer Discretionary
+DIVGIITTS,ev,Electric Vehicles
+DIVISLAB,cdmo_pharma,CDMO / CRAMS Pharma
+DIVISLAB,branded_pharma,Branded Formulations Pharma
+DIXON,semis,Semiconductors & Electronics Manufacturing
+DIXON,discretionary,Premium Consumer Discretionary
+DIXON,new_age_tech,New-Age Tech (Internet/Fintech)
+DLF,realty,Real Estate
+DMART,discretionary,Premium Consumer Discretionary
+DMCC,specialty_chem,Specialty Chemicals
+DOLATALGO,capital_markets,Capital Markets & Exchanges
+DOLATALGO,new_age_tech,New-Age Tech (Internet/Fintech)
+DOLLAR,discretionary,Premium Consumer Discretionary
+DONEAR,discretionary,Premium Consumer Discretionary
+DPABHUSHAN,discretionary,Premium Consumer Discretionary
+DPWIRES,metals,Metals & Mining
+DRCSYSTEMS,it_services,IT Services
+DRREDDY,cdmo_pharma,CDMO / CRAMS Pharma
+DRREDDY,branded_pharma,Branded Formulations Pharma
+DSFCL,specialty_chem,Specialty Chemicals
+DSSL,it_services,IT Services
+DTIL,fmcg_staples,FMCG Staples
+DUCON,capex,Broad Capital Goods Cycle
+DUCON,new_age_tech,New-Age Tech (Internet/Fintech)
+DWARKESH,fmcg_staples,FMCG Staples
+DYNAMATECH,capex,Broad Capital Goods Cycle
+DYNAMATECH,new_age_tech,New-Age Tech (Internet/Fintech)
+DYNPRO,specialty_chem,Specialty Chemicals
+EASEMYTRIP,discretionary,Premium Consumer Discretionary
+EASEMYTRIP,new_age_tech,New-Age Tech (Internet/Fintech)
+EBGNG,semis,Semiconductors & Electronics Manufacturing
+ECOSMOBLTY,logistics,Logistics & Supply Chain
+EICHERMOT,ev,Electric Vehicles
+EIHAHOTELS,discretionary,Premium Consumer Discretionary
+EIHOTEL,discretionary,Premium Consumer Discretionary
+EIMCOELECO,capex,Broad Capital Goods Cycle
+EKC,ev,Electric Vehicles
+EKC,capex,Broad Capital Goods Cycle
+ELDEHSG,realty,Real Estate
+ELECON,capex,Broad Capital Goods Cycle
+ELECTCAST,metals,Metals & Mining
+ELECTHERM,metals,Metals & Mining
+ELIN,semis,Semiconductors & Electronics Manufacturing
+ELIN,discretionary,Premium Consumer Discretionary
+ELLEN,capex,Broad Capital Goods Cycle
+EMAMILTD,fmcg_staples,FMCG Staples
+EMAMIREAL,realty,Real Estate
+EMBASSY,realty,Real Estate
+EMCURE,cdmo_pharma,CDMO / CRAMS Pharma
+EMCURE,branded_pharma,Branded Formulations Pharma
+EMIL,semis,Semiconductors & Electronics Manufacturing
+EMIL,discretionary,Premium Consumer Discretionary
+EMKAY,capital_markets,Capital Markets & Exchanges
+EMMVEE,semis,Semiconductors & Electronics Manufacturing
+EMMVEE,capex,Broad Capital Goods Cycle
+EMUDHRA,it_services,IT Services
+ENCUBE,cdmo_pharma,CDMO / CRAMS Pharma
+ENDURANCE,ev,Electric Vehicles
+ENDURANCE,new_age_tech,New-Age Tech (Internet/Fintech)
+ENERGYDEV,ev,Electric Vehicles
+ENRIN,capex,Broad Capital Goods Cycle
+ENTERO,discretionary,Premium Consumer Discretionary
+EPACK,semis,Semiconductors & Electronics Manufacturing
+EPACK,discretionary,Premium Consumer Discretionary
+EPACKPEB,semis,Semiconductors & Electronics Manufacturing
+EPACKPEB,capex,Broad Capital Goods Cycle
+EPACKPEB,new_age_tech,New-Age Tech (Internet/Fintech)
+EPIGRAL,specialty_chem,Specialty Chemicals
+EQUITASBNK,small_fin_banks,Small Finance & Microfinance
+ERIS,cdmo_pharma,CDMO / CRAMS Pharma
+ERIS,branded_pharma,Branded Formulations Pharma
+ESABINDIA,capex,Broad Capital Goods Cycle
+ESAFSFB,small_fin_banks,Small Finance & Microfinance
+ESCORTS,rural_agri,Rural & Agri
+ESSARSHPNG,logistics,Logistics & Supply Chain
+ETERNAL,discretionary,Premium Consumer Discretionary
+ETHOSLTD,discretionary,Premium Consumer Discretionary
+EUREKAFORB,discretionary,Premium Consumer Discretionary
+EUROBOND,metals,Metals & Mining
+EUROPRATIK,discretionary,Premium Consumer Discretionary
+EUROTEXIND,discretionary,Premium Consumer Discretionary
+EVEREADY,ev,Electric Vehicles
+EVERESTIND,ev,Electric Vehicles
+EXCELINDUS,specialty_chem,Specialty Chemicals
+EXCELSOFT,it_services,IT Services
+EXCELSOFT,new_age_tech,New-Age Tech (Internet/Fintech)
+EXICOM,capex,Broad Capital Goods Cycle
+EXIDEIND,ev,Electric Vehicles
+EXPLEOSOL,it_services,IT Services
+EXXARO,discretionary,Premium Consumer Discretionary
+FABTECH,semis,Semiconductors & Electronics Manufacturing
+FABTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+FACT,specialty_chem,Specialty Chemicals
+FACT,rural_agri,Rural & Agri
+FAIRCHEMOR,specialty_chem,Specialty Chemicals
+FCL,specialty_chem,Specialty Chemicals
+FCSSOFT,it_services,IT Services
+FDC,cdmo_pharma,CDMO / CRAMS Pharma
+FDC,branded_pharma,Branded Formulations Pharma
+FEDERALBNK,private_banks,Private Banks
+FIEMIND,ev,Electric Vehicles
+FILATEX,discretionary,Premium Consumer Discretionary
+FILATFASH,discretionary,Premium Consumer Discretionary
+FINEORG,specialty_chem,Specialty Chemicals
+FINOPB,small_fin_banks,Small Finance & Microfinance
+FIRSTCRY,discretionary,Premium Consumer Discretionary
+FIRSTCRY,new_age_tech,New-Age Tech (Internet/Fintech)
+FIVESTAR,nbfc,NBFC — Retail & Diversified
+FLEXITUFF,discretionary,Premium Consumer Discretionary
+FLUOROCHEM,specialty_chem,Specialty Chemicals
+FMGOETZE,ev,Electric Vehicles
+FOCUS,semis,Semiconductors & Electronics Manufacturing
+FOCUS,discretionary,Premium Consumer Discretionary
+FORCEMOT,ev,Electric Vehicles
+FORTIS,hospitals,Hospitals & Healthcare Services
+FOSECOIND,specialty_chem,Specialty Chemicals
+FRACTAL,it_services,IT Services
+FUSION,small_fin_banks,Small Finance & Microfinance
+GABRIEL,ev,Electric Vehicles
+GAEL,fmcg_staples,FMCG Staples
+GAIL,psu_capex,PSU Capex Beneficiaries
+GAIL,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+GALAPREC,capex,Broad Capital Goods Cycle
+GALAXYSURF,specialty_chem,Specialty Chemicals
+GALLANTT,metals,Metals & Mining
+GANDHITUBE,metals,Metals & Mining
+GANECOS,discretionary,Premium Consumer Discretionary
+GANESHHOU,realty,Real Estate
+GANGESSECU,fmcg_staples,FMCG Staples
+GARFIBRES,discretionary,Premium Consumer Discretionary
+GARFIBRES,new_age_tech,New-Age Tech (Internet/Fintech)
+GATECH,new_age_tech,New-Age Tech (Internet/Fintech)
+GATECHDVR,new_age_tech,New-Age Tech (Internet/Fintech)
+GATEWAY,logistics,Logistics & Supply Chain
+GATI,logistics,Logistics & Supply Chain
+GAUDIUMIVF,hospitals,Hospitals & Healthcare Services
+GEECEE,realty,Real Estate
+GEEKAYWIRE,metals,Metals & Mining
+GENCON,realty,Real Estate
+GENESYS,it_services,IT Services
+GENUSPOWER,semis,Semiconductors & Electronics Manufacturing
+GENUSPOWER,capex,Broad Capital Goods Cycle
+GEOJITFSL,capital_markets,Capital Markets & Exchanges
+GESHIP,logistics,Logistics & Supply Chain
+GHCL,specialty_chem,Specialty Chemicals
+GHCLTEXTIL,discretionary,Premium Consumer Discretionary
+GICHSGFIN,nbfc,NBFC — Retail & Diversified
+GICRE,general_insurance,General & Health Insurance
+GILLANDERS,fmcg_staples,FMCG Staples
+GILLETTE,fmcg_staples,FMCG Staples
+GINNIFILA,discretionary,Premium Consumer Discretionary
+GKSL,hospitals,Hospitals & Healthcare Services
+GLAND,cdmo_pharma,CDMO / CRAMS Pharma
+GLAND,branded_pharma,Branded Formulations Pharma
+GLAXO,cdmo_pharma,CDMO / CRAMS Pharma
+GLAXO,branded_pharma,Branded Formulations Pharma
+GLENMARK,cdmo_pharma,CDMO / CRAMS Pharma
+GLENMARK,branded_pharma,Branded Formulations Pharma
+GLOBAL,discretionary,Premium Consumer Discretionary
+GLOBALE,discretionary,Premium Consumer Discretionary
+GLOBALVECT,logistics,Logistics & Supply Chain
+GLOBE,discretionary,Premium Consumer Discretionary
+GLOTTIS,logistics,Logistics & Supply Chain
+GMDCLTD,ev,Electric Vehicles
+GMDCLTD,metals,Metals & Mining
+GMMPFAUDLR,capex,Broad Capital Goods Cycle
+GNA,ev,Electric Vehicles
+GNFC,specialty_chem,Specialty Chemicals
+GNFC,rural_agri,Rural & Agri
+GOACARBON,metals,Metals & Mining
+GOCOLORS,discretionary,Premium Consumer Discretionary
+GODAVARIB,fmcg_staples,FMCG Staples
+GODIGIT,general_insurance,General & Health Insurance
+GODREJAGRO,rural_agri,Rural & Agri
+GODREJCP,fmcg_staples,FMCG Staples
+GODREJPROP,realty,Real Estate
+GOKEX,discretionary,Premium Consumer Discretionary
+GOKUL,fmcg_staples,FMCG Staples
+GOKULAGRO,fmcg_staples,FMCG Staples
+GOLDBEES,capital_markets,Capital Markets & Exchanges
+GOLDIAM,discretionary,Premium Consumer Discretionary
+GOLDTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+GOODLUCK,metals,Metals & Mining
+GPIL,metals,Metals & Mining
+GPTHEALTH,hospitals,Hospitals & Healthcare Services
+GRANULES,cdmo_pharma,CDMO / CRAMS Pharma
+GRANULES,branded_pharma,Branded Formulations Pharma
+GRASIM,cement,Cement
+GRAVITA,metals,Metals & Mining
+GREAVESCOT,ev,Electric Vehicles
+GREENLAM,renewables,Renewables & Clean Energy
+GREENLAM,discretionary,Premium Consumer Discretionary
+GREENPANEL,renewables,Renewables & Clean Energy
+GREENPANEL,discretionary,Premium Consumer Discretionary
+GREENPLY,renewables,Renewables & Clean Energy
+GREENPLY,discretionary,Premium Consumer Discretionary
+GREENPOWER,renewables,Renewables & Clean Energy
+GRMOVER,fmcg_staples,FMCG Staples
+GROBTEA,fmcg_staples,FMCG Staples
+GROWW,capital_markets,Capital Markets & Exchanges
+GRSE,defense,Defense & Aerospace
+GRSE,psu_capex,PSU Capex Beneficiaries
+GRWRHITECH,new_age_tech,New-Age Tech (Internet/Fintech)
+GSFC,specialty_chem,Specialty Chemicals
+GSFC,rural_agri,Rural & Agri
+GSLSU,discretionary,Premium Consumer Discretionary
+GSS,it_services,IT Services
+GSS,new_age_tech,New-Age Tech (Internet/Fintech)
+GTECJAINX,discretionary,Premium Consumer Discretionary
+GUFICBIO,cdmo_pharma,CDMO / CRAMS Pharma
+GUFICBIO,branded_pharma,Branded Formulations Pharma
+GUJALKALI,specialty_chem,Specialty Chemicals
+GUJAPOLLO,capex,Broad Capital Goods Cycle
+GUJGAS,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+GUJGASLTD,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+GUJRATGAS,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+GUJTHEM,cdmo_pharma,CDMO / CRAMS Pharma
+GUJTHEM,branded_pharma,Branded Formulations Pharma
+GULPOLY,fmcg_staples,FMCG Staples
+GVPTECH,it_services,IT Services
+GVPTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+GVT&D,capex,Broad Capital Goods Cycle
+HAL,defense,Defense & Aerospace
+HAL,psu_capex,PSU Capex Beneficiaries
+HALDER,fmcg_staples,FMCG Staples
+HALEOSLABS,cdmo_pharma,CDMO / CRAMS Pharma
+HALEOSLABS,branded_pharma,Branded Formulations Pharma
+HAPPSTMNDS,it_services,IT Services
+HAPPSTMNDS,new_age_tech,New-Age Tech (Internet/Fintech)
+HARIOMPIPE,metals,Metals & Mining
+HARSHA,capex,Broad Capital Goods Cycle
+HAVELLS,semis,Semiconductors & Electronics Manufacturing
+HAVELLS,discretionary,Premium Consumer Discretionary
+HAVISHA,discretionary,Premium Consumer Discretionary
+HBLENGINE,capex,Broad Capital Goods Cycle
+HBLPOWER,ev,Electric Vehicles
+HCG,hospitals,Hospitals & Healthcare Services
+HCLTECH,it_services,IT Services
+HCLTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+HDFCAMC,capital_markets,Capital Markets & Exchanges
+HDFCBANK,private_banks,Private Banks
+HDFCLIFE,life_insurance,Life Insurance
+HEADSUP,discretionary,Premium Consumer Discretionary
+HEALTHCARE,capital_markets,Capital Markets & Exchanges
+HEIDELBERG,cement,Cement
+HEMIPROP,realty,Real Estate
+HERANBA,specialty_chem,Specialty Chemicals
+HERANBA,rural_agri,Rural & Agri
+HERITGFOOD,fmcg_staples,FMCG Staples
+HEROMOTOCO,ev,Electric Vehicles
+HESTERBIO,cdmo_pharma,CDMO / CRAMS Pharma
+HESTERBIO,branded_pharma,Branded Formulations Pharma
+HEXAWARE,new_age_tech,New-Age Tech (Internet/Fintech)
+HEXT,it_services,IT Services
+HEXT,new_age_tech,New-Age Tech (Internet/Fintech)
+HGM,it_services,IT Services
+HIKAL,cdmo_pharma,CDMO / CRAMS Pharma
+HIKAL,branded_pharma,Branded Formulations Pharma
+HIMATSEIDE,discretionary,Premium Consumer Discretionary
+HINDALCO,metals,Metals & Mining
+HINDCOMPOS,ev,Electric Vehicles
+HINDCON,specialty_chem,Specialty Chemicals
+HINDCOPPER,metals,Metals & Mining
+HINDMOTORS,ev,Electric Vehicles
+HINDOILEXP,oil_upstream,Oil & Gas — Upstream
+HINDPETRO,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+HINDUNILVR,ev,Electric Vehicles
+HINDUNILVR,fmcg_staples,FMCG Staples
+HINDWAREAP,discretionary,Premium Consumer Discretionary
+HINDZINC,metals,Metals & Mining
+HIRECT,capex,Broad Capital Goods Cycle
+HISARMETAL,metals,Metals & Mining
+HITECH,metals,Metals & Mining
+HITECH,new_age_tech,New-Age Tech (Internet/Fintech)
+HITECHCORP,new_age_tech,New-Age Tech (Internet/Fintech)
+HLEGLAS,capex,Broad Capital Goods Cycle
+HLVLTD,discretionary,Premium Consumer Discretionary
+HNDFDS,fmcg_staples,FMCG Staples
+HOMEFIRST,nbfc,NBFC — Retail & Diversified
+HONASA,fmcg_staples,FMCG Staples
+HONAUT,semis,Semiconductors & Electronics Manufacturing
+HONAUT,capex,Broad Capital Goods Cycle
+HONDAPOWER,capex,Broad Capital Goods Cycle
+HPAL,specialty_chem,Specialty Chemicals
+HPCL,psu_capex,PSU Capex Beneficiaries
+HPCL,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+HPIL,specialty_chem,Specialty Chemicals
+HPL,ev,Electric Vehicles
+HPL,capex,Broad Capital Goods Cycle
+HUBTOWN,realty,Real Estate
+HUDCO,ev,Electric Vehicles
+HYBRIDFIN,capital_markets,Capital Markets & Exchanges
+HYUNDAI,ev,Electric Vehicles
+ICEMAKE,capex,Broad Capital Goods Cycle
+ICICIAMC,capital_markets,Capital Markets & Exchanges
+ICICIBANK,private_banks,Private Banks
+ICICIGI,capital_markets,Capital Markets & Exchanges
+ICICIGI,general_insurance,General & Health Insurance
+ICICIPRULI,life_insurance,Life Insurance
+ICIL,discretionary,Premium Consumer Discretionary
+ICRA,capital_markets,Capital Markets & Exchanges
+IDBI,private_banks,Private Banks
+IDBI,psu_banks,PSU Banks
+IDEAFORGE,defense,Defense & Aerospace
+IDEAFORGE,new_age_tech,New-Age Tech (Internet/Fintech)
+IDFCFIRSTB,private_banks,Private Banks
+IEX,capital_markets,Capital Markets & Exchanges
+IFBIND,discretionary,Premium Consumer Discretionary
+IGARASHI,ev,Electric Vehicles
+IGCL,specialty_chem,Specialty Chemicals
+IGCL,rural_agri,Rural & Agri
+IGL,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+IGPL,specialty_chem,Specialty Chemicals
+IIFL,capital_markets,Capital Markets & Exchanges
+IIFLCAPS,capital_markets,Capital Markets & Exchanges
+IKIO,semis,Semiconductors & Electronics Manufacturing
+IKIO,discretionary,Premium Consumer Discretionary
+IKIO,new_age_tech,New-Age Tech (Internet/Fintech)
+IKS,it_services,IT Services
+IMAGICAA,discretionary,Premium Consumer Discretionary
+IMFA,metals,Metals & Mining
+INA,semis,Semiconductors & Electronics Manufacturing
+INA,capex,Broad Capital Goods Cycle
+INCREDIBLE,metals,Metals & Mining
+INDBANK,capital_markets,Capital Markets & Exchanges
+INDGN,hospitals,Hospitals & Healthcare Services
+INDHOTEL,discretionary,Premium Consumer Discretionary
+INDIACEM,cement,Cement
+INDIAMART,discretionary,Premium Consumer Discretionary
+INDIAMART,new_age_tech,New-Age Tech (Internet/Fintech)
+INDIANB,psu_banks,PSU Banks
+INDIANCARD,discretionary,Premium Consumer Discretionary
+INDIANHUME,capex,Broad Capital Goods Cycle
+INDIASHLTR,nbfc,NBFC — Retail & Diversified
+INDIGO,logistics,Logistics & Supply Chain
+INDIGOPNTS,discretionary,Premium Consumer Discretionary
+INDNIPPON,ev,Electric Vehicles
+INDOAMIN,specialty_chem,Specialty Chemicals
+INDOBORAX,specialty_chem,Specialty Chemicals
+INDOCO,cdmo_pharma,CDMO / CRAMS Pharma
+INDOCO,branded_pharma,Branded Formulations Pharma
+INDORAMA,discretionary,Premium Consumer Discretionary
+INDOTECH,capex,Broad Capital Goods Cycle
+INDOTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+INDOTHAI,capital_markets,Capital Markets & Exchanges
+INDOUS,fmcg_staples,FMCG Staples
+INDOUS,new_age_tech,New-Age Tech (Internet/Fintech)
+INDOWIND,renewables,Renewables & Clean Energy
+INDRAMEDCO,hospitals,Hospitals & Healthcare Services
+INDSWFTLAB,cdmo_pharma,CDMO / CRAMS Pharma
+INDSWFTLAB,branded_pharma,Branded Formulations Pharma
+INDTERRAIN,discretionary,Premium Consumer Discretionary
+INDUSINDBK,private_banks,Private Banks
+INFOBEAN,it_services,IT Services
+INFOBEAN,new_age_tech,New-Age Tech (Internet/Fintech)
+INFY,it_services,IT Services
+INNOVACAP,cdmo_pharma,CDMO / CRAMS Pharma
+INNOVACAP,branded_pharma,Branded Formulations Pharma
+INNOVANA,it_services,IT Services
+INOXGREEN,renewables,Renewables & Clean Energy
+INOXINDIA,capex,Broad Capital Goods Cycle
+INOXWIND,renewables,Renewables & Clean Energy
+INOXWIND,capex,Broad Capital Goods Cycle
+INSECTICID,specialty_chem,Specialty Chemicals
+INSECTICID,rural_agri,Rural & Agri
+INTELLECT,it_services,IT Services
+INTENTECH,it_services,IT Services
+INTENTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+INTLCONV,capex,Broad Capital Goods Cycle
+INVENTURE,capital_markets,Capital Markets & Exchanges
+IOB,psu_banks,PSU Banks
+IOC,psu_capex,PSU Capex Beneficiaries
+IOC,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+IOLCP,cdmo_pharma,CDMO / CRAMS Pharma
+IOLCP,branded_pharma,Branded Formulations Pharma
+IPCALAB,cdmo_pharma,CDMO / CRAMS Pharma
+IPCALAB,branded_pharma,Branded Formulations Pharma
+IPL,specialty_chem,Specialty Chemicals
+IPL,rural_agri,Rural & Agri
+IRB,ev,Electric Vehicles
+IRCON,railways,Railways & Metro Capex
+IRCON,psu_capex,PSU Capex Beneficiaries
+IRCON,data_center,Data Center & Digital Infra
+IRCTC,railways,Railways & Metro Capex
+IRCTC,discretionary,Premium Consumer Discretionary
+IRCTC,new_age_tech,New-Age Tech (Internet/Fintech)
+IREDA,ev,Electric Vehicles
+IREDA,renewables,Renewables & Clean Energy
+IREDA,nbfc,NBFC — Retail & Diversified
+IRFC,railways,Railways & Metro Capex
+IRFC,nbfc,NBFC — Retail & Diversified
+IRIS,new_age_tech,New-Age Tech (Internet/Fintech)
+IRISDOREME,discretionary,Premium Consumer Discretionary
+IRMENERGY,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+ISFT,discretionary,Premium Consumer Discretionary
+ISFT,new_age_tech,New-Age Tech (Internet/Fintech)
+ISHANCH,specialty_chem,Specialty Chemicals
+ITC,fmcg_staples,FMCG Staples
+ITCHOTELS,discretionary,Premium Consumer Discretionary
+ITDC,ev,Electric Vehicles
+ITDC,discretionary,Premium Consumer Discretionary
+IVC,capital_markets,Capital Markets & Exchanges
+IVP,specialty_chem,Specialty Chemicals
+IXIGO,discretionary,Premium Consumer Discretionary
+IXIGO,new_age_tech,New-Age Tech (Internet/Fintech)
+J&KBANK,private_banks,Private Banks
+J&KBANK,psu_banks,PSU Banks
+JAGSNPHARM,cdmo_pharma,CDMO / CRAMS Pharma
+JAGSNPHARM,branded_pharma,Branded Formulations Pharma
+JAIBALAJI,metals,Metals & Mining
+JAIPURKURT,discretionary,Premium Consumer Discretionary
+JAMNAAUTO,ev,Electric Vehicles
+JARO,discretionary,Premium Consumer Discretionary
+JARO,new_age_tech,New-Age Tech (Internet/Fintech)
+JASH,capex,Broad Capital Goods Cycle
+JAYAGROGN,specialty_chem,Specialty Chemicals
+JAYBARMARU,ev,Electric Vehicles
+JAYKAY,defense,Defense & Aerospace
+JAYNECOIND,metals,Metals & Mining
+JAYSREETEA,fmcg_staples,FMCG Staples
+JBCHEPHARM,cdmo_pharma,CDMO / CRAMS Pharma
+JBCHEPHARM,branded_pharma,Branded Formulations Pharma
+JBMA,ev,Electric Vehicles
+JETFREIGHT,logistics,Logistics & Supply Chain
+JGCHEM,specialty_chem,Specialty Chemicals
+JHS,fmcg_staples,FMCG Staples
+JINDALSAW,metals,Metals & Mining
+JINDALSTEL,metals,Metals & Mining
+JINDWORLD,discretionary,Premium Consumer Discretionary
+JKCEMENT,cement,Cement
+JKLAKSHMI,cement,Cement
+JLHL,hospitals,Hospitals & Healthcare Services
+JMFINANCIL,capital_markets,Capital Markets & Exchanges
+JMTAUTOLTD,ev,Electric Vehicles
+JNKINDIA,capex,Broad Capital Goods Cycle
+JOCIL,specialty_chem,Specialty Chemicals
+JSFB,small_fin_banks,Small Finance & Microfinance
+JSL,metals,Metals & Mining
+JSLL,discretionary,Premium Consumer Discretionary
+JSWCEMENT,cement,Cement
+JSWENERGY,renewables,Renewables & Clean Energy
+JSWINFRA,new_age_tech,New-Age Tech (Internet/Fintech)
+JSWINFRA,logistics,Logistics & Supply Chain
+JSWISPL,metals,Metals & Mining
+JSWSTEEL,metals,Metals & Mining
+JTEKTINDIA,ev,Electric Vehicles
+JTLIND,metals,Metals & Mining
+JUBLCPL,specialty_chem,Specialty Chemicals
+JUBLFOOD,discretionary,Premium Consumer Discretionary
+JUBLINGREA,ev,Electric Vehicles
+JUBLINGREA,specialty_chem,Specialty Chemicals
+JUBLPHARMA,cdmo_pharma,CDMO / CRAMS Pharma
+JUBLPHARMA,branded_pharma,Branded Formulations Pharma
+JUNIPER,discretionary,Premium Consumer Discretionary
+JUSTDIAL,discretionary,Premium Consumer Discretionary
+JWL,railways,Railways & Metro Capex
+JYOTHYLAB,fmcg_staples,FMCG Staples
+JYOTICNC,capex,Broad Capital Goods Cycle
+JYOTISTRUC,capex,Broad Capital Goods Cycle
+KABRAEXTRU,capex,Broad Capital Goods Cycle
+KABRAEXTRU,new_age_tech,New-Age Tech (Internet/Fintech)
+KAJARIACER,discretionary,Premium Consumer Discretionary
+KAKATCEM,cement,Cement
+KALAMANDIR,discretionary,Premium Consumer Discretionary
+KALINDEE,railways,Railways & Metro Capex
+KALPATARU,realty,Real Estate
+KALYANKJIL,discretionary,Premium Consumer Discretionary
+KAMATHOTEL,discretionary,Premium Consumer Discretionary
+KAMDHENU,metals,Metals & Mining
+KAMOPAINTS,discretionary,Premium Consumer Discretionary
+KANANIIND,discretionary,Premium Consumer Discretionary
+KANORICHEM,capex,Broad Capital Goods Cycle
+KANSAINER,discretionary,Premium Consumer Discretionary
+KARURVYSYA,private_banks,Private Banks
+KAUSHALYA,ev,Electric Vehicles
+KAUSHALYA,discretionary,Premium Consumer Discretionary
+KAYA,discretionary,Premium Consumer Discretionary
+KAYNES,semis,Semiconductors & Electronics Manufacturing
+KAYNES,capex,Broad Capital Goods Cycle
+KAYNES,new_age_tech,New-Age Tech (Internet/Fintech)
+KCP,cement,Cement
+KCPSUGIND,fmcg_staples,FMCG Staples
+KDDL,discretionary,Premium Consumer Discretionary
+KECL,ev,Electric Vehicles
+KECL,semis,Semiconductors & Electronics Manufacturing
+KECL,capex,Broad Capital Goods Cycle
+KEEPLEARN,discretionary,Premium Consumer Discretionary
+KEI,capex,Broad Capital Goods Cycle
+KELLTONTEC,it_services,IT Services
+KELLTONTEC,new_age_tech,New-Age Tech (Internet/Fintech)
+KERNEX,logistics,Logistics & Supply Chain
+KESORAMIND,discretionary,Premium Consumer Discretionary
+KEYFINSERV,capital_markets,Capital Markets & Exchanges
+KEYSTONE,realty,Real Estate
+KFINTECH,capital_markets,Capital Markets & Exchanges
+KFINTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+KHADIM,discretionary,Premium Consumer Discretionary
+KHAICHEM,specialty_chem,Specialty Chemicals
+KHAICHEM,rural_agri,Rural & Agri
+KHAITANLTD,semis,Semiconductors & Electronics Manufacturing
+KHAITANLTD,discretionary,Premium Consumer Discretionary
+KHANDSE,capital_markets,Capital Markets & Exchanges
+KILITCH,cdmo_pharma,CDMO / CRAMS Pharma
+KILITCH,branded_pharma,Branded Formulations Pharma
+KIMS,hospitals,Hospitals & Healthcare Services
+KINGFA,new_age_tech,New-Age Tech (Internet/Fintech)
+KIOCL,metals,Metals & Mining
+KIRIINDUS,specialty_chem,Specialty Chemicals
+KIRLOSIND,capex,Broad Capital Goods Cycle
+KITEX,discretionary,Premium Consumer Discretionary
+KKCL,discretionary,Premium Consumer Discretionary
+KMSUGAR,fmcg_staples,FMCG Staples
+KNAGRI,fmcg_staples,FMCG Staples
+KOHINOOR,fmcg_staples,FMCG Staples
+KOLTEPATIL,ev,Electric Vehicles
+KOLTEPATIL,realty,Real Estate
+KOPRAN,cdmo_pharma,CDMO / CRAMS Pharma
+KOPRAN,branded_pharma,Branded Formulations Pharma
+KOTAKBANK,private_banks,Private Banks
+KOTARISUG,fmcg_staples,FMCG Staples
+KOTHARIPET,specialty_chem,Specialty Chemicals
+KOTYARK,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+KPIGREEN,renewables,Renewables & Clean Energy
+KPITTECH,it_services,IT Services
+KPITTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+KPRMILL,discretionary,Premium Consumer Discretionary
+KRBL,fmcg_staples,FMCG Staples
+KREBSBIO,cdmo_pharma,CDMO / CRAMS Pharma
+KREBSBIO,branded_pharma,Branded Formulations Pharma
+KRISHANA,specialty_chem,Specialty Chemicals
+KRISHANA,rural_agri,Rural & Agri
+KRISHNADEF,defense,Defense & Aerospace
+KRITIKA,metals,Metals & Mining
+KRITINUT,fmcg_staples,FMCG Staples
+KRN,capex,Broad Capital Goods Cycle
+KRONOX,specialty_chem,Specialty Chemicals
+KROSS,ev,Electric Vehicles
+KRSNAA,hospitals,Hospitals & Healthcare Services
+KSCL,fmcg_staples,FMCG Staples
+KSHINTL,metals,Metals & Mining
+KSL,metals,Metals & Mining
+KSOLVES,it_services,IT Services
+KTKBANK,private_banks,Private Banks
+LAGNAM,discretionary,Premium Consumer Discretionary
+LAL,discretionary,Premium Consumer Discretionary
+LALPATHLAB,hospitals,Hospitals & Healthcare Services
+LAMBODHARA,discretionary,Premium Consumer Discretionary
+LAOPALA,discretionary,Premium Consumer Discretionary
+LASA,cdmo_pharma,CDMO / CRAMS Pharma
+LASA,branded_pharma,Branded Formulations Pharma
+LATENTVIEW,it_services,IT Services
+LAURUSLABS,cdmo_pharma,CDMO / CRAMS Pharma
+LAURUSLABS,branded_pharma,Branded Formulations Pharma
+LEMERITE,discretionary,Premium Consumer Discretionary
+LEMONTREE,discretionary,Premium Consumer Discretionary
+LENSKART,discretionary,Premium Consumer Discretionary
+LGBBROSLTD,ev,Electric Vehicles
+LGEINDIA,semis,Semiconductors & Electronics Manufacturing
+LGEINDIA,discretionary,Premium Consumer Discretionary
+LGHL,discretionary,Premium Consumer Discretionary
+LIBAS,discretionary,Premium Consumer Discretionary
+LIBERTSHOE,discretionary,Premium Consumer Discretionary
+LICHSGFIN,nbfc,NBFC — Retail & Diversified
+LICI,life_insurance,Life Insurance
+LINCOLN,cdmo_pharma,CDMO / CRAMS Pharma
+LINCOLN,branded_pharma,Branded Formulations Pharma
+LINDEINDIA,capex,Broad Capital Goods Cycle
+LLOYDS,discretionary,Premium Consumer Discretionary
+LLOYDSENGG,capex,Broad Capital Goods Cycle
+LLOYDSENT,metals,Metals & Mining
+LLOYDSME,metals,Metals & Mining
+LMW,capex,Broad Capital Goods Cycle
+LODHA,ev,Electric Vehicles
+LODHA,realty,Real Estate
+LOKESHMACH,capex,Broad Capital Goods Cycle
+LORDSCHLO,specialty_chem,Specialty Chemicals
+LOTUSDEV,ev,Electric Vehicles
+LOTUSDEV,realty,Real Estate
+LOTUSEYE,hospitals,Hospitals & Healthcare Services
+LOVABLE,discretionary,Premium Consumer Discretionary
+LPDC,ev,Electric Vehicles
+LPDC,realty,Real Estate
+LT,capex,Broad Capital Goods Cycle
+LTFOODS,fmcg_staples,FMCG Staples
+LTIM,it_services,IT Services
+LTM,it_services,IT Services
+LTTS,it_services,IT Services
+LTTS,new_age_tech,New-Age Tech (Internet/Fintech)
+LUMAXIND,ev,Electric Vehicles
+LUMAXTECH,ev,Electric Vehicles
+LUMAXTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+LUPIN,cdmo_pharma,CDMO / CRAMS Pharma
+LUPIN,branded_pharma,Branded Formulations Pharma
+LUXIND,discretionary,Premium Consumer Discretionary
+LXCHEM,specialty_chem,Specialty Chemicals
+LYKALABS,cdmo_pharma,CDMO / CRAMS Pharma
+LYKALABS,branded_pharma,Branded Formulations Pharma
+LYPSAGEMS,discretionary,Premium Consumer Discretionary
+M&M,ev,Electric Vehicles
+M&M,rural_agri,Rural & Agri
+M&MFIN,nbfc,NBFC — Retail & Diversified
+MACPOWER,capex,Broad Capital Goods Cycle
+MADHAV,discretionary,Premium Consumer Discretionary
+MADRASFERT,specialty_chem,Specialty Chemicals
+MADRASFERT,rural_agri,Rural & Agri
+MAGADSUGAR,fmcg_staples,FMCG Staples
+MAHABANK,psu_banks,PSU Banks
+MAHEPC,capex,Broad Capital Goods Cycle
+MAHLIFE,ev,Electric Vehicles
+MAHLIFE,realty,Real Estate
+MAHLOG,logistics,Logistics & Supply Chain
+MAHSEAMLES,metals,Metals & Mining
+MAITHANALL,metals,Metals & Mining
+MALLCOM,capex,Broad Capital Goods Cycle
+MAMATA,capex,Broad Capital Goods Cycle
+MANAKCOAT,metals,Metals & Mining
+MANAKSIA,metals,Metals & Mining
+MANAKSTEEL,metals,Metals & Mining
+MANALIPETC,specialty_chem,Specialty Chemicals
+MANAPPURAM,nbfc,NBFC — Retail & Diversified
+MANGLMCEM,cement,Cement
+MANINDS,metals,Metals & Mining
+MANINFRA,realty,Real Estate
+MANKIND,cdmo_pharma,CDMO / CRAMS Pharma
+MANKIND,branded_pharma,Branded Formulations Pharma
+MANOMAY,discretionary,Premium Consumer Discretionary
+MANORG,specialty_chem,Specialty Chemicals
+MANUGRAPH,capex,Broad Capital Goods Cycle
+MANYAVAR,discretionary,Premium Consumer Discretionary
+MAPMYINDIA,new_age_tech,New-Age Tech (Internet/Fintech)
+MARALOVER,discretionary,Premium Consumer Discretionary
+MARATHON,realty,Real Estate
+MARICO,fmcg_staples,FMCG Staples
+MARINE,ev,Electric Vehicles
+MARINE,capex,Broad Capital Goods Cycle
+MARKOLINES,new_age_tech,New-Age Tech (Internet/Fintech)
+MARKSANS,cdmo_pharma,CDMO / CRAMS Pharma
+MARKSANS,branded_pharma,Branded Formulations Pharma
+MARSONS,capex,Broad Capital Goods Cycle
+MARUTI,ev,Electric Vehicles
+MASTEK,it_services,IT Services
+MASTERTR,capital_markets,Capital Markets & Exchanges
+MATRIMONY,discretionary,Premium Consumer Discretionary
+MAWANASUG,fmcg_staples,FMCG Staples
+MAXESTATES,realty,Real Estate
+MAXFIN,life_insurance,Life Insurance
+MAXHEALTH,hospitals,Hospitals & Healthcare Services
+MAYURUNIQ,discretionary,Premium Consumer Discretionary
+MAZDA,capex,Broad Capital Goods Cycle
+MAZDOCK,defense,Defense & Aerospace
+MAZDOCK,psu_capex,PSU Capex Beneficiaries
+MBAPL,specialty_chem,Specialty Chemicals
+MBAPL,rural_agri,Rural & Agri
+MCLEODRUSS,fmcg_staples,FMCG Staples
+MCLOUD,it_services,IT Services
+MCX,capital_markets,Capital Markets & Exchanges
+MDL,discretionary,Premium Consumer Discretionary
+MEDANTA,hospitals,Hospitals & Healthcare Services
+MEDIASSIST,general_insurance,General & Health Insurance
+MEDICAMEQ,cdmo_pharma,CDMO / CRAMS Pharma
+MEDICAMEQ,branded_pharma,Branded Formulations Pharma
+MEDICAMEQ,new_age_tech,New-Age Tech (Internet/Fintech)
+MEDICO,cdmo_pharma,CDMO / CRAMS Pharma
+MEDICO,branded_pharma,Branded Formulations Pharma
+MEDPLUS,discretionary,Premium Consumer Discretionary
+MEESHO,discretionary,Premium Consumer Discretionary
+MEIL,ev,Electric Vehicles
+MEIL,semis,Semiconductors & Electronics Manufacturing
+MEIL,capex,Broad Capital Goods Cycle
+MENONBE,ev,Electric Vehicles
+METROBRAND,railways,Railways & Metro Capex
+METROBRAND,discretionary,Premium Consumer Discretionary
+METROPOLIS,railways,Railways & Metro Capex
+METROPOLIS,hospitals,Hospitals & Healthcare Services
+MFML,semis,Semiconductors & Electronics Manufacturing
+MFML,discretionary,Premium Consumer Discretionary
+MFSL,life_insurance,Life Insurance
+MGEL,fmcg_staples,FMCG Staples
+MGL,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+MHLXMIRU,discretionary,Premium Consumer Discretionary
+MHLXMIRU,new_age_tech,New-Age Tech (Internet/Fintech)
+MHRIL,discretionary,Premium Consumer Discretionary
+MICEL,semis,Semiconductors & Electronics Manufacturing
+MICEL,capex,Broad Capital Goods Cycle
+MIDHANI,defense,Defense & Aerospace
+MIDWESTLTD,discretionary,Premium Consumer Discretionary
+MINDACORP,ev,Electric Vehicles
+MINDSPACE,realty,Real Estate
+MINDTECK,it_services,IT Services
+MIRCELECTR,semis,Semiconductors & Electronics Manufacturing
+MIRCELECTR,discretionary,Premium Consumer Discretionary
+MIRZAINT,discretionary,Premium Consumer Discretionary
+MITTAL,discretionary,Premium Consumer Discretionary
+MKPL,fmcg_staples,FMCG Staples
+MMFL,ev,Electric Vehicles
+MMP,metals,Metals & Mining
+MODINATUR,fmcg_staples,FMCG Staples
+MODIS,realty,Real Estate
+MODISONLTD,semis,Semiconductors & Electronics Manufacturing
+MODISONLTD,capex,Broad Capital Goods Cycle
+MODTHREAD,discretionary,Premium Consumer Discretionary
+MOHITIND,discretionary,Premium Consumer Discretionary
+MOIL,metals,Metals & Mining
+MOKSH,discretionary,Premium Consumer Discretionary
+MOL,specialty_chem,Specialty Chemicals
+MOL,rural_agri,Rural & Agri
+MOLDTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+MONARCH,capital_markets,Capital Markets & Exchanges
+MONTECARLO,discretionary,Premium Consumer Discretionary
+MOREPENLAB,cdmo_pharma,CDMO / CRAMS Pharma
+MOREPENLAB,branded_pharma,Branded Formulations Pharma
+MOSCHIP,new_age_tech,New-Age Tech (Internet/Fintech)
+MOTHERSON,ev,Electric Vehicles
+MOTILALOFS,capital_markets,Capital Markets & Exchanges
+MOTISONS,discretionary,Premium Consumer Discretionary
+MPHASIS,it_services,IT Services
+MPSLTD,discretionary,Premium Consumer Discretionary
+MRPL,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+MSPL,metals,Metals & Mining
+MSUMI,ev,Electric Vehicles
+MTARTECH,defense,Defense & Aerospace
+MTARTECH,semis,Semiconductors & Electronics Manufacturing
+MTARTECH,capex,Broad Capital Goods Cycle
+MTARTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+MUFIN,renewables,Renewables & Clean Energy
+MUFTI,discretionary,Premium Consumer Discretionary
+MUKANDLTD,metals,Metals & Mining
+MUNJALAU,ev,Electric Vehicles
+MUNJALSHOW,ev,Electric Vehicles
+MURUDCERA,discretionary,Premium Consumer Discretionary
+MUTHOOTFIN,nbfc,NBFC — Retail & Diversified
+MVGJL,discretionary,Premium Consumer Discretionary
+MWL,metals,Metals & Mining
+NACLIND,specialty_chem,Specialty Chemicals
+NACLIND,rural_agri,Rural & Agri
+NAGAFERT,specialty_chem,Specialty Chemicals
+NAGAFERT,rural_agri,Rural & Agri
+NAGREEKEXP,discretionary,Premium Consumer Discretionary
+NAHARINDUS,discretionary,Premium Consumer Discretionary
+NAHARSPING,discretionary,Premium Consumer Discretionary
+NALCO,metals,Metals & Mining
+NAM-INDIA,capital_markets,Capital Markets & Exchanges
+NATCAPSUQ,cdmo_pharma,CDMO / CRAMS Pharma
+NATCAPSUQ,branded_pharma,Branded Formulations Pharma
+NATCOPHARM,cdmo_pharma,CDMO / CRAMS Pharma
+NATCOPHARM,branded_pharma,Branded Formulations Pharma
+NATHBIOGEN,fmcg_staples,FMCG Staples
+NATIONALUM,metals,Metals & Mining
+NAUKRI,discretionary,Premium Consumer Discretionary
+NAUKRI,new_age_tech,New-Age Tech (Internet/Fintech)
+NAVINFLUOR,specialty_chem,Specialty Chemicals
+NAVKARCORP,logistics,Logistics & Supply Chain
+NAZARA,new_age_tech,New-Age Tech (Internet/Fintech)
+NBCC,realty,Real Estate
+NCLIND,cement,Cement
+NDL,discretionary,Premium Consumer Discretionary
+NDRAUTO,ev,Electric Vehicles
+NDTV,ev,Electric Vehicles
+NECCLTD,logistics,Logistics & Supply Chain
+NECLIFE,cdmo_pharma,CDMO / CRAMS Pharma
+NECLIFE,branded_pharma,Branded Formulations Pharma
+NEOGEN,specialty_chem,Specialty Chemicals
+NEPHROPLUS,hospitals,Hospitals & Healthcare Services
+NESTLEIND,fmcg_staples,FMCG Staples
+NETWEB,it_services,IT Services
+NETWEB,new_age_tech,New-Age Tech (Internet/Fintech)
+NETWEB,data_center,Data Center & Digital Infra
+NEULANDLAB,cdmo_pharma,CDMO / CRAMS Pharma
+NEULANDLAB,branded_pharma,Branded Formulations Pharma
+NEWGEN,it_services,IT Services
+NEWGEN,new_age_tech,New-Age Tech (Internet/Fintech)
+NFL,specialty_chem,Specialty Chemicals
+NFL,rural_agri,Rural & Agri
+NGLFINE,cdmo_pharma,CDMO / CRAMS Pharma
+NGLFINE,branded_pharma,Branded Formulations Pharma
+NH,hospitals,Hospitals & Healthcare Services
+NHPC,psu_capex,PSU Capex Beneficiaries
+NIACL,general_insurance,General & Health Insurance
+NIBE,defense,Defense & Aerospace
+NIITLTD,discretionary,Premium Consumer Discretionary
+NIITMTS,discretionary,Premium Consumer Discretionary
+NIITMTS,it_services,IT Services
+NILAINFRA,realty,Real Estate
+NILASPACES,realty,Real Estate
+NILE,metals,Metals & Mining
+NILKAMAL,discretionary,Premium Consumer Discretionary
+NINSYS,it_services,IT Services
+NITCO,discretionary,Premium Consumer Discretionary
+NITINSPIN,discretionary,Premium Consumer Discretionary
+NITIRAJ,semis,Semiconductors & Electronics Manufacturing
+NITIRAJ,capex,Broad Capital Goods Cycle
+NIVABUPA,general_insurance,General & Health Insurance
+NKIND,fmcg_staples,FMCG Staples
+NMDC,psu_capex,PSU Capex Beneficiaries
+NMDC,metals,Metals & Mining
+NOCIL,specialty_chem,Specialty Chemicals
+NOVAAGRI,specialty_chem,Specialty Chemicals
+NOVAAGRI,new_age_tech,New-Age Tech (Internet/Fintech)
+NOVAAGRI,rural_agri,Rural & Agri
+NPST,new_age_tech,New-Age Tech (Internet/Fintech)
+NRBBEARING,ev,Electric Vehicles
+NRL,metals,Metals & Mining
+NSLNISP,metals,Metals & Mining
+NTPC,renewables,Renewables & Clean Energy
+NTPC,psu_capex,PSU Capex Beneficiaries
+NTPCGREEN,renewables,Renewables & Clean Energy
+NUVAMA,capital_markets,Capital Markets & Exchanges
+NUVOCO,cement,Cement
+NXTDIGITAL,data_center,Data Center & Digital Infra
+NYKAA,discretionary,Premium Consumer Discretionary
+NYKAA,new_age_tech,New-Age Tech (Internet/Fintech)
+OAL,specialty_chem,Specialty Chemicals
+OBCL,logistics,Logistics & Supply Chain
+OBEROIRLTY,realty,Real Estate
+OCCL,specialty_chem,Specialty Chemicals
+OCCLLTD,specialty_chem,Specialty Chemicals
+ODIGMA,it_services,IT Services
+OFSS,it_services,IT Services
+OIL,psu_capex,PSU Capex Beneficiaries
+OIL,oil_upstream,Oil & Gas — Upstream
+OLAELEC,ev,Electric Vehicles
+OLAELEC,new_age_tech,New-Age Tech (Internet/Fintech)
+OLECTRA,ev,Electric Vehicles
+OLECTRA,renewables,Renewables & Clean Energy
+OLECTRA,new_age_tech,New-Age Tech (Internet/Fintech)
+OMAXAUTO,ev,Electric Vehicles
+OMAXE,realty,Real Estate
+OMFREIGHT,logistics,Logistics & Supply Chain
+OMNI,capex,Broad Capital Goods Cycle
+OMNI,new_age_tech,New-Age Tech (Internet/Fintech)
+ONELIFECAP,capital_markets,Capital Markets & Exchanges
+ONESOURCE,cdmo_pharma,CDMO / CRAMS Pharma
+ONESOURCE,branded_pharma,Branded Formulations Pharma
+ONGC,psu_capex,PSU Capex Beneficiaries
+ONGC,oil_upstream,Oil & Gas — Upstream
+ONWARDTEC,it_services,IT Services
+ONWARDTEC,new_age_tech,New-Age Tech (Internet/Fintech)
+ORBTEXP,discretionary,Premium Consumer Discretionary
+ORCHASP,it_services,IT Services
+ORCHPHARMA,cdmo_pharma,CDMO / CRAMS Pharma
+ORCHPHARMA,branded_pharma,Branded Formulations Pharma
+ORIENTALTL,discretionary,Premium Consumer Discretionary
+ORIENTBELL,discretionary,Premium Consumer Discretionary
+ORIENTCEM,cement,Cement
+ORIENTCER,new_age_tech,New-Age Tech (Internet/Fintech)
+ORIENTELEC,ev,Electric Vehicles
+ORIENTELEC,discretionary,Premium Consumer Discretionary
+ORIENTHOT,discretionary,Premium Consumer Discretionary
+ORIENTTECH,it_services,IT Services
+ORIENTTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+ORISSAMINE,ev,Electric Vehicles
+ORISSAMINE,metals,Metals & Mining
+OSIAHYPER,discretionary,Premium Consumer Discretionary
+OSWALGREEN,renewables,Renewables & Clean Energy
+OSWALGREEN,new_age_tech,New-Age Tech (Internet/Fintech)
+OSWALSEEDS,fmcg_staples,FMCG Staples
+PAGEIND,discretionary,Premium Consumer Discretionary
+PAISALO,new_age_tech,New-Age Tech (Internet/Fintech)
+PALREDTEC,it_services,IT Services
+PALREDTEC,new_age_tech,New-Age Tech (Internet/Fintech)
+PANACEABIO,cdmo_pharma,CDMO / CRAMS Pharma
+PANACEABIO,branded_pharma,Branded Formulations Pharma
+PANSARI,ev,Electric Vehicles
+PANSARI,realty,Real Estate
+PAR,cdmo_pharma,CDMO / CRAMS Pharma
+PAR,branded_pharma,Branded Formulations Pharma
+PARABDRUGS,cdmo_pharma,CDMO / CRAMS Pharma
+PARABDRUGS,branded_pharma,Branded Formulations Pharma
+PARADEEP,specialty_chem,Specialty Chemicals
+PARADEEP,rural_agri,Rural & Agri
+PARAMOUNT,discretionary,Premium Consumer Discretionary
+PARAS,defense,Defense & Aerospace
+PARAS,new_age_tech,New-Age Tech (Internet/Fintech)
+PARKHOSPS,hospitals,Hospitals & Healthcare Services
+PARKHOTELS,discretionary,Premium Consumer Discretionary
+PARSVNATH,ev,Electric Vehicles
+PARSVNATH,realty,Real Estate
+PASHUPATI,discretionary,Premium Consumer Discretionary
+PASUPTAC,specialty_chem,Specialty Chemicals
+PATANJALI,fmcg_staples,FMCG Staples
+PATELRMART,discretionary,Premium Consumer Discretionary
+PATINTLOG,logistics,Logistics & Supply Chain
+PAUSHAKLTD,specialty_chem,Specialty Chemicals
+PAVNAIND,ev,Electric Vehicles
+PAYTM,discretionary,Premium Consumer Discretionary
+PAYTM,new_age_tech,New-Age Tech (Internet/Fintech)
+PCBL,semis,Semiconductors & Electronics Manufacturing
+PCJEWELLER,discretionary,Premium Consumer Discretionary
+PDSL,discretionary,Premium Consumer Discretionary
+PEARLPOLY,discretionary,Premium Consumer Discretionary
+PENIND,capex,Broad Capital Goods Cycle
+PENINLAND,realty,Real Estate
+PERSISTENT,it_services,IT Services
+PETRONET,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+PFC,psu_capex,PSU Capex Beneficiaries
+PFC,nbfc,NBFC — Retail & Diversified
+PFIZER,cdmo_pharma,CDMO / CRAMS Pharma
+PFIZER,branded_pharma,Branded Formulations Pharma
+PGEL,semis,Semiconductors & Electronics Manufacturing
+PGEL,discretionary,Premium Consumer Discretionary
+PGHH,fmcg_staples,FMCG Staples
+PGHL,cdmo_pharma,CDMO / CRAMS Pharma
+PGHL,branded_pharma,Branded Formulations Pharma
+PGIL,discretionary,Premium Consumer Discretionary
+PHOENIXLTD,realty,Real Estate
+PIDILITIND,specialty_chem,Specialty Chemicals
+PIGL,semis,Semiconductors & Electronics Manufacturing
+PIGL,capex,Broad Capital Goods Cycle
+PIIND,specialty_chem,Specialty Chemicals
+PIIND,rural_agri,Rural & Agri
+PILITA,discretionary,Premium Consumer Discretionary
+PIONEEREMB,discretionary,Premium Consumer Discretionary
+PITTIENG,capex,Broad Capital Goods Cycle
+PKTEA,fmcg_staples,FMCG Staples
+PLASTIBLEN,specialty_chem,Specialty Chemicals
+PLATIND,specialty_chem,Specialty Chemicals
+PNB,psu_banks,PSU Banks
+PNBHOUSING,nbfc,NBFC — Retail & Diversified
+PNCINFRA,new_age_tech,New-Age Tech (Internet/Fintech)
+PNGJL,discretionary,Premium Consumer Discretionary
+PNGSREVA,ev,Electric Vehicles
+PNGSREVA,discretionary,Premium Consumer Discretionary
+PODDARMENT,specialty_chem,Specialty Chemicals
+POKARNA,discretionary,Premium Consumer Discretionary
+POLICYBZR,discretionary,Premium Consumer Discretionary
+POLICYBZR,new_age_tech,New-Age Tech (Internet/Fintech)
+POLYCAB,semis,Semiconductors & Electronics Manufacturing
+POLYCAB,capex,Broad Capital Goods Cycle
+PONNIERODE,fmcg_staples,FMCG Staples
+POONAWALLA,nbfc,NBFC — Retail & Diversified
+POWERGRID,psu_capex,PSU Capex Beneficiaries
+POWERINDIA,capex,Broad Capital Goods Cycle
+POWERMECH,data_center,Data Center & Digital Infra
+PPAP,ev,Electric Vehicles
+PPLPHARMA,cdmo_pharma,CDMO / CRAMS Pharma
+PPLPHARMA,branded_pharma,Branded Formulations Pharma
+PRABHA,oil_upstream,Oil & Gas — Upstream
+PRAENG,realty,Real Estate
+PRAJIND,capex,Broad Capital Goods Cycle
+PRAKASH,metals,Metals & Mining
+PRAKASHSTL,metals,Metals & Mining
+PRAXIS,discretionary,Premium Consumer Discretionary
+PRECAM,ev,Electric Vehicles
+PRECWIRE,metals,Metals & Mining
+PREMIER,renewables,Renewables & Clean Energy
+PREMIER,capex,Broad Capital Goods Cycle
+PREMIERENE,semis,Semiconductors & Electronics Manufacturing
+PREMIERENE,capex,Broad Capital Goods Cycle
+PRESTIGE,realty,Real Estate
+PRICOLLTD,ev,Electric Vehicles
+PRIMO,specialty_chem,Specialty Chemicals
+PRISMJOHNSN,cement,Cement
+PRITI,discretionary,Premium Consumer Discretionary
+PRITIKAUTO,ev,Electric Vehicles
+PRIVISCL,specialty_chem,Specialty Chemicals
+PROSTARM,semis,Semiconductors & Electronics Manufacturing
+PROSTARM,capex,Broad Capital Goods Cycle
+PROTEAN,it_services,IT Services
+PROTEAN,new_age_tech,New-Age Tech (Internet/Fintech)
+PROZONER,realty,Real Estate
+PRSMJOHNSN,cement,Cement
+PRUDENT,capital_markets,Capital Markets & Exchanges
+PRUDMOULI,fmcg_staples,FMCG Staples
+PSB,psu_banks,PSU Banks
+PTC,defense,Defense & Aerospace
+PTCIL,capex,Broad Capital Goods Cycle
+PUNJABCHEM,specialty_chem,Specialty Chemicals
+PUNJABCHEM,rural_agri,Rural & Agri
+PURVA,realty,Real Estate
+PVP,realty,Real Estate
+PWL,discretionary,Premium Consumer Discretionary
+PYRAMID,new_age_tech,New-Age Tech (Internet/Fintech)
+QPOWER,ev,Electric Vehicles
+QPOWER,capex,Broad Capital Goods Cycle
+QUICKHEAL,new_age_tech,New-Age Tech (Internet/Fintech)
+RACLGEAR,ev,Electric Vehicles
+RACLGEAR,new_age_tech,New-Age Tech (Internet/Fintech)
+RADHIKAJWE,discretionary,Premium Consumer Discretionary
+RADHIKAJWE,new_age_tech,New-Age Tech (Internet/Fintech)
+RADICO,fmcg_staples,FMCG Staples
+RAILTEL,railways,Railways & Metro Capex
+RAILTEL,data_center,Data Center & Digital Infra
+RAIN,specialty_chem,Specialty Chemicals
+RAINBOW,hospitals,Hospitals & Healthcare Services
+RAJESHEXPO,discretionary,Premium Consumer Discretionary
+RAJMET,metals,Metals & Mining
+RAJOOENG,capex,Broad Capital Goods Cycle
+RAJRATAN,ev,Electric Vehicles
+RAJSREESUG,fmcg_staples,FMCG Staples
+RAJTV,ev,Electric Vehicles
+RALLIS,specialty_chem,Specialty Chemicals
+RALLIS,rural_agri,Rural & Agri
+RAMAPHO,specialty_chem,Specialty Chemicals
+RAMAPHO,rural_agri,Rural & Agri
+RAMASTEEL,metals,Metals & Mining
+RAMCOCEM,cement,Cement
+RAMRAT,semis,Semiconductors & Electronics Manufacturing
+RAMRAT,capex,Broad Capital Goods Cycle
+RAMSARUP,metals,Metals & Mining
+RANASUG,fmcg_staples,FMCG Staples
+RATEGAIN,it_services,IT Services
+RATEGAIN,new_age_tech,New-Age Tech (Internet/Fintech)
+RATNAMANI,metals,Metals & Mining
+RATNAVEER,metals,Metals & Mining
+RAYMOND,capex,Broad Capital Goods Cycle
+RAYMONDLSL,discretionary,Premium Consumer Discretionary
+RAYMONDREL,realty,Real Estate
+RBA,discretionary,Premium Consumer Discretionary
+RBLBANK,private_banks,Private Banks
+RBZJEWEL,discretionary,Premium Consumer Discretionary
+RCF,specialty_chem,Specialty Chemicals
+RCF,rural_agri,Rural & Agri
+RECLTD,psu_capex,PSU Capex Beneficiaries
+RECLTD,nbfc,NBFC — Retail & Diversified
+REDTAPE,discretionary,Premium Consumer Discretionary
+REFEX,capex,Broad Capital Goods Cycle
+REGAAL,fmcg_staples,FMCG Staples
+REGENCERAM,discretionary,Premium Consumer Discretionary
+RELAXO,discretionary,Premium Consumer Discretionary
+RELCHEMQ,discretionary,Premium Consumer Discretionary
+RELIANCE,oil_upstream,Oil & Gas — Upstream
+RELIANCE,oil_downstream,Oil & Gas — Downstream & Gas Utilities
+RELTD,semis,Semiconductors & Electronics Manufacturing
+RELTD,capex,Broad Capital Goods Cycle
+REMSONSIND,ev,Electric Vehicles
+RENUKA,fmcg_staples,FMCG Staples
+REPCOHOME,nbfc,NBFC — Retail & Diversified
+REPL,realty,Real Estate
+RESPONIND,discretionary,Premium Consumer Discretionary
+RETAIL,discretionary,Premium Consumer Discretionary
+RGL,discretionary,Premium Consumer Discretionary
+RHETAN,metals,Metals & Mining
+RHL,discretionary,Premium Consumer Discretionary
+RICOAUTO,ev,Electric Vehicles
+RIIL,logistics,Logistics & Supply Chain
+RISHABH,semis,Semiconductors & Electronics Manufacturing
+RISHABH,capex,Broad Capital Goods Cycle
+RITCO,logistics,Logistics & Supply Chain
+RITES,railways,Railways & Metro Capex
+RKFORGE,ev,Electric Vehicles
+RML,ev,Electric Vehicles
+ROHLTD,discretionary,Premium Consumer Discretionary
+ROLEXRINGS,ev,Electric Vehicles
+ROML,fmcg_staples,FMCG Staples
+ROSSARI,specialty_chem,Specialty Chemicals
+ROSSARI,new_age_tech,New-Age Tech (Internet/Fintech)
+ROSSELLIND,fmcg_staples,FMCG Staples
+ROSSTECH,defense,Defense & Aerospace
+ROSSTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+RPGLIFE,cdmo_pharma,CDMO / CRAMS Pharma
+RPGLIFE,branded_pharma,Branded Formulations Pharma
+RRKABEL,capex,Broad Capital Goods Cycle
+RSL,metals,Metals & Mining
+RSSOFTWARE,it_services,IT Services
+RSWM,discretionary,Premium Consumer Discretionary
+RSYSTEMS,it_services,IT Services
+RTNINDIA,discretionary,Premium Consumer Discretionary
+RUBICON,cdmo_pharma,CDMO / CRAMS Pharma
+RUBICON,branded_pharma,Branded Formulations Pharma
+RUBYMILLS,discretionary,Premium Consumer Discretionary
+RUDRA,metals,Metals & Mining
+RUPA,discretionary,Premium Consumer Discretionary
+RUSHIL,discretionary,Premium Consumer Discretionary
+RUSTOMJEE,realty,Real Estate
+RVHL,realty,Real Estate
+RVNL,railways,Railways & Metro Capex
+RVNL,psu_capex,PSU Capex Beneficiaries
+RVNL,data_center,Data Center & Digital Infra
+RVTH,ev,Electric Vehicles
+RVTH,capex,Broad Capital Goods Cycle
+SAATVIKGL,renewables,Renewables & Clean Energy
+SAATVIKGL,semis,Semiconductors & Electronics Manufacturing
+SAATVIKGL,capex,Broad Capital Goods Cycle
+SABTN,ev,Electric Vehicles
+SADHNANIQ,specialty_chem,Specialty Chemicals
+SAFARI,discretionary,Premium Consumer Discretionary
+SAGARDEEP,metals,Metals & Mining
+SAGCEM,cement,Cement
+SAGILITY,it_services,IT Services
+SAHANA,it_services,IT Services
+SAHASRA,semis,Semiconductors & Electronics Manufacturing
+SAHASRA,capex,Broad Capital Goods Cycle
+SAIL,psu_capex,PSU Capex Beneficiaries
+SAIL,metals,Metals & Mining
+SAILIFE,cdmo_pharma,CDMO / CRAMS Pharma
+SAILIFE,branded_pharma,Branded Formulations Pharma
+SAKAR,cdmo_pharma,CDMO / CRAMS Pharma
+SAKAR,branded_pharma,Branded Formulations Pharma
+SAKHTISUG,fmcg_staples,FMCG Staples
+SAKSOFT,it_services,IT Services
+SALASAR,capex,Broad Capital Goods Cycle
+SALASAR,new_age_tech,New-Age Tech (Internet/Fintech)
+SALONA,discretionary,Premium Consumer Discretionary
+SALZERELEC,semis,Semiconductors & Electronics Manufacturing
+SALZERELEC,capex,Broad Capital Goods Cycle
+SAMBHV,metals,Metals & Mining
+SAMHI,discretionary,Premium Consumer Discretionary
+SAMHI,new_age_tech,New-Age Tech (Internet/Fintech)
+SAMMAANCAP,nbfc,NBFC — Retail & Diversified
+SANATHAN,discretionary,Premium Consumer Discretionary
+SANDHAR,ev,Electric Vehicles
+SANDHAR,new_age_tech,New-Age Tech (Internet/Fintech)
+SANDUMA,metals,Metals & Mining
+SANGAMIND,discretionary,Premium Consumer Discretionary
+SANGHIIND,cement,Cement
+SANOFI,cdmo_pharma,CDMO / CRAMS Pharma
+SANOFI,branded_pharma,Branded Formulations Pharma
+SANOFICONR,cdmo_pharma,CDMO / CRAMS Pharma
+SANOFICONR,branded_pharma,Branded Formulations Pharma
+SANSERA,ev,Electric Vehicles
+SANSTAR,fmcg_staples,FMCG Staples
+SAPPHIRE,discretionary,Premium Consumer Discretionary
+SARDAEN,metals,Metals & Mining
+SARLAPOLY,discretionary,Premium Consumer Discretionary
+SARVESHWAR,fmcg_staples,FMCG Staples
+SASKEN,it_services,IT Services
+SASKEN,new_age_tech,New-Age Tech (Internet/Fintech)
+SASTASUNDR,hospitals,Hospitals & Healthcare Services
+SATIN,small_fin_banks,Small Finance & Microfinance
+SAURASHCEM,cement,Cement
+SBC,discretionary,Premium Consumer Discretionary
+SBCL,metals,Metals & Mining
+SBGLP,realty,Real Estate
+SBILIFE,life_insurance,Life Insurance
+SBIN,psu_banks,PSU Banks
+SCHAEFFLER,ev,Electric Vehicles
+SCHAEFFLER,capex,Broad Capital Goods Cycle
+SCHNEIDER,ev,Electric Vehicles
+SCHNEIDER,capex,Broad Capital Goods Cycle
+SCI,logistics,Logistics & Supply Chain
+SCODATUBES,metals,Metals & Mining
+SEAMECLTD,logistics,Logistics & Supply Chain
+SECMARK,it_services,IT Services
+SECURKLOUD,it_services,IT Services
+SECURKLOUD,new_age_tech,New-Age Tech (Internet/Fintech)
+SEDEMAC,ev,Electric Vehicles
+SELMC,discretionary,Premium Consumer Discretionary
+SENCO,discretionary,Premium Consumer Discretionary
+SENORES,cdmo_pharma,CDMO / CRAMS Pharma
+SENORES,branded_pharma,Branded Formulations Pharma
+SERVOTECH,renewables,Renewables & Clean Energy
+SERVOTECH,semis,Semiconductors & Electronics Manufacturing
+SERVOTECH,capex,Broad Capital Goods Cycle
+SERVOTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+SETCO,ev,Electric Vehicles
+SETL,capex,Broad Capital Goods Cycle
+SETL,new_age_tech,New-Age Tech (Internet/Fintech)
+SFL,discretionary,Premium Consumer Discretionary
+SGIL,renewables,Renewables & Clean Energy
+SGL,discretionary,Premium Consumer Discretionary
+SGMART,metals,Metals & Mining
+SHADOWFAX,new_age_tech,New-Age Tech (Internet/Fintech)
+SHADOWFAX,logistics,Logistics & Supply Chain
+SHAH,metals,Metals & Mining
+SHAHALLOYS,metals,Metals & Mining
+SHAILY,discretionary,Premium Consumer Discretionary
+SHALBY,hospitals,Hospitals & Healthcare Services
+SHALPAINTS,discretionary,Premium Consumer Discretionary
+SHANKARA,discretionary,Premium Consumer Discretionary
+SHANTI,fmcg_staples,FMCG Staples
+SHANTIGEAR,capex,Broad Capital Goods Cycle
+SHANTIGOLD,discretionary,Premium Consumer Discretionary
+SHARDACROP,specialty_chem,Specialty Chemicals
+SHARDACROP,rural_agri,Rural & Agri
+SHARDAMOTR,ev,Electric Vehicles
+SHAREINDIA,capital_markets,Capital Markets & Exchanges
+SHEKHAWATI,discretionary,Premium Consumer Discretionary
+SHILCTECH,capex,Broad Capital Goods Cycle
+SHILCTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+SHILPAMED,cdmo_pharma,CDMO / CRAMS Pharma
+SHILPAMED,branded_pharma,Branded Formulations Pharma
+SHIVALIK,specialty_chem,Specialty Chemicals
+SHIVALIK,rural_agri,Rural & Agri
+SHIVAMAUTO,ev,Electric Vehicles
+SHIVAMAUTO,new_age_tech,New-Age Tech (Internet/Fintech)
+SHIVAMILLS,discretionary,Premium Consumer Discretionary
+SHIVATEX,discretionary,Premium Consumer Discretionary
+SHK,specialty_chem,Specialty Chemicals
+SHOPERSTOP,discretionary,Premium Consumer Discretionary
+SHRADHA,realty,Real Estate
+SHREDIGCEM,cement,Cement
+SHREECEM,cement,Cement
+SHREEJISPG,logistics,Logistics & Supply Chain
+SHREEPUSHK,specialty_chem,Specialty Chemicals
+SHREERAMA,new_age_tech,New-Age Tech (Internet/Fintech)
+SHRINGARMS,discretionary,Premium Consumer Discretionary
+SHRIPISTON,ev,Electric Vehicles
+SHRIRAMFIN,nbfc,NBFC — Retail & Diversified
+SHRIRAMPPS,realty,Real Estate
+SHYAMCENT,metals,Metals & Mining
+SHYAMMETL,metals,Metals & Mining
+SIEMENS,renewables,Renewables & Clean Energy
+SIEMENS,capex,Broad Capital Goods Cycle
+SIGACHI,cdmo_pharma,CDMO / CRAMS Pharma
+SIGACHI,branded_pharma,Branded Formulations Pharma
+SIGMA,it_services,IT Services
+SIGMAADV,defense,Defense & Aerospace
+SIGNATURE,realty,Real Estate
+SIKKO,specialty_chem,Specialty Chemicals
+SIKKO,rural_agri,Rural & Agri
+SIL,realty,Real Estate
+SILGO,discretionary,Premium Consumer Discretionary
+SILVERTUC,it_services,IT Services
+SILVERTUC,new_age_tech,New-Age Tech (Internet/Fintech)
+SINCLAIR,discretionary,Premium Consumer Discretionary
+SINDHUTRAD,metals,Metals & Mining
+SINGERIND,discretionary,Premium Consumer Discretionary
+SINTERCOM,ev,Electric Vehicles
+SIRCA,discretionary,Premium Consumer Discretionary
+SIS,discretionary,Premium Consumer Discretionary
+SIYSIL,discretionary,Premium Consumer Discretionary
+SJS,ev,Electric Vehicles
+SJVN,psu_capex,PSU Capex Beneficiaries
+SKFINDIA,ev,Electric Vehicles
+SKIPPER,capex,Broad Capital Goods Cycle
+SKYGOLD,discretionary,Premium Consumer Discretionary
+SMCGLOBAL,capital_markets,Capital Markets & Exchanges
+SMLT,metals,Metals & Mining
+SMSPHARMA,cdmo_pharma,CDMO / CRAMS Pharma
+SMSPHARMA,branded_pharma,Branded Formulations Pharma
+SNOWMAN,logistics,Logistics & Supply Chain
+SOBHA,realty,Real Estate
+SOFTTECH,it_services,IT Services
+SOFTTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+SOLARA,renewables,Renewables & Clean Energy
+SOLARA,cdmo_pharma,CDMO / CRAMS Pharma
+SOLARA,branded_pharma,Branded Formulations Pharma
+SOLARINDS,renewables,Renewables & Clean Energy
+SOLARWORLD,renewables,Renewables & Clean Energy
+SOLEX,capex,Broad Capital Goods Cycle
+SOMANYCERA,discretionary,Premium Consumer Discretionary
+SOMICONVEY,capex,Broad Capital Goods Cycle
+SONACOMS,ev,Electric Vehicles
+SONAMLTD,semis,Semiconductors & Electronics Manufacturing
+SONAMLTD,discretionary,Premium Consumer Discretionary
+SONATSOFTW,it_services,IT Services
+SOTL,new_age_tech,New-Age Tech (Internet/Fintech)
+SOUTHBANK,private_banks,Private Banks
+SPAL,discretionary,Premium Consumer Discretionary
+SPANDANA,small_fin_banks,Small Finance & Microfinance
+SPARC,cdmo_pharma,CDMO / CRAMS Pharma
+SPARC,branded_pharma,Branded Formulations Pharma
+SPECIALITY,discretionary,Premium Consumer Discretionary
+SPECTRUM,ev,Electric Vehicles
+SPECTRUM,capex,Broad Capital Goods Cycle
+SPENCERS,discretionary,Premium Consumer Discretionary
+SPIC,specialty_chem,Specialty Chemicals
+SPIC,rural_agri,Rural & Agri
+SPICEJET,logistics,Logistics & Supply Chain
+SPLIL,discretionary,Premium Consumer Discretionary
+SPLPETRO,specialty_chem,Specialty Chemicals
+SPORTKING,discretionary,Premium Consumer Discretionary
+SRD,specialty_chem,Specialty Chemicals
+SREEL,discretionary,Premium Consumer Discretionary
+SRF,specialty_chem,Specialty Chemicals
+SRGHFL,nbfc,NBFC — Retail & Diversified
+SRHHYPOLTD,specialty_chem,Specialty Chemicals
+SRPL,fmcg_staples,FMCG Staples
+SRTL,discretionary,Premium Consumer Discretionary
+SSDL,discretionary,Premium Consumer Discretionary
+SSWL,ev,Electric Vehicles
+STALLION,capex,Broad Capital Goods Cycle
+STANLEY,discretionary,Premium Consumer Discretionary
+STAR,cdmo_pharma,CDMO / CRAMS Pharma
+STAR,branded_pharma,Branded Formulations Pharma
+STARCEMENT,cement,Cement
+STARHEALTH,general_insurance,General & Health Insurance
+STEELCITY,capital_markets,Capital Markets & Exchanges
+STEELXIND,metals,Metals & Mining
+STERTOOLS,ev,Electric Vehicles
+STLTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+STLTECH,data_center,Data Center & Digital Infra
+STOVEKRAFT,discretionary,Premium Consumer Discretionary
+STUDDS,ev,Electric Vehicles
+STYL,new_age_tech,New-Age Tech (Internet/Fintech)
+STYLAMIND,discretionary,Premium Consumer Discretionary
+STYLEBAAZA,discretionary,Premium Consumer Discretionary
+STYRENIX,specialty_chem,Specialty Chemicals
+SUBROS,ev,Electric Vehicles
+SUBROS,capex,Broad Capital Goods Cycle
+SUDARCOLOR,specialty_chem,Specialty Chemicals
+SUDARSCHEM,specialty_chem,Specialty Chemicals
+SUDEEPPHRM,cdmo_pharma,CDMO / CRAMS Pharma
+SUDEEPPHRM,branded_pharma,Branded Formulations Pharma
+SUKHJITS,fmcg_staples,FMCG Staples
+SUMEETINDS,discretionary,Premium Consumer Discretionary
+SUMICHEM,specialty_chem,Specialty Chemicals
+SUMICHEM,rural_agri,Rural & Agri
+SUMIT,realty,Real Estate
+SUNCLAY,ev,Electric Vehicles
+SUNDARMFIN,nbfc,NBFC — Retail & Diversified
+SUNDRMBRAK,ev,Electric Vehicles
+SUNDRMFAST,ev,Electric Vehicles
+SUNDROP,fmcg_staples,FMCG Staples
+SUNFLAG,metals,Metals & Mining
+SUNPHARMA,cdmo_pharma,CDMO / CRAMS Pharma
+SUNPHARMA,branded_pharma,Branded Formulations Pharma
+SUNTECK,realty,Real Estate
+SUPERHOUSE,discretionary,Premium Consumer Discretionary
+SUPERSPIN,discretionary,Premium Consumer Discretionary
+SUPRAJIT,ev,Electric Vehicles
+SUPREME,realty,Real Estate
+SUPRIYA,cdmo_pharma,CDMO / CRAMS Pharma
+SUPRIYA,branded_pharma,Branded Formulations Pharma
+SURAJEST,ev,Electric Vehicles
+SURAJEST,realty,Real Estate
+SURAJLTD,metals,Metals & Mining
+SURAKSHA,hospitals,Hospitals & Healthcare Services
+SURANASOL,renewables,Renewables & Clean Energy
+SURANASOL,capex,Broad Capital Goods Cycle
+SURYALAXMI,discretionary,Premium Consumer Discretionary
+SURYAROSNI,metals,Metals & Mining
+SURYODAY,small_fin_banks,Small Finance & Microfinance
+SUTLEJTEX,discretionary,Premium Consumer Discretionary
+SUVEN,hospitals,Hospitals & Healthcare Services
+SUVENPHAR,cdmo_pharma,CDMO / CRAMS Pharma
+SUZLON,renewables,Renewables & Clean Energy
+SUZLON,capex,Broad Capital Goods Cycle
+SVLL,logistics,Logistics & Supply Chain
+SWANCORP,specialty_chem,Specialty Chemicals
+SWELECTES,renewables,Renewables & Clean Energy
+SWELECTES,capex,Broad Capital Goods Cycle
+SWIGGY,discretionary,Premium Consumer Discretionary
+SWIGGY,new_age_tech,New-Age Tech (Internet/Fintech)
+SWSOLAR,renewables,Renewables & Clean Energy
+SYMPHONY,discretionary,Premium Consumer Discretionary
+SYNCOMF,cdmo_pharma,CDMO / CRAMS Pharma
+SYNCOMF,branded_pharma,Branded Formulations Pharma
+SYNGENE,cdmo_pharma,CDMO / CRAMS Pharma
+SYNGENE,hospitals,Hospitals & Healthcare Services
+SYRMA,semis,Semiconductors & Electronics Manufacturing
+SYRMA,capex,Broad Capital Goods Cycle
+SYRMA,new_age_tech,New-Age Tech (Internet/Fintech)
+SYSTMTXC,capital_markets,Capital Markets & Exchanges
+TAJGVK,discretionary,Premium Consumer Discretionary
+TALBROAUTO,ev,Electric Vehicles
+TANLA,new_age_tech,New-Age Tech (Internet/Fintech)
+TARAPUR,capex,Broad Capital Goods Cycle
+TARC,realty,Real Estate
+TARIL,capex,Broad Capital Goods Cycle
+TATACHEM,specialty_chem,Specialty Chemicals
+TATACOFFEE,fmcg_staples,FMCG Staples
+TATACONSUM,fmcg_staples,FMCG Staples
+TATAELXSI,it_services,IT Services
+TATAMETALI,metals,Metals & Mining
+TATAMOTORS,ev,Electric Vehicles
+TATAPOWER,ev,Electric Vehicles
+TATAPOWER,renewables,Renewables & Clean Energy
+TATASTEEL,metals,Metals & Mining
+TATATECH,it_services,IT Services
+TATATECH,new_age_tech,New-Age Tech (Internet/Fintech)
+TATVA,specialty_chem,Specialty Chemicals
+TBOTEK,discretionary,Premium Consumer Discretionary
+TBOTEK,new_age_tech,New-Age Tech (Internet/Fintech)
+TBZ,discretionary,Premium Consumer Discretionary
+TCC,discretionary,Premium Consumer Discretionary
+TCI,logistics,Logistics & Supply Chain
+TCIEXP,logistics,Logistics & Supply Chain
+TCS,it_services,IT Services
+TDPOWERSYS,capex,Broad Capital Goods Cycle
+TECHM,it_services,IT Services
+TECHM,new_age_tech,New-Age Tech (Internet/Fintech)
+TECHNO,ev,Electric Vehicles
+TECHNO,new_age_tech,New-Age Tech (Internet/Fintech)
+TECHNOE,ev,Electric Vehicles
+TECHNOE,new_age_tech,New-Age Tech (Internet/Fintech)
+TECILCHEM,specialty_chem,Specialty Chemicals
+TEGA,capex,Broad Capital Goods Cycle
+TEJAS,data_center,Data Center & Digital Infra
+TEMBO,metals,Metals & Mining
+TENNIND,ev,Electric Vehicles
+TERASOFT,it_services,IT Services
+TEXRAIL,railways,Railways & Metro Capex
+TGBHOTELS,discretionary,Premium Consumer Discretionary
+THANGAMAYL,discretionary,Premium Consumer Discretionary
+THEJO,capex,Broad Capital Goods Cycle
+THELEELA,discretionary,Premium Consumer Discretionary
+THEMISMED,cdmo_pharma,CDMO / CRAMS Pharma
+THEMISMED,branded_pharma,Branded Formulations Pharma
+THERMAX,capex,Broad Capital Goods Cycle
+THOMASCOOK,discretionary,Premium Consumer Discretionary
+THOMASCOTT,discretionary,Premium Consumer Discretionary
+THYROCARE,hospitals,Hospitals & Healthcare Services
+THYROCARE,new_age_tech,New-Age Tech (Internet/Fintech)
+TICL,ev,Electric Vehicles
+TIGERLOGS,logistics,Logistics & Supply Chain
+TIIL,metals,Metals & Mining
+TIIL,new_age_tech,New-Age Tech (Internet/Fintech)
+TIINDIA,ev,Electric Vehicles
+TIMETECHNO,new_age_tech,New-Age Tech (Internet/Fintech)
+TIMKEN,capex,Broad Capital Goods Cycle
+TIRUMALCHM,specialty_chem,Specialty Chemicals
+TITAGARH,railways,Railways & Metro Capex
+TITAN,discretionary,Premium Consumer Discretionary
+TMB,private_banks,Private Banks
+TMPV,ev,Electric Vehicles
+TNPETRO,specialty_chem,Specialty Chemicals
+TOKYOPLAST,discretionary,Premium Consumer Discretionary
+TORNTPHARM,cdmo_pharma,CDMO / CRAMS Pharma
+TORNTPHARM,branded_pharma,Branded Formulations Pharma
+TORNTPOWER,renewables,Renewables & Clean Energy
+TOTAL,logistics,Logistics & Supply Chain
+TOUCHWOOD,discretionary,Premium Consumer Discretionary
+TPLPLASTEH,new_age_tech,New-Age Tech (Internet/Fintech)
+TRACXN,new_age_tech,New-Age Tech (Internet/Fintech)
+TRANSPEK,specialty_chem,Specialty Chemicals
+TRANSRAILL,railways,Railways & Metro Capex
+TRANSRAILL,capex,Broad Capital Goods Cycle
+TRANSWORLD,logistics,Logistics & Supply Chain
+TRAVELFOOD,discretionary,Premium Consumer Discretionary
+TREJHARA,it_services,IT Services
+TREL,logistics,Logistics & Supply Chain
+TRENT,discretionary,Premium Consumer Discretionary
+TRF,capex,Broad Capital Goods Cycle
+TRIDENT,discretionary,Premium Consumer Discretionary
+TRIGYN,it_services,IT Services
+TRIGYN,new_age_tech,New-Age Tech (Internet/Fintech)
+TRITURBINE,capex,Broad Capital Goods Cycle
+TRIVENI,fmcg_staples,FMCG Staples
+TRUALT,fmcg_staples,FMCG Staples
+TTKPRESTIG,discretionary,Premium Consumer Discretionary
+TVSELECT,semis,Semiconductors & Electronics Manufacturing
+TVSMOTOR,ev,Electric Vehicles
+UCAL,ev,Electric Vehicles
+UCOBANK,psu_banks,PSU Banks
+UFBL,discretionary,Premium Consumer Discretionary
+UGARSUGAR,fmcg_staples,FMCG Staples
+UJJIVANSFB,small_fin_banks,Small Finance & Microfinance
+ULTRACEMCO,cement,Cement
+ULTRACEMCO,new_age_tech,New-Age Tech (Internet/Fintech)
+UNICHEMLAB,cdmo_pharma,CDMO / CRAMS Pharma
+UNICHEMLAB,branded_pharma,Branded Formulations Pharma
+UNIDT,capex,Broad Capital Goods Cycle
+UNIENTER,specialty_chem,Specialty Chemicals
+UNIMECH,defense,Defense & Aerospace
+UNIONBANK,psu_banks,PSU Banks
+UNIPARTS,ev,Electric Vehicles
+UNITECH,new_age_tech,New-Age Tech (Internet/Fintech)
+UNITECH,realty,Real Estate
+UNITEDPOLY,semis,Semiconductors & Electronics Manufacturing
+UNITEDPOLY,discretionary,Premium Consumer Discretionary
+UNITEDTEA,fmcg_staples,FMCG Staples
+UNOMINDA,ev,Electric Vehicles
+UPL,specialty_chem,Specialty Chemicals
+UPL,rural_agri,Rural & Agri
+URAVIDEF,ev,Electric Vehicles
+URAVIDEF,new_age_tech,New-Age Tech (Internet/Fintech)
+URBANCO,discretionary,Premium Consumer Discretionary
+URJA,semis,Semiconductors & Electronics Manufacturing
+URJA,capex,Broad Capital Goods Cycle
+USHAMART,metals,Metals & Mining
+UTIAMC,capital_markets,Capital Markets & Exchanges
+UTKARSHBNK,small_fin_banks,Small Finance & Microfinance
+UTLSOLAR,semis,Semiconductors & Electronics Manufacturing
+UTLSOLAR,capex,Broad Capital Goods Cycle
+UTTAMSUGAR,fmcg_staples,FMCG Staples
+V2RETAIL,discretionary,Premium Consumer Discretionary
+VADILALIND,fmcg_staples,FMCG Staples
+VAIBHAVGBL,discretionary,Premium Consumer Discretionary
+VAISHALI,cdmo_pharma,CDMO / CRAMS Pharma
+VAISHALI,branded_pharma,Branded Formulations Pharma
+VAKRANGEE,it_services,IT Services
+VALIANTLAB,cdmo_pharma,CDMO / CRAMS Pharma
+VALIANTLAB,branded_pharma,Branded Formulations Pharma
+VALIANTORG,specialty_chem,Specialty Chemicals
+VARDHACRLC,discretionary,Premium Consumer Discretionary
+VARROC,ev,Electric Vehicles
+VASCONEQ,realty,Real Estate
+VASWANI,metals,Metals & Mining
+VBL,ev,Electric Vehicles
+VBL,fmcg_staples,FMCG Staples
+VCL,semis,Semiconductors & Electronics Manufacturing
+VCL,discretionary,Premium Consumer Discretionary
+VEDL,discretionary,Premium Consumer Discretionary
+VEDL,metals,Metals & Mining
+VEDL,oil_upstream,Oil & Gas — Upstream
+VENTIVE,discretionary,Premium Consumer Discretionary
+VENUSPIPES,metals,Metals & Mining
+VENUSREM,cdmo_pharma,CDMO / CRAMS Pharma
+VENUSREM,branded_pharma,Branded Formulations Pharma
+VERANDA,discretionary,Premium Consumer Discretionary
+VERTOZ,it_services,IT Services
+VETO,semis,Semiconductors & Electronics Manufacturing
+VETO,discretionary,Premium Consumer Discretionary
+VGL,discretionary,Premium Consumer Discretionary
+VGUARD,discretionary,Premium Consumer Discretionary
+VIDHIING,specialty_chem,Specialty Chemicals
+VIDYAWIRES,metals,Metals & Mining
+VIJAYA,hospitals,Hospitals & Healthcare Services
+VIKASECO,specialty_chem,Specialty Chemicals
+VIKASECO,new_age_tech,New-Age Tech (Internet/Fintech)
+VIKRAMSOLR,renewables,Renewables & Clean Energy
+VIKRAMSOLR,semis,Semiconductors & Electronics Manufacturing
+VIKRAMSOLR,capex,Broad Capital Goods Cycle
+VIMTALABS,hospitals,Hospitals & Healthcare Services
+VINATIORGA,specialty_chem,Specialty Chemicals
+VINCOFE,ev,Electric Vehicles
+VINEETLAB,cdmo_pharma,CDMO / CRAMS Pharma
+VINEETLAB,branded_pharma,Branded Formulations Pharma
+VINNY,discretionary,Premium Consumer Discretionary
+VINYLINDIA,specialty_chem,Specialty Chemicals
+VIPCLOTHNG,discretionary,Premium Consumer Discretionary
+VIPIND,discretionary,Premium Consumer Discretionary
+VISAKAIND,cement,Cement
+VISASTEEL,metals,Metals & Mining
+VISHNU,specialty_chem,Specialty Chemicals
+VISHWARAJ,fmcg_staples,FMCG Staples
+VITAL,specialty_chem,Specialty Chemicals
+VITAL,new_age_tech,New-Age Tech (Internet/Fintech)
+VIVIDHA,discretionary,Premium Consumer Discretionary
+VIVIMEDLAB,cdmo_pharma,CDMO / CRAMS Pharma
+VIVIMEDLAB,branded_pharma,Branded Formulations Pharma
+VIYASH,cdmo_pharma,CDMO / CRAMS Pharma
+VIYASH,branded_pharma,Branded Formulations Pharma
+VLEGOV,it_services,IT Services
+VMART,discretionary,Premium Consumer Discretionary
+VMM,discretionary,Premium Consumer Discretionary
+VMSTMT,metals,Metals & Mining
+VOLTAMP,capex,Broad Capital Goods Cycle
+VOLTAS,discretionary,Premium Consumer Discretionary
+VRAJ,metals,Metals & Mining
+VRLLOG,logistics,Logistics & Supply Chain
+VSSL,metals,Metals & Mining
+VSTL,metals,Metals & Mining
+VSTTILLERS,rural_agri,Rural & Agri
+VTL,discretionary,Premium Consumer Discretionary
+WAAREEENER,semis,Semiconductors & Electronics Manufacturing
+WAAREEENER,capex,Broad Capital Goods Cycle
+WAAREERTL,renewables,Renewables & Clean Energy
+WAAREERTL,semis,Semiconductors & Electronics Manufacturing
+WAAREERTL,capex,Broad Capital Goods Cycle
+WAAREERTL,new_age_tech,New-Age Tech (Internet/Fintech)
+WABAG,new_age_tech,New-Age Tech (Internet/Fintech)
+WAKEFIT,discretionary,Premium Consumer Discretionary
+WALCHANNAG,capex,Broad Capital Goods Cycle
+WCIL,logistics,Logistics & Supply Chain
+WEBELSOLAR,renewables,Renewables & Clean Energy
+WEBELSOLAR,semis,Semiconductors & Electronics Manufacturing
+WEBELSOLAR,capex,Broad Capital Goods Cycle
+WEIZMANIND,discretionary,Premium Consumer Discretionary
+WEL,ev,Electric Vehicles
+WEL,discretionary,Premium Consumer Discretionary
+WELCORP,metals,Metals & Mining
+WELSPUNLIV,discretionary,Premium Consumer Discretionary
+WESTLIFE,discretionary,Premium Consumer Discretionary
+WHEELS,ev,Electric Vehicles
+WHIRLPOOL,discretionary,Premium Consumer Discretionary
+WINDLAS,renewables,Renewables & Clean Energy
+WINDLAS,cdmo_pharma,CDMO / CRAMS Pharma
+WINDLAS,branded_pharma,Branded Formulations Pharma
+WINDLAS,new_age_tech,New-Age Tech (Internet/Fintech)
+WINDMACHIN,renewables,Renewables & Clean Energy
+WINDMACHIN,capex,Broad Capital Goods Cycle
+WIPL,discretionary,Premium Consumer Discretionary
+WIPRO,it_services,IT Services
+WOCKPHARMA,cdmo_pharma,CDMO / CRAMS Pharma
+WOCKPHARMA,branded_pharma,Branded Formulations Pharma
+WONDERLA,discretionary,Premium Consumer Discretionary
+XCHANGING,it_services,IT Services
+XELPMOC,new_age_tech,New-Age Tech (Internet/Fintech)
+XTGLOBAL,it_services,IT Services
+XTGLOBAL,new_age_tech,New-Age Tech (Internet/Fintech)
+YASHO,specialty_chem,Specialty Chemicals
+YATHARTH,hospitals,Hospitals & Healthcare Services
+YATRA,discretionary,Premium Consumer Discretionary
+YATRA,new_age_tech,New-Age Tech (Internet/Fintech)
+YESBANK,private_banks,Private Banks
+ZAGGLE,it_services,IT Services
+ZEELEARN,discretionary,Premium Consumer Discretionary
+ZENITHEXPO,discretionary,Premium Consumer Discretionary
+ZENITHSTL,metals,Metals & Mining
+ZENSARTECH,it_services,IT Services
+ZENSARTECH,new_age_tech,New-Age Tech (Internet/Fintech)
+ZENTEC,defense,Defense & Aerospace
+ZENTEC,new_age_tech,New-Age Tech (Internet/Fintech)
+ZFCVINDIA,ev,Electric Vehicles
+ZIMLAB,cdmo_pharma,CDMO / CRAMS Pharma
+ZIMLAB,branded_pharma,Branded Formulations Pharma
+ZODIACLOTH,discretionary,Premium Consumer Discretionary
+ZOMATO,discretionary,Premium Consumer Discretionary
+ZOMATO,new_age_tech,New-Age Tech (Internet/Fintech)
+ZOTA,cdmo_pharma,CDMO / CRAMS Pharma
+ZOTA,branded_pharma,Branded Formulations Pharma
+ZUARI,specialty_chem,Specialty Chemicals
+ZUARI,rural_agri,Rural & Agri
+ZUARIIND,fmcg_staples,FMCG Staples
+ZYDUSLIFE,cdmo_pharma,CDMO / CRAMS Pharma
+ZYDUSLIFE,branded_pharma,Branded Formulations Pharma

@@ -17,19 +17,35 @@ Reads credentials from environment variables:
 from __future__ import annotations
 
 import os
+import time
 import threading
 from typing import Optional
 
-_GROWW_API_KEY = os.environ.get("GROWW_API_KEY", "")
-_GROWW_API_SECRET = os.environ.get("GROWW_API_SECRET", "")
-_GROWW_ACCESS_TOKEN = os.environ.get("GROWW_ACCESS_TOKEN", "")
+_GROWW_API_KEY = os.environ.get("GROWW_API_KEY", "").strip().strip("'\"")
+_GROWW_API_SECRET = os.environ.get("GROWW_API_SECRET", "").strip().strip("'\"")
+_GROWW_ACCESS_TOKEN = os.environ.get("GROWW_ACCESS_TOKEN", "").strip().strip("'\"")
 
-# Groww-only mode is ON by default. Disable by setting GROWW_ONLY=0.
-_GROWW_ONLY = os.environ.get("GROWW_ONLY", "1").strip().lower() not in ("0", "false", "no", "off", "")
+# Groww-only mode: when ON, Indian stocks ONLY use Groww (no Yahoo/NSE fallback).
+# Auto-detected: ON only when Groww credentials are present AND user hasn't set GROWW_ONLY=0.
+# If no Groww credentials → always allow fallbacks regardless of env var.
+_GROWW_ONLY_ENV = os.environ.get("GROWW_ONLY", "").strip().lower()
+_GROWW_HAS_CREDS = bool(_GROWW_ACCESS_TOKEN or _GROWW_API_KEY)
+if _GROWW_ONLY_ENV in ("0", "false", "no", "off"):
+    _GROWW_ONLY = False
+elif _GROWW_ONLY_ENV in ("1", "true", "yes", "on"):
+    _GROWW_ONLY = _GROWW_HAS_CREDS  # only enforce if creds exist
+else:
+    # Not explicitly set → auto: enable only when credentials are available
+    _GROWW_ONLY = _GROWW_HAS_CREDS
 
 _client = None
+_client_token = None          # the access token the current client was created with
+_client_token_ts: float = 0   # when the token was obtained
+_TOKEN_REFRESH_INTERVAL = 3600 * 5  # refresh every 5 hours (tokens typically last ~6h)
 _init_lock = threading.Lock()
 _init_failed = False
+_init_fail_ts: float = 0      # when the last init failure happened
+_INIT_RETRY_INTERVAL = 60     # retry init after 60 seconds on failure
 _last_error: Optional[str] = None
 
 
@@ -51,15 +67,6 @@ def should_use_non_groww_source(symbol: str) -> bool:
 
     Returns True  → caller may try yfinance / NSE / Yahoo / screener etc.
     Returns False → caller must NOT use any external source other than Groww.
-
-    Rule:
-      * When GROWW_ONLY mode is on AND the symbol is Indian (.NS/.BO):
-        external sources other than Groww are forbidden. Data must come
-        from Groww or not at all — this prevents silently pulling from
-        geo-blocked Yahoo/NSE that break when VPN is off or misconfigured.
-      * For non-Indian symbols (e.g. US), Groww cannot serve them, so
-        fallbacks are always allowed (they have no alternative).
-      * When GROWW_ONLY mode is off, all fallbacks are allowed (legacy).
     """
     if not _GROWW_ONLY:
         return True
@@ -68,49 +75,186 @@ def should_use_non_groww_source(symbol: str) -> bool:
     return True  # non-Indian: nothing else to use
 
 
-def get_groww_client():
-    """Lazy-init singleton Groww API client. Returns None if unavailable."""
-    global _client, _init_failed, _last_error
-    if _client is not None:
-        return _client
-    if _init_failed:
+def _detect_auth_type() -> str:
+    """Detect whether the API key requires TOTP or approval-based auth.
+    Returns 'totp', 'approval', or 'unknown'.
+    """
+    if not _GROWW_API_KEY:
+        return "unknown"
+    try:
+        import base64, json
+        parts = _GROWW_API_KEY.split('.')
+        if len(parts) == 3:
+            payload = parts[1] + '=' * (4 - len(parts[1]) % 4)
+            decoded = json.loads(base64.b64decode(payload))
+            sub = decoded.get('sub', '')
+            if sub:
+                sub_data = json.loads(sub)
+                role = sub_data.get('role', '')
+                if 'totp' in role.lower():
+                    return 'totp'
+                if 'approval' in role.lower():
+                    return 'approval'
+    except Exception:
+        pass
+    return "unknown"
+
+
+def _generate_totp(secret_seed: str) -> Optional[str]:
+    """Generate a TOTP code from a base32-encoded secret seed."""
+    try:
+        import hmac, hashlib, struct, time as _time, base64
+        # Clean up the secret
+        secret_seed = secret_seed.strip().upper().replace(' ', '')
+        # Pad to multiple of 8
+        missing_padding = len(secret_seed) % 8
+        if missing_padding:
+            secret_seed += '=' * (8 - missing_padding)
+        key = base64.b32decode(secret_seed)
+        # TOTP: counter = floor(time / 30)
+        counter = int(_time.time()) // 30
+        msg = struct.pack('>Q', counter)
+        hmac_hash = hmac.new(key, msg, hashlib.sha1).digest()
+        offset = hmac_hash[-1] & 0x0F
+        code = struct.unpack('>I', hmac_hash[offset:offset + 4])[0]
+        code = (code & 0x7FFFFFFF) % 1000000
+        return f"{code:06d}"
+    except Exception as e:
+        print(f"⚠ TOTP generation failed: {type(e).__name__}: {e}", flush=True)
         return None
-    if not _GROWW_ACCESS_TOKEN and not _GROWW_API_KEY:
-        _last_error = ("No Groww credentials set. Export GROWW_ACCESS_TOKEN "
-                       "(preferred) or GROWW_API_KEY+GROWW_API_SECRET.")
-        return None
-    with _init_lock:
-        if _client is not None:
-            return _client
-        if _init_failed:
-            return None
+
+
+def _exchange_token() -> Optional[str]:
+    """Exchange API key + secret for an access token. Returns token string or None.
+
+    Retries up to 3 times with backoff on transient connection errors.
+    """
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
         try:
             from growwapi import GrowwAPI
-            token = _GROWW_ACCESS_TOKEN
-            if not token and _GROWW_API_KEY and _GROWW_API_SECRET:
+            auth_type = _detect_auth_type()
+
+            if auth_type == 'totp':
+                # Generate TOTP from the secret seed
+                totp_code = _generate_totp(_GROWW_API_SECRET)
+                if not totp_code:
+                    print("⚠ Could not generate TOTP code from secret", flush=True)
+                    return None
+                print(f"🔐 Using TOTP auth (code generated)", flush=True)
+                result = GrowwAPI.get_access_token(
+                    api_key=_GROWW_API_KEY,
+                    totp=totp_code,
+                )
+            else:
+                # Approval-based auth
+                print(f"🔐 Using approval-based auth", flush=True)
                 result = GrowwAPI.get_access_token(
                     api_key=_GROWW_API_KEY,
                     secret=_GROWW_API_SECRET,
                 )
-                if isinstance(result, str) and result:
-                    token = result
-                elif isinstance(result, dict):
-                    token = (result.get("accessToken")
-                             or result.get("access_token")
-                             or result.get("token", ""))
+
+            if isinstance(result, str) and result:
+                return result
+            elif isinstance(result, dict):
+                return (result.get("accessToken")
+                        or result.get("access_token")
+                        or result.get("token", "")) or None
+        except (ConnectionError, ConnectionResetError, OSError) as e:
+            print(f"⚠ Groww token exchange attempt {attempt}/{max_retries} failed: {type(e).__name__}: {e}", flush=True)
+            if attempt < max_retries:
+                time.sleep(2 ** attempt)  # 2s, 4s backoff
+                continue
+            return None
+        except Exception as e:
+            print(f"⚠ Groww token exchange failed: {type(e).__name__}: {e}", flush=True)
+            return None
+    return None
+
+
+def _needs_token_refresh() -> bool:
+    """Check if the current client's token should be refreshed."""
+    if _client is None:
+        return True
+    if _client_token_ts and (time.time() - _client_token_ts) > _TOKEN_REFRESH_INTERVAL:
+        return True
+    return False
+
+
+def get_groww_client():
+    """Lazy-init singleton Groww API client. Returns None if unavailable.
+
+    Automatically refreshes the access token when it's about to expire.
+    Retries initialization after transient failures (60s cooldown).
+    """
+    global _client, _client_token, _client_token_ts, _init_failed, _init_fail_ts, _last_error
+
+    # Fast path: client exists and token is fresh
+    if _client is not None and not _needs_token_refresh():
+        return _client
+
+    # If init failed previously, retry after cooldown
+    if _init_failed and (time.time() - _init_fail_ts) < _INIT_RETRY_INTERVAL:
+        return None
+
+    if not _GROWW_ACCESS_TOKEN and not _GROWW_API_KEY:
+        _last_error = ("No Groww credentials set. Export GROWW_ACCESS_TOKEN "
+                       "(preferred) or GROWW_API_KEY+GROWW_API_SECRET.")
+        return None
+
+    with _init_lock:
+        # Re-check after acquiring lock
+        if _client is not None and not _needs_token_refresh():
+            return _client
+        if _init_failed and (time.time() - _init_fail_ts) < _INIT_RETRY_INTERVAL:
+            return None
+
+        try:
+            from growwapi import GrowwAPI
+            token = _GROWW_ACCESS_TOKEN
+
+            # Exchange API key + secret for access token
+            if not token and _GROWW_API_KEY and _GROWW_API_SECRET:
+                token = _exchange_token()
                 if not token:
                     _init_failed = True
+                    _init_fail_ts = time.time()
                     _last_error = "Groww token exchange returned empty token."
                     return None
             elif not token and _GROWW_API_KEY:
+                # Use API key directly (not recommended but supported)
                 token = _GROWW_API_KEY
+
+            if not token:
+                _init_failed = True
+                _init_fail_ts = time.time()
+                _last_error = "No valid Groww token available."
+                return None
+
             _client = GrowwAPI(token=token)
+            _client_token = token
+            _client_token_ts = time.time()
+            _init_failed = False
             _last_error = None
+            action = "refreshed" if _client_token else "initialized"
+            print(f"✅ Groww API client {action} (token exchange)", flush=True)
             return _client
         except Exception as e:
             _init_failed = True
+            _init_fail_ts = time.time()
             _last_error = f"{type(e).__name__}: {e}"
+            print(f"⚠ Groww API init failed: {_last_error}", flush=True)
             return None
+
+
+def reset_groww_client():
+    """Force re-initialization on next call (e.g. after auth error)."""
+    global _client, _client_token, _client_token_ts, _init_failed
+    with _init_lock:
+        _client = None
+        _client_token = None
+        _client_token_ts = 0
+        _init_failed = False
 
 
 def is_groww_available() -> bool:
@@ -119,19 +263,7 @@ def is_groww_available() -> bool:
 
 
 def verify_groww_live(probe_symbol: str = "RELIANCE") -> dict:
-    """End-to-end health check: init client, fetch a known-good LTP.
-
-    Returns a dict the UI can render:
-      {
-        "ok": bool,
-        "mode_groww_only": bool,
-        "credentials_set": bool,
-        "client_initialized": bool,
-        "probe_symbol": str,
-        "probe_price": float | None,
-        "error": str | None,
-      }
-    """
+    """End-to-end health check: init client, fetch a known-good LTP."""
     result = {
         "ok": False,
         "mode_groww_only": _GROWW_ONLY,
@@ -177,7 +309,12 @@ def verify_groww_live(probe_symbol: str = "RELIANCE") -> dict:
             result["error"] = ("Groww returned no LTP for the probe symbol. "
                                "Token may be expired or rate-limited.")
     except Exception as e:
-        result["error"] = f"Groww probe raised {type(e).__name__}: {e}"
+        err_str = str(e).lower()
+        if "forbidden" in err_str or "authoris" in err_str or "unauthori" in err_str:
+            # Token expired or invalid — force refresh on next call
+            reset_groww_client()
+            result["error"] = f"Groww auth error (will retry): {e}"
+        else:
+            result["error"] = f"Groww probe raised {type(e).__name__}: {e}"
     return result
-
 

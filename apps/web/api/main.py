@@ -16,7 +16,7 @@ from typing import Literal, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -26,6 +26,7 @@ CLI_DIR = ROOT / "apps" / "python" / "cli"
 PY_LIB_DIR = ROOT / "apps" / "python" / "lib"
 UI_INDEX = ROOT / "apps" / "web" / "ui" / "index.html"
 TRADE_BOARD_UI = ROOT / "apps" / "web" / "ui" / "trade_board.html"
+INDUSTRY_GROUPS_UI = ROOT / "apps" / "web" / "ui" / "industry_groups.html"
 SECTOR_MACRO_HTML = OUTPUT_DIR / "sector_macro_analysis.html"
 GENERATE_SECTOR_MACRO = CLI_DIR / "generate_sector_macro_page.py"
 BREADTH_HTML = OUTPUT_DIR / "market_breadth.html"
@@ -51,6 +52,7 @@ REFRESH_LOG = OUTPUT_DIR / "cache_refresh.log"
 sys.path.insert(0, str(PY_LIB_DIR))
 from trade_plan_assistant import brief_as_json, build_scan_brief
 from stock_analyzer import analyze_stock
+import trading_wisdom
 import performance_tracker as _pt
 from mutual_funds_provider import MutualFundsProvider, swing_context as _mf_swing_context
 import watchlist_pattern_engine as _wpe
@@ -343,7 +345,26 @@ class BackgroundCacheRefresher:
                 return
 
             self._append_log(f"  Found {len(stale)} stale symbol(s)\n")
-            self._append_log("  Sources: yfinance → NSE India → raw Yahoo v8\n")
+            # Surface the REAL source priority + live Groww status so log
+            # readers know why updates might be empty.
+            try:
+                sys.path.insert(0, str(ROOT / "apps" / "python" / "lib"))
+                from groww_client import (  # type: ignore
+                    is_groww_available, groww_only_mode)
+                gw_live = is_groww_available()
+                gw_only = groww_only_mode()
+            except Exception:
+                gw_live, gw_only = False, False
+            self._append_log(
+                f"  Sources: Groww → yfinance → NSE India → raw Yahoo v8"
+                f"   [groww_available={gw_live}, groww_only={gw_only}]\n"
+            )
+            if not gw_live:
+                self._append_log(
+                    "  ⚠ Groww client unavailable — set GROWW_ACCESS_TOKEN "
+                    "(or GROWW_API_KEY + GROWW_API_SECRET) and restart. "
+                    "Falling back to rate-limited Yahoo/NSE will mostly return no_data.\n"
+                )
 
             # 3. Process symbols with thread pool
             stats_lock = threading.Lock()
@@ -394,6 +415,26 @@ class BackgroundCacheRefresher:
 
             # Auto-regenerate analysis dashboards after cache refresh
             self._auto_regenerate_dashboards()
+
+            # Invalidate industry-groups cache so /api/industry-groups rebuilds
+            # using freshly-landed OHLCV data. Runs in a background thread so
+            # it doesn't block the HTTP worker.
+            try:
+                global _INDUSTRY_CACHE_TS
+                _INDUSTRY_CACHE_TS = 0
+                self._append_log("\n🏭 Invalidating industry-groups cache — recomputing from fresh CSVs…\n")
+                _bg_refresh_industry_groups()
+            except Exception as _e:
+                self._append_log(f"⚠ Industry-groups invalidation error: {_e}\n")
+
+            # Also invalidate the RS-universe scan cache so the next call to
+            # the RS leaders endpoint picks up today's closes for CMP / scores.
+            try:
+                with _rs_scan_lock:
+                    _rs_scan_cache["ts"] = 0
+                self._append_log("📊 Invalidated RS-universe scan cache (CMP will refresh on next request)\n")
+            except Exception as _e:
+                self._append_log(f"⚠ RS-scan cache invalidation error: {_e}\n")
 
         except Exception as e:
             with self._lock:
@@ -449,6 +490,230 @@ _cache_refresher = BackgroundCacheRefresher()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  PERIODIC CACHE REFRESH SCHEDULER
+#  Triggers a full OHLCV cache refresh every N seconds (default 3600 = 1 hour).
+#  The underlying BackgroundCacheRefresher._run also invalidates the
+#  industry-groups cache and RS-universe scan cache at the end, so every tick
+#  transitively refreshes those derived datasets too.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class PeriodicCacheRefreshScheduler:
+    """Fires BackgroundCacheRefresher.start() on a fixed interval.
+
+    • Interval via env SETUPS_REFRESH_INTERVAL_SECONDS (default 3600).
+    • Disabled via env SETUPS_DISABLE_PERIODIC_REFRESH=true.
+    • Skips a tick if a refresh is already running (no overlap).
+    • Daemon thread; stop() is idempotent.
+    """
+
+    def __init__(self, refresher: "BackgroundCacheRefresher",
+                 interval_seconds: int = 3600):
+        self._refresher = refresher
+        self._interval = max(60, int(interval_seconds))  # floor 60s
+        self._stop_evt = threading.Event()
+        self._thread: Optional[threading.Thread] = None
+        self._last_tick_at: Optional[str] = None
+        self._tick_count: int = 0
+
+    @property
+    def is_running(self) -> bool:
+        return self._thread is not None and self._thread.is_alive()
+
+    def status_dict(self) -> dict:
+        return {
+            "running": self.is_running,
+            "intervalSeconds": self._interval,
+            "lastTickAt": self._last_tick_at,
+            "tickCount": self._tick_count,
+        }
+
+    def start(self) -> None:
+        if self.is_running:
+            return
+        self._stop_evt.clear()
+        self._thread = threading.Thread(
+            target=self._loop, name="periodic-cache-refresh", daemon=True)
+        self._thread.start()
+        print(f"⏱  Periodic cache refresh scheduled every "
+              f"{self._interval}s ({self._interval // 60} min)", flush=True)
+
+    def stop(self) -> None:
+        self._stop_evt.set()
+
+    def _loop(self) -> None:
+        # Wait one full interval before the first scheduled tick — the
+        # startup refresh already kicked off once in lifespan().
+        while not self._stop_evt.wait(self._interval):
+            try:
+                if self._refresher.is_running:
+                    print("⏱  Periodic tick skipped — refresh still running",
+                          flush=True)
+                    continue
+                self._tick_count += 1
+                self._last_tick_at = datetime.now().isoformat(timespec="seconds")
+                print(f"⏱  Periodic cache refresh tick #{self._tick_count} "
+                      f"at {self._last_tick_at}", flush=True)
+                self._refresher.start(indian_only=True, workers=4, force=False)
+            except Exception as e:
+                print(f"⚠ Periodic refresh tick error: {e}", flush=True)
+
+
+_periodic_refresher = PeriodicCacheRefreshScheduler(
+    _cache_refresher,
+    interval_seconds=int(os.environ.get("SETUPS_REFRESH_INTERVAL_SECONDS", "3600")),
+)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  DAILY POST-CLOSE REFRESH SCHEDULER  (wall-clock, IST-pinned)
+#
+#  The hourly PeriodicCacheRefreshScheduler ticks on elapsed time from startup,
+#  which means nothing guarantees a refresh lands *after* NSE's 15:30 close
+#  cutoff (15:35 IST in `_is_price_stale`). If the server was started at, say,
+#  15:10 IST, the next tick isn't until 16:10 IST, so the Industry Groups page
+#  keeps showing pre-close intraday values for up to an hour.
+#
+#  This scheduler fires a single wall-clock refresh every weekday at
+#  SETUPS_POSTCLOSE_REFRESH_IST (default "15:40"), forcing today's finalized
+#  close into every CSV. End of that refresh also recomputes industry-groups
+#  and RS-scan caches (see BackgroundCacheRefresher._run).
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class PostCloseRefreshScheduler:
+    """Fires one BackgroundCacheRefresher.start(force=True) per weekday at a
+    fixed IST wall-clock time (default 15:40 IST, ~10 min after NSE close).
+
+    • Disabled via env SETUPS_DISABLE_POSTCLOSE_REFRESH=true.
+    • Time configurable via env SETUPS_POSTCLOSE_REFRESH_IST="HH:MM".
+    • Skips weekends.
+    • If the target time has already passed for *today* at startup and no
+      refresh has landed after the cutoff, fires once immediately.
+    • Daemon thread; stop() is idempotent.
+    """
+
+    def __init__(self, refresher: "BackgroundCacheRefresher",
+                 ist_hhmm: str = "15:40"):
+        self._refresher = refresher
+        try:
+            hh, mm = ist_hhmm.strip().split(":")
+            self._hour = max(0, min(23, int(hh)))
+            self._minute = max(0, min(59, int(mm)))
+        except Exception:
+            self._hour, self._minute = 15, 40
+        self._stop_evt = threading.Event()
+        self._thread: Optional[threading.Thread] = None
+        self._last_fire_at: Optional[str] = None
+        self._fire_count: int = 0
+
+    @property
+    def is_running(self) -> bool:
+        return self._thread is not None and self._thread.is_alive()
+
+    def status_dict(self) -> dict:
+        return {
+            "running": self.is_running,
+            "istTime": f"{self._hour:02d}:{self._minute:02d}",
+            "lastFireAt": self._last_fire_at,
+            "fireCount": self._fire_count,
+        }
+
+    def start(self) -> None:
+        if self.is_running:
+            return
+        self._stop_evt.clear()
+        self._thread = threading.Thread(
+            target=self._loop, name="postclose-cache-refresh", daemon=True)
+        self._thread.start()
+        print(f"⏰ Post-close refresh scheduled daily at "
+              f"{self._hour:02d}:{self._minute:02d} IST (Mon–Fri)", flush=True)
+
+    def stop(self) -> None:
+        self._stop_evt.set()
+
+    def _next_fire_delay(self) -> float:
+        """Seconds until the next weekday fire instant in IST."""
+        import datetime as _dt
+        import zoneinfo as _zi
+        ist = _zi.ZoneInfo("Asia/Kolkata")
+        now = _dt.datetime.now(ist)
+        target = now.replace(hour=self._hour, minute=self._minute,
+                             second=0, microsecond=0)
+        # If we've already passed today's target, aim for tomorrow.
+        if target <= now:
+            target = target + _dt.timedelta(days=1)
+        # Skip weekends (Sat=5, Sun=6).
+        while target.weekday() >= 5:
+            target = target + _dt.timedelta(days=1)
+        return max(1.0, (target - now).total_seconds())
+
+    def _should_fire_now(self) -> bool:
+        """True if we're past today's target on a weekday and no CSV has been
+        refreshed since — used for the one-shot catch-up at startup."""
+        import datetime as _dt
+        import zoneinfo as _zi
+        ist = _zi.ZoneInfo("Asia/Kolkata")
+        now = ist_now = _dt.datetime.now(ist)
+        if now.weekday() >= 5:
+            return False
+        target = now.replace(hour=self._hour, minute=self._minute,
+                             second=0, microsecond=0)
+        if now < target:
+            return False
+        # If any representative CSV in the cache was written after today's
+        # target, a post-close refresh already ran — don't duplicate.
+        try:
+            probe = CACHE_DIR / "RELIANCE.NS.csv"
+            if probe.exists():
+                mtime = _dt.datetime.fromtimestamp(probe.stat().st_mtime, tz=ist)
+                if mtime >= target:
+                    return False
+        except Exception:
+            pass
+        return True
+
+    def _loop(self) -> None:
+        # One-shot catch-up: if server started after today's close but before
+        # any refresh landed, fire immediately (after a brief delay so we
+        # don't fight the startup refresh for CPU/network).
+        try:
+            if self._should_fire_now():
+                self._stop_evt.wait(60)
+                if not self._stop_evt.is_set():
+                    self._fire("startup-catchup")
+        except Exception as e:
+            print(f"⚠ Post-close startup catch-up error: {e}", flush=True)
+
+        # Daily loop: sleep until next IST target, fire, repeat.
+        while not self._stop_evt.is_set():
+            delay = self._next_fire_delay()
+            if self._stop_evt.wait(delay):
+                return
+            try:
+                self._fire("scheduled")
+            except Exception as e:
+                print(f"⚠ Post-close fire error: {e}", flush=True)
+
+    def _fire(self, reason: str) -> None:
+        if self._refresher.is_running:
+            print(f"⏰ Post-close tick ({reason}) skipped — refresh already running",
+                  flush=True)
+            return
+        self._fire_count += 1
+        self._last_fire_at = datetime.now().isoformat(timespec="seconds")
+        print(f"⏰ Post-close cache refresh fire #{self._fire_count} "
+              f"({reason}) at {self._last_fire_at}", flush=True)
+        # force=True so yfinance re-fetches today's bar even if the CSV
+        # already has a same-date intraday snapshot.
+        self._refresher.start(indian_only=True, workers=4, force=True)
+
+
+_postclose_refresher = PostCloseRefreshScheduler(
+    _cache_refresher,
+    ist_hhmm=os.environ.get("SETUPS_POSTCLOSE_REFRESH_IST", "15:40"),
+)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  SELECTIVE SYMBOL REFRESH (refresh specific symbols inline, thread-safe)
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -468,10 +733,14 @@ def _canonical_sym(symbol: str) -> str:
     return base + ".NS"
 
 
-def _is_price_stale(last_date_str: str) -> bool:
+def _is_price_stale(last_date_str: str, csv_path: Path | None = None) -> bool:
     """
     Proper IST-aware staleness check (mirrors refresh_cache._is_stale logic).
     Returns True if the cache needs refreshing.
+
+    Beyond date-gap, also flags intraday snapshots captured during market hours
+    as stale once market closes — i.e. if the file's mtime is before 15:35 IST
+    on today and we're now past 15:35 IST, the bar is NOT today's final close.
     """
     import datetime as _dt
     import zoneinfo as _zi
@@ -482,19 +751,32 @@ def _is_price_stale(last_date_str: str) -> bool:
     except ValueError:
         return True
     _ist = _zi.ZoneInfo("Asia/Kolkata")
-    today = _dt.datetime.now(_ist).date()
+    now_ist = _dt.datetime.now(_ist)
+    today = now_ist.date()
     gap = (today - last_date).days
-    if gap <= 0:
-        return False
-    if gap > 10:
-        return True
-    # Count business days in the gap
-    biz = sum(1 for d in range(1, gap + 1)
-              if (last_date + _dt.timedelta(days=d)).weekday() < 5)
-    if biz == 0:
-        return False
-    # Any business day gap means stale — refresh immediately
-    return True
+    if gap > 0:
+        if gap > 10:
+            return True
+        biz = sum(1 for d in range(1, gap + 1)
+                  if (last_date + _dt.timedelta(days=d)).weekday() < 5)
+        return biz > 0
+
+    # last_date == today → cache has today's bar. Might be an intraday snapshot.
+    if csv_path is not None and today.weekday() < 5:
+        close_cutoff = now_ist.replace(hour=15, minute=35, second=0, microsecond=0)
+        try:
+            mtime = _dt.datetime.fromtimestamp(csv_path.stat().st_mtime, tz=_ist)
+        except OSError:
+            return False
+        if now_ist >= close_cutoff and mtime < close_cutoff:
+            return True
+        # Pre-close: if the file was written earlier today (not in the last
+        # few minutes), treat as stale so reads trigger a refresh that will
+        # drop the in-progress bar and pull the finalized prior-day close.
+        if now_ist < close_cutoff and mtime.date() == today \
+                and (now_ist - mtime).total_seconds() > 300:
+            return True
+    return False
 
 
 def _refresh_symbol_if_stale(symbol: str, force: bool = False) -> bool:
@@ -520,8 +802,8 @@ def _refresh_symbol_if_stale(symbol: str, force: bool = False) -> bool:
         for sym in [ns, base]:
             csv_path = CACHE_DIR / f"{sym}.csv"
             last_date = _rc._read_last_date(csv_path)
-            if _is_price_stale(last_date):
-                result = _rc.refresh_symbol(sym, csv_path, last_date)
+            if force or _is_price_stale(last_date, csv_path):
+                result = _rc.refresh_symbol(sym, csv_path, last_date, force=force)
                 status = result.get("status", "")
                 if status == "updated":
                     return True
@@ -552,13 +834,32 @@ async def lifespan(app: FastAPI):
     """
     # ── STARTUP ──
     skip_env = os.environ.get("SETUPS_SKIP_STARTUP_REFRESH", "").lower()
+    force_env = os.environ.get("SETUPS_STARTUP_FORCE_REFRESH", "").lower()
     if skip_env not in ("true", "1", "yes"):
         # Only auto-refresh if the script hasn't already started one
         if not _cache_refresher.is_running:
-            print("🔄 Starting background OHLCV cache refresh…", flush=True)
-            _cache_refresher.start(indian_only=True, workers=4)
+            force_flag = force_env in ("true", "1", "yes")
+            label = " (FORCE)" if force_flag else ""
+            print(f"🔄 Starting background OHLCV cache refresh{label}…", flush=True)
+            _cache_refresher.start(indian_only=True, workers=4, force=force_flag)
     else:
         print("⏭  Startup cache refresh skipped (env)", flush=True)
+
+    # ── PERIODIC HOURLY CACHE REFRESH ──
+    # Fires BackgroundCacheRefresher every SETUPS_REFRESH_INTERVAL_SECONDS
+    # (default 3600). Refresh also invalidates industry-groups + RS-scan caches.
+    if os.environ.get("SETUPS_DISABLE_PERIODIC_REFRESH", "").lower() in ("true", "1", "yes"):
+        print("⏭  Periodic cache refresh disabled (env)", flush=True)
+    else:
+        _periodic_refresher.start()
+
+    # ── DAILY POST-CLOSE REFRESH (wall-clock IST) ──
+    # Guarantees today's finalized 3:30 PM close lands into CSVs at ~15:40 IST
+    # regardless of when the server started. See PostCloseRefreshScheduler.
+    if os.environ.get("SETUPS_DISABLE_POSTCLOSE_REFRESH", "").lower() in ("true", "1", "yes"):
+        print("⏭  Post-close cache refresh disabled (env)", flush=True)
+    else:
+        _postclose_refresher.start()
 
     # ── AUTO-START BREAKOUT ALERT SCANNER ──
     # Wire up dependencies and start the background scanner so alerts
@@ -577,18 +878,26 @@ async def lifespan(app: FastAPI):
     else:
         print("⏭  Breakout alert scanner disabled in config", flush=True)
 
-    # ── TELEGRAM BACKUP (once per day) ──
+    # ── TRADE-DATA BACKUP (once per day — iCloud + Telegram) ──
     try:
         sys.path.insert(0, str(ROOT / "scripts"))
-        from telegram_backup import run_backup_background
+        from icloud_backup import run_backup_background
         run_backup_background()
     except Exception as e:
-        print(f"☁️  Backup init: {e}", flush=True)
+        print(f"☁️  Backup init failed: {e}", flush=True)
 
     yield  # App is running
 
     # ── SHUTDOWN ──
     _breakout_scanner.stop()
+    try:
+        _periodic_refresher.stop()
+    except Exception:
+        pass
+    try:
+        _postclose_refresher.stop()
+    except Exception:
+        pass
     print("👋 Shutting down…", flush=True)
 
 
@@ -624,6 +933,13 @@ if TRADE_BOARD_JSON_LEGACY.exists() and not TRADE_BOARD_JSON.exists():
 
 if OUTPUT_DIR.exists():
     app.mount("/reports", StaticFiles(directory=str(OUTPUT_DIR)), name="reports")
+
+# Mount the UI folder so wisdom.js (and any future static UI assets) are
+# reachable by the browser at /ui/wisdom.js.  Kept read-only — anything
+# dynamic stays behind an API route.
+_UI_DIR = TRADE_BOARD_UI.parent
+if _UI_DIR.exists():
+    app.mount("/ui", StaticFiles(directory=str(_UI_DIR)), name="ui")
 
 
 def _ensure_parent_dir(path: Path) -> None:
@@ -672,15 +988,45 @@ def trade_board_page() -> FileResponse:
     return FileResponse(TRADE_BOARD_UI)
 
 
+# ── Wisdom-layer HTML helper ───────────────────────────────────────────────
+# The sector/breadth/trades pages are generated as static HTML by the CLI
+# scripts and written into output/.  They don't go through a template engine,
+# so we can't add the wisdom <script> tag there without rerunning the scan.
+# Instead we inject it at serve time — one line, deterministic, and nothing
+# to keep in sync across four generators.
+_WISDOM_SCRIPT_TAG = (
+    '<script defer src="/ui/wisdom.js"></script>'
+    '<!-- injected by serve_with_wisdom() -->'
+)
+
+
+def _serve_with_wisdom(path: Path, media_type: str = "text/html") -> Response:
+    """Serve a static HTML file with the wisdom reminder layer injected
+    right before </body>.  Falls back to untouched content if </body> isn't
+    found — we never want an injection bug to 500 a page.
+    """
+    try:
+        html = path.read_text(encoding="utf-8")
+    except Exception:
+        raise HTTPException(status_code=500, detail="could not read page")
+    if _WISDOM_SCRIPT_TAG not in html:
+        idx = html.rfind("</body>")
+        if idx != -1:
+            html = html[:idx] + _WISDOM_SCRIPT_TAG + html[idx:]
+        else:
+            html = html + _WISDOM_SCRIPT_TAG
+    return Response(content=html, media_type=media_type)
+
+
 @app.get("/sector")
-def sector_macro_page() -> FileResponse:
+def sector_macro_page() -> Response:
     """Serve the pre-built Sector Rotation & Macro Analysis HTML page."""
     if not SECTOR_MACRO_HTML.exists():
         raise HTTPException(
             status_code=404,
             detail="Sector macro analysis page not found. Run generate_sector_macro_page.py first.",
         )
-    return FileResponse(SECTOR_MACRO_HTML, media_type="text/html")
+    return _serve_with_wisdom(SECTOR_MACRO_HTML)
 
 
 @app.post("/api/jobs/sector-macro")
@@ -692,14 +1038,14 @@ def start_sector_macro_job() -> dict:
 
 
 @app.get("/breadth")
-def breadth_dashboard_page() -> FileResponse:
+def breadth_dashboard_page() -> Response:
     """Serve the pre-built Market Breadth & Trend Detection HTML page."""
     if not BREADTH_HTML.exists():
         raise HTTPException(
             status_code=404,
             detail="Market breadth dashboard not found. It will be auto-generated after cache refresh completes, or trigger manually via POST /api/jobs/breadth.",
         )
-    return FileResponse(BREADTH_HTML, media_type="text/html")
+    return _serve_with_wisdom(BREADTH_HTML)
 
 
 @app.post("/api/jobs/breadth")
@@ -710,15 +1056,1375 @@ def start_breadth_job() -> dict:
     return {"job": job, "message": "Market breadth dashboard regeneration started"}
 
 
+@app.get("/groups")
+def industry_groups_page() -> FileResponse:
+    """Serve the Industry Groups RS & Rotation UI page."""
+    if not INDUSTRY_GROUPS_UI.exists():
+        raise HTTPException(status_code=404, detail="Industry groups UI not found")
+    return FileResponse(INDUSTRY_GROUPS_UI)
+
+
+# ── Trading Playbook (daily read) ────────────────────────────────────────────
+# Serves docs/TRADING_PLAYBOOK.md (and its evidence companion) through three
+# surfaces:
+#   GET /playbook                         → styled reader UI (?doc=evidence to
+#                                            load the companion document)
+#   GET /api/playbook/markdown[?doc=…]    → raw markdown source
+#   GET /api/playbook/download[?doc=…]    → self-contained HTML, print-to-PDF
+_PLAYBOOK_UI_PATH = ROOT / "apps" / "web" / "ui" / "playbook.html"
+_PLAYBOOK_DOCS: dict[str, dict] = {
+    "playbook": {
+        "path":  ROOT / "docs" / "TRADING_PLAYBOOK.md",
+        "title": "The Trading Playbook",
+        "dek":   "Why chart patterns work, which ones actually pay, and the "
+                 "distilled philosophies of the traders who pioneered them.",
+        "file":  "Trading_Playbook.html",
+    },
+    "evidence": {
+        "path":  ROOT / "docs" / "TRADING_PLAYBOOK_EVIDENCE.md",
+        "title": "Trading Playbook — Evidence",
+        "dek":   "Hard statistics, audited track records, and academic research "
+                 "behind every claim in the playbook.",
+        "file":  "Trading_Playbook_Evidence.html",
+    },
+}
+
+
+def _resolve_playbook_doc(doc: str | None) -> dict:
+    key = (doc or "playbook").strip().lower()
+    if key not in _PLAYBOOK_DOCS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"unknown doc {key!r}; expected one of "
+                   f"{sorted(_PLAYBOOK_DOCS)}",
+        )
+    meta = _PLAYBOOK_DOCS[key]
+    if not meta["path"].exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"source markdown missing: {meta['path'].name}",
+        )
+    return meta
+
+
+@app.get("/playbook")
+def playbook_page() -> FileResponse:
+    """Serve the reader UI. The client picks the doc via ?doc=evidence."""
+    if not _PLAYBOOK_UI_PATH.exists():
+        raise HTTPException(status_code=404, detail="Playbook UI not found")
+    return FileResponse(_PLAYBOOK_UI_PATH, media_type="text/html")
+
+
+@app.get("/api/playbook/markdown")
+def playbook_markdown(doc: str = "playbook") -> Response:
+    """Raw markdown source (default: playbook; doc=evidence for companion)."""
+    meta = _resolve_playbook_doc(doc)
+    text = meta["path"].read_text(encoding="utf-8")
+    return Response(
+        content=text,
+        media_type="text/markdown; charset=utf-8",
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/api/playbook/meta")
+def playbook_meta() -> dict:
+    """List available playbook documents so the UI can render a switcher."""
+    return {
+        "docs": [
+            {"key": k, "title": v["title"], "dek": v["dek"]}
+            for k, v in _PLAYBOOK_DOCS.items()
+            if v["path"].exists()
+        ],
+    }
+
+
+@app.get("/api/playbook/download")
+def playbook_download(doc: str = "playbook") -> Response:
+    """Self-contained HTML (no network). Save-as-PDF friendly."""
+    meta = _resolve_playbook_doc(doc)
+    md = meta["path"].read_text(encoding="utf-8")
+
+    # Tiny server-side markdown → HTML. Handles the subset the playbook uses:
+    # # h1 / ## h2 / ### h3 / #### h4, bold/italic/code, blockquote, ordered +
+    # unordered lists, fenced code, horizontal rule, GFM tables, inline links.
+    # Good enough to produce a clean printable artefact without any third-
+    # party deps on the server side.
+    import html as _html
+    import re as _re
+
+    def _inline(s: str) -> str:
+        s = _html.escape(s)
+        # code spans first (protect them from further subs)
+        s = _re.sub(r"`([^`]+)`", r"<code>\1</code>", s)
+        # bold, italic
+        s = _re.sub(r"\*\*([^\*]+)\*\*", r"<strong>\1</strong>", s)
+        s = _re.sub(r"(?<!\w)\*([^\*]+)\*", r"<em>\1</em>", s)
+        s = _re.sub(r"(?<!_)_([^_]+)_(?!\w)", r"<em>\1</em>", s)
+        # links [text](url)
+        s = _re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', s)
+        return s
+
+    def _slug(text: str) -> str:
+        t = _re.sub(r"<[^>]+>", "", text).lower()
+        t = _re.sub(r"[^\w\s-]", "", t).strip()
+        return _re.sub(r"\s+", "-", t) or "section"
+
+    lines = md.splitlines()
+    out: list[str] = []
+    i = 0
+    in_code = False
+    while i < len(lines):
+        ln = lines[i]
+        stripped = ln.rstrip()
+        if stripped.startswith("```"):
+            if not in_code:
+                out.append("<pre><code>")
+                in_code = True
+            else:
+                out.append("</code></pre>")
+                in_code = False
+            i += 1
+            continue
+        if in_code:
+            out.append(_html.escape(ln))
+            i += 1
+            continue
+        if not stripped.strip():
+            out.append("")
+            i += 1
+            continue
+        # Horizontal rule
+        if _re.match(r"^\s*---+\s*$", stripped):
+            out.append("<hr/>")
+            i += 1
+            continue
+        # Headings
+        m = _re.match(r"^(#{1,6})\s+(.*)$", stripped)
+        if m:
+            level = len(m.group(1))
+            text = _inline(m.group(2).rstrip("#").strip())
+            slug = _slug(text)
+            out.append(f'<h{level} id="{slug}">{text}</h{level}>')
+            i += 1
+            continue
+        # Blockquote (consecutive lines starting with >)
+        if stripped.startswith(">"):
+            block = []
+            while i < len(lines) and lines[i].startswith(">"):
+                block.append(_inline(lines[i].lstrip("> ").rstrip()))
+                i += 1
+            out.append("<blockquote><p>" + "<br/>".join(block) + "</p></blockquote>")
+            continue
+        # GFM table: header | separator | rows
+        if "|" in stripped and i + 1 < len(lines) and _re.match(
+                r"^\s*\|?\s*:?-{2,}", lines[i + 1]):
+            header_cells = [c.strip() for c in stripped.strip("|").split("|")]
+            i += 2  # skip separator row
+            rows: list[list[str]] = []
+            while i < len(lines) and "|" in lines[i] and lines[i].strip():
+                rows.append([c.strip() for c in lines[i].strip().strip("|").split("|")])
+                i += 1
+            th = "".join(f"<th>{_inline(c)}</th>" for c in header_cells)
+            tr_list = []
+            for r in rows:
+                td = "".join(f"<td>{_inline(c)}</td>" for c in r)
+                tr_list.append(f"<tr>{td}</tr>")
+            out.append(f"<table><thead><tr>{th}</tr></thead><tbody>"
+                       f"{''.join(tr_list)}</tbody></table>")
+            continue
+        # Ordered list
+        m = _re.match(r"^(\s*)(\d+)\.\s+(.*)$", stripped)
+        if m:
+            items = []
+            while i < len(lines):
+                mm = _re.match(r"^(\s*)(\d+)\.\s+(.*)$", lines[i])
+                if not mm:
+                    break
+                items.append(_inline(mm.group(3)))
+                i += 1
+            out.append("<ol>" + "".join(f"<li>{x}</li>" for x in items) + "</ol>")
+            continue
+        # Unordered list
+        m = _re.match(r"^(\s*)[\-\*]\s+(.*)$", stripped)
+        if m:
+            items = []
+            while i < len(lines):
+                mm = _re.match(r"^(\s*)[\-\*]\s+(.*)$", lines[i])
+                if not mm:
+                    break
+                items.append(_inline(mm.group(2)))
+                i += 1
+            out.append("<ul>" + "".join(f"<li>{x}</li>" for x in items) + "</ul>")
+            continue
+        # Paragraph (collapse consecutive non-blank non-special lines)
+        para = [_inline(stripped)]
+        i += 1
+        while i < len(lines):
+            nxt = lines[i]
+            if not nxt.strip():
+                break
+            if _re.match(r"^(#{1,6}\s|>|\s*---+\s*$|```|\s*[\-\*]\s|\s*\d+\.\s)",
+                         nxt):
+                break
+            if "|" in nxt and i + 1 < len(lines) and _re.match(
+                    r"^\s*\|?\s*:?-{2,}", lines[i + 1]):
+                break
+            para.append(_inline(nxt.rstrip()))
+            i += 1
+        out.append("<p>" + " ".join(para) + "</p>")
+
+    body_html = "\n".join(out)
+
+    # Print-friendly shell. No external CSS / JS so it works offline forever.
+    page = f"""<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/>
+<title>{_html.escape(meta['title'])} — Printable Edition</title>
+<style>
+  @page {{ size: A4; margin: 18mm 16mm 20mm; }}
+  html,body{{margin:0;padding:0;background:#fff;color:#111;
+    font-family:Georgia,'Times New Roman',serif;font-size:11pt;line-height:1.55}}
+  .container{{max-width:760px;margin:24px auto;padding:0 28px}}
+  h1,h2,h3,h4{{font-family:Georgia,serif;color:#111;letter-spacing:-.2px}}
+  h1{{font-size:26pt;border-bottom:2px solid #b8830c;padding-bottom:8px;margin:28pt 0 14pt;page-break-before:always}}
+  h1:first-of-type{{page-break-before:auto;margin-top:0;text-align:center;border:none;font-size:32pt}}
+  h2{{font-size:16pt;color:#8a5a00;margin:22pt 0 8pt}}
+  h3{{font-size:13pt;margin:16pt 0 6pt}}
+  h4{{font-size:11pt;color:#444;margin:12pt 0 4pt}}
+  p{{margin:0 0 10pt}}
+  ul,ol{{margin:0 0 10pt;padding-left:22pt}}
+  li{{margin:3pt 0}}
+  blockquote{{margin:10pt 0;padding:8pt 14pt;border-left:3px solid #b8830c;
+    background:#faf4e4;font-style:italic;color:#444}}
+  code{{font-family:Menlo,Consolas,monospace;background:#f5f2ea;padding:1pt 4pt;
+    border-radius:2pt;font-size:.85em}}
+  pre{{background:#f5f2ea;border:1px solid #e2dccc;border-radius:4pt;padding:10pt;
+    overflow:auto;page-break-inside:avoid}}
+  pre code{{background:none;padding:0;font-size:.82em}}
+  table{{border-collapse:collapse;width:100%;margin:10pt 0;font-family:Arial,sans-serif;
+    font-size:.9em;page-break-inside:avoid}}
+  th,td{{border:1px solid #d9d6cc;padding:6pt 8pt;text-align:left;vertical-align:top}}
+  th{{background:#f5f2ea;color:#8a5a00;font-weight:700;text-transform:uppercase;font-size:.85em;letter-spacing:.4px}}
+  hr{{border:0;border-top:1px solid #d9d6cc;margin:18pt 0}}
+  a{{color:#1d4ed8;text-decoration:none}}
+  .cover{{text-align:center;margin:0 0 26pt;padding:0 0 20pt;border-bottom:1px solid #d9d6cc}}
+  .cover .eyebrow{{font-family:Arial,sans-serif;letter-spacing:3px;text-transform:uppercase;
+    color:#b8830c;font-size:9pt;font-weight:700;margin-bottom:8pt}}
+  .cover .dek{{font-style:italic;color:#555;font-size:12pt;max-width:520px;margin:10pt auto 0;line-height:1.45}}
+  .meta{{font-family:Arial,sans-serif;color:#888;font-size:9pt;margin-top:12pt}}
+  .print-hint{{text-align:center;background:#fff5d6;border:1px solid #e8c566;
+    border-radius:6pt;padding:10pt 14pt;margin:14pt 0;font-family:Arial,sans-serif;font-size:10pt;color:#7a5a00}}
+  @media print {{ .print-hint {{ display:none }} }}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="cover">
+    <div class="eyebrow">SETUPS · Offline Edition</div>
+    <div style="font-size:30pt;font-weight:700;color:#111;font-family:Georgia,serif">{_html.escape(meta['title'])}</div>
+    <div class="dek">{_html.escape(meta['dek'])}</div>
+    <div class="meta">Generated {_html.escape(datetime.now().strftime('%B %d, %Y'))}
+      · source: <code>docs/{_html.escape(meta['path'].name)}</code></div>
+  </div>
+  <div class="print-hint">💡 This is a self-contained printable copy.
+    Press <strong>Cmd+P</strong> (Mac) or <strong>Ctrl+P</strong> (Windows)
+    and choose <em>Save as PDF</em> for a permanent offline reference.</div>
+  {body_html}
+</div>
+</body></html>"""
+
+    return Response(
+        content=page,
+        media_type="text/html; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="{meta["file"]}"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+# ── Industry Groups API ──────────────────────────────────────────────────────
+# Provides live industry-level RS ranking, breadth, 52WH counts, volume profiles,
+# custom group management, and group detail drilldown.
+
+import json as _json_mod
+_CUSTOM_GROUPS_PATH = TRADE_DATA_DIR / "custom_groups.json"
+_INDUSTRY_CACHE: dict = {}
+_INDUSTRY_CACHE_TS: float = 0
+_INDUSTRY_DISK_TS: float = 0  # last on-disk snapshot timestamp (for UI staleness display)
+_INDUSTRY_CACHE_TTL = 600  # seconds (10 min — data doesn't change fast)
+_INDUSTRY_DISK_PATH = TRADE_DATA_DIR / "industry_groups_cache.json"
+
+# Thread-local flag: when set, _read_ohlcv skips its inline per-symbol
+# stale-refresh thread spawn. Used by bulk callers (industry-groups compute)
+# to avoid flooding the machine with thousands of refresh threads.
+_bulk_read_ctx = threading.local()
+
+
+def _bulk_skip_stale() -> bool:
+    """True if the current thread is inside a bulk-read context."""
+    return bool(getattr(_bulk_read_ctx, "skip_stale_refresh", False))
+
+
+def _ig_worker_init():
+    """ThreadPoolExecutor initializer — propagates the bulk-read flag into
+    pool worker threads (thread-locals don't inherit automatically)."""
+    _bulk_read_ctx.skip_stale_refresh = True
+
+
+# ── Taxonomy cache (expensive to rebuild per request) ─────────────────────
+_TAXONOMY_CACHE: dict | None = None
+_TAXONOMY_CACHE_TS: float = 0
+_TAXONOMY_CACHE_TTL = 1800  # 30 min — taxonomy CSV rarely changes at runtime
+_TAXONOMY_LOCK = threading.Lock()
+
+
+def _load_taxonomy_cached() -> dict:
+    """Thread-safe cached load of the NSE sector/industry taxonomy.
+
+    Previously each industry-groups API call rebuilt the sector/industry maps
+    and re-read the 2600-line CSV — a measurable latency hit on hot endpoints
+    (/api/industry-groups, /api/industry-groups/{name}, /rs-history). Now we
+    load once per process and refresh after TTL."""
+    global _TAXONOMY_CACHE, _TAXONOMY_CACHE_TS
+    now = time.time()
+    if _TAXONOMY_CACHE is not None and (now - _TAXONOMY_CACHE_TS) < _TAXONOMY_CACHE_TTL:
+        return _TAXONOMY_CACHE
+    with _TAXONOMY_LOCK:
+        if _TAXONOMY_CACHE is not None and (time.time() - _TAXONOMY_CACHE_TS) < _TAXONOMY_CACHE_TTL:
+            return _TAXONOMY_CACHE
+        try:
+            sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python" / "lib"))
+            import nse_taxonomy
+            # reload() clears every enriched map (macro/basic/themes/name)
+            # and re-populates _SECTOR_MAP/_INDUSTRY_MAP from nse_stock_taxonomy.csv
+            # followed by nse_stock_enriched.csv — so downstream multi-level
+            # endpoints (/api/groups, /api/sector-rotation) see today's CSVs.
+            if hasattr(nse_taxonomy, "reload"):
+                nse_taxonomy.reload()
+            else:
+                nse_taxonomy._SECTOR_MAP, nse_taxonomy._INDUSTRY_MAP = nse_taxonomy._build_maps()
+            _TAXONOMY_CACHE = nse_taxonomy.load_taxonomy() or {}
+        except Exception as e:
+            print(f"⚠ Failed to load taxonomy: {e}", flush=True)
+            _TAXONOMY_CACHE = {}
+        _TAXONOMY_CACHE_TS = time.time()
+        return _TAXONOMY_CACHE
+
+
+@app.post("/api/taxonomy/reload")
+def reload_taxonomy() -> dict:
+    """Force-reload the NSE sector/industry taxonomy from disk and invalidate
+    downstream caches (industry groups + RS scan) so the UI picks up the new
+    classifications on the next request.
+
+    Useful after running `scripts/build_nse_industry_taxonomy.py` — lets you
+    refresh the in-memory taxonomy without restarting the web server.
+    """
+    global _TAXONOMY_CACHE, _TAXONOMY_CACHE_TS, _INDUSTRY_CACHE_TS
+    with _TAXONOMY_LOCK:
+        _TAXONOMY_CACHE = None
+        _TAXONOMY_CACHE_TS = 0
+    tax = _load_taxonomy_cached()
+    _INDUSTRY_CACHE_TS = 0  # force industry-groups recompute on next hit
+    # Also clear the multi-level groups cache (macro/sector/basic_industry/
+    # theme) and the industry-groups disk snapshot — otherwise stale
+    # classifications survive the reload for up to 10 minutes.
+    try:
+        with _GROUPS_LEVEL_LOCK:
+            _GROUPS_LEVEL_CACHE.clear()
+    except Exception:
+        pass
+    try:
+        if _INDUSTRY_DISK_PATH.exists():
+            _INDUSTRY_DISK_PATH.unlink()
+    except Exception:
+        pass
+    # Drop auto-classify cache so any yfinance overrides from a prior taxonomy
+    # don't win against the fresh enriched CSV.
+    try:
+        _auto_cache = ROOT / "cache" / "auto_classify_cache.json"
+        if _auto_cache.exists():
+            _auto_cache.unlink()
+    except Exception:
+        pass
+    try:
+        with _rs_scan_lock:
+            _rs_scan_cache["ts"] = 0
+    except Exception:
+        pass
+    _bg_refresh_industry_groups()
+    return {
+        "ok": True,
+        "taxonomyEntries": len(tax),
+        "message": "Taxonomy reloaded; industry-groups + multi-level groups + "
+                   "RS-scan + auto-classify caches invalidated. A background "
+                   "recompute of /api/industry-groups has been kicked off.",
+    }
+
+
+def _load_industry_cache_from_disk():
+    """Load industry groups from disk cache on startup for instant first load.
+
+    IMPORTANT: We deliberately set _INDUSTRY_CACHE_TS = 0 (not the saved ts) so
+    the *first* /api/industry-groups call after web-app startup serves this
+    snapshot instantly AND triggers a background recompute against whatever
+    fresh CSV data the startup OHLCV refresh has landed. Without this, a cache
+    saved < TTL (10 min) before shutdown would be considered 'fresh' and the
+    UI would show yesterday's prices until TTL expires.
+    """
+    global _INDUSTRY_CACHE, _INDUSTRY_CACHE_TS, _INDUSTRY_DISK_TS
+    try:
+        if _INDUSTRY_DISK_PATH.exists():
+            data = _json_mod.loads(_INDUSTRY_DISK_PATH.read_text())
+            groups = data.get("groups", [])
+            disk_ts = float(data.get("ts", 0) or 0)
+            if groups:
+                _INDUSTRY_CACHE = {"groups": groups}
+                _INDUSTRY_CACHE_TS = 0  # force stale → background refresh on first hit
+                _INDUSTRY_DISK_TS = disk_ts
+                print(f"✅ Loaded {len(groups)} industry groups from disk cache "
+                      f"(marked stale; will auto-refresh on first request)", flush=True)
+    except Exception as e:
+        print(f"⚠ Failed to load industry disk cache: {e}", flush=True)
+
+
+def _save_industry_cache_to_disk(groups: list[dict]):
+    """Persist industry groups to disk for fast startup."""
+    try:
+        _INDUSTRY_DISK_PATH.parent.mkdir(parents=True, exist_ok=True)
+        # Strip members to keep file small (~50KB vs ~5MB) for fast load
+        lite = []
+        for g in groups:
+            gc = dict(g)
+            gc.pop("members", None)
+            lite.append(gc)
+        _INDUSTRY_DISK_PATH.write_text(_json_mod.dumps({"ts": time.time(), "groups": lite}, separators=(',', ':')))
+    except Exception as e:
+        print(f"⚠ Failed to save industry disk cache: {e}", flush=True)
+
+
+# Load from disk on module import (instant first request)
+_load_industry_cache_from_disk()
+
+
+def _load_custom_groups() -> list[dict]:
+    try:
+        return _json_mod.loads(_CUSTOM_GROUPS_PATH.read_text()) if _CUSTOM_GROUPS_PATH.exists() else []
+    except Exception:
+        return []
+
+
+def _save_custom_groups(groups: list[dict]) -> None:
+    _CUSTOM_GROUPS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _CUSTOM_GROUPS_PATH.write_text(_json_mod.dumps(groups, indent=2))
+
+
+def _compute_group_metrics(group_name: str, tickers: list[str], sector: str = "",
+                           preloaded: dict = None, nifty_returns: dict = None) -> dict:
+    """Compute RS (vs Nifty), breadth, volume, 52WH metrics for a group of tickers.
+    If preloaded dict {sym: rows} is passed, skip I/O entirely.
+    If nifty_returns {'r5':..., 'r20':..., 'r60':...} is passed, RS is true vs Nifty."""
+
+    n = 0
+    above_20 = above_50 = above_200 = 0
+    at_52wh = 0
+    vol_expanding = 0
+    ret_5d_list = []
+    ret_20d_list = []
+    ret_60d_list = []
+    vol_ratios = []
+    members = []
+
+    for sym in tickers:
+        if preloaded is not None:
+            rows = preloaded.get(sym)
+        else:
+            rows = _read_ohlcv(sym, days=300)
+        if not rows or len(rows) < 20:
+            continue
+        closes = [r["close"] for r in rows]
+        volumes = [r["volume"] for r in rows]
+        n += 1
+        last = closes[-1]
+
+        if len(closes) >= 20:
+            ma20 = sum(closes[-20:]) / 20
+            if last > ma20: above_20 += 1
+        if len(closes) >= 50:
+            ma50 = sum(closes[-50:]) / 50
+            if last > ma50: above_50 += 1
+        if len(closes) >= 200:
+            ma200 = sum(closes[-200:]) / 200
+            if last > ma200: above_200 += 1
+
+        high_52w = max(closes[-252:]) if len(closes) >= 252 else max(closes)
+        pct_from_52wh = round((last / high_52w - 1) * 100, 2) if high_52w > 0 else 0
+        if last >= high_52w * 0.95:
+            at_52wh += 1
+
+        if len(volumes) >= 50:
+            avg_vol = sum(volumes[-50:]) / 50
+            recent_vol = sum(volumes[-5:]) / 5 if len(volumes) >= 5 else volumes[-1]
+            if avg_vol > 0:
+                vr = recent_vol / avg_vol
+                vol_ratios.append(vr)
+                if vr > 1.2: vol_expanding += 1
+
+        if len(closes) >= 6:
+            ret_5d_list.append((last / closes[-6] - 1) * 100)
+        if len(closes) >= 21:
+            ret_20d_list.append((last / closes[-21] - 1) * 100)
+        if len(closes) >= 61:
+            ret_60d_list.append((last / closes[-61] - 1) * 100)
+
+        day_chg = round((closes[-1] / closes[-2] - 1) * 100, 2) if len(closes) >= 2 else 0
+        # Guard against stale data: if last 2 bars are > 5 calendar days apart,
+        # day_chg is meaningless (gap between e.g. last Wednesday and this Monday).
+        if len(rows) >= 2:
+            from datetime import datetime as _dt
+            try:
+                d1 = _dt.strptime(rows[-1]["date"][:10], "%Y-%m-%d")
+                d2 = _dt.strptime(rows[-2]["date"][:10], "%Y-%m-%d")
+                if (d1 - d2).days > 5:
+                    day_chg = 0.0  # stale gap — don't show misleading %
+            except Exception:
+                pass
+        members.append({
+            "symbol": sym,
+            "close": round(last, 2),
+            "dayChangePct": day_chg,
+            "pctFrom52wHigh": pct_from_52wh,
+            "volRatio": round(vol_ratios[-1], 2) if vol_ratios and vol_ratios[-1] == (recent_vol / avg_vol if avg_vol > 0 else 1) else None,
+        })
+
+    if n == 0:
+        return {"group": group_name, "sector": sector, "stockCount": 0}
+
+    pct_20 = round(above_20 / n * 100, 1)
+    pct_50 = round(above_50 / n * 100, 1)
+    pct_200 = round(above_200 / n * 100, 1)
+    breadth_score = round(pct_20 * 0.3 + pct_50 * 0.4 + pct_200 * 0.3, 1)
+    avg_vr = round(sum(vol_ratios) / len(vol_ratios), 2) if vol_ratios else 1.0
+    avg_ret_5d = round(sum(ret_5d_list) / len(ret_5d_list), 2) if ret_5d_list else 0
+    avg_ret_20d = round(sum(ret_20d_list) / len(ret_20d_list), 2) if ret_20d_list else 0
+    avg_ret_60d = round(sum(ret_60d_list) / len(ret_60d_list), 2) if ret_60d_list else 0
+
+    if avg_vr >= 1.3 and avg_ret_20d > 0:
+        vol_pattern = "ACCUMULATION"
+    elif avg_vr >= 1.3 and avg_ret_20d < -2:
+        vol_pattern = "DISTRIBUTION"
+    elif avg_vr < 0.8:
+        vol_pattern = "DRY"
+    else:
+        vol_pattern = "NEUTRAL"
+
+    rs_score = round(avg_ret_20d * 0.4 + avg_ret_60d * 0.3 + (pct_50 - 50) * 0.3, 2)
+
+    # True Relative Strength vs Nifty: excess return over benchmark
+    # rs_vs_nifty is positive when group outperforms Nifty, negative when it lags
+    if nifty_returns:
+        nifty_r5 = nifty_returns.get("r5", 0) or 0
+        nifty_r20 = nifty_returns.get("r20", 0) or 0
+        nifty_r60 = nifty_returns.get("r60", 0) or 0
+        excess_5d = avg_ret_5d - nifty_r5
+        excess_20d = avg_ret_20d - nifty_r20
+        excess_60d = avg_ret_60d - nifty_r60
+        # Weighted excess return — weight medium-term more (20d/60d)
+        rs_score = round(excess_5d * 0.15 + excess_20d * 0.45 + excess_60d * 0.40, 2)
+    else:
+        excess_5d = excess_20d = excess_60d = 0.0
+
+    return {
+        "group": group_name, "sector": sector, "stockCount": n,
+        "pctAbove20ma": pct_20, "pctAbove50ma": pct_50, "pctAbove200ma": pct_200,
+        "breadthScore": breadth_score, "at52wHighCount": at_52wh,
+        "pct52wHigh": round(at_52wh / n * 100, 1),
+        "avgVolRatio": avg_vr, "volExpandingPct": round(vol_expanding / n * 100, 1),
+        "volPattern": vol_pattern,
+        "avgRet5d": avg_ret_5d, "avgRet20d": avg_ret_20d, "avgRet60d": avg_ret_60d,
+        "excessRet5d": round(excess_5d, 2), "excessRet20d": round(excess_20d, 2), "excessRet60d": round(excess_60d, 2),
+        "rsScore": rs_score,
+        "members": sorted(members, key=lambda m: -(m.get("dayChangePct") or 0)),
+    }
+
+
+def _compute_all_industry_groups() -> list[dict]:
+    """Return industry-group metrics. Never blocks the caller.
+
+    Strategy (stale-while-revalidate, even on cold start):
+    - Fresh in-memory cache (< TTL) → return it directly.
+    - Stale in-memory cache (from disk or previous compute) → return it AND
+      kick a single background recompute.
+    - No cache at all (very first run, no disk snapshot) → return [] and kick a
+      background compute. Callers (e.g. the HTTP handler) will surface
+      `bgRefreshing=true` so the UI can show a "computing…" state instead of
+      hanging on a 30-60s request.
+    """
+    global _INDUSTRY_CACHE, _INDUSTRY_CACHE_TS
+    now = time.time()
+    if _INDUSTRY_CACHE and (now - _INDUSTRY_CACHE_TS) < _INDUSTRY_CACHE_TTL:
+        return _INDUSTRY_CACHE.get("groups", [])
+
+    # Stale or empty → refresh in background, return whatever we have now.
+    _bg_refresh_industry_groups()
+    return _INDUSTRY_CACHE.get("groups", []) if _INDUSTRY_CACHE else []
+
+
+_INDUSTRY_BG_LOCK = threading.Lock()
+_INDUSTRY_BG_RUNNING = False
+
+# Cap concurrency for the bulk OHLCV preload so the industry-groups compute
+# never saturates the box. Leaves headroom for request handlers, the OHLCV
+# cache refresher, and other background jobs — keeps the app smooth even
+# during a full recompute.
+_IG_WORKERS = max(2, min(8, (os.cpu_count() or 4) // 2 or 2))
+
+
+def _bg_refresh_industry_groups():
+    """Trigger a background refresh of industry groups cache."""
+    global _INDUSTRY_BG_RUNNING
+    if _INDUSTRY_BG_RUNNING:
+        return
+    def _run():
+        global _INDUSTRY_BG_RUNNING
+        try:
+            _do_compute_industry_groups()
+        finally:
+            _INDUSTRY_BG_RUNNING = False
+    with _INDUSTRY_BG_LOCK:
+        if _INDUSTRY_BG_RUNNING:
+            return
+        _INDUSTRY_BG_RUNNING = True
+    threading.Thread(target=_run, daemon=True).start()
+
+
+def _do_compute_industry_groups() -> list[dict]:
+    """Actually compute all industry groups and update cache."""
+    global _INDUSTRY_CACHE, _INDUSTRY_CACHE_TS
+    import time as _t
+    t0 = _t.time()
+
+    # Suppress inline per-symbol refresh-thread spawning for the duration of
+    # this bulk load. With 2000+ CSVs we'd otherwise spawn thousands of
+    # threads that all hit Yahoo, choking CPU + network and making this
+    # compute take 30-60s instead of 3-5s. The global OHLCV refresher
+    # (_cache_refresher) handles keeping the on-disk cache fresh.
+    _bulk_read_ctx.skip_stale_refresh = True
+    try:
+        return _do_compute_industry_groups_inner(t0)
+    finally:
+        _bulk_read_ctx.skip_stale_refresh = False
+
+
+def _do_compute_industry_groups_inner(t0: float) -> list[dict]:
+    global _INDUSTRY_CACHE, _INDUSTRY_CACHE_TS
+    import time as _t
+
+    try:
+        taxonomy = _load_taxonomy_cached()
+    except Exception:
+        return []
+
+    industry_tickers: dict[str, list[str]] = {}
+    industry_sectors: dict[str, str] = {}
+    for ticker, (sector, industry) in taxonomy.items():
+        # Skip unclassified rows: any ticker that NSE couldn't bucket into
+        # a concrete industry is noise for RS/breadth aggregation.
+        if not industry or industry == "Other":
+            continue
+        industry_tickers.setdefault(industry, []).append(ticker)
+        if industry not in industry_sectors:
+            industry_sectors[industry] = sector or "Other"
+
+    groups_to_compute = [(ind, tks) for ind, tks in industry_tickers.items() if len(tks) >= 2]
+
+    # Collect ALL unique tickers across all groups and bulk-load in one parallel pass
+    all_syms = set()
+    for _, tks in groups_to_compute:
+        all_syms.update(tks)
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _load_one(sym):
+        rows = _read_ohlcv(sym, days=300)
+        return (sym, rows) if rows and len(rows) >= 20 else (sym, None)
+
+    preloaded: dict = {}
+    with ThreadPoolExecutor(max_workers=_IG_WORKERS, initializer=_ig_worker_init) as pool:
+        for sym, rows in pool.map(_load_one, all_syms):
+            if rows:
+                preloaded[sym] = rows
+
+    # ── Freshness check: if many CSVs are stale-for-today, delegate one
+    # consolidated refresh to the OHLCV cache refresher (pooled, cooldowned).
+    # When that finishes it auto-invalidates this cache and kicks a recompute —
+    # so the next request will serve today's prices without any thread-storm.
+    # We can't let individual _read_ohlcv calls spawn refreshes (thread storm),
+    # so this is how freshness propagates during bulk compute.
+    try:
+        stale_syms: list[str] = []
+        sample = list(preloaded.items())[:150]  # sample — full stat scan is expensive
+        for sym, rows in sample:
+            if not rows:
+                continue
+            last_date = rows[-1]["date"]
+            csv_path = CACHE_DIR / f"{sym}.NS.csv"
+            if not csv_path.exists():
+                csv_path = CACHE_DIR / f"{sym}.csv"
+            if _is_price_stale(last_date, csv_path):
+                stale_syms.append(sym)
+        # If ≥10% of sample is stale and no refresh is in flight, kick one.
+        if sample and len(stale_syms) >= max(5, len(sample) // 10):
+            if not _cache_refresher.is_running:
+                print(f"🔄 Industry compute: {len(stale_syms)}/{len(sample)} sampled "
+                      f"CSVs are stale — kicking OHLCV cache refresh", flush=True)
+                _cache_refresher.start(indian_only=True, workers=4)
+    except Exception as _e:
+        print(f"⚠ Industry compute freshness probe error: {_e}", flush=True)
+
+    # Compute Nifty's returns for true RS-vs-benchmark calculation
+    nifty_returns = None
+    nifty_rows = _read_ohlcv("^NSEI", days=300)
+    if nifty_rows and len(nifty_rows) >= 61:
+        nc = [r["close"] for r in nifty_rows]
+        nifty_returns = {
+            "r5":  (nc[-1] / nc[-6] - 1) * 100  if len(nc) >= 6  else 0,
+            "r20": (nc[-1] / nc[-21] - 1) * 100 if len(nc) >= 21 else 0,
+            "r60": (nc[-1] / nc[-61] - 1) * 100 if len(nc) >= 61 else 0,
+        }
+
+    # Now compute metrics for each group — pure CPU, no I/O
+    results = []
+    for ind, tickers in groups_to_compute:
+        r = _compute_group_metrics(ind, tickers, industry_sectors.get(ind, ""),
+                                   preloaded=preloaded, nifty_returns=nifty_returns)
+        if r.get("stockCount", 0) >= 2:
+            results.append(r)
+
+    results.sort(key=lambda x: -(x.get("rsScore") or 0))
+
+    for i, r in enumerate(results):
+        r["rsRank"] = i + 1
+
+    _INDUSTRY_CACHE = {"groups": results}
+    _INDUSTRY_CACHE_TS = _t.time()
+    globals()["_INDUSTRY_DISK_TS"] = _INDUSTRY_CACHE_TS
+    _save_industry_cache_to_disk(results)
+    elapsed = _t.time() - t0
+    print(f"✅ Industry groups computed: {len(results)} groups, {len(preloaded)} tickers in {elapsed:.1f}s", flush=True)
+    return results
+
+
+# ── Periodic self-refresher ─────────────────────────────────────────────────
+# Keeps the industry-groups cache warm even when no one is hitting the
+# endpoint, so the UI never has to wait on a full recompute. Runs at half the
+# TTL interval, single-threaded, low priority (best-effort nice).
+_INDUSTRY_PERIODIC_STARTED = False
+
+
+def _start_periodic_industry_refresher():
+    global _INDUSTRY_PERIODIC_STARTED
+    if _INDUSTRY_PERIODIC_STARTED:
+        return
+    _INDUSTRY_PERIODIC_STARTED = True
+
+    def _loop():
+        # Be a good neighbour: lower process-wide priority is too aggressive,
+        # but we can sleep a bit at startup so we don't fight with the
+        # startup OHLCV refresh for CPU/network.
+        try:
+            time.sleep(30)
+        except Exception:
+            pass
+        interval = max(60, _INDUSTRY_CACHE_TTL // 2)
+        while True:
+            try:
+                now = time.time()
+                # Only refresh if cache is actually stale; otherwise just idle.
+                if not _INDUSTRY_CACHE or (now - _INDUSTRY_CACHE_TS) >= _INDUSTRY_CACHE_TTL:
+                    _bg_refresh_industry_groups()
+            except Exception as e:
+                print(f"⚠ Industry periodic refresher error: {e}", flush=True)
+            try:
+                time.sleep(interval)
+            except Exception:
+                return
+
+    threading.Thread(target=_loop, name="industry-periodic-refresh", daemon=True).start()
+
+
+# Kick the periodic refresher now that all the helpers exist.
+if os.environ.get("SETUPS_SKIP_STARTUP_REFRESH", "").lower() not in ("true", "1", "yes"):
+    _start_periodic_industry_refresher()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Multi-level groups  (macro / sector / industry / basic_industry / theme)
+# ─────────────────────────────────────────────────────────────────────────────
+# The existing /api/industry-groups endpoint groups stocks by NSE `industry`
+# only. For sector-rotation and relative-strength analysis we want to look at
+# the same RS metrics at multiple classification layers simultaneously:
+#
+#   macro           → NSE macro-economic sector (~20 buckets) — broadest rotation lens
+#   sector          → NSE sector (~55)  — standard Nifty-index bucketing
+#   industry        → NSE industry (~250) — what /api/industry-groups already serves
+#   basic_industry  → NSE basic_industry (~200) — finest NSE level, pure-play peers
+#   theme           → Curated thematic overlay (~30) — cuts across NSE hierarchy
+#                     (Defense, EV, Renewables, Railways, PSU Capex, CDMO, …)
+#
+# Themes are multi-label (a stock can live in several themes, e.g. RELIANCE
+# sits in both oil_upstream + oil_downstream). Every other level is single-
+# label. Theme rules live in data/themes.json; membership is precomputed by
+# scripts/apply_themes.py into data/nse_stock_enriched.csv.
+#
+# Caching is per-level with its own TTL timestamp. We reuse the industry cache
+# for level="industry" so existing callers benefit from the same disk-warmed
+# snapshot and periodic refresher.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_GROUPS_LEVEL_CACHE: dict[str, dict] = {}   # level → {"groups": [...], "ts": float}
+_GROUPS_LEVEL_LOCK = threading.Lock()
+_VALID_LEVELS = ("macro", "sector", "industry", "basic_industry", "theme")
+
+
+def _taxonomy_module():
+    """Return the live nse_taxonomy module (imported once)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python" / "lib"))
+    import nse_taxonomy  # noqa: F401
+    return nse_taxonomy
+
+
+def _compute_groups_for_level(level: str) -> list[dict]:
+    """Compute RS/breadth/volume metrics for every group at the given level.
+
+    Mirrors _do_compute_industry_groups_inner's algorithm but groups tickers
+    by the requested classification level. The expensive work — loading OHLCV
+    for ~2,500 tickers in parallel and computing Nifty baseline returns — is
+    shared across all groups within a single call. Results are cached per
+    level with a 10-min TTL.
+    """
+    import time as _t
+    if level not in _VALID_LEVELS:
+        raise ValueError(f"unknown level {level!r}")
+
+    t0 = _t.time()
+    tax_mod = _taxonomy_module()
+    groups_map = tax_mod.group_tickers_by(level)          # {group → [tickers]}
+    parent_map = tax_mod.group_parent_map(level)          # {group → parent_name}
+    theme_meta = {m["key"]: m for m in tax_mod.list_themes()} if level == "theme" else {}
+
+    # Filter groups worth computing
+    groups_to_compute = [(g, tks) for g, tks in groups_map.items() if len(tks) >= 2]
+
+    # Bulk-load OHLCV in parallel (shared across all groups)
+    all_syms = set()
+    for _, tks in groups_to_compute:
+        all_syms.update(tks)
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _load_one(sym):
+        rows = _read_ohlcv(sym, days=300)
+        return (sym, rows) if rows and len(rows) >= 20 else (sym, None)
+
+    preloaded: dict = {}
+    with ThreadPoolExecutor(max_workers=_IG_WORKERS,
+                            initializer=_ig_worker_init) as pool:
+        for sym, rows in pool.map(_load_one, all_syms):
+            if rows:
+                preloaded[sym] = rows
+
+    # Nifty baseline returns (for true RS-vs-benchmark)
+    nifty_returns = None
+    nifty_rows = _read_ohlcv("^NSEI", days=300)
+    if nifty_rows and len(nifty_rows) >= 61:
+        nc = [r["close"] for r in nifty_rows]
+        nifty_returns = {
+            "r5":  (nc[-1] / nc[-6]  - 1) * 100 if len(nc) >= 6  else 0,
+            "r20": (nc[-1] / nc[-21] - 1) * 100 if len(nc) >= 21 else 0,
+            "r60": (nc[-1] / nc[-61] - 1) * 100 if len(nc) >= 61 else 0,
+        }
+
+    # Per-group metrics
+    results = []
+    for g, tickers in groups_to_compute:
+        parent = parent_map.get(g, "")
+        r = _compute_group_metrics(g, tickers, parent,
+                                   preloaded=preloaded, nifty_returns=nifty_returns)
+        if r.get("stockCount", 0) < 2:
+            continue
+        r["level"]  = level
+        r["parent"] = parent   # industry's sector, basic's industry, etc.
+        if level == "theme":
+            meta = theme_meta.get(g, {})
+            r["themeName"]        = meta.get("name", g)
+            r["themeDescription"] = meta.get("description", "")
+        results.append(r)
+
+    # Rotation score: catches nascent leadership changes. Positive = group's
+    # 1M outperformance has accelerated versus its 3M trend. Negative = momentum
+    # is cooling, even if 3M still looks strong. Ranked independently of rsScore.
+    for r in results:
+        r5  = r.get("return5d")  or 0
+        r20 = r.get("return20d") or 0
+        r60 = r.get("return60d") or 0
+        nr  = nifty_returns or {}
+        # RS-vs-Nifty over each horizon
+        rs5  = r5  - (nr.get("r5")  or 0)
+        rs20 = r20 - (nr.get("r20") or 0)
+        rs60 = r60 - (nr.get("r60") or 0)
+        # Rotation = short-term RS acceleration vs medium-term RS
+        # Positive → momentum accelerating (emerging leader)
+        # Negative → momentum cooling (leader → laggard transition)
+        r["rotationScore"] = round(rs20 - (rs60 / 3), 2)
+        r["rsVsNifty5d"]   = round(rs5, 2)
+        r["rsVsNifty20d"]  = round(rs20, 2)
+        r["rsVsNifty60d"]  = round(rs60, 2)
+
+    results.sort(key=lambda x: -(x.get("rsScore") or 0))
+    for i, r in enumerate(results):
+        r["rsRank"] = i + 1
+
+    elapsed = _t.time() - t0
+    print(f"✅ Groups[{level}] computed: {len(results)} groups, "
+          f"{len(preloaded)} tickers in {elapsed:.1f}s", flush=True)
+    return results
+
+
+def _get_level_groups(level: str, max_age: int = 600) -> list[dict]:
+    """Cached accessor. For level='industry' we piggyback on the existing
+    _INDUSTRY_CACHE so warmth is shared with /api/industry-groups."""
+    now = time.time()
+
+    if level == "industry":
+        # Reuse existing industry cache (already disk-warmed at startup).
+        if _INDUSTRY_CACHE and (now - _INDUSTRY_CACHE_TS) < max_age:
+            return _INDUSTRY_CACHE.get("groups", [])
+        # Fall through to the existing path (handles disk snapshot, bg refresh).
+        return _compute_all_industry_groups()
+
+    cached = _GROUPS_LEVEL_CACHE.get(level)
+    if cached and (now - cached["ts"]) < max_age:
+        return cached["groups"]
+
+    with _GROUPS_LEVEL_LOCK:
+        cached = _GROUPS_LEVEL_CACHE.get(level)
+        if cached and (time.time() - cached["ts"]) < max_age:
+            return cached["groups"]
+        groups = _compute_groups_for_level(level)
+        _GROUPS_LEVEL_CACHE[level] = {"groups": groups, "ts": time.time()}
+        return groups
+
+
+@app.get("/api/groups/levels")
+def api_groups_levels() -> dict:
+    """List the classification levels available to /api/groups, plus theme
+    metadata. Use this to populate a level-selector dropdown in the UI."""
+    tax_mod = _taxonomy_module()
+    return {
+        "levels": [
+            {"key": "macro",          "name": "Macro Sector",
+             "description": "NSE macro-economic sector (broadest)",
+             "count": len(tax_mod.list_macros())},
+            {"key": "sector",         "name": "Sector",
+             "description": "NSE sector (standard index bucketing)",
+             "count": len(tax_mod.list_sectors())},
+            {"key": "industry",       "name": "Industry",
+             "description": "NSE industry (default grouping)",
+             "count": len(tax_mod.list_industries())},
+            {"key": "basic_industry", "name": "Basic Industry",
+             "description": "NSE basic_industry (finest official level)",
+             "count": len(tax_mod.list_basic_industries())},
+            {"key": "theme",          "name": "Theme",
+             "description": "Curated thematic overlay (multi-label)",
+             "count": len(tax_mod.list_themes())},
+        ],
+        "themes": tax_mod.list_themes(),
+    }
+
+
+@app.get("/api/groups")
+def api_groups(level: str = "industry", min_stocks: int = 2,
+               sort_by: str = "rsScore") -> dict:
+    """Unified multi-level groups endpoint for relative-strength & rotation.
+
+    Query params:
+      level   : one of macro | sector | industry | basic_industry | theme
+      min_stocks : drop groups smaller than this (default 2)
+      sort_by : rsScore (default) | rotationScore | breadthScore | return20d
+    """
+    if level not in _VALID_LEVELS:
+        raise HTTPException(status_code=400,
+                            detail=f"level must be one of {_VALID_LEVELS}")
+    groups = _get_level_groups(level)
+    groups = [g for g in groups if g.get("stockCount", 0) >= min_stocks]
+
+    # Sorting
+    key = sort_by if sort_by in ("rsScore", "rotationScore", "breadthScore",
+                                 "return5d", "return20d", "return60d") else "rsScore"
+    groups = sorted(groups, key=lambda g: -(g.get(key) or 0))
+
+    # Strip heavy member arrays (same lite convention as /api/industry-groups)
+    lite = []
+    for g in groups:
+        gc = dict(g)
+        gc.pop("members", None)
+        lite.append(gc)
+
+    ts = (_INDUSTRY_CACHE_TS if level == "industry"
+          else _GROUPS_LEVEL_CACHE.get(level, {}).get("ts", 0))
+    return {
+        "level":      level,
+        "sortBy":     key,
+        "groups":     lite,
+        "total":      len(lite),
+        "cachedAt":   ts or None,
+        "cacheAgeSec": round(time.time() - ts) if ts else None,
+        "timestamp":  time.time(),
+    }
+
+
+@app.post("/api/groups/refresh")
+def api_groups_refresh(level: str | None = None) -> dict:
+    """Invalidate the multi-level groups cache (all levels if none given)."""
+    global _INDUSTRY_CACHE_TS
+    with _GROUPS_LEVEL_LOCK:
+        if level is None:
+            _GROUPS_LEVEL_CACHE.clear()
+            _INDUSTRY_CACHE_TS = 0
+            return {"cleared": "all"}
+        if level not in _VALID_LEVELS:
+            raise HTTPException(status_code=400,
+                                detail=f"level must be one of {_VALID_LEVELS}")
+        if level == "industry":
+            _INDUSTRY_CACHE_TS = 0
+        _GROUPS_LEVEL_CACHE.pop(level, None)
+        return {"cleared": level}
+
+
+@app.get("/api/sector-rotation")
+def api_sector_rotation(level: str = "sector", top_n: int = 10) -> dict:
+    """Sector / theme rotation dashboard.
+
+    Returns the strongest and weakest groups at the chosen level sorted by
+    *rotationScore* (not rsScore). rotationScore = rsVsNifty20d - rsVsNifty60d/3,
+    so positive = outperformance accelerating (emerging leadership) and
+    negative = outperformance cooling (leaders rolling over). Pair this with
+    /api/groups?sort_by=rsScore to see absolute vs directional strength.
+    """
+    if level not in _VALID_LEVELS:
+        raise HTTPException(status_code=400,
+                            detail=f"level must be one of {_VALID_LEVELS}")
+    groups = _get_level_groups(level)
+    groups = [g for g in groups if g.get("stockCount", 0) >= 3]
+    by_rot = sorted(groups, key=lambda g: -(g.get("rotationScore") or 0))
+
+    def _slim(g: dict) -> dict:
+        return {
+            "name":           g.get("name") or g.get("industry"),
+            "parent":         g.get("parent") or g.get("sector", ""),
+            "stockCount":     g.get("stockCount"),
+            "rsScore":        g.get("rsScore"),
+            "rotationScore":  g.get("rotationScore"),
+            "rsVsNifty5d":    g.get("rsVsNifty5d"),
+            "rsVsNifty20d":   g.get("rsVsNifty20d"),
+            "rsVsNifty60d":   g.get("rsVsNifty60d"),
+            "return5d":       g.get("return5d"),
+            "return20d":      g.get("return20d"),
+            "return60d":      g.get("return60d"),
+            "breadthScore":   g.get("breadthScore"),
+            "pctAbove50ma":   g.get("pctAbove50ma"),
+            "themeName":      g.get("themeName"),
+        }
+
+    return {
+        "level":     level,
+        "timestamp": time.time(),
+        "emerging":  [_slim(g) for g in by_rot[:top_n]],       # accelerating
+        "cooling":   [_slim(g) for g in by_rot[-top_n:][::-1]],# decelerating
+    }
+
+
+@app.get("/api/industry-groups")
+def get_industry_groups(min_stocks: int = 2) -> dict:
+    groups = _compute_all_industry_groups()
+    filtered = [g for g in groups if g.get("stockCount", 0) >= min_stocks]
+    lite = []
+    for g in filtered:
+        gc = dict(g)
+        gc.pop("members", None)
+        lite.append(gc)
+    # Include cache age so frontend can show staleness warning.
+    # Prefer in-memory TS (post-compute); fall back to disk TS so a fresh
+    # startup can still tell the UI when the snapshot was made.
+    effective_ts = _INDUSTRY_CACHE_TS or _INDUSTRY_DISK_TS
+    cache_age = round(time.time() - effective_ts) if effective_ts else None
+    # Expose OHLCV refresh status so UI can show "pulling today's closes…"
+    # and poll faster while it's in flight.
+    ohlcv_status = _cache_refresher.status_dict()
+    ohlcv_running = ohlcv_status.get("status") == "running"
+    ohlcv_progress = None
+    if ohlcv_running:
+        done = ohlcv_status.get("symbolsDone", 0)
+        total = ohlcv_status.get("symbolsTotal", 0)
+        ohlcv_progress = {"done": done, "total": total,
+                          "pct": round(done / total * 100, 1) if total else 0}
+    return {"groups": lite, "total": len(lite), "timestamp": time.time(),
+            "cachedAt": effective_ts or None, "cacheAgeSec": cache_age,
+            "bgRefreshing": _INDUSTRY_BG_RUNNING,
+            "ohlcvRefreshing": ohlcv_running,
+            "ohlcvProgress": ohlcv_progress,
+            "fromDiskSnapshot": bool(_INDUSTRY_CACHE) and _INDUSTRY_CACHE_TS == 0}
+
+
+@app.post("/api/industry-groups/refresh")
+def refresh_industry_groups(force: bool = False, prices: bool = True) -> dict:
+    """Invalidate the industry-groups cache and kick a background recompute
+    against the latest CSV cache. Returns immediately; poll /api/industry-groups
+    with `cacheAgeSec` to know when the new snapshot lands.
+
+    When prices=True (default), also kicks the OHLCV cache refresher so today's
+    closing bars are pulled into the CSVs before the recompute runs. This is
+    how the manual 🔄 Refresh button gets today's prices into the page when the
+    startup refresh didn't run (or hasn't run since market close).
+    """
+    global _INDUSTRY_CACHE_TS
+    _INDUSTRY_CACHE_TS = 0
+
+    # Kick OHLCV refresh first — when it finishes it will auto-invalidate
+    # and recompute industry groups (see BackgroundCacheRefresher._run).
+    ohlcv_started = False
+    if prices and not _cache_refresher.is_running:
+        try:
+            _cache_refresher.start(indian_only=True, workers=4)
+            ohlcv_started = True
+        except Exception as e:
+            print(f"⚠ OHLCV refresh kick failed: {e}", flush=True)
+
+    if force:
+        # Blocking full recompute (used by tests / manual debugging)
+        groups = _do_compute_industry_groups()
+        return {"ok": True, "mode": "sync", "count": len(groups),
+                "ohlcvRefreshStarted": ohlcv_started}
+    _bg_refresh_industry_groups()
+    return {"ok": True, "mode": "async", "bgRunning": _INDUSTRY_BG_RUNNING,
+            "ohlcvRefreshStarted": ohlcv_started,
+            "message": "Industry groups recompute started in background"
+                       + (" (after OHLCV refresh)" if ohlcv_started else "")}
+
+
+@app.get("/api/industry-groups/{group_name}")
+def get_industry_group_detail(group_name: str, fresh: bool = True) -> dict:
+    """Return metrics + member list for an industry group.
+
+    By default (`fresh=True`) recomputes the group from the latest CSV data so
+    member close / dayChange / 52WH percentages are always current — this is
+    the only way to guarantee the drilldown isn't showing a snapshot from the
+    last full industry-groups rebuild (which may be up to 10 min old).
+
+    Pass `fresh=false` to return the possibly-cached snapshot instead.
+    """
+    import urllib.parse
+    decoded = urllib.parse.unquote(group_name)
+
+    # Resolve tickers + sector for this group from the taxonomy — cheap.
+    taxonomy = _load_taxonomy_cached()
+
+    tickers: list[str] = []
+    sector = ""
+    for t, (sec, ind) in taxonomy.items():
+        if ind == decoded:
+            tickers.append(t)
+            if not sector:
+                sector = sec
+
+    if not tickers:
+        # Fall back to any cached entry so stale-but-known groups still respond
+        groups = _compute_all_industry_groups()
+        for g in groups:
+            if g.get("group") == decoded:
+                return g
+        raise HTTPException(status_code=404, detail=f"Industry group '{decoded}' not found")
+
+    if fresh:
+        # Pass Nifty returns for true RS-vs-benchmark calc.
+        # Bulk-read guard: prevent per-symbol refresh-thread storm while
+        # _compute_group_metrics walks members. For a small group (≤30 members)
+        # this is safe because the worst case is 30 refresh threads — well
+        # within the machine's tolerance and gives the user up-to-date prices.
+        use_bulk_flag = len(tickers) > 30
+        if use_bulk_flag:
+            _bulk_read_ctx.skip_stale_refresh = True
+        try:
+            nifty_rows = _read_ohlcv("^NSEI", days=300)
+            nifty_returns = None
+            if nifty_rows and len(nifty_rows) >= 61:
+                nc = [r["close"] for r in nifty_rows]
+                nifty_returns = {
+                    "r5":  (nc[-1] / nc[-6] - 1) * 100  if len(nc) >= 6  else 0,
+                    "r20": (nc[-1] / nc[-21] - 1) * 100 if len(nc) >= 21 else 0,
+                    "r60": (nc[-1] / nc[-61] - 1) * 100 if len(nc) >= 61 else 0,
+                }
+            result = _compute_group_metrics(decoded, tickers, sector,
+                                            nifty_returns=nifty_returns)
+        finally:
+            if use_bulk_flag:
+                _bulk_read_ctx.skip_stale_refresh = False
+
+        # For small groups (where we allowed per-symbol refresh), also probe
+        # for overall staleness and delegate to the OHLCV refresher so the
+        # NEXT click gets today's closes — the per-symbol threads take care
+        # of this group's symbols, but a consolidated refresh covers the rest.
+        if not use_bulk_flag and not _cache_refresher.is_running:
+            try:
+                stale_count = 0
+                for sym in tickers:
+                    csv_path = CACHE_DIR / f"{sym}.NS.csv"
+                    if not csv_path.exists():
+                        csv_path = CACHE_DIR / f"{sym}.csv"
+                    if not csv_path.exists():
+                        continue
+                    import refresh_cache as _rc
+                    ld = _rc._read_last_date(csv_path)
+                    if _is_price_stale(ld, csv_path):
+                        stale_count += 1
+                if stale_count >= max(1, len(tickers) // 3):
+                    print(f"🔄 Drilldown {decoded!r}: {stale_count}/{len(tickers)} "
+                          f"stale — kicking OHLCV refresh", flush=True)
+                    _cache_refresher.start(indian_only=True, workers=4)
+            except Exception:
+                pass
+        # Attach rsRank from cached list if present (cheap metadata)
+        for g in _INDUSTRY_CACHE.get("groups", []):
+            if g.get("group") == decoded:
+                result["rsRank"] = g.get("rsRank")
+                break
+        return result
+
+    # Non-fresh path: return cached snapshot if available
+    groups = _compute_all_industry_groups()
+    for g in groups:
+        if g.get("group") == decoded:
+            if not g.get("members"):
+                # Disk cache stripped members — recompute this one group
+                return _compute_group_metrics(decoded, tickers, sector)
+            return g
+    raise HTTPException(status_code=404, detail=f"Industry group '{decoded}' not found")
+
+
+@app.get("/api/industry-groups/{group_name}/rs-history")
+def get_industry_group_rs_history(group_name: str, days: int = 120) -> dict:
+    import urllib.parse
+    decoded = urllib.parse.unquote(group_name)
+    groups = _compute_all_industry_groups()
+    target = None
+    for g in groups:
+        if g.get("group") == decoded:
+            target = g
+            break
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Group '{decoded}' not found")
+
+    members = [m["symbol"] for m in target.get("members", [])]
+    # If loaded from disk cache (no members), look up tickers from taxonomy
+    if not members:
+        try:
+            taxonomy = _load_taxonomy_cached()
+            members = [t for t, (sec, ind) in taxonomy.items() if ind == decoded]
+        except Exception:
+            pass
+    if not members:
+        return {"group": decoded, "rsLine": []}
+
+    # Read in bulk without spawning per-symbol refresh threads.
+    _bulk_read_ctx.skip_stale_refresh = True
+    try:
+        nifty_rows = _read_ohlcv("^NSEI", days=days + 50)
+        nifty_map = {r["date"]: r["close"] for r in nifty_rows} if nifty_rows else {}
+
+        all_dates: dict[str, list[float]] = {}
+        for sym in members[:30]:
+            rows = _read_ohlcv(sym, days=days + 50)
+            if not rows or len(rows) < 20:
+                continue
+            base_close = rows[0]["close"]
+            for r in rows:
+                d = r["date"]
+                normed = (r["close"] / base_close) * 100
+                all_dates.setdefault(d, []).append(normed)
+    finally:
+        _bulk_read_ctx.skip_stale_refresh = False
+
+    if not all_dates:
+        return {"group": decoded, "rsLine": []}
+
+    sorted_dates = sorted(all_dates.keys())
+    if len(sorted_dates) > days:
+        sorted_dates = sorted_dates[-days:]
+
+    nifty_base = nifty_map.get(sorted_dates[0], 100) if nifty_map else 100
+    rs_line = []
+    for d in sorted_dates:
+        group_avg = sum(all_dates[d]) / len(all_dates[d])
+        nifty_normed = (nifty_map.get(d, nifty_base) / nifty_base) * 100 if nifty_base > 0 else 100
+        rs_val = round(group_avg / nifty_normed * 100, 2) if nifty_normed > 0 else 100
+        rs_line.append({"date": d, "rs": rs_val, "groupReturn": round(group_avg - 100, 2), "niftyReturn": round(nifty_normed - 100, 2)})
+
+    return {"group": decoded, "rsLine": rs_line}
+
+
+@app.get("/api/custom-groups")
+def list_custom_groups() -> dict:
+    return {"groups": _load_custom_groups()}
+
+
+@app.post("/api/custom-groups")
+def create_custom_group(body: dict) -> dict:
+    name = body.get("name", "").strip()
+    tickers = body.get("tickers", [])
+    if not name or not tickers:
+        raise HTTPException(status_code=400, detail="name and tickers required")
+    groups = _load_custom_groups()
+    if any(g["name"] == name for g in groups):
+        raise HTTPException(status_code=409, detail=f"Group '{name}' already exists")
+    group = {"name": name, "tickers": [t.upper() for t in tickers], "created": datetime.now().isoformat()}
+    groups.append(group)
+    _save_custom_groups(groups)
+    return {"ok": True, "group": group}
+
+
+@app.delete("/api/custom-groups/{name}")
+def delete_custom_group(name: str) -> dict:
+    import urllib.parse
+    decoded = urllib.parse.unquote(name)
+    groups = _load_custom_groups()
+    groups = [g for g in groups if g["name"] != decoded]
+    _save_custom_groups(groups)
+    return {"ok": True}
+
+
+@app.get("/api/custom-groups/{name}/metrics")
+def custom_group_metrics(name: str) -> dict:
+    import urllib.parse
+    decoded = urllib.parse.unquote(name)
+    groups = _load_custom_groups()
+    target = next((g for g in groups if g["name"] == decoded), None)
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Custom group '{decoded}' not found")
+    return _compute_group_metrics(decoded, target["tickers"], "Custom")
+
+
 @app.get("/trades")
-def trade_plans_page() -> FileResponse:
+def trade_plans_page() -> Response:
     """Serve the pre-built Live Breakout Trade Plans HTML page."""
     if not TRADE_PLANS_HTML.exists():
         raise HTTPException(
             status_code=404,
             detail="Trade plans page not found. It will be auto-generated after cache refresh completes, or trigger manually via POST /api/jobs/trade-plans. A scan must have run at least once.",
         )
-    return FileResponse(TRADE_PLANS_HTML, media_type="text/html")
+    return _serve_with_wisdom(TRADE_PLANS_HTML)
 
 
 @app.post("/api/jobs/trade-plans")
@@ -787,7 +2493,10 @@ def cache_refresh_status() -> dict:
     Get the current status of the background OHLCV cache refresh.
     Poll this endpoint to track progress.
     """
-    return _cache_refresher.status_dict()
+    status = _cache_refresher.status_dict()
+    status["periodic"] = _periodic_refresher.status_dict()
+    status["postClose"] = _postclose_refresher.status_dict()
+    return status
 
 
 @app.post("/api/cache/refresh")
@@ -809,7 +2518,7 @@ def cache_refresh_trigger(req: CacheRefreshRequest | None = None) -> dict:
 
 
 @app.post("/api/cache/refresh-symbols")
-def cache_refresh_specific_symbols(symbols: list[str]) -> dict:
+def cache_refresh_specific_symbols(symbols: list[str], force: bool = False) -> dict:
     """
     Synchronously refresh specific symbols' cache (for small lists like watchlist/positions).
     Use this when you need fresh data for a few stocks immediately.
@@ -825,10 +2534,92 @@ def cache_refresh_specific_symbols(symbols: list[str]) -> dict:
         sym_clean = sym.strip().upper()
         if not sym_clean:
             continue
-        updated = _refresh_symbol_if_stale(sym_clean)
+        updated = _refresh_symbol_if_stale(sym_clean, force=force)
         results[sym_clean] = "updated" if updated else "fresh_or_cooldown"
 
     return {"results": results, "count": len(results)}
+
+
+@app.post("/api/cache/fix-intraday")
+def cache_fix_intraday_snapshots(
+    dry_run: bool = False,
+    workers: int = 8,
+) -> dict:
+    """
+    Scan every Indian OHLCV cache file for an "intraday snapshot" — i.e. the
+    CSV's last row is dated D and the file mtime is on D but before the 15:35
+    IST market close. Those rows contain an intraday price, not the finalized
+    close, and the normal "+1 day" fetcher logic would never re-query that
+    date. This endpoint lists every affected file and (unless `dry_run=true`)
+    kicks a forced refresh against them via the BackgroundCacheRefresher,
+    which uses the intraday-aware back-up logic in refresh_symbol() to pull
+    the finalized close and overwrite the bad row.
+
+    Returns immediately; poll /api/cache/refresh-status for progress.
+    """
+    import datetime as _dt, zoneinfo as _zi
+    _ist = _zi.ZoneInfo("Asia/Kolkata")
+
+    affected: list[dict] = []
+    for p in sorted(CACHE_DIR.glob("*.NS.csv")):
+        try:
+            sym = p.name.replace(".csv", "")
+            # Cheap last-date read via refresh_cache helper
+            try:
+                import refresh_cache as _rc
+                last_date_str = _rc._read_last_date(p)
+            except Exception:
+                last_date_str = ""
+            if not last_date_str:
+                continue
+            try:
+                last_date = _dt.date.fromisoformat(last_date_str)
+            except ValueError:
+                continue
+            mtime = _dt.datetime.fromtimestamp(p.stat().st_mtime, tz=_ist)
+            # Only flag if the file's last-row date matches the mtime date
+            # AND the file was written before market close (15:35 IST).
+            if mtime.date() != last_date:
+                continue
+            cutoff = mtime.replace(hour=15, minute=35, second=0, microsecond=0)
+            if mtime < cutoff:
+                affected.append({
+                    "symbol": sym,
+                    "last_date": last_date_str,
+                    "mtime": mtime.strftime("%Y-%m-%d %H:%M IST"),
+                })
+        except Exception:
+            pass
+
+    if dry_run:
+        return {
+            "ok": True, "mode": "dry_run",
+            "count": len(affected),
+            "affected": affected[:500],
+            "truncated": len(affected) > 500,
+        }
+
+    if not affected:
+        return {"ok": True, "mode": "idle", "count": 0,
+                "message": "No intraday-stuck CSVs found"}
+
+    syms = [a["symbol"] for a in affected]
+    # Force-refresh via the background manager. Its _run() reload()s
+    # refresh_cache before executing, so the intraday back-up logic in the
+    # latest refresh_symbol() is guaranteed to apply even without a server
+    # restart.
+    start_result = _cache_refresher.start(
+        symbols=syms, force=True, indian_only=True, workers=workers,
+    )
+    return {
+        "ok": True, "mode": "async",
+        "count": len(affected),
+        "affected_preview": affected[:50],
+        "truncated": len(affected) > 50,
+        "refresher": start_result,
+        "message": f"Force-refreshing {len(affected)} intraday-stuck CSV(s) — "
+                   f"poll /api/cache/refresh-status for progress.",
+    }
 
 
 # ── VPN / Proxy Toggle API ────────────────────────────────────────────────────
@@ -1391,7 +3182,7 @@ def market_phases_endpoint(
     Detect Nifty50 market phases: decline, consolidation, recovery.
     Returns structured phase map for the last `days` trading days.
     """
-    market_prices = _wpe.fetch_market_prices(days=max(days, 252))
+    market_prices = _get_fresh_nifty_benchmark(days=max(days, 252))
     if not market_prices:
         raise HTTPException(status_code=503, detail="Could not fetch Nifty50 data")
 
@@ -1465,10 +3256,11 @@ def _save_board(data: dict) -> None:
 
 # ── Price / Chart helpers ──────────────────────────────────────────────────────
 
-def _read_ohlcv(symbol: str, days: int = 0) -> list[dict]:
+def _read_ohlcv(symbol: str, days: int = 0, market: str = "india") -> list[dict]:
     """Read OHLCV from cache. Returns sorted list of dicts with date/open/high/low/close/volume.
     days=0 means return ALL available data.
-    Prefers unified SYMBOL.csv; falls back to legacy _N.csv files.
+    • market="india"  → prefers SYMBOL.NS.csv, falls back to SYMBOL.csv (legacy).
+    • market="us"     → reads SYMBOL.csv directly (no .NS).
     Triggers a background refresh if data is stale (non-blocking)."""
     base = symbol.upper().replace(".NS", "").replace(".BO", "")
     ns   = base + ".NS"
@@ -1501,7 +3293,10 @@ def _read_ohlcv(symbol: str, days: int = 0) -> list[dict]:
         return dm
 
     date_map: dict[str, dict] = {}
-    for prefix in [ns, base]:
+    # For US symbols (ADRs etc.) skip the .NS prefix entirely so we don't
+    # pick up a same-named Indian stock by accident (e.g. INFY vs INFY.NS).
+    prefixes = [base] if market == "us" else [ns, base]
+    for prefix in prefixes:
         # 1) Try unified single file first
         for fname in [f"{prefix}.csv"]:
             date_map.update(_read_csv(CACHE_DIR / fname))
@@ -1520,9 +3315,21 @@ def _read_ohlcv(symbol: str, days: int = 0) -> list[dict]:
     # Non-blocking: returns current (possibly stale) data immediately;
     # refreshes in background thread so the NEXT read gets fresh data.
     # Uses IST-aware business-day logic matching refresh_cache._is_stale().
-    if rows:
+    #
+    # BUT: when a bulk caller (industry-groups compute) has set the
+    # skip_stale_refresh thread-local flag, suppress the spawn — otherwise
+    # a single compute over 2000+ tickers would launch thousands of daemon
+    # threads that saturate CPU / lock / Yahoo. The periodic OHLCV refresher
+    # (_cache_refresher) handles on-disk freshness for that path.
+    if _bulk_skip_stale():
+        pass
+    elif rows:
         last_date = rows[-1]["date"]
-        if _is_price_stale(last_date):
+        # Prefer the actual CSV file used for the read (falls back to .NS.csv)
+        _csv_for_stale = CACHE_DIR / f"{base}.NS.csv"
+        if not _csv_for_stale.exists():
+            _csv_for_stale = CACHE_DIR / f"{base}.csv"
+        if _is_price_stale(last_date, _csv_for_stale):
             threading.Thread(
                 target=_refresh_symbol_if_stale,
                 args=(symbol,),
@@ -1539,6 +3346,115 @@ def _read_ohlcv(symbol: str, days: int = 0) -> list[dict]:
     if days and days > 0 and len(rows) > days:
         rows = rows[-days:]
     return rows
+
+
+# ── Fresh Nifty benchmark helper ──────────────────────────────────────────
+# Every page that shows a "Nifty asof" or relies on the Nifty benchmark
+# must route through this function so they all share the same source and
+# freshness semantics:
+#   1. Primary:  OHLCV CSV cache (cache/^NSEI.csv) — same source as stock
+#                data, kept fresh by BackgroundCacheRefresher + the IST-aware
+#                staleness check.
+#   2. If the OHLCV bar is stale (past-close intraday, or >0 biz-day gap),
+#      do a SYNCHRONOUS refresh_nifty_index() call — single symbol, ≤2 s —
+#      then re-read the cache. Guarantees nifty_asof == current trading day
+#      by the time the calling endpoint returns.
+#   3. If the OHLCV cache stays empty after refresh, fall back to
+#      _wpe.fetch_market_prices (yfinance side-cache). Whichever has the
+#      newer last-date wins.
+_NIFTY_BENCHMARK_LOCK = threading.Lock()
+_NIFTY_LAST_SYNC_TS: float = 0
+_NIFTY_SYNC_COOLDOWN = 60  # seconds — avoid hammering refresh_nifty_index
+_NIFTY_RESULT_CACHE: dict = {}  # days → {"data": dict, "ts": float, "asof": str}
+_NIFTY_RESULT_TTL = 30         # seconds — memoize helper output to amortize fallback cost
+
+
+def _get_fresh_nifty_benchmark(days: int = 260) -> dict | None:
+    """Return a Nifty50 price dict in wpe format with the freshest possible
+    last-date. See section header above for the source-priority rules.
+
+    Safe to call from any endpoint — the sync refresh is cooldowned
+    (`_NIFTY_SYNC_COOLDOWN` seconds) so bursts of parallel requests don't
+    each trigger a Yahoo hit.
+    """
+    global _NIFTY_LAST_SYNC_TS
+
+    # Fast path: recent memoized result.
+    cached = _NIFTY_RESULT_CACHE.get(days)
+    if cached and (time.time() - cached.get("ts", 0)) < _NIFTY_RESULT_TTL:
+        return cached["data"]
+
+    def _read_csv_rows() -> list[dict]:
+        try:
+            return _read_ohlcv("^NSEI", days=days, market="us") or []
+        except Exception:
+            return []
+
+    rows = _read_csv_rows()
+    nifty_csv = CACHE_DIR / "^NSEI.csv"
+
+    # Sync refresh if stale — but only once per cooldown window per process.
+    ran_sync_refresh = False
+    try:
+        if rows and _is_price_stale(rows[-1]["date"], nifty_csv):
+            with _NIFTY_BENCHMARK_LOCK:
+                now_ts = time.time()
+                if now_ts - _NIFTY_LAST_SYNC_TS >= _NIFTY_SYNC_COOLDOWN:
+                    _NIFTY_LAST_SYNC_TS = now_ts
+                    ran_sync_refresh = True
+                    try:
+                        sys.path.insert(0, str(ROOT / "scripts"))
+                        import refresh_cache as _rc
+                        _rc.refresh_nifty_index()
+                        rows = _read_csv_rows()
+                    except Exception as _e:
+                        print(f"⚠ _get_fresh_nifty_benchmark sync refresh failed: {_e}", flush=True)
+                    # Only kick the full OHLCV refresher when we actually ran a
+                    # sync refresh AND it didn't produce fresh bars (likely Yahoo
+                    # doesn't have today's close yet or network issue).
+                    if (not rows or _is_price_stale(rows[-1]["date"], nifty_csv)) \
+                            and not _cache_refresher.is_running:
+                        _cache_refresher.start(indian_only=True, workers=4)
+    except Exception:
+        pass
+
+    primary = None
+    if rows and len(rows) >= 20:
+        primary = {
+            "symbol": "^NSEI", "yf_symbol": "^NSEI",
+            "dates":  [r["date"]  for r in rows],
+            "open":   [r["open"]  for r in rows],
+            "high":   [r["high"]  for r in rows],
+            "low":    [r["low"]   for r in rows],
+            "close":  [r["close"] for r in rows],
+            "volume": [r["volume"] for r in rows],
+        }
+
+    # Fallback + newer-source check: only hit the yfinance side-cache when
+    # the primary is empty OR we just tried a sync refresh and it failed to
+    # advance the date. Otherwise we'd pay yfinance latency on every request.
+    result = primary
+    try:
+        primary_stale = bool(rows) and _is_price_stale(rows[-1]["date"], nifty_csv)
+        if (primary is None) or (primary_stale and ran_sync_refresh):
+            alt = _wpe.fetch_market_prices(days=days)
+            if alt and alt.get("dates"):
+                if primary is None or alt["dates"][-1] > primary["dates"][-1]:
+                    if primary is not None:
+                        print(f"🔁 Nifty benchmark: using _wpe source (asof={alt['dates'][-1]}) "
+                              f"over OHLCV (asof={primary['dates'][-1]})", flush=True)
+                    result = alt
+    except Exception:
+        pass
+
+    if result is not None:
+        _NIFTY_RESULT_CACHE[days] = {
+            "data": result,
+            "ts": time.time(),
+            "asof": (result.get("dates") or [None])[-1],
+        }
+    return result
+
 
 def _calc_ema(closes: list[float], period: int) -> list[Optional[float]]:
     result: list[Optional[float]] = [None] * len(closes)
@@ -1565,15 +3481,16 @@ _IST = _zi.ZoneInfo("Asia/Kolkata")
 
 _live_cache: dict[str, dict] = {}   # symbol -> {price, prevClose, ts, date}
 _live_cache_lock = threading.Lock()
+_nse_fetch_lock = threading.Lock()   # serialize NSE requests to avoid rate-limiting
 _LIVE_TTL_MARKET = 30    # seconds — during market hours
 _LIVE_TTL_OFF = 300      # seconds — outside market hours (5 min, just to get today's close)
 
 # ── Groww API integration ─────────────────────────────────────────────────
 # Uses shared groww_client module for singleton initialization.
 # Env vars: GROWW_API_KEY, GROWW_API_SECRET, GROWW_ACCESS_TOKEN
-_GROWW_API_KEY = os.environ.get("GROWW_API_KEY", "")
-_GROWW_API_SECRET = os.environ.get("GROWW_API_SECRET", "")
-_GROWW_ACCESS_TOKEN = os.environ.get("GROWW_ACCESS_TOKEN", "")
+_GROWW_API_KEY = os.environ.get("GROWW_API_KEY", "").strip().strip("'\"")
+_GROWW_API_SECRET = os.environ.get("GROWW_API_SECRET", "").strip().strip("'\"")
+_GROWW_ACCESS_TOKEN = os.environ.get("GROWW_ACCESS_TOKEN", "").strip().strip("'\"")
 _groww_client = None
 _groww_init_lock = threading.Lock()
 _groww_init_failed = False
@@ -1608,8 +3525,30 @@ def _get_groww_client():
                 from growwapi import GrowwAPI
                 token = _GROWW_ACCESS_TOKEN
                 if not token and _GROWW_API_KEY and _GROWW_API_SECRET:
+                    # Auto-detect TOTP vs approval auth from JWT payload
+                    auth_kwargs = {"secret": _GROWW_API_SECRET}
+                    try:
+                        import base64 as _b64, json as _j
+                        parts = _GROWW_API_KEY.split('.')
+                        if len(parts) == 3:
+                            payload = parts[1] + '=' * (4 - len(parts[1]) % 4)
+                            sub = _j.loads(_j.loads(_b64.b64decode(payload)).get('sub', '{}'))
+                            if 'totp' in sub.get('role', '').lower():
+                                import hmac, hashlib, struct, time as _tm
+                                seed = _GROWW_API_SECRET.strip().upper().replace(' ', '')
+                                missing = len(seed) % 8
+                                if missing:
+                                    seed += '=' * (8 - missing)
+                                key_bytes = _b64.b32decode(seed)
+                                counter = int(_tm.time()) // 30
+                                h = hmac.new(key_bytes, struct.pack('>Q', counter), hashlib.sha1).digest()
+                                o = h[-1] & 0x0F
+                                code = (struct.unpack('>I', h[o:o+4])[0] & 0x7FFFFFFF) % 1000000
+                                auth_kwargs = {"totp": f"{code:06d}"}
+                    except Exception:
+                        pass
                     result = GrowwAPI.get_access_token(
-                        api_key=_GROWW_API_KEY, secret=_GROWW_API_SECRET)
+                        api_key=_GROWW_API_KEY, **auth_kwargs)
                     if isinstance(result, str) and result:
                         token = result
                     elif isinstance(result, dict):
@@ -1628,6 +3567,21 @@ def _get_groww_client():
                 print(f"⚠ Groww API init failed: {e}", flush=True)
                 _groww_init_failed = True
                 return None
+
+
+def _reset_groww_on_auth_error(e: Exception):
+    """If Groww returns forbidden/auth error, reset client so token gets refreshed."""
+    err_str = str(e).lower()
+    if "forbidden" in err_str or "authoris" in err_str or "unauthori" in err_str:
+        try:
+            from groww_client import reset_groww_client
+            reset_groww_client()
+            global _groww_client, _groww_init_failed
+            _groww_client = None
+            _groww_init_failed = False
+            print(f"⚠ Groww auth error — will refresh token: {e}", flush=True)
+        except Exception:
+            pass
 
 
 def _fetch_live_quote_groww(base_symbol: str) -> Optional[dict]:
@@ -1666,8 +3620,8 @@ def _fetch_live_quote_groww(base_symbol: str) -> Optional[dict]:
             except Exception:
                 pass
             return {"price": ltp, "prevClose": float(prev) if prev else None, "source": "groww"}
-    except Exception:
-        pass
+    except Exception as e:
+        _reset_groww_on_auth_error(e)
     return None
 
 
@@ -1690,8 +3644,8 @@ def _fetch_groww_quote(base_symbol: str) -> Optional[dict]:
             close = ohlc.get("close")
             if close and float(close) > 0:
                 return {"price": float(close), "prevClose": None, "source": "groww-ohlc"}
-    except Exception:
-        pass
+    except Exception as e:
+        _reset_groww_on_auth_error(e)
     return None
 
 
@@ -1707,28 +3661,29 @@ def _is_market_open() -> bool:
 def _fetch_live_quote_nse(base_symbol: str) -> Optional[dict]:
     """Fetch live quote from NSE India equity quote API."""
     import requests as _req
-    try:
-        import refresh_cache as _rc
-        session = _rc._get_nse_session()
-        import urllib.parse
-        url = (
-            f"https://www.nseindia.com/api/quote-equity"
-            f"?symbol={urllib.parse.quote(base_symbol)}"
-        )
-        resp = session.get(url, headers={
-            "Accept": "application/json",
-            "Referer": f"https://www.nseindia.com/get-quotes/equity?symbol={urllib.parse.quote(base_symbol)}",
-        }, timeout=8)
-        if not resp.ok:
-            return None
-        data = resp.json()
-        pi = data.get("priceInfo", {})
-        ltp = pi.get("lastPrice")
-        prev = pi.get("previousClose") or pi.get("close")
-        if ltp and ltp > 0:
-            return {"price": float(ltp), "prevClose": float(prev) if prev else None, "source": "nse"}
-    except Exception:
-        pass
+    with _nse_fetch_lock:  # serialize to avoid NSE rate-limiting
+        try:
+            import refresh_cache as _rc
+            session = _rc._get_nse_session()
+            import urllib.parse
+            url = (
+                f"https://www.nseindia.com/api/quote-equity"
+                f"?symbol={urllib.parse.quote(base_symbol)}"
+            )
+            resp = session.get(url, headers={
+                "Accept": "application/json",
+                "Referer": f"https://www.nseindia.com/get-quotes/equity?symbol={urllib.parse.quote(base_symbol)}",
+            }, timeout=8)
+            if not resp.ok:
+                return None
+            data = resp.json()
+            pi = data.get("priceInfo", {})
+            ltp = pi.get("lastPrice")
+            prev = pi.get("previousClose") or pi.get("close")
+            if ltp and ltp > 0:
+                return {"price": float(ltp), "prevClose": float(prev) if prev else None, "source": "nse"}
+        except Exception:
+            pass
     return None
 
 
@@ -1859,7 +3814,7 @@ def _get_current_price(symbol: str) -> Optional[float]:
     return rows[-1]["close"] if rows else None
 
 
-def _get_price_info(symbol: str) -> tuple[Optional[float], Optional[float], Optional[str]]:
+def _get_price_info(symbol: str, market: str = "india") -> tuple[Optional[float], Optional[float], Optional[str]]:
     """
     Returns (cmp, prev_close, last_date) for a symbol.
 
@@ -1868,17 +3823,23 @@ def _get_price_info(symbol: str) -> tuple[Optional[float], Optional[float], Opti
       falling back to CSV cache if APIs fail.
     Always returns the most current price available.
     """
-    rows = _read_ohlcv(symbol, days=5)
+    rows = _read_ohlcv(symbol, days=5, market=market)
     csv_close = rows[-1]["close"] if rows else None
     csv_prev = rows[-2]["close"] if len(rows) >= 2 else None
     csv_date = rows[-1]["date"] if rows else None
+
+    # Skip live-quote fetch for US symbols (Groww/NSE not applicable); use CSV.
+    if market == "us":
+        return csv_close, csv_prev, csv_date
 
     # Try live/latest price (works both during and outside market hours now)
     live = _get_live_price(symbol)
     if live and live.get("price"):
         cmp = live["price"]
         prev = live.get("prevClose") or csv_prev
-        return cmp, prev, csv_date
+        # Use today's date when live price is available so frontend doesn't flag as stale
+        today_str = datetime.now(_IST).strftime("%Y-%m-%d")
+        return cmp, prev, today_str
     else:
         return csv_close, csv_prev, csv_date
 
@@ -1900,7 +3861,7 @@ def _compute_board_stats(positions: list[dict]) -> dict:
     for p in positions:
         entry = p.get("entry", 0)
         qty   = p.get("quantity", 1)
-        remaining = p.get("remaining_quantity") or qty
+        remaining = p.get("remaining_quantity") if p.get("remaining_quantity") is not None else qty
         cmp   = p.get("cmp", entry)
         exit_price = p.get("exit_price") or cmp
         sl    = p.get("sl", 0)
@@ -1917,9 +3878,12 @@ def _compute_board_stats(positions: list[dict]) -> dict:
                 open_risk += (entry - sl) * remaining
             day_pl += p.get("dayChangeAmt", 0) or 0
         else:
-            partial_qty_exited = sum(e.get("quantity", 0) for e in p.get("partial_exits", []))
-            exit_qty = qty - partial_qty_exited
-            pl = pos_realized + (exit_price - entry) * exit_qty
+            # Closed position: use realized_pl if available (already includes
+            # partial exits + final close), else compute from exit_price
+            if pos_realized:
+                pl = pos_realized
+            else:
+                pl = (exit_price - entry) * qty
             total_pl += pl
             if status.startswith("T"):
                 locked_profit += pl
@@ -2135,10 +4099,11 @@ def _enrich_position_metrics(p: dict) -> dict:
     sym = p.get("symbol", "")
     if not sym:
         return p
-    rows = _read_ohlcv(sym, days=300)  # need ~252 for yearly volume analysis
+    mkt = p.get("market") or "india"
+    rows = _read_ohlcv(sym, days=300, market=mkt)  # need ~252 for yearly volume analysis
     # Inject live price into the latest bar so EMA/metrics reflect current price
     if rows:
-        live = _get_live_price(sym)
+        live = _get_live_price(sym) if mkt != "us" else None
         if live and live.get("price") and live["price"] > 0:
             import datetime as _dtmod
             today_str = _dtmod.datetime.now(_IST).strftime("%Y-%m-%d")
@@ -2280,27 +4245,41 @@ def trade_board_positions_enriched(status: str = "") -> dict:
     with _board_lock:
         data = _load_board()
         positions = list(data.get("positions", []))
+    # Pre-warm live price cache for all open positions
+    open_syms = [p.get("symbol", "") for p in positions if p.get("status") in ("OPEN", "PARTIAL")]
+    for sym in open_syms:
+        if sym:
+            _get_live_price(sym)
     for p in positions:
         entry = p.get("entry", 0) or 0
         qty = p.get("quantity", 1) or 1
-        remaining = p.get("remaining_quantity") or qty
+        remaining = p.get("remaining_quantity") if p.get("remaining_quantity") is not None else qty
         st = p.get("status", "OPEN")
         if st in ("OPEN", "PARTIAL"):
             cmp, prev_close, last_date = _get_price_info(p.get("symbol", ""))
             if cmp:
                 p["cmp"] = round(cmp, 2)
                 p["gainPct"] = round((cmp - entry) / entry * 100, 2) if entry else 0
-                p["gainAmt"] = round((cmp - entry) * remaining, 2) if entry else 0
+                # Unrealized on remaining + realized from partials
+                unrealized = (cmp - entry) * remaining
+                pos_realized = p.get("realized_pl", 0) or 0
+                p["gainAmt"] = round(unrealized + pos_realized, 2) if entry else 0
                 p["lastPriceDate"] = last_date
             if cmp and prev_close and prev_close > 0:
                 p["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
                 p["dayChangeAmt"] = round((cmp - prev_close) * remaining, 2)
             # Enrich with 20EMA extension + volume records + ADR
             _enrich_position_metrics(p)
-        elif p.get("exit_price") and entry:
-            ep = float(p["exit_price"])
-            p["gainPct"] = round((ep - entry) / entry * 100, 2)
-            p["gainAmt"] = round((ep - entry) * qty, 2)
+        elif entry:
+            # Closed position: use realized_pl if available, else compute from exit_price
+            pos_realized = p.get("realized_pl", 0) or 0
+            ep = float(p.get("exit_price") or entry)
+            if pos_realized:
+                p["gainAmt"] = round(pos_realized, 2)
+                p["gainPct"] = round(pos_realized / (entry * qty) * 100, 2) if entry and qty else 0
+            elif ep:
+                p["gainPct"] = round((ep - entry) / entry * 100, 2)
+                p["gainAmt"] = round((ep - entry) * qty, 2)
     if status:
         positions = [p for p in positions if p.get("status") == status]
     positions.sort(key=lambda p: (
@@ -2314,40 +4293,39 @@ def trade_board_positions_enriched(status: str = "") -> dict:
 
 @app.get("/api/trade-board/watchlist/enriched")
 def trade_board_watchlist_enriched() -> dict:
-    """Return watchlist items enriched with 20EMA extension + volume records (parallelized)."""
+    """Return watchlist items enriched with CMP, day-change, return-since-add,
+    cross-market pair, scan signal, 20EMA extension & volume records (parallelized)."""
     from concurrent.futures import ThreadPoolExecutor
     with _watchlist_lock:
         items = _load_watchlist()
     sig_index = _load_scan_signals_index()
 
-    def _enrich_wl(item):
+    # Pre-warm live price cache sequentially — avoids NSE rate-limiting
+    # when ThreadPoolExecutor fires 8 concurrent requests.
+    for item in items:
         sym = item.get("symbol", "")
-        cmp, prev_close, last_date = _get_price_info(sym)
-        if cmp:
-            item["cmp"] = round(cmp, 2)
-            item["lastPriceDate"] = last_date
-        if cmp and prev_close and prev_close > 0:
-            item["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
+        mkt = item.get("market") or "india"
+        if sym and mkt != "us":
+            _get_live_price(sym)
+
+    def _enrich_wl(item):
+        _enrich_watchlist_item_lite(item, sig_index)
+        # Heavy metrics (EMA20, vol records, ADR, RSI, SMA200…)
         _enrich_position_metrics(item)
+        # fundSummary is only exposed via the enriched variant
+        sym = item.get("symbol", "")
         sig = sig_index.get(sym) or sig_index.get(sym + ".NS") or sig_index.get(sym.replace(".NS", ""))
-        if sig:
-            item["scanSetup"] = sig.get("setup", "")
-            item["scanRating"] = sig.get("rating", "")
-            item["scanScore"] = sig.get("rankingScore") or sig.get("score")
-            item["scanEntry"] = sig.get("entry")
-            item["scanSl"] = sig.get("sl")
-            item["rsScore"] = sig.get("rsScore")
-            item["regimeState"] = sig.get("regimeState")
-            item["entryInstruction"] = sig.get("entryInstruction")
+        if sig and sig.get("fundSummary"):
             item["fundSummary"] = sig.get("fundSummary")
-            item["inScan"] = True
-        else:
-            item["inScan"] = False
 
     with ThreadPoolExecutor(max_workers=8) as pool:
         list(pool.map(_enrich_wl, items))
 
-    return {"items": items, "total": len(items)}
+    return {
+        "items": items, "total": len(items),
+        "buckets": WATCHLIST_BUCKETS, "setups": WATCHLIST_SETUPS,
+        "marketOpen": _is_market_open(),
+    }
 
 
 def _calc_rsi(closes: list[float], period: int = 14) -> list[Optional[float]]:
@@ -2928,19 +4906,84 @@ def export_journal():
     )
 
 
-# ── Trade Watchlist ────────────────────────────────────────────────────────────
+# ── Trade Watchlist 2.0 ────────────────────────────────────────────────────────
+# Adds manual categorization (bucket), entry-style setup, cross-market pairing
+# (RS stock ↔ ADR), return-since-add tracking, conviction, tags, and a
+# market-health strip endpoint that powers the top of the Watchlist UI.
 _watchlist_lock = threading.Lock()
+
+WATCHLIST_BUCKETS: list[dict] = [
+    {"slug": "rs_leaders",      "label": "RS Leaders",         "icon": "🏆", "hint": "Outperformers holding up vs market"},
+    {"slug": "adr_pairs",       "label": "ADR Pairs",          "icon": "🌐", "hint": "Indian stock ↔ US ADR cross-listing"},
+    {"slug": "long_term",       "label": "Long-term / SIP",    "icon": "🏛️", "hint": "Multi-year compounders"},
+    {"slug": "sector_rotators", "label": "Sector Rotators",    "icon": "🔄", "hint": "Rotation candidates"},
+    {"slug": "macro_hedge",     "label": "Macro / Hedge",      "icon": "🛡️", "hint": "Gold, defensives, yields"},
+    {"slug": "setup_vcp",       "label": "Setup · VCP",        "icon": "🧲", "hint": "Volatility Contraction"},
+    {"slug": "setup_pullback",  "label": "Setup · Pullback",   "icon": "⤵️", "hint": "Buy on orderly retrace"},
+    {"slug": "setup_breakout",  "label": "Setup · Breakout",   "icon": "🚀", "hint": "Range high break + volume"},
+    {"slug": "setup_range_exp", "label": "Setup · Range Exp.", "icon": "📐", "hint": "Range expansion / trend day"},
+    {"slug": "setup_mean_rev",  "label": "Setup · Mean Rev.",  "icon": "↩️", "hint": "Oversold bounce"},
+    {"slug": "setup_bull_flag", "label": "Setup · Bull Flag",  "icon": "🏁", "hint": "Flag / pennant"},
+    {"slug": "setup_earnings",  "label": "Setup · Earnings",   "icon": "💼", "hint": "Pre / post earnings swing"},
+    {"slug": "setup_ipo_base",  "label": "Setup · IPO Base",   "icon": "🆕", "hint": "First base after listing"},
+    {"slug": "watching",        "label": "Just Watching",      "icon": "👀", "hint": "No setup yet, monitoring"},
+]
+
+WATCHLIST_SETUPS: list[str] = [
+    "VCP", "Pullback", "Breakout", "Range Expansion", "Mean Reversion",
+    "Bull Flag", "Base Building", "Earnings Swing", "IPO Base",
+    "Cup & Handle", "Darvas Box", "Gap-n-Go", "Watching",
+]
+
+# Known India ↔ US ADR cross-listings (NSE symbol → US ADR, and inverse).
+ADR_HINTS: dict[str, dict] = {
+    "INFY":       {"adr_symbol": "INFY", "adr_market": "us"},
+    "WIPRO":      {"adr_symbol": "WIT",  "adr_market": "us"},
+    "HDFCBANK":   {"adr_symbol": "HDB",  "adr_market": "us"},
+    "ICICIBANK":  {"adr_symbol": "IBN",  "adr_market": "us"},
+    "DRREDDY":    {"adr_symbol": "RDY",  "adr_market": "us"},
+    "TATAMOTORS": {"adr_symbol": "TTM",  "adr_market": "us"},
+    "VEDL":       {"adr_symbol": "VEDL", "adr_market": "us"},
+    "MAKEMYTRIP": {"adr_symbol": "MMYT", "adr_market": "us"},
+    "WIT":  {"adr_symbol": "WIPRO",     "adr_market": "india"},
+    "HDB":  {"adr_symbol": "HDFCBANK",  "adr_market": "india"},
+    "IBN":  {"adr_symbol": "ICICIBANK", "adr_market": "india"},
+    "RDY":  {"adr_symbol": "DRREDDY",   "adr_market": "india"},
+    "TTM":  {"adr_symbol": "TATAMOTORS","adr_market": "india"},
+    "MMYT": {"adr_symbol": "MAKEMYTRIP","adr_market": "india"},
+}
+
+
+def _migrate_watchlist_item(raw: dict) -> dict:
+    """Upgrade a v1 watchlist entry to v2 schema (idempotent)."""
+    raw.setdefault("bucket",      "watching")
+    raw.setdefault("market",      "india")
+    raw.setdefault("setup",       raw.get("setup", ""))
+    raw.setdefault("conviction",  3)
+    raw.setdefault("tags",        [])
+    raw.setdefault("add_price",   None)
+    raw.setdefault("add_date",    (raw.get("added_at") or "")[:10] or None)
+    raw.setdefault("pair_symbol", None)
+    raw.setdefault("pair_market", None)
+    raw.setdefault("source",      "manual")   # "manual" | "auto_rs"
+    return raw
+
 
 def _load_watchlist() -> list:
     if not TRADE_WATCHLIST_JSON.exists():
         return []
     try:
-        return json.loads(TRADE_WATCHLIST_JSON.read_text(encoding="utf-8"))
+        raw = json.loads(TRADE_WATCHLIST_JSON.read_text(encoding="utf-8"))
+        if isinstance(raw, list):
+            return [_migrate_watchlist_item(dict(x)) for x in raw]
+        return []
     except Exception:
         return []
 
+
 def _save_watchlist(items: list) -> None:
     TRADE_WATCHLIST_JSON.write_text(json.dumps(items, indent=2, ensure_ascii=False), encoding="utf-8")
+
 
 class WatchlistItem(BaseModel):
     symbol: str
@@ -2948,50 +4991,133 @@ class WatchlistItem(BaseModel):
     notes: str = ""
     alert_price: Optional[float] = None
     setup: str = ""
+    # ── v2 additions ──
+    market: Literal["india", "us"] = "india"
+    bucket: str = "watching"
+    conviction: int = Field(default=3, ge=1, le=5)
+    tags: list[str] = Field(default_factory=list)
+    add_price: Optional[float] = None       # anchor price captured at add-time
+    add_date: Optional[str] = None          # YYYY-MM-DD (auto → today)
+    pair_symbol: Optional[str] = None       # cross-market pair (e.g. ADR)
+    pair_market: Optional[Literal["india", "us"]] = None
+    source: Literal["manual", "auto_rs"] = "manual"  # provenance flag
+
+
+class WatchlistItemUpdate(BaseModel):
+    name: Optional[str] = None
+    notes: Optional[str] = None
+    alert_price: Optional[float] = None
+    setup: Optional[str] = None
+    bucket: Optional[str] = None
+    conviction: Optional[int] = None
+    tags: Optional[list[str]] = None
+    add_price: Optional[float] = None
+    add_date: Optional[str] = None
+    pair_symbol: Optional[str] = None
+    pair_market: Optional[Literal["india", "us"]] = None
+
+
+def _enrich_watchlist_item_lite(item: dict, sig_index: dict) -> None:
+    """Light-weight enrichment (CMP, day-change, return-since-add, pair, scan).
+    Shared between /watchlist and /watchlist/enriched."""
+    sym = item.get("symbol", "")
+    mkt = item.get("market") or "india"
+    cmp, prev_close, last_date = _get_price_info(sym, market=mkt)
+    if cmp:
+        item["cmp"] = round(cmp, 2)
+        item["lastPriceDate"] = last_date
+    if cmp and prev_close and prev_close > 0:
+        item["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
+    ap = item.get("add_price")
+    if cmp and ap and ap > 0:
+        item["returnSinceAddPct"] = round((cmp - ap) / ap * 100, 2)
+        item["returnSinceAddAbs"] = round(cmp - ap, 2)
+    pair_sym = item.get("pair_symbol")
+    if pair_sym:
+        pmkt = item.get("pair_market") or "india"
+        pcmp, pprev, pdate = _get_price_info(pair_sym, market=pmkt)
+        item["pair"] = {
+            "symbol": pair_sym, "market": pmkt,
+            "cmp": round(pcmp, 2) if pcmp else None,
+            "dayChangePct": round((pcmp - pprev) / pprev * 100, 2) if pcmp and pprev else None,
+            "lastPriceDate": pdate,
+        }
+    sig = sig_index.get(sym) or sig_index.get(sym + ".NS") or sig_index.get(sym.replace(".NS", ""))
+    if sig:
+        item["scanSetup"] = sig.get("setup", "")
+        item["scanRating"] = sig.get("rating", "")
+        item["scanScore"] = sig.get("rankingScore") or sig.get("score")
+        item["scanEntry"] = sig.get("entry")
+        item["scanSl"] = sig.get("sl")
+        item["rsScore"] = sig.get("rsScore")
+        item["regimeState"] = sig.get("regimeState")
+        item["entryInstruction"] = sig.get("entryInstruction")
+        item["inScan"] = True
+    else:
+        item["inScan"] = False
+
 
 @app.get("/api/trade-board/watchlist")
 def get_watchlist() -> dict:
     with _watchlist_lock:
         items = _load_watchlist()
-    # Enrich with CMP, day change, and scan signal data
     sig_index = _load_scan_signals_index()
     for item in items:
-        sym = item.get("symbol", "")
-        cmp, prev_close, last_date = _get_price_info(sym)
-        if cmp:
-            item["cmp"] = round(cmp, 2)
-            item["lastPriceDate"] = last_date
-        if cmp and prev_close and prev_close > 0:
-            item["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
-        # Merge scan signal data if available
-        sig = sig_index.get(sym) or sig_index.get(sym + ".NS") or sig_index.get(sym.replace(".NS", ""))
-        if sig:
-            item["scanSetup"] = sig.get("setup", "")
-            item["scanRating"] = sig.get("rating", "")
-            item["scanScore"] = sig.get("rankingScore") or sig.get("score")
-            item["scanEntry"] = sig.get("entry")
-            item["scanSl"] = sig.get("sl")
-            item["rsScore"] = sig.get("rsScore")
-            item["regimeState"] = sig.get("regimeState")
-            item["entryInstruction"] = sig.get("entryInstruction")
-            item["inScan"] = True
-        else:
-            item["inScan"] = False
-    return {"items": items, "total": len(items)}
+        _enrich_watchlist_item_lite(item, sig_index)
+    return {
+        "items": items, "total": len(items),
+        "buckets": WATCHLIST_BUCKETS, "setups": WATCHLIST_SETUPS,
+    }
+
 
 @app.post("/api/trade-board/watchlist")
 def add_watchlist_item(item: WatchlistItem) -> dict:
     with _watchlist_lock:
         items = _load_watchlist()
-        # Check for duplicate
-        if any(i.get("symbol","").upper() == item.symbol.upper() for i in items):
-            raise HTTPException(status_code=409, detail=f"{item.symbol} already in watchlist")
+        sym_u = item.symbol.upper()
+        # Duplicate guard — symbol + market must be unique
+        if any(i.get("symbol","").upper() == sym_u
+               and (i.get("market") or "india") == item.market
+               for i in items):
+            raise HTTPException(status_code=409, detail=f"{item.symbol} ({item.market}) already in watchlist")
         rec = item.model_dump()
+        rec["symbol"] = sym_u
         rec["id"] = str(uuid.uuid4())
         rec["added_at"] = datetime.now().isoformat(timespec="seconds")
+        if not rec.get("add_date"):
+            rec["add_date"] = datetime.now().strftime("%Y-%m-%d")
+        # Auto-capture current price as anchor if not given
+        if rec.get("add_price") in (None, 0, 0.0):
+            cmp, _, _ = _get_price_info(sym_u, market=rec.get("market") or "india")
+            if cmp:
+                rec["add_price"] = round(float(cmp), 2)
+        # Auto-suggest ADR pair if user didn't set one
+        if not rec.get("pair_symbol"):
+            hint = ADR_HINTS.get(sym_u)
+            if hint:
+                rec["pair_symbol"] = hint["adr_symbol"]
+                rec["pair_market"] = hint["adr_market"]
         items.append(rec)
         _save_watchlist(items)
     return {"ok": True, "item": rec}
+
+
+@app.patch("/api/trade-board/watchlist/{item_id}")
+def update_watchlist_item(item_id: str, patch: WatchlistItemUpdate) -> dict:
+    """Edit any editable field (bucket, setup, pair, notes, conviction,
+    add_price, add_date, tags, alert_price, name). Symbol/market are
+    immutable — delete and re-add to change them."""
+    with _watchlist_lock:
+        items = _load_watchlist()
+        for i, it in enumerate(items):
+            if it.get("id") == item_id:
+                changes = {k: v for k, v in patch.model_dump(exclude_unset=True).items()
+                           if v is not None}
+                items[i] = {**it, **changes}
+                _save_watchlist(items)
+                return {"ok": True, "item": items[i]}
+    raise HTTPException(status_code=404, detail="Watchlist item not found")
+
 
 @app.delete("/api/trade-board/watchlist/{item_id}")
 def remove_watchlist_item(item_id: str) -> dict:
@@ -3003,6 +5129,394 @@ def remove_watchlist_item(item_id: str) -> dict:
             raise HTTPException(status_code=404, detail="Watchlist item not found")
         _save_watchlist(items)
     return {"ok": True, "deleted": item_id}
+
+
+@app.get("/api/trade-board/watchlist/categories")
+def watchlist_categories() -> dict:
+    """Canonical bucket + setup vocabulary + ADR pairing hints.
+    The UI pulls from here so both sides stay in lock-step."""
+    return {"buckets": WATCHLIST_BUCKETS, "setups": WATCHLIST_SETUPS, "adr_hints": ADR_HINTS}
+
+
+@app.get("/api/trade-board/watchlist/market-health")
+def watchlist_market_health() -> dict:
+    """Compact market-health snapshot for the top of the Watchlist page.
+    Aggregates Nifty spot + trend + phase, regime from scan bundle, and breadth
+    hit-counts from the latest system summary. Every piece degrades gracefully
+    if its underlying artifact is missing."""
+    out: dict = {"generatedAt": datetime.now().isoformat(timespec="seconds")}
+    # Nifty spot + phase
+    try:
+        prices = _get_fresh_nifty_benchmark(days=260)
+        if prices:
+            closes = prices.get("close", []) or []
+            dates  = prices.get("dates", []) or []
+            if closes:
+                cur  = closes[-1]
+                prev = closes[-2]  if len(closes) >= 2   else cur
+                d20  = closes[-21] if len(closes) >= 21  else cur
+                d50  = closes[-51] if len(closes) >= 51  else cur
+                d252 = closes[0]
+                out["nifty"] = {
+                    "value":     round(cur, 2),
+                    "changePct": round((cur - prev) / prev * 100, 2) if prev else 0,
+                    "change20d": round((cur - d20) / d20 * 100, 2) if d20 else 0,
+                    "change50d": round((cur - d50) / d50 * 100, 2) if d50 else 0,
+                    "change52w": round((cur - d252) / d252 * 100, 2) if d252 else 0,
+                    "asOf":      dates[-1] if dates else None,
+                }
+            phases = _wpe.detect_market_phases(prices) or []
+            if phases:
+                out["currentPhase"] = phases[-1]
+                out["phaseSummary"] = _wpe._summarize_phases(phases)
+    except Exception as e:
+        out["phaseError"] = str(e)
+    # Regime + breadth from scan artifacts
+    try:
+        bundle = _read_json_if_exists(OUTPUT_DIR / "scan_bundle_india_daily_full_LATEST.json") or {}
+        if isinstance(bundle, dict):
+            out["regime"]     = (bundle.get("meta") or {}).get("regime")
+            out["scanCounts"] = bundle.get("counts")
+    except Exception:
+        pass
+    try:
+        summary = _read_json_if_exists(OUTPUT_DIR / "system_latest_summary.json") or {}
+        for r in summary.get("results", []) or []:
+            if r.get("market") == "india" and r.get("timeframe") == "daily":
+                out["summary"] = {
+                    "hits":            r.get("hits", 0),
+                    "watchlistHits":   r.get("watchlistHits", 0),
+                    "portfolioPicks":  r.get("portfolioPicks", 0),
+                    "setupBreakdown":  (r.get("variationBreakdown") or {}).get("setup", {}),
+                    "ratingBreakdown": (r.get("variationBreakdown") or {}).get("rating", {}),
+                }
+                break
+    except Exception:
+        pass
+    # One-line verdict for the top strip
+    phase = (out.get("currentPhase") or {}).get("type")
+    _reg = out.get("regime")
+    if isinstance(_reg, dict):
+        _reg = _reg.get("state") or _reg.get("label") or ""
+    regime = str(_reg or "").lower()
+    if phase == "decline":
+        verdict = "⚠ Defense mode — Nifty in decline phase"
+    elif phase == "consolidation":
+        verdict = "⏸ Consolidation — wait for leadership / breakouts"
+    elif phase == "recovery":
+        verdict = "✅ Recovery leg — lean into RS leaders"
+    elif "bull" in regime:
+        verdict = "✅ Bullish regime — offense mode"
+    elif "bear" in regime:
+        verdict = "⚠ Bearish regime — defense mode"
+    else:
+        verdict = "⚖ Neutral — selective, setup-dependent"
+    out["verdict"] = verdict
+    return out
+
+
+# ── Automated RS-Leader Detection ─────────────────────────────────────────────
+# Scans every Indian cache file, computes IBD-style Relative Strength vs Nifty
+# 50 for each stock, ranks them, and surfaces the top N. The scan is cached for
+# 30 minutes because it's a pure read over the CSV cache (no network) and
+# stable within a trading session.
+
+_rs_scan_cache: dict = {"ts": 0, "data": None}
+_rs_scan_lock = threading.Lock()
+_RS_SCAN_TTL = 30 * 60  # seconds
+
+
+def _list_india_cache_symbols() -> list[str]:
+    """Return every NSE symbol present in the OHLCV cache (base names, no .NS)."""
+    out: list[str] = []
+    try:
+        for p in CACHE_DIR.glob("*.NS.csv"):
+            out.append(p.stem.replace(".NS", ""))
+    except Exception:
+        pass
+    return sorted(set(out))
+
+
+def _compute_rs_universe(
+    top_n: int = 35,
+    min_price: float = 50.0,
+    min_bars: int = 150,
+    max_symbols: int = 0,  # 0 = all
+) -> dict:
+    """
+    Rank every Indian stock in the cache by IBD-style RS vs Nifty 50.
+    Returns a dict with {top, total_scanned, computed, nifty_asof, generatedAt}.
+    Thread-safe, memoized for _RS_SCAN_TTL seconds.
+    """
+    now = time.time()
+
+    # Fetch freshest-possible Nifty benchmark (shared helper — same source as
+    # every other page that shows "Nifty asof"). Triggers a sync index refresh
+    # if the OHLCV cache is stale; falls back to yfinance side-cache if needed.
+    market_prices = _get_fresh_nifty_benchmark(days=260)
+    live_nifty_asof = (market_prices or {}).get("dates", [None])[-1] if market_prices else None
+
+    with _rs_scan_lock:
+        cached = _rs_scan_cache.get("data")
+        if cached and (now - _rs_scan_cache.get("ts", 0)) < _RS_SCAN_TTL \
+                and cached.get("_params") == (top_n, min_price, min_bars, max_symbols):
+            # Bypass the TTL if the live ^NSEI CSV has a newer last-date than
+            # what the cached scan was computed against. Otherwise the RS
+            # table keeps showing e.g. "Nifty 2026-04-17" for ≤30 min even
+            # though fresh bars have already landed on disk.
+            cached_asof = cached.get("nifty_asof")
+            if (not live_nifty_asof) or (not cached_asof) or live_nifty_asof <= cached_asof:
+                return cached
+            print(f"🔁 RS-universe cache asof={cached_asof} < live ^NSEI {live_nifty_asof} "
+                  f"— invalidating and recomputing", flush=True)
+            _rs_scan_cache["ts"] = 0  # force recompute below
+
+    if not market_prices or not market_prices.get("close"):
+        raise HTTPException(status_code=503, detail="Could not fetch Nifty50 data for RS benchmark")
+
+    # 2. Universe = all cached NSE symbols (excluding Nifty itself)
+    universe = [s for s in _list_india_cache_symbols() if s.upper() != "^NSEI"]
+    if max_symbols and len(universe) > max_symbols:
+        universe = universe[:max_symbols]
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _score_one(sym: str) -> Optional[dict]:
+        rows = _read_ohlcv(sym, days=260, market="india")
+        if not rows or len(rows) < min_bars:
+            return None
+        last_close = rows[-1]["close"]
+        if last_close < min_price:
+            return None
+        stock_prices = {
+            "close": [r["close"] for r in rows],
+            "dates": [r["date"]  for r in rows],
+        }
+        try:
+            rs = _wpe.compute_rs_score(stock_prices, market_prices)
+        except Exception:
+            return None
+        score = rs.get("rs_score")
+        if score is None:
+            return None
+        # Quick trend filter: price above its 50-day SMA (IBD "Stage-2" lite)
+        closes = stock_prices["close"]
+        sma50 = sum(closes[-50:]) / 50 if len(closes) >= 50 else 0
+        above_sma50 = last_close >= sma50 if sma50 else False
+        # 52-week high proximity
+        hi52 = max(r["high"] for r in rows[-252:]) if len(rows) >= 252 else max(r["high"] for r in rows)
+        pct_from_hi = ((last_close - hi52) / hi52 * 100) if hi52 else 0
+        return {
+            "symbol":       sym,
+            "market":       "india",
+            "rs_score":     score,
+            "rs_label":     rs.get("rs_label"),
+            "rs_color":     rs.get("rs_color"),
+            "excess_pct":   rs.get("weighted_excess_pct"),
+            "period_returns": rs.get("period_returns", {}),
+            "cmp":          round(last_close, 2),
+            "pctFrom52wHigh": round(pct_from_hi, 2),
+            "aboveSma50":   above_sma50,
+            "bars":         len(rows),
+            "lastDate":     rows[-1]["date"],
+        }
+
+    scored: list[dict] = []
+    # Use the bulk-read initializer so pool workers don't each spawn per-symbol
+    # refresh threads (5000+ symbols × stale → thread-storm freeze).
+    with ThreadPoolExecutor(max_workers=12, initializer=_ig_worker_init) as pool:
+        for res in pool.map(_score_one, universe):
+            if res is not None:
+                scored.append(res)
+
+    # ── Freshness probe ──────────────────────────────────────────────────
+    # The bulk-read flag above prevents _read_ohlcv from spawning per-symbol
+    # refresh threads (thread-storm), but that means CMP in the RS leaders
+    # table reflects whatever's on disk — which is yesterday's close if the
+    # OHLCV refresher hasn't run since market close. Delegate one consolidated
+    # refresh to the OHLCV cache refresher when we detect staleness. When it
+    # finishes we invalidate the RS scan cache so the next call recomputes.
+    try:
+        stale_count = 0
+        sample = scored[:150]
+        for row in sample:
+            sym = row["symbol"]
+            csv_path = CACHE_DIR / f"{sym}.NS.csv"
+            if not csv_path.exists():
+                csv_path = CACHE_DIR / f"{sym}.csv"
+            if _is_price_stale(row.get("lastDate", ""), csv_path):
+                stale_count += 1
+        if sample and stale_count >= max(5, len(sample) // 10):
+            if not _cache_refresher.is_running:
+                print(f"🔄 RS-universe: {stale_count}/{len(sample)} sampled "
+                      f"CSVs are stale — kicking OHLCV cache refresh", flush=True)
+                _cache_refresher.start(indian_only=True, workers=4)
+    except Exception as _e:
+        print(f"⚠ RS-universe freshness probe error: {_e}", flush=True)
+
+    # 3. Sort by rs_score desc; tiebreak by excess_pct
+    scored.sort(key=lambda x: (x["rs_score"], x.get("excess_pct") or 0), reverse=True)
+    top = scored[:top_n]
+    # Add rank
+    for i, s in enumerate(top, start=1):
+        s["rank"] = i
+
+    data = {
+        "generatedAt":   datetime.now().isoformat(timespec="seconds"),
+        "top":           top,
+        "top_n":         top_n,
+        "total_scanned": len(universe),
+        "total_computed": len(scored),
+        "min_price":     min_price,
+        "min_bars":      min_bars,
+        "nifty_asof":    (market_prices.get("dates") or [None])[-1],
+        "_params":       (top_n, min_price, min_bars, max_symbols),
+    }
+    with _rs_scan_lock:
+        _rs_scan_cache["data"] = data
+        _rs_scan_cache["ts"]   = now
+    return data
+
+
+@app.get("/api/trade-board/watchlist/rs-leaders/preview")
+def rs_leaders_preview(
+    top: int = 35,
+    min_price: float = 50.0,
+    min_bars: int = 150,
+    refresh: bool = False,
+) -> dict:
+    """
+    Rank every Indian stock in the cache by IBD-style RS vs Nifty 50 and return
+    the top `top` without inserting anything. Use this to preview before
+    auto-populating the watchlist.
+    """
+    if top <= 0 or top > 200:
+        raise HTTPException(status_code=400, detail="top must be between 1 and 200")
+    if refresh:
+        with _rs_scan_lock:
+            _rs_scan_cache["ts"] = 0
+    return _compute_rs_universe(top_n=top, min_price=min_price, min_bars=min_bars)
+
+
+class RsLeaderAutoAddRequest(BaseModel):
+    top:       int = Field(default=35, ge=1, le=100)
+    min_price: float = 50.0
+    min_bars:  int = 150
+    refresh:   bool = False
+    replace_existing_auto: bool = True  # wipe prior auto_rs items first
+
+
+@app.post("/api/trade-board/watchlist/rs-leaders/auto-add")
+def rs_leaders_auto_add(req: RsLeaderAutoAddRequest | None = None) -> dict:
+    """
+    Compute the top-N RS leaders (vs Nifty 50) and insert them into the
+    watchlist with bucket="rs_leaders" and source="auto_rs".
+
+    • Manual entries (source="manual") are NEVER touched.
+    • By default any previously-inserted auto_rs entries are wiped first, so
+      calling this endpoint again gives you a fresh top-N snapshot.
+    • If a symbol already exists as a manual entry, we skip it (no duplicate,
+      no overwrite of your notes/conviction/etc).
+    • Anchor price defaults to the current CMP; ADR pair auto-suggested if
+      known (INFY, WIPRO, HDFCBANK, …).
+    """
+    if req is None:
+        req = RsLeaderAutoAddRequest()
+    if req.refresh:
+        with _rs_scan_lock:
+            _rs_scan_cache["ts"] = 0
+
+    ranking = _compute_rs_universe(
+        top_n=req.top, min_price=req.min_price, min_bars=req.min_bars,
+    )
+    leaders = ranking["top"]
+
+    added: list[dict] = []
+    skipped_manual: list[str] = []
+    removed_auto:  list[str] = []
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    with _watchlist_lock:
+        items = _load_watchlist()
+        # 1. Remove stale auto_rs entries first
+        if req.replace_existing_auto:
+            kept = []
+            for it in items:
+                if it.get("source") == "auto_rs":
+                    removed_auto.append(it.get("symbol", "?"))
+                else:
+                    kept.append(it)
+            items = kept
+        # 2. Insert fresh leaders, skipping any symbol already tracked manually
+        existing_syms = {(it.get("symbol") or "").upper(): it for it in items}
+        for row in leaders:
+            sym_u = row["symbol"].upper()
+            if sym_u in existing_syms:
+                # It's still in the list → either we kept a manual entry or
+                # replace_existing_auto was False and the auto entry is still there.
+                existing = existing_syms[sym_u]
+                if existing.get("source") == "manual":
+                    skipped_manual.append(sym_u)
+                    continue
+                # It's an auto entry we kept — refresh rank tags / score
+                existing["conviction"] = max(3, min(5, int((row["rs_score"] or 50) / 20)))
+                existing["tags"] = list({*existing.get("tags", []),
+                                         "rs_leader", f"rs{row['rs_score']}", f"rank{row['rank']}"})
+                existing["notes"] = f"Auto RS-Leader rank #{row['rank']}  ·  RS {row['rs_score']} {row.get('rs_label','')}"
+                added.append(existing)
+                continue
+            # Fresh insert
+            hint = ADR_HINTS.get(sym_u) or {}
+            rec = {
+                "id":          str(uuid.uuid4()),
+                "symbol":      sym_u,
+                "market":      "india",
+                "name":        "",
+                "bucket":      "rs_leaders",
+                "setup":       "",
+                "conviction":  max(3, min(5, int((row["rs_score"] or 50) / 20))),
+                "tags":        ["rs_leader", f"rs{row['rs_score']}", f"rank{row['rank']}"],
+                "add_price":   row.get("cmp"),
+                "add_date":    today,
+                "added_at":    datetime.now().isoformat(timespec="seconds"),
+                "alert_price": None,
+                "pair_symbol": hint.get("adr_symbol"),
+                "pair_market": hint.get("adr_market"),
+                "notes":       f"Auto RS-Leader rank #{row['rank']}  ·  RS {row['rs_score']} {row.get('rs_label','')}",
+                "source":      "auto_rs",
+                # extra diagnostic fields (preserved in JSON)
+                "rs_score":    row["rs_score"],
+                "rs_rank":     row["rank"],
+                "rs_excess_pct": row.get("excess_pct"),
+            }
+            items.append(rec)
+            added.append(rec)
+        _save_watchlist(items)
+
+    return {
+        "ok":              True,
+        "top":             req.top,
+        "added_count":     len(added),
+        "removed_auto":    removed_auto,
+        "skipped_manual":  skipped_manual,
+        "leaders":         added,
+        "generatedAt":     ranking["generatedAt"],
+        "nifty_asof":      ranking.get("nifty_asof"),
+        "total_scanned":   ranking["total_scanned"],
+        "total_computed":  ranking["total_computed"],
+    }
+
+
+@app.delete("/api/trade-board/watchlist/rs-leaders/auto")
+def rs_leaders_remove_auto() -> dict:
+    """Remove every auto-generated RS-Leader entry (keeps manual entries)."""
+    with _watchlist_lock:
+        items = _load_watchlist()
+        before = len(items)
+        kept   = [it for it in items if it.get("source") != "auto_rs"]
+        removed = [it.get("symbol") for it in items if it.get("source") == "auto_rs"]
+        _save_watchlist(kept)
+    return {"ok": True, "removed_count": before - len(kept), "removed": removed}
 
 
 # ── Market Overview ────────────────────────────────────────────────────────────
@@ -3204,7 +5718,10 @@ def get_price_data_for_symbols(symbols: str = "") -> dict:
                 "prevClose": round(prev, 2) if prev else None,
                 "dayChangePct": round((cmp - prev) / prev * 100, 2) if prev and prev > 0 else None,
                 "lastDate": last_date,
-                "isStale": _is_price_stale(last_date) if last_date else True,
+                "isStale": _is_price_stale(
+                    last_date,
+                    CACHE_DIR / f"{sym.upper().replace('.NS','').replace('.BO','')}.NS.csv",
+                ) if last_date else True,
             }
     return {"prices": prices, "count": len(prices)}
 
@@ -3235,6 +5752,28 @@ class BreakoutAlertConfigUpdate(BaseModel):
     gmail_address: Optional[str] = None
     gmail_app_password: Optional[str] = None
     email_to: Optional[str] = None
+    # Custom rules replace-all (optional bulk update)
+    custom_rules: Optional[list[dict]] = None
+
+
+class CustomAlertRulePayload(BaseModel):
+    """Schema for creating/updating one custom alert rule.
+
+    All fields optional on PATCH; on POST `timeframe`, `metric`,
+    `operator`, `threshold` are required (validated at handler).
+    """
+    id: Optional[str] = None
+    name: Optional[str] = None
+    enabled: Optional[bool] = None
+    symbol: Optional[str] = None                 # "" or "*" = watchlist-wide
+    timeframe: Optional[str] = None              # 5m/15m/30m/1h/1d/1wk/1mo
+    metric: Optional[str] = None                 # price|volume|volume_ratio|price_pct_change
+    operator: Optional[str] = None               # >|>=|<|<=|==|crosses_above|crosses_below
+    threshold: Optional[float] = None
+    reference: Optional[str] = None              # absolute|avg|prev_close|prev_high|prev_low|highest|lowest
+    reference_bars: Optional[int] = None
+    cooldown_minutes: Optional[int] = None
+    channels: Optional[list[str]] = None         # subset of ["telegram","email"]
 
 
 @app.get("/api/breakout-alerts/status")
@@ -3263,6 +5802,126 @@ def update_breakout_alert_config(update: BreakoutAlertConfigUpdate) -> dict:
     _breakout_scanner.state.save_config(new_config)
     return {"ok": True, "config": {k: v for k, v in _asdict(new_config).items()
                                     if k not in ("gmail_app_password",)}}
+
+
+# ── Custom per-timeframe alert rules CRUD ──────────────────────────────────
+
+_VALID_TIMEFRAMES = {"5m", "15m", "30m", "60m", "1h", "1d", "1wk", "1mo"}
+_VALID_METRICS = {"price", "volume", "volume_ratio", "price_pct_change"}
+_VALID_OPERATORS = {">", ">=", "<", "<=", "==", "crosses_above", "crosses_below"}
+_VALID_REFERENCES = {"absolute", "avg", "prev_close", "prev_high", "prev_low",
+                      "highest", "lowest"}
+_VALID_CHANNELS = {"telegram", "email"}
+
+
+def _validate_rule(rule: dict, partial: bool = False) -> None:
+    """Raise HTTPException on invalid rule payload."""
+    from fastapi import HTTPException
+    required = ("timeframe", "metric", "operator", "threshold")
+    if not partial:
+        for k in required:
+            if rule.get(k) in (None, ""):
+                raise HTTPException(400, f"Field '{k}' is required")
+    if "timeframe" in rule and rule["timeframe"] and rule["timeframe"] not in _VALID_TIMEFRAMES:
+        raise HTTPException(400, f"timeframe must be one of {sorted(_VALID_TIMEFRAMES)}")
+    if "metric" in rule and rule["metric"] and rule["metric"] not in _VALID_METRICS:
+        raise HTTPException(400, f"metric must be one of {sorted(_VALID_METRICS)}")
+    if "operator" in rule and rule["operator"] and rule["operator"] not in _VALID_OPERATORS:
+        raise HTTPException(400, f"operator must be one of {sorted(_VALID_OPERATORS)}")
+    if "reference" in rule and rule["reference"] and rule["reference"] not in _VALID_REFERENCES:
+        raise HTTPException(400, f"reference must be one of {sorted(_VALID_REFERENCES)}")
+    if "channels" in rule and rule["channels"]:
+        bad = [c for c in rule["channels"] if c not in _VALID_CHANNELS]
+        if bad:
+            raise HTTPException(400, f"unknown channels: {bad}")
+
+
+@app.get("/api/breakout-alerts/custom-rules")
+def list_custom_alert_rules() -> dict:
+    """Return every persisted custom alert rule."""
+    config = _breakout_scanner.state.load_config()
+    return {"rules": list(config.custom_rules or []),
+            "count": len(config.custom_rules or []),
+            "supported": {
+                "timeframes": sorted(_VALID_TIMEFRAMES),
+                "metrics": sorted(_VALID_METRICS),
+                "operators": sorted(_VALID_OPERATORS),
+                "references": sorted(_VALID_REFERENCES),
+                "channels": sorted(_VALID_CHANNELS),
+            }}
+
+
+@app.post("/api/breakout-alerts/custom-rules")
+def create_custom_alert_rule(payload: CustomAlertRulePayload) -> dict:
+    """Create a new custom alert rule. Returns the stored rule with its id."""
+    import uuid
+    from dataclasses import asdict as _asdict
+    rule = {k: v for k, v in payload.model_dump(exclude_unset=True).items()
+            if v is not None}
+    _validate_rule(rule, partial=False)
+    rule.setdefault("id", uuid.uuid4().hex[:12])
+    rule.setdefault("name", f"{rule.get('metric','')}-{rule.get('timeframe','')}")
+    rule.setdefault("enabled", True)
+    rule.setdefault("symbol", "")
+    rule.setdefault("reference", "absolute")
+    rule.setdefault("reference_bars", 20)
+    rule.setdefault("cooldown_minutes", 60)
+    rule.setdefault("channels", ["telegram"])
+
+    config = _breakout_scanner.state.load_config()
+    rules = list(config.custom_rules or [])
+    rules.append(rule)
+    data = _asdict(config)
+    data["custom_rules"] = rules
+    _breakout_scanner.state.save_config(AlertConfig(**data))
+    return {"ok": True, "rule": rule}
+
+
+@app.patch("/api/breakout-alerts/custom-rules/{rule_id}")
+def update_custom_alert_rule(rule_id: str, payload: CustomAlertRulePayload) -> dict:
+    """Partially update a rule by id."""
+    from fastapi import HTTPException
+    from dataclasses import asdict as _asdict
+    patch = {k: v for k, v in payload.model_dump(exclude_unset=True).items()
+             if v is not None and k != "id"}
+    _validate_rule(patch, partial=True)
+
+    config = _breakout_scanner.state.load_config()
+    rules = list(config.custom_rules or [])
+    for i, r in enumerate(rules):
+        if r.get("id") == rule_id:
+            rules[i] = {**r, **patch}
+            data = _asdict(config)
+            data["custom_rules"] = rules
+            _breakout_scanner.state.save_config(AlertConfig(**data))
+            return {"ok": True, "rule": rules[i]}
+    raise HTTPException(404, f"rule {rule_id} not found")
+
+
+@app.delete("/api/breakout-alerts/custom-rules/{rule_id}")
+def delete_custom_alert_rule(rule_id: str) -> dict:
+    """Delete a rule by id."""
+    from fastapi import HTTPException
+    from dataclasses import asdict as _asdict
+    config = _breakout_scanner.state.load_config()
+    rules = list(config.custom_rules or [])
+    new_rules = [r for r in rules if r.get("id") != rule_id]
+    if len(new_rules) == len(rules):
+        raise HTTPException(404, f"rule {rule_id} not found")
+    data = _asdict(config)
+    data["custom_rules"] = new_rules
+    _breakout_scanner.state.save_config(AlertConfig(**data))
+    return {"ok": True, "deleted": rule_id, "remaining": len(new_rules)}
+
+
+@app.post("/api/breakout-alerts/custom-rules/evaluate-now")
+def evaluate_custom_rules_now(symbols: list[str] | None = None) -> dict:
+    """Dry-run every enabled rule (ignores cooldown). Returns list of fired alerts."""
+    if _breakout_scanner._read_ohlcv is None:
+        _breakout_scanner._read_ohlcv = _read_ohlcv
+    fired = _breakout_scanner.evaluate_custom_rules_now(symbols=symbols)
+    return {"fired": fired, "count": len(fired),
+            "evaluatedAt": datetime.now().isoformat(timespec="seconds")}
 
 
 @app.post("/api/breakout-alerts/scan-now")
@@ -3469,3 +6128,68 @@ def position_ema5_scan_and_alert(threshold: float = 1.5) -> dict:
         "telegramSent": sent_count,
         "checkedAt": datetime.now().isoformat(timespec="seconds"),
     }
+
+
+# ── Trading wisdom / daily reminders ───────────────────────────────────────
+# These endpoints power the always-on nudge layer in the UI: quote-of-the-day
+# panel, page-contextual reminders, psychology pings on open positions, etc.
+# All data is served from trading_wisdom.QUOTES (pure-data, see lib module).
+#
+# NOTE: every endpoint returns JSONResponse with Cache-Control: no-store.
+# Without that header browsers (especially Safari) were caching responses
+# aggressively, so navigating between pages or hitting the rotate button
+# silently replayed stale quotes — the #1 complaint from the first rollout.
+
+_WISDOM_NO_CACHE_HEADERS = {
+    "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    "Pragma": "no-cache",
+    "Expires": "0",
+}
+
+
+def _wisdom_json(payload: dict, status_code: int = 200):
+    from fastapi.responses import JSONResponse
+    return JSONResponse(payload, status_code=status_code,
+                        headers=_WISDOM_NO_CACHE_HEADERS)
+
+
+@app.get("/api/wisdom/quote-of-the-day")
+def wisdom_qotd():
+    """Deterministic-by-date quote. Same date → same quote on every device."""
+    q = trading_wisdom.quote_of_the_day()
+    return _wisdom_json({**q, "date": datetime.now().strftime("%Y-%m-%d")})
+
+
+@app.get("/api/wisdom/random")
+def wisdom_random(tags: str = "", exclude: str = ""):
+    """Random quote, optionally filtered by comma-separated tags / authors."""
+    tag_list = [t.strip() for t in tags.split(",") if t.strip()] or None
+    ex_list = [a.strip() for a in exclude.split(",") if a.strip()] or None
+    q = trading_wisdom.random_quote(tags=tag_list, exclude_authors=ex_list)
+    if not q:
+        return _wisdom_json({"detail": "no quotes match"}, status_code=404)
+    return _wisdom_json(q)
+
+
+@app.get("/api/wisdom/for-page")
+def wisdom_for_page(page: str = "home", regime: str = "unknown",
+                    count: int = 3):
+    """Contextual nudges for a page + market-regime combination.
+
+    regime: 'bull' | 'bear' | 'neutral' | 'unknown'
+
+    Returns a FRESH random mix on every call (no date-seed lock-in) — that
+    is what makes the panel feel alive as the user moves between pages.
+    """
+    count = max(1, min(count, 10))
+    items = trading_wisdom.reminders_for_page(
+        page=page, market_regime=regime, count=count)
+    return _wisdom_json({"page": page, "regime": regime,
+                         "count": len(items), "items": items})
+
+
+@app.get("/api/wisdom/stats")
+def wisdom_stats():
+    """Totals, per-author & per-tag counts — used by tests and an About page."""
+    return _wisdom_json(trading_wisdom.stats())
+

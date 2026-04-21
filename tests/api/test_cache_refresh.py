@@ -35,3 +35,19 @@ class TestCacheRefresh:
                             json=[f"SYM{i}.NS" for i in range(25)])
         assert r.status_code == 400
 
+    def test_refresh_symbols_force_flag_propagates(self, api_client, monkeypatch):
+        import main as api_main
+
+        calls = []
+
+        def _fake_refresh(symbol: str, force: bool = False) -> bool:
+            calls.append((symbol, force))
+            return True
+
+        monkeypatch.setattr(api_main, "_refresh_symbol_if_stale", _fake_refresh)
+
+        r = api_client.post("/api/cache/refresh-symbols?force=true", json=["HCG.NS"])
+        assert r.status_code == 200
+        assert calls == [("HCG.NS", True)]
+        assert r.json()["results"]["HCG.NS"] == "updated"
+

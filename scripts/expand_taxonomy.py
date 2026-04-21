@@ -214,7 +214,9 @@ NEW_STOCKS = [
     ("POLYPLEX","Packaging","Packaging - Films"),
     ("SUPREMEIND","Packaging","Packaging - Plastics"),
     ("MOLDTEK","Packaging","Packaging - Containers"),
-    ("APEX","Packaging","Packaging - Laminates"),
+    # NOTE: NSE ticker "APEX" = Apex Frozen Foods Ltd (shrimp exporter),
+    # classified under Agri/Aquaculture in clean_taxonomy.py. Do NOT put it
+    # under Packaging — that was a mis-mapping with an unlisted "Apex Laminates".
 
     # ── METALS ───────────────────────────────────────────────────────────────
     ("STERLITE","Metals","Copper"),

@@ -45,17 +45,39 @@ class TestSymbolClassification:
 
 class TestGrowwOnlyGate:
     def test_indian_symbol_blocks_external_sources_when_groww_only(self, monkeypatch):
-        gc = _reload_gc(monkeypatch, GROWW_ONLY="1")
+        # Groww-only mode only activates when credentials are present
+        # (see _GROWW_HAS_CREDS in groww_client.py).
+        gc = _reload_gc(monkeypatch,
+                        GROWW_ONLY="1",
+                        GROWW_ACCESS_TOKEN="test-token",
+                        GROWW_API_KEY="test-key")
         assert gc.groww_only_mode() is True
         assert gc.should_use_non_groww_source("RELIANCE.NS") is False
         assert gc.should_use_non_groww_source("TCS.BO") is False
 
     def test_us_symbol_always_allows_fallback(self, monkeypatch):
-        gc = _reload_gc(monkeypatch, GROWW_ONLY="1")
+        gc = _reload_gc(monkeypatch,
+                        GROWW_ONLY="1",
+                        GROWW_ACCESS_TOKEN="test-token",
+                        GROWW_API_KEY="test-key")
         assert gc.should_use_non_groww_source("AAPL") is True
 
     def test_groww_only_off_allows_everything(self, monkeypatch):
-        gc = _reload_gc(monkeypatch, GROWW_ONLY="0")
+        gc = _reload_gc(monkeypatch,
+                        GROWW_ONLY="0",
+                        GROWW_ACCESS_TOKEN="test-token",
+                        GROWW_API_KEY="test-key")
+        assert gc.groww_only_mode() is False
+        assert gc.should_use_non_groww_source("RELIANCE.NS") is True
+
+    def test_groww_only_disabled_when_no_creds(self, monkeypatch):
+        """Regression guard: GROWW_ONLY=1 must NOT activate without creds,
+        otherwise every fetcher blocks with no working data source."""
+        gc = _reload_gc(monkeypatch,
+                        GROWW_ONLY="1",
+                        GROWW_ACCESS_TOKEN="",
+                        GROWW_API_KEY="",
+                        GROWW_API_SECRET="")
         assert gc.groww_only_mode() is False
         assert gc.should_use_non_groww_source("RELIANCE.NS") is True
 

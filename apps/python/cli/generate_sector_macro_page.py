@@ -20,35 +20,21 @@ OUTPUT    = ROOT / "output"
 CACHE_DIR = ROOT / "cache"
 sys.path.insert(0, str(ROOT / "apps" / "python" / "lib"))
 
-SECTOR_MAP = {
-    "HDFCBANK":"Banking","ICICIBANK":"Banking","SBIN":"Banking","AXISBANK":"Banking",
-    "KOTAKBANK":"Banking","INDUSINDBK":"Banking","BANDHANBNK":"Banking","FEDERALBNK":"Banking",
-    "IDFCFIRSTB":"Banking","AUBANK":"Banking","CANBK":"Banking","BANKBARODA":"Banking",
-    "PNB":"Banking","UNIONBANK":"Banking","IDBI":"Banking","RBLBANK":"Banking",
-    "TCS":"IT","INFY":"IT","WIPRO":"IT","HCLTECH":"IT","TECHM":"IT","LTIM":"IT",
-    "MPHASIS":"IT","COFORGE":"IT","PERSISTENT":"IT","KPITTECH":"IT","OFSS":"IT",
-    "HINDUNILVR":"FMCG","ITC":"FMCG","NESTLEIND":"FMCG","BRITANNIA":"FMCG",
-    "DABUR":"FMCG","MARICO":"FMCG","COLPAL":"FMCG","GODREJCP":"FMCG",
-    "SUNPHARMA":"Pharma","DRREDDY":"Pharma","CIPLA":"Pharma","DIVISLAB":"Pharma",
-    "TORNTPHARM":"Pharma","LUPIN":"Pharma","AUROPHARMA":"Pharma","ALKEM":"Pharma",
-    "IPCALAB":"Pharma","GLENMARK":"Pharma","GRANULES":"Pharma",
-    "MARUTI":"Auto","TATAMOTORS":"Auto","HEROMOTOCO":"Auto","EICHERMOT":"Auto",
-    "TVSMOTOR":"Auto","ASHOKLEY":"Auto","TIINDIA":"Auto","M&M":"Auto",
-    "RELIANCE":"Energy","ONGC":"Energy","BPCL":"Energy","IOC":"Energy","HINDPETRO":"Energy",
-    "GAIL":"Energy","COALINDIA":"Energy","ADANIGREEN":"Energy","NTPC":"Energy","POWERGRID":"Energy",
-    "TATASTEEL":"Metals","HINDALCO":"Metals","JSWSTEEL":"Metals","SAIL":"Metals",
-    "VEDL":"Metals","NMDC":"Metals","HINDZINC":"Metals","APLAPOLLO":"Metals",
-    "ADANIENT":"Infra","ADANIPORTS":"Infra","L&T":"Infra","LT":"Infra","ADANIPOWER":"Infra",
-    "BAJFINANCE":"NBFC","BAJAJFINSV":"NBFC","CHOLAFIN":"NBFC","M&MFIN":"NBFC",
-    "MUTHOOTFIN":"NBFC","MANAPPURAM":"NBFC","PFC":"NBFC","RECLTD":"NBFC",
-    "TITAN":"Consumer","ASIANPAINT":"Consumer","PIDILITIND":"Consumer","HAVELLS":"Consumer",
-    "VOLTAS":"Consumer","DIXON":"Consumer","CROMPTON":"Consumer",
-    "NAUKRI":"Internet","ZOMATO":"Internet","PAYTM":"Internet","IRCTC":"Internet",
-    "DLF":"RealEstate","GODREJPROP":"RealEstate","OBEROIRLTY":"RealEstate","PRESTIGE":"RealEstate",
-    "SIEMENS":"Cap Goods","ABB":"Cap Goods","BHEL":"Cap Goods","BEL":"Cap Goods",
-    "CUMMINSIND":"Cap Goods","THERMAX":"Cap Goods",
-    "HDFCLIFE":"Insurance","SBILIFE":"Insurance","ICICIPRU":"Insurance",
-}
+# ── Sector taxonomy ──────────────────────────────────────────────────────────
+# Source of truth is nse_taxonomy (backed by data/nse_stock_enriched.csv and
+# data/nse_stock_taxonomy.csv). We build a ticker → sector map at import so
+# the rest of the file's cache-iteration logic is unchanged, but the universe
+# automatically covers every NSE stock (~2,650) instead of the ~100-ticker
+# hardcoded list this file used to ship with.
+try:
+    import nse_taxonomy  # type: ignore
+    SECTOR_MAP: dict[str, str] = {
+        t: s for t, s in nse_taxonomy._SECTOR_MAP.items()
+        if s and s != "Other"
+    }
+except Exception as _exc:  # pragma: no cover — defensive boot fallback
+    print(f"⚠ nse_taxonomy unavailable ({_exc}); sector macro page will be empty")
+    SECTOR_MAP = {}
 
 INDEX_SYMBOL = "^NSEI"
 LIVE_REFRESH_DAYS = 75

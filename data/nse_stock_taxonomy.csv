@@ -1,1361 +1,2650 @@
 nse_ticker,sector,industry,notes
-360ONE,Financials,Wealth Management,
-3MINDIA,Cap Goods,Specialty Materials,
+20MICRONS,Metals & Mining,Minerals & Mining,nse_official
+21STCENMGM,Financial Services,Capital Markets,nse_official
+360ONE,Financial Services,Capital Markets,nse_official
+3IINFOLTD,Information Technology,IT - Software,nse_official
+3MINDIA,Diversified,Diversified,nse_official
+3PLAND,Financial Services,Finance,nse_official
 4THAND,Consumer,Tobacco,
-5PAISA,Financials,Stock Broking,
-AADHARHFC,Financials,Housing Finance,
-AADINATH,Textiles,Textile Processing,
+5PAISA,Financial Services,Capital Markets,nse_official
+63MOONS,Information Technology,IT - Software,nse_official
+AAATECH,Services,Commercial Services & Supplies,nse_official
+AADHARHFC,Financial Services,Finance,nse_official
+AADINATH,Textiles,Textiles - Synthetic,
+AAREYDRUGS,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+AARNAV,Textiles,Textiles & Apparels,nse_official
+AARON,Capital Goods,Industrial Manufacturing,nse_official
+AARTECH,Capital Goods,Electrical Equipment,nse_official
 AARTI,Chemicals,Specialty Chemicals,
-AARTIDRUGS,Pharma,Pharma API,
-AARTIIND,Chemicals,Specialty Chemicals - Pharma,
-AARTISURF,Chemicals,Specialty Chemicals,
-AAVAS,Financials,Housing Finance,
+AARTIDRUGS,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+AARTIIND,Chemicals,Chemicals & Petrochemicals,nse_official
+AARTIPHARM,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+AARTISURF,Chemicals,Chemicals & Petrochemicals,nse_official
+AARVI,Services,Commercial Services & Supplies,nse_official
+AAVAS,Financial Services,Finance,nse_official
 AAVIN,FMCG,FMCG - Dairy,
-ABB,Cap Goods,Automation & Drives,
-ABBOTINDIA,Pharma,Pharma Formulations,
-ABCAPITAL,Financials,NBFC,
-ABCOTS,Textiles,Cotton / Agri,
-ABFRL,Textiles,Apparel Retail,Aditya Birla Fashion Retail
+ABB,Capital Goods,Electrical Equipment,nse_official
+ABBOTINDIA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+ABCAPITAL,Financial Services,Finance,nse_official
+ABCOTS,Textiles,Textiles & Apparels,nse_official
+ABDL,Fast Moving Consumer Goods,Beverages,nse_official
+ABFRL,Consumer Services,Retailing,nse_official
 ABHIINV,Metals,Steel - Sponge Iron,
-ABHISHEK,Metals,Steel,
-ABIRLANUVO,Consumer,Diversified Consumer,
-ABSLAMC,Financials,Asset Management,
+ABHISHEK,TEXTILES,TEXTILES - COTTON,nse_official
+ABINFRA,Construction,Construction,nse_official
+ABIRLANUVO,SERVICES,SERVICES,nse_official
+ABLBL,Consumer Services,Retailing,nse_official
+ABREL,Realty,Realty,nse_official
+ABSLAMC,Financial Services,Capital Markets,nse_official
 ABSLI,Financials,Insurance,
-ACCELYA,IT,Airline IT,
+ACC,Construction Materials,Cement & Cement Products,nse_official
+ACCELYA,Information Technology,IT - Software,nse_official
 ACCIND,Infra,Cement,
-ACI,Cap Goods,Engineering,
-ACMESOLAR,Renewable,Solar IPP,
+ACCURACY,Services,Transport Services,nse_official
+ACE,Capital Goods,Agricultural Commercial & Construction Vehicles,nse_official
+ACEINTEG,Services,Commercial Services & Supplies,nse_official
+ACI,Chemicals,Chemicals & Petrochemicals,nse_official
+ACL,Construction Materials,Cement & Cement Products,nse_official
+ACMESOLAR,Power,Power,nse_official
+ACUTAAS,Healthcare,Pharmaceuticals & Biotechnology,nse_official
 ADANIAIRPORT,Infra,Airports,
-ADANIENSOL,Renewable,Solar IPP,
-ADANIENT,Infra,Diversified Infra,
+ADANIENSOL,Power,Power,nse_official
+ADANIENT,Metals & Mining,Metals & Minerals Trading,nse_official
 ADANIGAS,Energy,Gas Distribution,
-ADANIGREEN,Renewable,Renewable Energy,
-ADANIPORTS,Infra,Ports & Logistics,
-ADANIPOWER,Energy,Power Generation,
+ADANIGREEN,Power,Power,nse_official
+ADANIPORTS,Services,Transport Infrastructure,nse_official
+ADANIPOWER,Power,Power,nse_official
 ADANITRANS,Energy,Power Transmission,
-ADVAIT,Electronics,Electronic Components,
+ADFFOODS,Fast Moving Consumer Goods,Food Products,nse_official
+ADL,Consumer Durables,Consumer Durables,nse_official
+ADOR,Capital Goods,Industrial Products,nse_official
+ADROITINFO,Information Technology,IT - Services,nse_official
+ADSL,Information Technology,IT - Services,nse_official
+ADVAIT,Capital Goods,Electrical Equipment,nse_official
+ADVANCE,Chemicals,Fertilizers & Agrochemicals,nse_official
+ADVANIHOTR,Consumer Services,Leisure Services,nse_official
+ADVENTHTL,Consumer Services,Leisure Services,nse_official
+ADVENZYMES,Healthcare,Pharmaceuticals & Biotechnology,nse_official
 AEGASIND,Energy,City Gas Distribution,
-AEGISLOG,Chemicals,Specialty Chemicals,
-AEROFLEX,Electronics,Electronic Components,
-AERONEU,Defense,Aerospace & Defense,
-AETHER,Chemicals,Specialty Chemicals,
-AFCONS,Infra,Construction EPC,
-AFFLE,Internet,AdTech,
+AEGISLOG,Oil Gas & Consumable Fuels,Gas,nse_official
+AEGISVOPAK,Oil Gas & Consumable Fuels,Oil,nse_official
+AEPL,Capital Goods,Electrical Equipment,nse_official
+AEQUS,Capital Goods,Aerospace & Defense,nse_official
+AEROENTER,Capital Goods,Industrial Products,nse_official
+AEROFLEX,Capital Goods,Industrial Products,nse_official
+AERONEU,Capital Goods,Industrial Products,nse_official
+AETHER,Chemicals,Chemicals & Petrochemicals,nse_official
+AFCONS,Construction,Construction,nse_official
+AFFLE,Information Technology,IT - Services,nse_official
+AFFORDABLE,Capital Goods,Industrial Manufacturing,nse_official
+AFSL,Financial Services,Finance,nse_official
 AGANORA,Pharma,Pharma Formulations,
-AGROPHOS,Chemicals,Agri Chemicals & Fertilisers,
-AHLUCONT,Packaging,Packaging - Containers,
-AIAENG,Cap Goods,Cutting Tools,
-AJANTPHARM,Pharma,Pharma Formulations,
-AJMERA,RealEstate,Real Estate - Residential,
+AGARIND,Chemicals,Chemicals & Petrochemicals,nse_official
+AGARWALEYE,Healthcare,Healthcare Services,nse_official
+AGI,Capital Goods,Industrial Products,nse_official
+AGIIL,Realty,Realty,nse_official
+AGROPHOS,Chemicals,Fertilizers & Agrochemicals,nse_official
+AHCL,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+AHLADA,Consumer Durables,Consumer Durables,nse_official
+AHLEAST,Consumer Services,Leisure Services,nse_official
+AHLUCONT,Construction,Construction,nse_official
+AIAENG,Capital Goods,Industrial Products,nse_official
+AIIL,Financial Services,Finance,nse_official
+AIRAN,Information Technology,IT - Services,nse_official
+AIROLAM,Consumer Durables,Consumer Durables,nse_official
+AJANTPHARM,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+AJAXENGG,Capital Goods,Agricultural Commercial & Construction Vehicles,nse_official
+AJMERA,Realty,Realty,nse_official
+AJOONI,Fast Moving Consumer Goods,Food Products,nse_official
 AKASAAIR,Consumer,Aviation,
-AKUMS,Pharma,Pharma Contract Mfg,
+AKASH,Construction,Construction,nse_official
+AKG,Services,Commercial Services & Supplies,nse_official
+AKI,Consumer Durables,Consumer Durables,nse_official
+AKSHAR,Textiles,Textiles & Apparels,nse_official
+AKSHARCHEM,Chemicals,Chemicals & Petrochemicals,nse_official
+AKSHOPTFBR,Telecommunication,Telecom - Equipment & Accessories,nse_official
+AKUMS,Healthcare,Pharmaceuticals & Biotechnology,nse_official
 AKZOINDIA,Consumer,Paints,
-ALEMBICPHARM,Pharma,Formulations,
-ALIVUS,Pharma,Healthcare Services,
-ALKEM,Pharma,Formulations,
+ALANKIT,Services,Commercial Services & Supplies,nse_official
+ALBERTDAVD,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+ALEMBICLTD,Realty,Realty,nse_official
+ALEMBICPHARM,Pharma,Pharma Formulations,
+ALGOQUANT,Financial Services,Finance,nse_official
+ALICON,Automobile and Auto Components,Auto Components,nse_official
+ALIVUS,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+ALKALI,Chemicals,Chemicals & Petrochemicals,nse_official
+ALKEM,Healthcare,Pharmaceuticals & Biotechnology,nse_official
 ALKYL,Chemicals,Specialty Chemicals,
-ALKYLAMINE,Chemicals,Specialty Chemicals,
-ALLCARGO,Shipping,Logistics,
+ALKYLAMINE,Chemicals,Chemicals & Petrochemicals,nse_official
+ALLCARGO,Services,Transport Services,nse_official
+ALLDIGI,Services,Commercial Services & Supplies,nse_official
+ALLTIME,Consumer Durables,Consumer Durables,nse_official
+ALMONDZ,Financial Services,Capital Markets,nse_official
 ALOKIND,Textiles,Textiles - Fabric,
-ALUCAST,Metals,Aluminium Die Casting,
+ALOKINDS,Textiles,Textiles & Apparels,nse_official
+ALPA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+ALPHAGEO,Oil Gas & Consumable Fuels,Oil,nse_official
+ALUCAST,Metals,Auto Ancillaries,
+AMAGI,Information Technology,IT - Services,nse_official
+AMANTA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
 AMARA,Auto,Batteries,
-AMARON,Auto,Auto Batteries,
-AMBER,Electronics,Electronic Components,
-AMBUJACEM,Infra,Cement,
-AMJLAND,RealEstate,Real Estate - Residential,
+AMARON,Auto,Auto Ancillaries,
+AMBER,Consumer Durables,Consumer Durables,nse_official
+AMBICAAGAR,Fast Moving Consumer Goods,Household Products,nse_official
+AMBIKCO,Textiles,Textiles & Apparels,nse_official
+AMBUJACEM,Construction Materials,Cement & Cement Products,nse_official
+AMDIND,Capital Goods,Industrial Products,nse_official
+AMJLAND,Realty,Realty,nse_official
+AMNPLST,Chemicals,Chemicals & Petrochemicals,nse_official
+AMRUTANJAN,Healthcare,Pharmaceuticals & Biotechnology,nse_official
 AMTEK,Metals,Metal Forgings & Castings,
 ANAND,Auto,Auto Components,
-ANANDRATHI,Financials,Capital Markets,
-ANANTRAJ,RealEstate,Commercial RE,
+ANANDRATHI,Financial Services,Capital Markets,nse_official
+ANANTRAJ,Realty,Realty,nse_official
 ANCHOR,Consumer,Consumer Electricals,
+ANDHRAPAP,Forest Materials,Paper Forest & Jute Products,nse_official
 ANDHRAPER,Consumer,Paper,
+ANDHRSUGAR,Chemicals,Chemicals & Petrochemicals,nse_official
 ANGELBRKG,Financials,Stock Broking,
-ANGELONE,Financials,Stock Broking,
-ANUP,Cap Goods,Engineering,
-ANURAS,Agri,Seeds,
-APAR,Cap Goods,Conductors,
-APARINDS,Cables,Cables & Wires,
-APCOTEXIND,Chemicals,Specialty Chemicals,
-APEX,Packaging,Packaging - Laminates,
+ANGELONE,Financial Services,Capital Markets,nse_official
+ANIKINDS,Services,Commercial Services & Supplies,nse_official
+ANMOL,Oil Gas & Consumable Fuels,Consumable Fuels,nse_official
+ANTELOPUS,Oil Gas & Consumable Fuels,Oil,nse_official
+ANTGRAPHIC,Capital Goods,Industrial Products,nse_official
+ANTHEM,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+ANUHPHR,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+ANUP,Capital Goods,Industrial Manufacturing,nse_official
+ANURAS,Chemicals,Chemicals & Petrochemicals,nse_official
+APAR,Cap Goods,Cables & Wires,
+APARINDS,Capital Goods,Electrical Equipment,nse_official
+APCL,Construction Materials,Cement & Cement Products,nse_official
+APCOTEXIND,Capital Goods,Industrial Products,nse_official
+APEX,Fast Moving Consumer Goods,Food Products,nse_official
 APL,Metals,Steel Pipes,
-APLAPOLLO,Metals,Steel Pipes,
-APOLLO,Defense,Defense,
-APOLLOHOSP,Pharma,Hospitals,Major hospital chain
+APLAPOLLO,Capital Goods,Industrial Products,nse_official
+APLLTD,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+APOLLO,Capital Goods,Aerospace & Defense,nse_official
+APOLLOHOSP,Healthcare,Healthcare Services,nse_official
 APOLLOPHARM,Pharma,Pharmacy Retail,
-APOLLOPIPE,Infra,CPVC/PVC Pipes,
+APOLLOPIPE,Capital Goods,Industrial Products,nse_official
 APOLLOPIPES,Infra,Pipes & Fittings,
-APOLLOTYRE,Auto,Tyres,
-APTUS,Financials,Housing Finance,
-ARIHANTCAP,Financials,Stock Broking,
-ARISINFRA,Infra,Construction Materials,
+APOLLOTYRE,Automobile and Auto Components,Auto Components,nse_official
+APOLSINHOT,Consumer Services,Leisure Services,nse_official
+APTECHT,Consumer Services,Other Consumer Services,nse_official
+APTUS,Financial Services,Finance,nse_official
+AQYLON,Media Entertainment & Publication,Entertainment,nse_official
+ARCHIDPLY,Consumer Durables,Consumer Durables,nse_official
+ARCHIES,Consumer Durables,Consumer Durables,nse_official
+ARE&M,Automobile and Auto Components,Auto Components,nse_official
+ARENTERP,Metals & Mining,Metals & Minerals Trading,nse_official
+ARFIN,Metals & Mining,Non - Ferrous Metals,nse_official
+ARIES,Chemicals,Fertilizers & Agrochemicals,nse_official
+ARIHANTCAP,Financial Services,Capital Markets,nse_official
+ARIHANTSUP,Realty,Realty,nse_official
+ARIS,Construction Materials,Other Construction Materials,nse_official
+ARISINFRA,Infra,Building Materials,
+ARKADE,Realty,Realty,nse_official
+ARMANFIN,Financial Services,Finance,nse_official
+AROGRANITE,Consumer Durables,Consumer Durables,nse_official
 AROHAN,Financials,Microfinance,
-ARVIND,Textiles,Textiles - Apparel,
+ARROWGREEN,Capital Goods,Industrial Products,nse_official
+ARSSBL,Financial Services,Capital Markets,nse_official
+ARTEMISMED,Healthcare,Healthcare Services,nse_official
+ARTNIRMAN,Realty,Realty,nse_official
+ARVIND,Textiles,Textiles & Apparels,nse_official
+ARVINDFASN,Consumer Services,Retailing,nse_official
 ARVINDSMRT,RealEstate,Real Estate - Residential,
-ARVSMART,RealEstate,Residential RE,
-ASAHIINDIA,Auto,Auto Ancillaries,
+ARVSMART,Realty,Realty,nse_official
+ASAHIINDIA,Automobile and Auto Components,Auto Components,nse_official
+ASAHISONG,Chemicals,Chemicals & Petrochemicals,nse_official
 ASAHISONGI,Chemicals,Specialty Chemicals,
+ASAL,Automobile and Auto Components,Auto Components,nse_official
+ASALCBR,Fast Moving Consumer Goods,Beverages,nse_official
+ASHAPURMIN,Metals & Mining,Minerals & Mining,nse_official
+ASHIANA,Realty,Realty,nse_official
+ASHIMASYN,Textiles,Textiles & Apparels,nse_official
 ASHIRVAD,Infra,Plastic Pipes,
-ASHOKA,Infra,Roads & Highways,
-ASHOKLEY,Auto,Auto OEM - CV,
-ASIANENE,Cables,Cables,
-ASIANPAINT,Consumer,Paints,
-ASIANTILES,Consumer,Tiles,
+ASHOKA,Construction,Construction,nse_official
+ASHOKAMET,Metals & Mining,Metals & Minerals Trading,nse_official
+ASHOKLEY,Capital Goods,Agricultural Commercial & Construction Vehicles,nse_official
+ASIANENE,Oil Gas & Consumable Fuels,Oil,nse_official
+ASIANHOTNR,Consumer Services,Leisure Services,nse_official
+ASIANPAINT,Consumer Durables,Consumer Durables,nse_official
+ASIANTILES,Consumer Durables,Consumer Durables,nse_official
 ASK,Financials,Wealth Management,
+ASKAUTOLTD,Automobile and Auto Components,Auto Components,nse_official
+ASMS,Information Technology,IT - Services,nse_official
+ASPINWALL,Services,Transport Services,nse_official
+ASTEC,Chemicals,Fertilizers & Agrochemicals,nse_official
 ASTECLIFE,Agri,Agro Chemicals,
 ASTER,Pharma,Hospitals,
-ASTERDM,Pharma,Hospitals,
+ASTERDM,Healthcare,Healthcare Services,nse_official
 ASTRA,Defense,Defense,
-ASTRAL,Infra,Pipes & Fittings,
-ASTRAZEN,Pharma,Formulations,
-ATAM,Chemicals,Industrial Gases,
-ATGL,Energy,Gas Distribution,
-ATHERENERG,Renewable,EV Ecosystem,
-ATUL,Chemicals,Specialty Chemicals,
-AUBANK,Banking,Small Finance Banks,
-AURIONPRO,IT,Fintech Software,
-AUROPHARMA,Pharma,Pharma API,
-AURUM,RealEstate,Real Estate - Residential,
+ASTRAL,Capital Goods,Industrial Products,nse_official
+ASTRAMICRO,Capital Goods,Aerospace & Defense,nse_official
+ASTRAZEN,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+ASTRON,Forest Materials,Paper Forest & Jute Products,nse_official
+ATALREAL,Realty,Realty,nse_official
+ATAM,Capital Goods,Industrial Manufacturing,nse_official
+ATGL,Oil Gas & Consumable Fuels,Gas,nse_official
+ATHERENERG,Automobile and Auto Components,Automobiles,nse_official
+ATL,Services,Transport Infrastructure,nse_official
+ATLANTAA,Services,Transport Infrastructure,nse_official
+ATLANTAELE,Capital Goods,Electrical Equipment,nse_official
+ATLASCYCLE,Consumer Durables,Consumer Durables,nse_official
+ATUL,Chemicals,Chemicals & Petrochemicals,nse_official
+ATULAUTO,Capital Goods,Agricultural Commercial & Construction Vehicles,nse_official
+AUBANK,Financial Services,Banks,nse_official
+AURIONPRO,Information Technology,IT - Software,nse_official
+AUROPHARMA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+AURUM,Information Technology,IT - Services,nse_official
+AUTOAXLES,Automobile and Auto Components,Auto Components,nse_official
 AUTOEQ,Auto,Auto Ancillaries,
-AVAADA,Renewable,Solar Energy,
-AVADHSUGAR,Sugar,Sugar,
-AVALON,Electronics,Electronic Components,
-AVANTIFEED,Agri,Aquaculture / Shrimp Feed,
-AVENUSEMART,Consumer,Retail,Avenue Supermarts
-AVL,Auto,Auto Ancillaries,
-AXISBANK,Banking,Private Banks,
-AXISCADES,IT,Engineering Services,
-BAJAJ-AUTO,Auto,Auto OEM - 2W,
+AUTOIND,Automobile and Auto Components,Auto Components,nse_official
+AVAADA,Renewable,Renewable Energy,
+AVADHSUGAR,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+AVALON,Capital Goods,Electrical Equipment,nse_official
+AVANTEL,Capital Goods,Aerospace & Defense,nse_official
+AVANTIFEED,Fast Moving Consumer Goods,Food Products,nse_official
+AVENUSEMART,Consumer,Consumer Retail,Avenue Supermarts
+AVG,Services,Transport Services,nse_official
+AVL,Consumer Services,Retailing,nse_official
+AVONMORE,Financial Services,Finance,nse_official
+AVROIND,Consumer Durables,Consumer Durables,nse_official
+AVTNPL,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+AWFIS,Services,Commercial Services & Supplies,nse_official
+AWHCL,Utilities,Other Utilities,nse_official
+AWL,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+AXISBANK,Financial Services,Banks,nse_official
+AXISCADES,Capital Goods,Aerospace & Defense,nse_official
+AYE,Financial Services,Finance,nse_official
+AYMSYNTEX,Textiles,Textiles & Apparels,nse_official
+AZAD,Capital Goods,Electrical Equipment,nse_official
+BAFNAPH,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+BAGFILMS,Media Entertainment & Publication,Entertainment,nse_official
+BAIDFIN,Financial Services,Finance,nse_official
+BAJAJ-AUTO,Automobile and Auto Components,Automobiles,nse_official
 BAJAJAUT,Auto,Auto OEM - 2W,
-BAJAJCON,FMCG,FMCG - Personal Care,
+BAJAJCON,Fast Moving Consumer Goods,Personal Products,nse_official
 BAJAJCONS,Consumer,FMCG,
-BAJAJELEC,Consumer,Consumer Electronics,
+BAJAJELEC,Consumer Durables,Consumer Durables,nse_official
 BAJAJELECTR,Consumer,Consumer Electricals,
-BAJAJFINSV,Financials,Insurance & Finance,
-BAJAJHFL,Financials,Housing Finance,
-BAJFINANCE,Financials,Consumer Finance,
+BAJAJFINSV,Financial Services,Finance,nse_official
+BAJAJHCARE,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+BAJAJHFL,Financial Services,Finance,nse_official
+BAJAJHIND,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+BAJAJHLDNG,Financial Services,Finance,nse_official
+BAJAJINDEF,Capital Goods,Industrial Manufacturing,nse_official
+BAJEL,Capital Goods,Electrical Equipment,nse_official
+BAJFINANCE,Financial Services,Finance,nse_official
+BALAJEE,Capital Goods,Industrial Products,nse_official
 BALAJIAM,Consumer,Snacks,
-BALAJITELE,Consumer,Broadcasting,
-BALAMINES,Consumer,Food Products,
+BALAJITELE,Media Entertainment & Publication,Entertainment,nse_official
+BALAMINES,Chemicals,Chemicals & Petrochemicals,nse_official
 BALASORE,Metals,Steel,
-BALKRISIND,Auto,Tyres,
-BALRAMCHIN,Packaging,Sugar,
-BANDHANBNK,Banking,Small Finance Banks,
-BANKBARODA,Banking,PSU Banks,
-BANKINDIA,Banking,PSU Banks,
+BALAXI,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+BALKRISHNA,Forest Materials,Paper Forest & Jute Products,nse_official
+BALKRISIND,Automobile and Auto Components,Auto Components,nse_official
+BALMLAWRIE,Diversified,Diversified,nse_official
+BALPHARMA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+BALRAMCHIN,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+BALUFORGE,Capital Goods,Industrial Products,nse_official
+BANARBEADS,Consumer Durables,Consumer Durables,nse_official
+BANARISUG,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+BANCOINDIA,Automobile and Auto Components,Auto Components,nse_official
+BANDHANBNK,Financial Services,Banks,nse_official
+BANG,Textiles,Textiles & Apparels,nse_official
+BANKA,Construction,Construction,nse_official
+BANKBARODA,Financial Services,Banks,nse_official
+BANKINDIA,Financial Services,Banks,nse_official
+BANSALWIRE,Capital Goods,Industrial Products,nse_official
+BANSWRAS,Textiles,Textiles & Apparels,nse_official
 BARBEQUE,Consumer,Restaurants,
-BASF,Chemicals,Specialty Chemicals,
-BATA,Consumer,Footwear,
-BATAINDIA,Consumer,Footwear,
+BASF,Chemicals,Chemicals & Petrochemicals,nse_official
+BASML,Textiles,Textiles & Apparels,nse_official
+BATA,Consumer,Consumer Retail - Footwear,
+BATAINDIA,Consumer Durables,Consumer Durables,nse_official
 BAYER,Chemicals,Specialty Chemicals - Agri,
+BAYERCROP,Chemicals,Fertilizers & Agrochemicals,nse_official
+BBL,Capital Goods,Electrical Equipment,nse_official
+BBOX,Information Technology,IT - Services,nse_official
+BBTC,Fast Moving Consumer Goods,Food Products,nse_official
+BBTCL,Capital Goods,Industrial Products,nse_official
+BCLIND,Fast Moving Consumer Goods,Beverages,nse_official
+BCONCEPTS,Consumer Services,Retailing,nse_official
+BDL,Capital Goods,Aerospace & Defense,nse_official
 BDSL,Defense,Defense,
-BECTORFOOD,Consumer,Food Products,
-BEL,Defense,Defense Electronics,
-BEML,Cap Goods,Heavy Engineering - Defense,
-BEPL,Chemicals,Specialty Chemicals,
-BERGEPAINT,Consumer,Paints,
-BFUTILITIE,Auto,Auto Ancillaries,
-BHAGERIA,Chemicals,Specialty Chemicals - Dyes,
-BHAGYANGR,Infra,Roads & Highways,
+BEARDSELL,Capital Goods,Industrial Products,nse_official
+BECTORFOOD,Fast Moving Consumer Goods,Food Products,nse_official
+BEL,Capital Goods,Aerospace & Defense,nse_official
+BELLACASA,Textiles,Textiles & Apparels,nse_official
+BELRISE,Automobile and Auto Components,Auto Components,nse_official
+BEML,Capital Goods,Agricultural Commercial & Construction Vehicles,nse_official
+BEPL,Chemicals,Chemicals & Petrochemicals,nse_official
+BERGEPAINT,Consumer Durables,Consumer Durables,nse_official
+BETA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+BFINVEST,Financial Services,Finance,nse_official
+BFUTILITIE,Services,Transport Infrastructure,nse_official
+BHAGCHEM,Chemicals,Fertilizers & Agrochemicals,nse_official
+BHAGERIA,Chemicals,Chemicals & Petrochemicals,nse_official
+BHAGYANGR,Metals & Mining,Non - Ferrous Metals,nse_official
+BHANDARI,Textiles,Textiles & Apparels,nse_official
 BHARAT,Cap Goods,Engineering,
 BHARAT1,Auto,Auto Ancillaries,
-BHARATFORG,Metals,Metal Forgings & Castings,
-BHARTIARTL,Telecom,Telecom Services,
-BHEL,Cap Goods,Power Equipment,
+BHARATCOAL,Oil Gas & Consumable Fuels,Consumable Fuels,nse_official
+BHARATFORG,Automobile and Auto Components,Auto Components,nse_official
+BHARATGEAR,Automobile and Auto Components,Auto Components,nse_official
+BHARATRAS,Chemicals,Fertilizers & Agrochemicals,nse_official
+BHARATSE,Automobile and Auto Components,Auto Components,nse_official
+BHARATWIRE,Capital Goods,Industrial Products,nse_official
+BHARTIARTL,Telecommunication,Telecom - Services,nse_official
+BHARTIHEXA,Telecommunication,Telecom - Services,nse_official
+BHEL,Capital Goods,Electrical Equipment,nse_official
 BHELPSG,Cap Goods,Power Equipment,
 BHFIN,Financials,Consumer Finance,
-BIGBLOC,RealEstate,Building Materials,
-BIKAJI,FMCG,FMCG - Foods,
-BIOCON,Pharma,Pharma API,
+BIGBLOC,Construction Materials,Cement & Cement Products,nse_official
+BIKAJI,Fast Moving Consumer Goods,Food Products,nse_official
+BIL,Consumer Durables,Consumer Durables,nse_official
+BIOCON,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+BIOFILCHEM,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+BIRLACABLE,Telecommunication,Telecom - Equipment & Accessories,nse_official
 BIRLACORP,Infra,Cement,
-BIRLACORPN,Infra,Cement,
-BIRLAMONEY,Financials,Wealth Management,
+BIRLACORPN,Construction Materials,Cement & Cement Products,nse_official
+BIRLAMONEY,Financial Services,Capital Markets,nse_official
+BIRLANU,Consumer Durables,Consumer Durables,nse_official
 BIRLASOFT,IT,IT Services,
 BIRLATELE,Telecom,Telecom Services,
-BLISSGVS,Pharma,Pharma Formulations,
+BLACKBUCK,Services,Transport Services,nse_official
+BLAL,Financial Services,Finance,nse_official
+BLISSGVS,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+BLKASHYAP,Construction,Construction,nse_official
+BLS,Consumer Services,Leisure Services,nse_official
+BLSE,Information Technology,IT - Services,nse_official
 BLUE,Consumer,Air Conditioning,
 BLUEBLOOD,Pharma,Pharma API,
-BLUEDART,Shipping,Express Logistics,
+BLUECOAST,Consumer Services,Leisure Services,nse_official
+BLUEDART,Services,Transport Services,nse_official
+BLUEJET,Healthcare,Pharmaceuticals & Biotechnology,nse_official
 BLUESTAR,Consumer,Air Conditioners,
+BLUESTARCO,Consumer Durables,Consumer Durables,nse_official
+BLUESTONE,Consumer Durables,Consumer Durables,nse_official
+BLUSPRING,Services,Commercial Services & Supplies,nse_official
+BMWVENTLTD,Metals & Mining,Metals & Minerals Trading,nse_official
+BODALCHEM,Chemicals,Chemicals & Petrochemicals,nse_official
 BOMBAYDY,Textiles,Home Textiles,
-BOMBDYING,Textiles,Textiles - Processing,
-BORORENEW,Auto,Auto,
-BOROSIL,Consumer,Scientific Glassware,
+BOMBDYING,Textiles,Textiles - Synthetic,
+BOMDYEING,Textiles,Textiles & Apparels,nse_official
+BOROLTD,Consumer Durables,Consumer Durables,nse_official
+BORORENEW,Capital Goods,Industrial Products,nse_official
+BOROSCI,Capital Goods,Industrial Products,nse_official
+BOROSIL,Consumer,Glass & Ceramics,
 BOSCH,Auto,Auto Ancillaries,
-BPCL,Energy,Oil Refining,
+BOSCH-HCIL,Consumer Durables,Consumer Durables,nse_official
+BOSCHLTD,Automobile and Auto Components,Auto Components,nse_official
+BPCL,Oil Gas & Consumable Fuels,Petroleum Products,nse_official
+BPL,Consumer Durables,Consumer Durables,nse_official
 BREMBO,Auto,Auto Ancillaries,
-BRIGADE,RealEstate,Real Estate - Residential,
-BRITANNIA,FMCG,FMCG - Foods,
-BSE,Financials,Capital Markets,
+BRIGADE,Realty,Realty,nse_official
+BRIGHOTEL,Consumer Services,Leisure Services,nse_official
+BRITANNIA,Fast Moving Consumer Goods,Food Products,nse_official
+BRNL,Construction,Construction,nse_official
+BROOKS,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+BSE,Financial Services,Capital Markets,nse_official
+BSHSL,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+BSL,Textiles,Textiles & Apparels,nse_official
 BSNL,Telecom,Telecom Services,
-BSOFT,IT,IT Services,
-BURNPUR,Metals,Sponge Iron,
+BSOFT,Information Technology,IT - Software,nse_official
+BTML,Media Entertainment & Publication,Entertainment,nse_official
+BUILDPRO,Services,Commercial Services & Supplies,nse_official
+BURNPUR,Construction Materials,Cement & Cement Products,nse_official
+BUTTERFLY,Consumer Durables,Consumer Durables,nse_official
+BVCL,Construction Materials,Cement & Cement Products,nse_official
+BYKE,Consumer Services,Leisure Services,nse_official
 CABINDIA,Cables,Cables & Wires,
-CAIRN,Energy,Oil Exploration,
+CAIRN,OIL & GAS,OIL,nse_official
+CALSOFT,Information Technology,IT - Software,nse_official
 CAMLIN,Chemicals,Specialty Chemicals,
-CAMPUS,Consumer,Footwear,
-CAMS,Financials,Financial Technology,
+CAMLINFINE,Chemicals,Chemicals & Petrochemicals,nse_official
+CAMPUS,Consumer Durables,Consumer Durables,nse_official
+CAMS,Financial Services,Capital Markets,nse_official
 CAMSONBIO,Pharma,Healthcare Services,
-CANBK,Banking,PSU Banks,
-CANFINHOME,Financials,Housing Finance,
-CAPITALSFB,Banking,Small Finance Banks,
-CAPLIPOINT,Pharma,Formulations,
-CARBORUNIV,Cap Goods,Cutting Tools,
-CARERATING,Financials,Credit Rating,
-CARRARO,Auto,Metal Forgings & Castings,
-CARTRADE,Internet,Automotive Marketplace,
-CASTROL,Energy,Petroleum Products,
-CCL,FMCG,FMCG - Beverages,
-CDSL,Financials,Financial Technology,
-CEATLTD,Auto,Tyres,
-CEIGALL,Infra,Roads & Highways,
-CELLO,Consumer,Plastics & Furniture,
-CENTRALBK,Banking,PSU Banks,
+CANBK,Financial Services,Banks,nse_official
+CANFINHOME,Financial Services,Finance,nse_official
+CANHLIFE,Financial Services,Insurance,nse_official
+CANTABIL,Textiles,Textiles & Apparels,nse_official
+CAPACITE,Construction,Construction,nse_official
+CAPILLARY,Information Technology,IT - Software,nse_official
+CAPITALSFB,Financial Services,Banks,nse_official
+CAPLIPOINT,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+CARBORUNIV,Capital Goods,Industrial Products,nse_official
+CARERATING,Financial Services,Capital Markets,nse_official
+CARRARO,Automobile and Auto Components,Auto Components,nse_official
+CARTRADE,Consumer Services,Retailing,nse_official
+CARYSIL,Consumer Durables,Consumer Durables,nse_official
+CASTROL,OIL & GAS,PETROLEUM PRODUCTS,nse_official
+CASTROLIND,Oil Gas & Consumable Fuels,Petroleum Products,nse_official
+CCAVENUE,Financial Services,Financial Technology (Fintech),nse_official
+CCCL,Realty,Realty,nse_official
+CCHHL,Consumer Services,Leisure Services,nse_official
+CCL,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+CDSL,Financial Services,Capital Markets,nse_official
+CEATLTD,Automobile and Auto Components,Auto Components,nse_official
+CEIGALL,Construction,Construction,nse_official
+CEINSYS,Information Technology,IT - Services,nse_official
+CELEBRITY,Textiles,Textiles & Apparels,nse_official
+CELLO,Consumer Durables,Consumer Durables,nse_official
+CEMPRO,Construction,Construction,nse_official
+CENTENKA,Textiles,Textiles & Apparels,nse_official
+CENTEXT,Capital Goods,Industrial Products,nse_official
+CENTRALBK,Financial Services,Banks,nse_official
 CENTRALBNK,Banking,PSU Banks,
-CENTUM,Electronics,Electronic Components,
-CENTURYPLY,Consumer,Building Materials,Century Plywood
-CENTURYTEX,RealEstate,Residential RE,
-CERA,Consumer,Sanitaryware,
-CESC,Energy,Power Generation,
-CGPOWER,Cap Goods,Electrical Equipment,
-CHALET,Consumer,Hotels,
+CENTRUM,Financial Services,Finance,nse_official
+CENTUM,Capital Goods,Aerospace & Defense,nse_official
+CENTURYPLY,Consumer Durables,Consumer Durables,nse_official
+CENTURYTEX,RealEstate,Real Estate - Residential,
+CERA,Consumer Durables,Consumer Durables,nse_official
+CESC,Power,Power,nse_official
+CEWATER,Utilities,Other Utilities,nse_official
+CGCL,Financial Services,Finance,nse_official
+CGPOWER,Capital Goods,Electrical Equipment,nse_official
+CHALET,Consumer Services,Leisure Services,nse_official
 CHAMAN,Agri,Rice,
 CHAMBAL,Agri,Fertilisers,
-CHEMCON,Chemicals,Specialty Chemicals,
-CHENNPETRO,Energy,Oil Refining,
-CHOICEIN,Financials,Stock Broking,
-CHOLAFIN,Financials,Vehicle Finance,
-CHOLAHLDNG,Financials,Insurance & Finance,
-CIEINDIA,Auto,Metal Forgings & Castings,
-CIPLA,Pharma,Pharma Formulations,
-CLEAN,Chemicals,Specialty Chemicals,
-CMSINFO,IT,IT Services,
-COALINDIA,Energy,Coal & Mining,
-COASTCORP,Shipping,Logistics,
-COCHINSHIP,Defense,Shipbuilding,
-COFORGE,IT,IT Services,
+CHAMBLFERT,Chemicals,Fertilizers & Agrochemicals,nse_official
+CHEMBOND,Chemicals,Chemicals & Petrochemicals,nse_official
+CHEMBONDCH,Chemicals,Chemicals & Petrochemicals,nse_official
+CHEMCON,Chemicals,Chemicals & Petrochemicals,nse_official
+CHEMFAB,Chemicals,Chemicals & Petrochemicals,nse_official
+CHEMPLASTS,Chemicals,Chemicals & Petrochemicals,nse_official
+CHENNPETRO,Oil Gas & Consumable Fuels,Petroleum Products,nse_official
+CHEVIOT,Forest Materials,Paper Forest & Jute Products,nse_official
+CHOICEIN,Financial Services,Finance,nse_official
+CHOLAFIN,Financial Services,Finance,nse_official
+CHOLAHLDNG,Financial Services,Finance,nse_official
+CIEINDIA,Automobile and Auto Components,Auto Components,nse_official
+CIFL,Financial Services,Finance,nse_official
+CIGNITITEC,Information Technology,IT - Services,nse_official
+CINELINE,Media Entertainment & Publication,Entertainment,nse_official
+CINEVISTA,Realty,Realty,nse_official
+CIPLA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+CLEAN,Chemicals,Chemicals & Petrochemicals,nse_official
+CLEANMAX,Power,Power,nse_official
+CLSEL,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+CMSINFO,Services,Commercial Services & Supplies,nse_official
+CNL,Services,Commercial Services & Supplies,nse_official
+COALINDIA,Oil Gas & Consumable Fuels,Consumable Fuels,nse_official
+COASTCORP,Fast Moving Consumer Goods,Food Products,nse_official
+COCHINSHIP,Capital Goods,Industrial Manufacturing,nse_official
+COFFEEDAY,Consumer Services,Leisure Services,nse_official
+COFORGE,Information Technology,IT - Software,nse_official
+COHANCE,Healthcare,Pharmaceuticals & Biotechnology,nse_official
 COLORMASTER,Chemicals,Specialty Chemicals - Dyes,
-COLPAL,FMCG,FMCG - Personal Care,
-COMSYN,Chemicals,Specialty Chemicals,
-CONCOR,Shipping,Rail Logistics,
+COLPAL,Fast Moving Consumer Goods,Personal Products,nse_official
+COMPUSOFT,Consumer Services,Other Consumer Services,nse_official
+COMSYN,Capital Goods,Industrial Products,nse_official
+CONCOR,Services,Transport Services,nse_official
 CONCORD,Pharma,Hospitals,
-COROMANDEL,Agri,Fertilisers & Agro Chem,
-CRAFTSMAN,Auto,Metal Forgings & Castings,
+CONCORDBIO,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+CONFIPET,Oil Gas & Consumable Fuels,Gas,nse_official
+CONTROLPR,Information Technology,IT - Hardware,nse_official
+CORALFINAC,Services,Commercial Services & Supplies,nse_official
+CORDSCABLE,Capital Goods,Industrial Products,nse_official
+COROMANDEL,Chemicals,Fertilizers & Agrochemicals,nse_official
+CORONA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+COSMOFIRST,Capital Goods,Industrial Products,nse_official
+COUNCODOS,Realty,Realty,nse_official
+CPCAP,Financial Services,Finance,nse_official
+CPEDU,Consumer Services,Other Consumer Services,nse_official
+CPPLUS,Capital Goods,Industrial Manufacturing,nse_official
+CRAFTSMAN,Automobile and Auto Components,Auto Components,nse_official
+CRAMC,Financial Services,Capital Markets,nse_official
 CREAMBELL,Consumer,Ice Cream,
-CREDITACC,Financials,Microfinance,
+CREATIVEYE,Media Entertainment & Publication,Entertainment,nse_official
+CREDITACC,Financial Services,Finance,nse_official
 CREMICAP,Consumer,Ice Cream,
-CREST,Cap Goods,Pumps,
-CRISIL,Financials,Financial Technology,
-CROMPTON,Consumer,Consumer Electricals,
-CSBBANK,Banking,Private Banks,
+CREST,Financial Services,Finance,nse_official
+CRISIL,Financial Services,Finance,nse_official
+CRIZAC,Consumer Services,Retailing,nse_official
+CROMPTON,Consumer Durables,Consumer Durables,nse_official
+CROWN,Capital Goods,Industrial Manufacturing,nse_official
+CSBBANK,Financial Services,Banks,nse_official
+CSLFINANCE,Financial Services,Finance,nse_official
 CSTLTD,Metals,Steel,
-CUMI,Cap Goods,Abrasives,
-CUMMINSIND,Cap Goods,Engines & Compressors,
-CYIENT,IT,Engineering Services,
-DABUR,FMCG,FMCG - Personal Care,
+CTE,Information Technology,IT - Software,nse_official
+CUB,Financial Services,Banks,nse_official
+CUBEXTUB,Capital Goods,Industrial Products,nse_official
+CUMI,Cap Goods,Industrial Machinery,
+CUMMINSIND,Capital Goods,Industrial Products,nse_official
+CUPID,Fast Moving Consumer Goods,Personal Products,nse_official
+CYBERMEDIA,Media Entertainment & Publication,Media,nse_official
+CYBERTECH,Information Technology,IT - Software,nse_official
+CYIENT,Information Technology,IT - Services,nse_official
+CYIENTDLM,Capital Goods,Aerospace & Defense,nse_official
+DABUR,Fast Moving Consumer Goods,Personal Products,nse_official
+DALBHARAT,Construction Materials,Cement & Cement Products,nse_official
 DALMIACE,Infra,Cement,
 DALMIACEM,Infra,Cement,
 DALMIACEMB,Infra,Cement,
-DALMIASUG,Sugar,Sugar,
+DALMIASUG,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+DAMCAPITAL,Financial Services,Capital Markets,nse_official
+DAMODARIND,Textiles,Textiles & Apparels,nse_official
+DANGEE,Fast Moving Consumer Goods,Food Products,nse_official
 DATACUBE,Defense,Defense Electronics,
-DATAMATICS,IT,IT Services,
-DATAPATTNS,Defense,Defense Electronics,
-DBCORP,Banking,Regional Banks,
-DBOL,Financials,Capital Markets,
-DBREALTY,RealEstate,Real Estate - Residential,
-DBSTOCKBRO,Financials,Stock Broking,
-DCBBANK,Banking,Regional Banks,
-DCI,Infra,Construction,
-DCMSHRIRAM,Chemicals,Agri Chemicals & Fertilisers,
-DCW,Chemicals,Specialty Chemicals - Alkali,
+DATAMATICS,Information Technology,IT - Services,nse_official
+DATAPATTNS,Capital Goods,Aerospace & Defense,nse_official
+DAVANGERE,Fast Moving Consumer Goods,Diversified FMCG,nse_official
+DBCORP,Media Entertainment & Publication,Media,nse_official
+DBEIL,Construction,Construction,nse_official
+DBL,Construction,Construction,nse_official
+DBOL,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+DBREALTY,Realty,Realty,nse_official
+DBSTOCKBRO,Financial Services,Capital Markets,nse_official
+DCAL,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+DCBBANK,Financial Services,Banks,nse_official
+DCI,Information Technology,IT - Software,nse_official
+DCM,Information Technology,IT - Services,nse_official
+DCMNVL,Textiles,Textiles & Apparels,nse_official
+DCMSHRIRAM,Diversified,Diversified,nse_official
+DCMSIL,Textiles,Textiles & Apparels,nse_official
+DCMSRIND,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+DCW,Chemicals,Chemicals & Petrochemicals,nse_official
 DCWLTD,Chemicals,Chlor-Alkali,
-DEEDEV,Cap Goods,Industrial Piping & Pressure Vessels,
-DEEPAKFERT,Chemicals,Agri Chemicals & Fertilisers,
+DCXINDIA,Capital Goods,Aerospace & Defense,nse_official
+DDEVPLSTIK,Chemicals,Chemicals & Petrochemicals,nse_official
+DECCANCE,Construction Materials,Cement & Cement Products,nse_official
+DEEDEV,Capital Goods,Industrial Manufacturing,nse_official
+DEEPAKFERT,Chemicals,Chemicals & Petrochemicals,nse_official
 DEEPAKNITR,Chemicals,Specialty Chemicals,
-DEEPAKNTR,Chemicals,Specialty Chemicals,
-DEEPINDS,Chemicals,Specialty Chemicals,
-DELHIVERY,Shipping,Logistics,
-DELTACORP,Consumer,Gaming & Casinos,
-DENORA,Chemicals,Specialty Chemicals,
-DENSATECH,Chemicals,Industrial Gases,
-DEVYANI,FMCG,QSR,
+DEEPAKNTR,Chemicals,Chemicals & Petrochemicals,nse_official
+DEEPINDS,Oil Gas & Consumable Fuels,Oil,nse_official
+DELHIVERY,Services,Transport Services,nse_official
+DELPHIFX,Financial Services,Finance,nse_official
+DELTACORP,Consumer Services,Leisure Services,nse_official
+DELTAMAGNT,Capital Goods,Industrial Products,nse_official
+DEN,Media Entertainment & Publication,Entertainment,nse_official
+DENORA,Capital Goods,Industrial Products,nse_official
+DENSATECH,Chemicals,Specialty Chemicals,
+DENTA,Utilities,Other Utilities,nse_official
+DEVIT,Information Technology,IT - Services,nse_official
+DEVX,Services,Commercial Services & Supplies,nse_official
+DEVYANI,Consumer Services,Leisure Services,nse_official
 DFM,Consumer,Food Products,
+DGCONTENT,Media Entertainment & Publication,Media,nse_official
 DHAMPUR,Sugar,Sugar,
-DHAMPURSUG,Sugar,Sugar,
+DHAMPURSUG,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+DHANBANK,Financial Services,Banks,nse_official
 DHANU,Chemicals,Specialty Chemicals - Agri,
-DHANUKA,Chemicals,Specialty Chemicals - Agri,
+DHANUKA,Chemicals,Fertilizers & Agrochemicals,nse_official
 DHARANI,Sugar,Sugar,
-DISHTV,Consumer,DTH,
+DHARMAJ,Chemicals,Fertilizers & Agrochemicals,nse_official
+DHRUV,Services,Commercial Services & Supplies,nse_official
+DHUNINV,Financial Services,Finance,nse_official
+DIACABS,Capital Goods,Electrical Equipment,nse_official
+DIAMINESQ,Chemicals,Chemicals & Petrochemicals,nse_official
+DIAMONDYD,Fast Moving Consumer Goods,Food Products,nse_official
+DICIND,Chemicals,Chemicals & Petrochemicals,nse_official
+DIFFNKG,Capital Goods,Industrial Products,nse_official
+DIGIDRIVE,Consumer Services,Retailing,nse_official
+DIGISPICE,Information Technology,IT - Services,nse_official
+DIGITIDE,Information Technology,IT - Services,nse_official
+DIGJAMLMTD,Textiles,Textiles & Apparels,nse_official
+DISHTV,Media Entertainment & Publication,Entertainment,nse_official
+DIVGIITTS,Automobile and Auto Components,Auto Components,nse_official
 DIVI,Pharma,API & Bulk Drugs,
-DIVISLAB,Pharma,Pharma Formulations,
-DIXON,Consumer,Consumer Electronics,
-DLF,RealEstate,Real Estate - Residential,
-DMART,Consumer,Retail,Avenue Supermarts - retail
-DMCC,Chemicals,Specialty Chemicals,
-DODLA,Consumer,Dairy,
-DOLLAR,Textiles,Textiles - Innerwear,
-DPABHUSHAN,Consumer,Jewellery,
+DIVISLAB,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+DIXON,Consumer Durables,Consumer Durables,nse_official
+DLF,Realty,Realty,nse_official
+DLINKINDIA,Information Technology,IT - Hardware,nse_official
+DMART,Consumer Services,Retailing,nse_official
+DMCC,Chemicals,Chemicals & Petrochemicals,nse_official
+DNAMEDIA,Media Entertainment & Publication,Media,nse_official
+DODLA,Fast Moving Consumer Goods,Food Products,nse_official
+DOLATALGO,Financial Services,Capital Markets,nse_official
+DOLLAR,Textiles,Textiles & Apparels,nse_official
+DOLPHIN,Oil Gas & Consumable Fuels,Oil,nse_official
+DOMS,Fast Moving Consumer Goods,Household Products,nse_official
+DONEAR,Textiles,Textiles & Apparels,nse_official
+DPABHUSHAN,Consumer Durables,Consumer Durables,nse_official
+DPSCLTD,Power,Power,nse_official
+DPWIRES,Capital Goods,Industrial Products,nse_official
+DRCSYSTEMS,Information Technology,IT - Software,nse_official
+DREAMFOLKS,Services,Transport Infrastructure,nse_official
+DREDGECORP,Services,Engineering Services,nse_official
 DRLALPATH,Pharma,Diagnostics,
 DRONEACHARYA,Defense,Drones,
-DRREDDY,Pharma,Pharma Formulations,
-DRREDDYS,Pharma,Formulations,
+DRREDDY,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+DSFCL,Chemicals,Chemicals & Petrochemicals,nse_official
 DSPIM,Financials,Wealth Management,
+DSSL,Information Technology,IT - Services,nse_official
 DTDC,Infra,Logistics,
-DTIL,Infra,Logistics,
-DWARKESH,Sugar,Sugar,
-DYNAMATECH,Defense,Aerospace & Defense,
-EASEMYTRIP,Internet,Travel & Hospitality,
-ECLERX,IT,BPO / KPO,
-EICHERMOT,Auto,Auto OEM - 2W,
+DTIL,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+DUCON,Capital Goods,Industrial Manufacturing,nse_official
+DVL,Diversified,Diversified,nse_official
+DWARKESH,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+DYCL,Capital Goods,Industrial Products,nse_official
+DYNAMATECH,Capital Goods,Industrial Manufacturing,nse_official
+DYNPRO,Chemicals,Chemicals & Petrochemicals,nse_official
+EASEMYTRIP,Consumer Services,Leisure Services,nse_official
+EBGNG,Information Technology,IT - Hardware,nse_official
+ECLERX,Services,Commercial Services & Supplies,nse_official
+ECOSMOBLTY,Services,Transport Services,nse_official
+EDELWEISS,Financial Services,Finance,nse_official
+EFCIL,Services,Commercial Services & Supplies,nse_official
+EICHERMOT,Automobile and Auto Components,Automobiles,nse_official
 EID,Sugar,Sugar,
-EIDPARRY,Sugar,Sugar,
-EIHOTEL,Consumer,Hotels,
+EIDPARRY,Fast Moving Consumer Goods,Food Products,nse_official
+EIEL,Utilities,Other Utilities,nse_official
+EIFFL,Fast Moving Consumer Goods,Food Products,nse_official
+EIHAHOTELS,Consumer Services,Leisure Services,nse_official
+EIHOTEL,Consumer Services,Leisure Services,nse_official
+EIMCOELECO,Capital Goods,Industrial Manufacturing,nse_official
 EKART,Infra,Logistics,
+EKC,Capital Goods,Industrial Manufacturing,nse_official
 ELCIDSIMP,Defense,Defense,
 ELCOMPCORP,Electronics,Electronic Components,
 ELCOMPONENT,Defense,Defense Electronics,
-ELDECO,RealEstate,Residential RE,
-ELECTHERM,Metals,Steel,
+ELDECO,RealEstate,Real Estate - Residential,
+ELDEHSG,Realty,Realty,nse_official
+ELECON,Capital Goods,Electrical Equipment,nse_official
+ELECTCAST,Capital Goods,Industrial Products,nse_official
+ELECTHERM,Capital Goods,Industrial Products,nse_official
 ELGI,Cap Goods,Compressors,
-ELGIEQUIP,Cap Goods,Compressors,
-ELIN,Electronics,Electronic Components,
+ELGIEQUIP,Capital Goods,Industrial Products,nse_official
+ELGIRUBCO,Capital Goods,Industrial Products,nse_official
+ELIN,Consumer Durables,Consumer Durables,nse_official
 ELIXIR,Pharma,Pharma API,
+ELLEN,Chemicals,Chemicals & Petrochemicals,nse_official
 ELMEASURE,Cables,Energy Meters,Energy meters
 EMAMI,Consumer,FMCG,
-EMAMILTD,FMCG,FMCG - Personal Care,
-EMBASSY,RealEstate,REIT,
-EMCURE,Pharma,Pharma Formulations,
+EMAMILTD,Fast Moving Consumer Goods,Personal Products,nse_official
+EMAMIPAP,Forest Materials,Paper Forest & Jute Products,nse_official
+EMAMIREAL,Realty,Realty,nse_official
+EMBASSY,Realty,Realty,nse_official
+EMCURE,Healthcare,Pharmaceuticals & Biotechnology,nse_official
 EMGDELTA,Infra,EPC & Construction,
-EMKAY,Financials,Stock Broking,
-EMMBI,Packaging,Packaging - Films,
+EMIL,Consumer Services,Retailing,nse_official
+EMKAY,Financial Services,Capital Markets,nse_official
+EMMBI,Capital Goods,Industrial Products,nse_official
+EMMVEE,Capital Goods,Electrical Equipment,nse_official
+EMSLIMITED,Utilities,Other Utilities,nse_official
+EMUDHRA,Information Technology,IT - Services,nse_official
 ENCUBE,Pharma,Pharma Contract Mfg,CDMO pharmaceutical
-ENDURANCE,Auto,Auto Ancillaries,
-ENTERO,Pharma,Pharma Distribution,
-EPIGRAL,Chemicals,Specialty Chemicals - Alkali,
-EPL,Packaging,Packaging - Laminates,
-EQUINOX,IT,Data Centers,
-EQUITASBNK,Banking,Small Finance Banks,
-ERIS,Pharma,Pharma Formulations,
+ENDURANCE,Automobile and Auto Components,Auto Components,nse_official
+ENERGYDEV,Power,Power,nse_official
+ENGINERSIN,Construction,Construction,nse_official
+ENIL,Media Entertainment & Publication,Entertainment,nse_official
+ENRIN,Capital Goods,Electrical Equipment,nse_official
+ENTERO,Consumer Services,Retailing,nse_official
+EPACK,Consumer Durables,Consumer Durables,nse_official
+EPACKPEB,Capital Goods,Industrial Manufacturing,nse_official
+EPIGRAL,Chemicals,Chemicals & Petrochemicals,nse_official
+EPL,Capital Goods,Industrial Products,nse_official
+EQUINOX,IT,IT Services,
+EQUITASBNK,Financial Services,Banks,nse_official
+ERIS,Healthcare,Pharmaceuticals & Biotechnology,nse_official
 EROS,Consumer,Media & Entertainment,
-EROSMEDIA,Consumer,Media & Entertainment,
+EROSMEDIA,Media Entertainment & Publication,Entertainment,nse_official
 ESAB,Cap Goods,Engineering,
-ESABINDIA,Cap Goods,Welding Equipment,
-ESAFSFB,Banking,Small Finance Banks,
+ESABINDIA,Capital Goods,Industrial Products,nse_official
+ESAFSFB,Financial Services,Banks,nse_official
 ESCORIT,Shipping,Shipping,
-ESCORTS,Auto,Auto OEM - 4W,
+ESCORTS,Capital Goods,Agricultural Commercial & Construction Vehicles,nse_official
 ESGL,Shipping,Shipping,
-ETHNIX,Textiles,Apparel Retail,
-EXIDEIND,Auto,Auto Batteries,
-EXPERION,RealEstate,Residential RE,
+ESSARSHPNG,Services,Transport Services,nse_official
+ESSENTIA,Services,Commercial Services & Supplies,nse_official
+ESTER,Capital Goods,Industrial Products,nse_official
+ETERNAL,Consumer Services,Retailing,nse_official
+ETHNIX,Textiles,Consumer Retail - Apparel,
+ETHOSLTD,Consumer Durables,Consumer Durables,nse_official
+EUREKAFORB,Consumer Durables,Consumer Durables,nse_official
+EUROBOND,Capital Goods,Industrial Products,nse_official
+EUROPRATIK,Consumer Durables,Consumer Durables,nse_official
+EUROTEXIND,Textiles,Textiles & Apparels,nse_official
+EVEREADY,Fast Moving Consumer Goods,Household Products,nse_official
+EVERESTIND,Construction Materials,Other Construction Materials,nse_official
+EXCEL,Chemicals,Specialty Chemicals,manual
+EXCELINDUS,Chemicals,Chemicals & Petrochemicals,nse_official
+EXCELSOFT,Information Technology,IT - Services,nse_official
+EXICOM,Capital Goods,Electrical Equipment,nse_official
+EXIDEIND,Automobile and Auto Components,Auto Components,nse_official
+EXPERION,RealEstate,Real Estate - Residential,
+EXPLEOSOL,Information Technology,IT - Services,nse_official
+EXXARO,Consumer Durables,Consumer Durables,nse_official
+FABTECH,Healthcare,Healthcare Equipment & Supplies,nse_official
 FACORALL,Metals,Aluminium,
-FACT,Agri,Fertilisers,
+FACT,Chemicals,Fertilizers & Agrochemicals,nse_official
 FAIRCHEM,Chemicals,Specialty Chemicals,
-FEDERALBNK,Banking,Private Banks,
-FEVICOL,Consumer,Adhesives,
+FAIRCHEMOR,Chemicals,Chemicals & Petrochemicals,nse_official
+FCL,Chemicals,Chemicals & Petrochemicals,nse_official
+FCSSOFT,Information Technology,IT - Services,nse_official
+FDC,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+FEDERALBNK,Financial Services,Banks,nse_official
+FEDFINA,Financial Services,Finance,nse_official
+FEVICOL,Consumer,Adhesives & Chemicals,
 FIEM,Auto,Auto Ancillaries,
-FILATEX,Packaging,Packaging - Films,Filatex India films
-FINCABLES,Financials,NBFC,
-FINEORG,Chemicals,Specialty Chemicals,
+FIEMIND,Automobile and Auto Components,Auto Components,nse_official
+FILATEX,Textiles,Textiles & Apparels,nse_official
+FILATFASH,Textiles,Textiles & Apparels,nse_official
+FINCABLES,Capital Goods,Industrial Products,nse_official
+FINEORG,Chemicals,Chemicals & Petrochemicals,nse_official
 FINEOTEX,Chemicals,Specialty Chemicals,
+FINKURVE,Financial Services,Finance,nse_official
 FINOLEX,Cables,Cables & Wires,
-FLUOROCHEM,Chemicals,Specialty Chemicals - Fluorine,
-FORCEMOT,Auto,Auto OEM - CV,
-FORTIS,Pharma,Hospitals,
-FOSECOIND,Metals,Foundry Chemicals,
-FSL,Electronics,Semiconductors,
+FINOPB,Financial Services,Banks,nse_official
+FINPIPE,Capital Goods,Industrial Products,nse_official
+FIRSTCRY,Consumer Services,Retailing,nse_official
+FISCHER,Healthcare,Healthcare Equipment & Supplies,nse_official
+FIVESTAR,Financial Services,Finance,nse_official
+FLAIR,Fast Moving Consumer Goods,Household Products,nse_official
+FLEXITUFF,Textiles,Textiles & Apparels,nse_official
+FLUOROCHEM,Chemicals,Chemicals & Petrochemicals,nse_official
+FMGOETZE,Automobile and Auto Components,Auto Components,nse_official
+FMNL,Services,Commercial Services & Supplies,nse_official
+FOCUS,Consumer Durables,Consumer Durables,nse_official
+FOODSIN,Fast Moving Consumer Goods,Food Products,nse_official
+FORCEMOT,Automobile and Auto Components,Automobiles,nse_official
+FORTIS,Healthcare,Healthcare Services,nse_official
+FOSECOIND,Chemicals,Chemicals & Petrochemicals,nse_official
+FRACTAL,Information Technology,IT - Software,nse_official
+FSL,Services,Commercial Services & Supplies,nse_official
 FSS,IT,Fintech Software,
-FUSION,Financials,Microfinance,
-GABRIEL,Auto,Auto Ancillaries,
-GAEL,Agri,Agri Processing,
-GAIL,Energy,Gas Distribution,
-GALAXYSURF,Chemicals,Specialty Chemicals,
-GALLANTT,Metals,Steel - Structural,
-GANDHAR,Chemicals,Specialty Chemicals,
+FUSION,Financial Services,Finance,nse_official
+GABRIEL,Automobile and Auto Components,Auto Components,nse_official
+GAEL,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+GAIL,Oil Gas & Consumable Fuels,Gas,nse_official
+GALAPREC,Capital Goods,Industrial Manufacturing,nse_official
+GALAXYSURF,Chemicals,Chemicals & Petrochemicals,nse_official
+GALLANTT,Capital Goods,Industrial Products,nse_official
+GANDHAR,Oil Gas & Consumable Fuels,Petroleum Products,nse_official
+GANDHITUBE,Capital Goods,Industrial Products,nse_official
+GANECOS,Textiles,Textiles & Apparels,nse_official
 GANESHA,Textiles,Technical Textiles,
+GANESHBE,Oil Gas & Consumable Fuels,Oil,nse_official
+GANESHCP,Fast Moving Consumer Goods,Food Products,nse_official
+GANESHHOU,Realty,Realty,nse_official
+GANGAFORGE,Capital Goods,Industrial Products,nse_official
+GANGESSECU,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+GARFIBRES,Textiles,Textiles & Apparels,nse_official
 GARMENTSIND,Textiles,Garments,
-GARUDA,Consumer,Aviation,
+GARUDA,Construction,Construction,nse_official
 GARWARE,Textiles,Textiles - Technical,
+GATECH,Financial Services,Finance,nse_official
+GATECHDVR,Financial Services,Finance,nse_official
+GATEWAY,Services,Transport Services,nse_official
 GATI,Infra,Logistics,
+GAUDIUMIVF,Healthcare,Healthcare Services,nse_official
+GAYAHWS,Services,Transport Infrastructure,nse_official
 GE SHIPPING,Shipping,Shipping,
+GEECEE,Realty,Realty,nse_official
+GEEKAYWIRE,Capital Goods,Industrial Products,nse_official
+GENCON,Realty,Realty,nse_official
+GENESYS,Information Technology,IT - Services,nse_official
 GENUS,Cables,Energy Meters,Smart metering solutions
-GEOJITFSL,Financials,Stock Broking,
-GEPIL,Cap Goods,Industrial Gases,
-GESHIP,Shipping,Shipping,
-GHCL,Chemicals,Specialty Chemicals - Alkali,
-GICRE,Financials,Reinsurance,
-GILLETTE,FMCG,FMCG - Personal Care,
-GIPCL,Energy,Power Generation,
-GLAND,Pharma,Pharma API,
-GLAXO,Pharma,Pharma Formulations,
-GLENMARK,Pharma,Pharma Formulations,
-GLOBUSSPR,Consumer,Spirits,
-GMBREW,FMCG,FMCG - Beverages,
-GMDC,Metals,Coal & Minerals,
-GMDCLTD,Metals,Iron Ore,
-GMRINFRA,Infra,Airports,
-GNA,Auto,Metal Forgings & Castings,
-GNFC,Chemicals,Agro Chemicals,
+GENUSPAPER,Forest Materials,Paper Forest & Jute Products,nse_official
+GENUSPOWER,Capital Goods,Electrical Equipment,nse_official
+GEOJITFSL,Financial Services,Capital Markets,nse_official
+GEPIL,Cap Goods,Specialty Chemicals,
+GESHIP,Services,Transport Services,nse_official
+GFLLIMITED,Financial Services,Finance,nse_official
+GHCL,Chemicals,Chemicals & Petrochemicals,nse_official
+GHCLTEXTIL,Textiles,Textiles & Apparels,nse_official
+GICHSGFIN,Financial Services,Finance,nse_official
+GICRE,Financial Services,Insurance,nse_official
+GILLANDERS,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+GILLETTE,Fast Moving Consumer Goods,Personal Products,nse_official
+GINNIFILA,Textiles,Textiles & Apparels,nse_official
+GIPCL,Power,Power,nse_official
+GKENERGY,Construction,Construction,nse_official
+GKSL,Healthcare,Healthcare Services,nse_official
+GKWLIMITED,Financial Services,Finance,nse_official
+GLAND,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+GLAXO,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+GLENMARK,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+GLOBAL,Consumer Services,Other Consumer Services,nse_official
+GLOBALE,Textiles,Textiles & Apparels,nse_official
+GLOBALVECT,Services,Transport Services,nse_official
+GLOBE,Textiles,Textiles & Apparels,nse_official
+GLOBECIVIL,Construction,Construction,nse_official
+GLOBUSSPR,Fast Moving Consumer Goods,Beverages,nse_official
+GLOSTERLTD,Forest Materials,Paper Forest & Jute Products,nse_official
+GLOTTIS,Services,Transport Services,nse_official
+GMBREW,Fast Moving Consumer Goods,Beverages,nse_official
+GMDC,Metals,Coal & Mining,
+GMDCLTD,Metals & Mining,Minerals & Mining,nse_official
+GMMPFAUDLR,Capital Goods,Industrial Manufacturing,nse_official
+GMRAIRPORT,Services,Transport Infrastructure,nse_official
+GMRINFRA,Infra,Construction - Infra,
+GMRP&UI,Power,Power,nse_official
+GNA,Automobile and Auto Components,Auto Components,nse_official
+GNFC,Chemicals,Chemicals & Petrochemicals,nse_official
 GOA,Cap Goods,Shipbuilding,
-GOCLCORP,Defense,Defense - Explosives,
-GODAVARIB,Infra,Irrigation,
+GOACARBON,Metals & Mining,Minerals & Mining,nse_official
+GOCLCORP,Chemicals,Chemicals & Petrochemicals,nse_official
+GOCOLORS,Consumer Services,Retailing,nse_official
+GODAVARIB,Fast Moving Consumer Goods,Diversified FMCG,nse_official
 GODFREY,Consumer,Tobacco,
-GODFRYPHLP,FMCG,Cigarettes,
-GODIGIT,Financials,Non-Life Insurance,
-GODREJAGRO,Agri,Agro Chemicals,
+GODFRYPHLP,Fast Moving Consumer Goods,Cigarettes & Tobacco Products,nse_official
+GODIGIT,Financial Services,Insurance,nse_official
+GODREJAGRO,Fast Moving Consumer Goods,Food Products,nse_official
 GODREJAP,Consumer,Home Appliances,
-GODREJCP,FMCG,FMCG - Personal Care,
+GODREJCP,Fast Moving Consumer Goods,Personal Products,nse_official
 GODREJFIN,Financials,NBFC,
-GODREJIND,Consumer,Adhesives & Chemicals,
-GODREJPROP,RealEstate,Real Estate - Residential,
+GODREJIND,Diversified,Diversified,nse_official
+GODREJPROP,Realty,Realty,nse_official
 GOKALDAS,Textiles,Textiles - Apparel,
-GOKEX,Textiles,Cotton / Agri,
-GOKUL,Agri,Edible Oils,
-GOLDBEES,Metals,Gold ETF,
+GOKEX,Textiles,Textiles & Apparels,nse_official
+GOKUL,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+GOKULAGRO,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+GOLDBEES,Financial Services,Capital Markets,nse_official
 GOLDENKA,Renewable,Solar Modules,
 GOLDI,Renewable,Solar Panels,
-GOLDIAM,Consumer,Jewellery,
+GOLDIAM,Consumer Durables,Consumer Durables,nse_official
+GOLDTECH,Information Technology,IT - Software,nse_official
+GOODLUCK,Capital Goods,Industrial Products,nse_official
+GOPAL,Fast Moving Consumer Goods,Food Products,nse_official
 GOVAL,Metals,Steel,
-GPIL,Metals,Steel - Sponge Iron,
-GPPL,Infra,Ports & Logistics,
-GPT,Cap Goods,Railway Sleepers,
-GRANULES,Pharma,API & Bulk Drugs,
-GRAPHITE,Metals,Graphite Electrodes,
-GRASIM,Textiles,Textiles - Viscose,
-GRAVITA,Metals,Metal & Mining,
+GPIL,Capital Goods,Industrial Products,nse_official
+GPPL,Services,Transport Infrastructure,nse_official
+GPT,Cap Goods,Railway,
+GPTHEALTH,Healthcare,Healthcare Services,nse_official
+GPTINFRA,Construction,Construction,nse_official
+GRANULES,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+GRAPHITE,Capital Goods,Industrial Products,nse_official
+GRASIM,Construction Materials,Cement & Cement Products,nse_official
+GRAVITA,Metals & Mining,Minerals & Mining,nse_official
 GREAVES,Auto,Auto Components,
-GREAVESCOT,Auto,Engines & Compressors,
+GREAVESCOT,Capital Goods,Industrial Products,nse_official
 GREENKO,Renewable,Solar IPP,
-GREENLAMIND,Consumer,Plywood & Laminates,
-GREENPANEL,Consumer,Building Materials,Green Panel
-GREENPOWER,Renewable,Power Integrated,
-GRINDMASTER,Cap Goods,Grinders & Machines,
-GRINDWELL,Cap Goods,Cutting Tools,Abrasives and cutting tools
-GRMOVER,Consumer,E-Commerce,
-GROWW,Financials,Stock Broking,
-GRSE,Defense,Shipbuilding,
-GRUH,Financials,Housing Finance,
-GSPL,Energy,Gas Distribution,
-GTLINFRA,Telecom,Telecom Infrastructure,
-GTPL,Telecom,Cable TV & Broadband,
-GUJALKALI,Chemicals,Specialty Chemicals - Alkali,
+GREENLAM,Consumer Durables,Consumer Durables,nse_official
+GREENLAMIND,Consumer,Wood & Laminates,
+GREENPANEL,Consumer Durables,Consumer Durables,nse_official
+GREENPLY,Consumer Durables,Consumer Durables,nse_official
+GREENPOWER,Power,Power,nse_official
+GRINDMASTER,Cap Goods,Industrial Machinery,
+GRINDWELL,Capital Goods,Industrial Products,nse_official
+GRINFRA,Construction,Construction,nse_official
+GRMOVER,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+GROBTEA,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+GROWW,Financial Services,Capital Markets,nse_official
+GRPLTD,Capital Goods,Industrial Products,nse_official
+GRSE,Capital Goods,Aerospace & Defense,nse_official
+GRUH,FINANCIAL SERVICES,FINANCE,nse_official
+GRWRHITECH,Capital Goods,Industrial Products,nse_official
+GSFC,Chemicals,Fertilizers & Agrochemicals,nse_official
+GSLSU,Consumer Durables,Consumer Durables,nse_official
+GSPL,Oil Gas & Consumable Fuels,Gas,nse_official
+GSS,Information Technology,IT - Services,nse_official
+GTECJAINX,Consumer Services,Other Consumer Services,nse_official
+GTL,Telecommunication,Telecom - Services,nse_official
+GTLINFRA,Telecommunication,Telecom - Services,nse_official
+GTPL,Media Entertainment & Publication,Entertainment,nse_official
+GUFICBIO,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+GUJALKALI,Chemicals,Chemicals & Petrochemicals,nse_official
+GUJAPOLLO,Capital Goods,Industrial Manufacturing,nse_official
 GUJARATGAS,Energy,Gas Distribution,
 GUJFLUORO,Chemicals,Specialty Chemicals - Fluorine,
 GUJGAS,Energy,City Gas Distribution,
-GUJGASLTD,Energy,City Gas Distribution,
+GUJGASLTD,Oil Gas & Consumable Fuels,Gas,nse_official
 GUJNREGAS,Energy,Gas Distribution,
-GUJRATGAS,Energy,City Gas Distribution,
+GUJRAFFIA,Capital Goods,Industrial Products,nse_official
+GUJRATGAS,OIL & GAS,GAS,nse_official
+GUJTHEM,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+GULFOILLUB,Oil Gas & Consumable Fuels,Petroleum Products,nse_official
+GULFPETRO,Oil Gas & Consumable Fuels,Petroleum Products,nse_official
+GULPOLY,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
 GVK,Infra,Airports,
-GVKPIL,Infra,Ports,
-HAL,Defense,Aerospace & Defense,
-HALONIX,Consumer,Lighting & Fixtures,
-HAPPSTMNDS,IT,IT Services,
+GVKPIL,Construction,Construction,nse_official
+GVPTECH,Information Technology,IT - Services,nse_official
+GVT&D,Capital Goods,Electrical Equipment,nse_official
+HAL,Capital Goods,Aerospace & Defense,nse_official
+HALDER,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+HALEOSLABS,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+HALONIX,Consumer,Electrical Equipment,
+HAPPSTMNDS,Information Technology,IT - Software,nse_official
+HAPPYFORGE,Capital Goods,Industrial Products,nse_official
 HARIOM,Metals,Steel,
-HATHWAY,Telecom,Cable TV & Broadband,
-HATSUN,Consumer,Dairy,
-HAVELLS,Cap Goods,Electrical Equipment,
+HARIOMPIPE,Capital Goods,Industrial Products,nse_official
+HARRMALAYA,Capital Goods,Industrial Products,nse_official
+HARSHA,Capital Goods,Industrial Products,nse_official
+HATHWAY,Media Entertainment & Publication,Entertainment,nse_official
+HATSUN,Fast Moving Consumer Goods,Food Products,nse_official
+HAVELLS,Consumer Durables,Consumer Durables,nse_official
+HAVISHA,Consumer Services,Leisure Services,nse_official
 HAWKINS,Consumer,Pressure Cookers,
+HBLENGINE,Capital Goods,Industrial Products,nse_official
 HBLPOWER,Auto,Batteries,
+HBSL,Financial Services,Finance,nse_official
 HCALPIPES,Cap Goods,Pipes,
-HCG,Pharma,Hospitals,
+HCC,Construction,Construction,nse_official
+HCG,Healthcare,Healthcare Services,nse_official
+HCL-INSYS,Information Technology,IT - Hardware,nse_official
 HCLINFOSYS,IT,IT Services,
-HCLTECH,IT,IT Services,
-HDFCAMC,Financials,Asset Management,
-HDFCBANK,Banking,Private Banks,
-HDFCLIFE,Financials,Life Insurance,
-HEALTHCARE,Pharma,Hospitals,
+HCLTECH,Information Technology,IT - Software,nse_official
+HDBFS,Financial Services,Finance,nse_official
+HDFCAMC,Financial Services,Capital Markets,nse_official
+HDFCBANK,Financial Services,Banks,nse_official
+HDFCLIFE,Financial Services,Insurance,nse_official
+HEADSUP,Textiles,Textiles & Apparels,nse_official
+HEALTHCARE,Financial Services,Capital Markets,nse_official
 HEALTHSPRING,Pharma,Healthcare IT,
 HEALTHSRC,Pharma,Diagnostics,
-HEG,Metals,Graphite Electrodes,Graphite electrode manufacturer
-HEIDELBERG,Infra,Cement,
-HEMIPROP,Chemicals,Specialty Chemicals,
-HERANBA,Agri,Agro Chemicals,
-HERITGFOOD,Consumer,Dairy,
+HECPROJECT,Construction,Construction,nse_official
+HEG,Capital Goods,Industrial Products,nse_official
+HEIDELBERG,Construction Materials,Cement & Cement Products,nse_official
+HEMIPROP,Services,Commercial Services & Supplies,nse_official
+HERANBA,Chemicals,Fertilizers & Agrochemicals,nse_official
+HERITGFOOD,Fast Moving Consumer Goods,Food Products,nse_official
 HERO,Auto,Auto OEM - 2W,
 HEROHONDA,Auto,Auto OEM - 2W,
-HEROMOTOCO,Auto,Auto OEM - 2W,
-HESTER,Pharma,Veterinary & Animal Health,
-HEXAWARE,IT,IT Services,
-HFCL,Cables,Optical Fiber Cables,
-HG INFRA,Infra,Road EPC,
-HGINFRA,Infra,Roads & Highways,
-HIKAL,Chemicals,Specialty Chemicals - Pharma,
-HIMALAYA,Consumer,FMCG - Ayurveda,
-HIMATSEIDE,Textiles,Textiles - Technical,
-HINDALCO,Metals,Aluminium,
+HEROMOTOCO,Automobile and Auto Components,Automobiles,nse_official
+HESTER,Pharma,Pharma Formulations,
+HESTERBIO,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+HEXATRADEX,Financial Services,Finance,nse_official
+HEXAWARE,IT,SOFTWARE,nse_official
+HEXT,Information Technology,IT - Software,nse_official
+HFCL,Telecommunication,Telecom - Services,nse_official
+HG INFRA,Infra,Construction & Engineering,
+HGINFRA,Construction,Construction,nse_official
+HGM,Information Technology,IT - Services,nse_official
+HGS,Services,Commercial Services & Supplies,nse_official
+HIKAL,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+HILINFRA,Services,Transport Infrastructure,nse_official
+HILTON,Capital Goods,Industrial Products,nse_official
+HIMALAYA,Consumer,FMCG - Personal Care,
+HIMATSEIDE,Textiles,Textiles & Apparels,nse_official
+HINDALCO,Metals & Mining,Non - Ferrous Metals,nse_official
 HINDALCOIND,Metals,Aluminium,
-HINDCOPPER,Metals,Copper Mining,
-HINDMOTORS,Auto,Passenger Vehicles,
-HINDOILEXP,Energy,Oil & Gas,
-HINDPETRO,Energy,Oil Refining,
+HINDCOMPOS,Automobile and Auto Components,Auto Components,nse_official
+HINDCON,Chemicals,Chemicals & Petrochemicals,nse_official
+HINDCOPPER,Metals & Mining,Non - Ferrous Metals,nse_official
+HINDMOTORS,Automobile and Auto Components,Automobiles,nse_official
+HINDOILEXP,Oil Gas & Consumable Fuels,Oil,nse_official
+HINDPETRO,Oil Gas & Consumable Fuels,Petroleum Products,nse_official
 HINDPOW,Metals,Ferro Alloys,
 HINDUCOPPER,Metals,Copper,
-HINDUNILVR,FMCG,FMCG - Personal Care,
-HINDUSTAN,Chemicals,Industrial Gases,
+HINDUNILVR,Fast Moving Consumer Goods,Diversified FMCG,nse_official
+HINDUSTAN,Chemicals,Specialty Chemicals,
 HINDWARE,Consumer,Sanitaryware,
-HINDZINC,Metals,Zinc & Lead,
+HINDWAREAP,Consumer Durables,Consumer Durables,nse_official
+HINDZINC,Metals & Mining,Non - Ferrous Metals,nse_official
+HIRECT,Capital Goods,Industrial Manufacturing,nse_official
 HISAR,Metals,Steel,
 HISARMET,Metals,Steel,
-HISARMETAL,Metals,Steel - Sponge Iron,
-HITECHCORP,Cap Goods,Electrical Equipment,
-HLEGLAS,Consumer,Glassware,
-HNDFDS,FMCG,FMCG - Foods,
-HOMEFIRST,Financials,Housing Finance,
-HONASA,FMCG,FMCG - Personal Care,
-HONAUT,Cap Goods,Automation,
+HISARMETAL,Capital Goods,Industrial Products,nse_official
+HITECH,Capital Goods,Industrial Products,nse_official
+HITECHCORP,Capital Goods,Industrial Products,nse_official
+HLEGLAS,Capital Goods,Industrial Manufacturing,nse_official
+HLVLTD,Consumer Services,Leisure Services,nse_official
+HMAAGRO,Fast Moving Consumer Goods,Food Products,nse_official
+HMVL,Media Entertainment & Publication,Media,nse_official
+HNDFDS,Fast Moving Consumer Goods,Diversified FMCG,nse_official
+HOMEFIRST,Financial Services,Finance,nse_official
+HONASA,Fast Moving Consumer Goods,Personal Products,nse_official
+HONAUT,Capital Goods,Industrial Manufacturing,nse_official
+HONDAPOWER,Capital Goods,Industrial Manufacturing,nse_official
+HPAL,Chemicals,Chemicals & Petrochemicals,nse_official
 HPCL,Energy,Oil Refining,
-HSCL,Cap Goods,Heavy Structures,
+HPIL,Chemicals,Chemicals & Petrochemicals,nse_official
+HPL,Capital Goods,Industrial Manufacturing,nse_official
+HSCL,Chemicals,Chemicals & Petrochemicals,nse_official
 HSIL,Consumer,Sanitaryware,
-HUHTAMAKI,Packaging,Packaging - Laminates,
-HYUNDAI,Auto,Passenger Vehicles,
-IBREALEST,RealEstate,Commercial RE,
+HTMEDIA,Media Entertainment & Publication,Media,nse_official
+HUBTOWN,Realty,Realty,nse_official
+HUDCO,Financial Services,Finance,nse_official
+HUHTAMAKI,Capital Goods,Industrial Products,nse_official
+HYBRIDFIN,Financial Services,Capital Markets,nse_official
+HYUNDAI,Automobile and Auto Components,Automobiles,nse_official
+IBREALEST,RealEstate,Real Estate - Commercial,
 IBULHSGFIN,Financials,Housing Finance,
-ICICIBANK,Banking,Private Banks,
-ICICIGI,Financials,Non-Life Insurance,
+IBULLSLTD,Services,Commercial Services & Supplies,nse_official
+ICEMAKE,Capital Goods,Industrial Manufacturing,nse_official
+ICICIAMC,Financial Services,Capital Markets,nse_official
+ICICIBANK,Financial Services,Banks,nse_official
+ICICIGI,Financial Services,Insurance,nse_official
 ICICILOMBRD,Financials,Insurance,
 ICICIPRAMC,Financials,Asset Management,
 ICICIPRU,Financials,Life Insurance,
+ICICIPRULI,Financial Services,Insurance,nse_official
 ICICISEC,Financials,Stock Broking,
-ICIL,Textiles,Textiles - Fabric,
-ICRA,Financials,Credit Rating,
-IDBI,Banking,PSU Banks,
-IDEA,Telecom,Telecom Services,
-IDEAFORGE,Defense,Drones,
-IDFC,Banking,Private Banks,
-IDFCFIRSTB,Banking,Private Banks,
+ICIL,Textiles,Textiles & Apparels,nse_official
+ICRA,Financial Services,Capital Markets,nse_official
+IDBI,Financial Services,Banks,nse_official
+IDEA,Telecommunication,Telecom - Services,nse_official
+IDEAFORGE,Capital Goods,Aerospace & Defense,nse_official
+IDFC,Financial Services,Finance,nse_official
+IDFCFIRSTB,Financial Services,Banks,nse_official
+IEX,Financial Services,Capital Markets,nse_official
+IFBAGRO,Fast Moving Consumer Goods,Beverages,nse_official
+IFBIND,Consumer Durables,Consumer Durables,nse_official
+IFCI,Financial Services,Finance,nse_official
 IFFCO,Agri,Fertilisers,
 IFGL,Metals,Refractories,
-IGARASHI,Auto,Auto Ancillaries,
-IGL,Energy,Gas Distribution,
-IGPL,Chemicals,Industrial Gases,
-IIFL,Financials,NBFC,
+IFGLEXPOR,Capital Goods,Industrial Products,nse_official
+IGARASHI,Automobile and Auto Components,Auto Components,nse_official
+IGCL,Chemicals,Fertilizers & Agrochemicals,nse_official
+IGIL,Services,Commercial Services & Supplies,nse_official
+IGL,Oil Gas & Consumable Fuels,Gas,nse_official
+IGPL,Chemicals,Chemicals & Petrochemicals,nse_official
+IIFL,Financial Services,Finance,nse_official
+IIFLCAPS,Financial Services,Capital Markets,nse_official
 IIFLSEC,Financials,Stock Broking,
+IITL,Financial Services,Finance,nse_official
+IKIO,Consumer Durables,Consumer Durables,nse_official
+IKS,Information Technology,IT - Services,nse_official
+IMAGICAA,Consumer Services,Leisure Services,nse_official
+IMFA,Metals & Mining,Ferrous Metals,nse_official
+IMPAL,Automobile and Auto Components,Auto Components,nse_official
+INA,Capital Goods,Electrical Equipment,nse_official
+INCREDIBLE,Capital Goods,Industrial Products,nse_official
+INDBANK,Financial Services,Capital Markets,nse_official
 INDEGENE,IT,Healthcare IT,
+INDGN,Healthcare,Healthcare Services,nse_official
+INDHOTEL,Consumer Services,Leisure Services,nse_official
 INDHOTELS,Consumer,Hotels,
 INDIABULL,RealEstate,Real Estate - Residential,
-INDIABULLS,RealEstate,Residential RE,
-INDIACEM,Infra,Cement,
-INDIAGLYCO,Chemicals,Specialty Chemicals,
+INDIABULLS,FINANCIAL SERVICES,FINANCE,nse_official
+INDIACEM,Construction Materials,Cement & Cement Products,nse_official
+INDIAGLYCO,Fast Moving Consumer Goods,Beverages,nse_official
 INDIAGLYCOL,Chemicals,Specialty Chemicals,
 INDIAGRID,Energy,Power Transmission,
-INDIAMART,Internet,B2B Marketplace,
-INDIANB,Banking,PSU Banks,
-INDIASHLTR,Financials,Housing Finance,
-INDIGO,Chemicals,Specialty Chemicals,
-INDIGOPNTS,Consumer,Paints,
-INDIGRID,Infra,Power Transmission InvIT,
-INDOCO,Pharma,Formulations,
-INDOTECH,Cables,Cables & Wires,
-INDOTHAI,Banking,Regional Banks,
+INDIAMART,Consumer Services,Retailing,nse_official
+INDIANB,Financial Services,Banks,nse_official
+INDIANCARD,Textiles,Textiles & Apparels,nse_official
+INDIANHUME,Capital Goods,Industrial Manufacturing,nse_official
+INDIASHLTR,Financial Services,Finance,nse_official
+INDIGO,Services,Transport Services,nse_official
+INDIGOPNTS,Consumer Durables,Consumer Durables,nse_official
+INDIGRID,Power,Power,nse_official
+INDIQUBE,Services,Commercial Services & Supplies,nse_official
+INDNIPPON,Automobile and Auto Components,Auto Components,nse_official
+INDOAMIN,Chemicals,Chemicals & Petrochemicals,nse_official
+INDOBORAX,Chemicals,Chemicals & Petrochemicals,nse_official
+INDOCO,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+INDOFARM,Capital Goods,Agricultural Commercial & Construction Vehicles,nse_official
+INDORAMA,Textiles,Textiles & Apparels,nse_official
+INDOSTAR,Financial Services,Finance,nse_official
+INDOTECH,Capital Goods,Electrical Equipment,nse_official
+INDOTHAI,Financial Services,Capital Markets,nse_official
+INDOUS,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+INDOWIND,Power,Power,nse_official
+INDRAMEDCO,Healthcare,Healthcare Services,nse_official
+INDSWFTLAB,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+INDTERRAIN,Textiles,Textiles & Apparels,nse_official
 INDUS,Telecom,Telecom Infrastructure,
-INDUSINDBK,Banking,Private Banks,
+INDUSINDBK,Financial Services,Banks,nse_official
+INDUSTOWER,Telecommunication,Telecom - Services,nse_official
 INFIBEAM,Internet,Fintech,
+INFOBEAN,Information Technology,IT - Software,nse_official
+INFOMEDIA,Media Entertainment & Publication,Printing & Publication,nse_official
 INFOSYS,IT,IT Services,
-INFY,IT,IT Services,
+INFY,Information Technology,IT - Software,nse_official
+INGERRAND,Capital Goods,Industrial Products,nse_official
+INNOVACAP,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+INNOVANA,Information Technology,IT - Software,nse_official
 INNVENTMED,Pharma,Medical Devices,
 INOX,Consumer,Multiplex,
-INOXAIR,Cap Goods,Industrial Gases,
-INOXINDIA,Cap Goods,Cryogenic Equipment,
+INOXAIR,Cap Goods,Specialty Chemicals,
+INOXGREEN,Services,Commercial Services & Supplies,nse_official
+INOXINDIA,Capital Goods,Industrial Products,nse_official
 INOXLEIS,Consumer,Multiplex,
-INOXLEISUR,Consumer,Multiplex,
-INOXWIND,Energy,Wind Energy,
-INSECTICID,Agri,Agro Chemicals,
-INTELLECT,IT,IT Products,
+INOXLEISUR,Media Entertainment & Publication,Entertainment,nse_official
+INOXWIND,Capital Goods,Electrical Equipment,nse_official
+INSECTICID,Chemicals,Fertilizers & Agrochemicals,nse_official
+INTELLECT,Information Technology,IT - Software,nse_official
+INTENTECH,Information Technology,IT - Services,nse_official
+INTERARCH,Construction,Construction,nse_official
 INTERGLOBE,Consumer,Aviation,
+INTLCONV,Capital Goods,Industrial Manufacturing,nse_official
+INVENTURE,Financial Services,Capital Markets,nse_official
 INVENTURUS,IT,Healthcare IT,
-IOB,Banking,PSU Banks,
-IOC,Energy,Oil Refining,
-IOLCP,Chemicals,Specialty Chemicals,
-ION,IT,E-Governance,
-IPCALAB,Pharma,Pharma Formulations,
-IRB,Infra,Roads & Highways,
-IRCON,Infra,Railway Construction,
-IRCTC,Internet,Travel & Hospitality,
-IREDA,Financials,Power Finance,
-IRFC,Infra,Railway Finance,
-ISGEC,Cap Goods,Heavy Engineering,
+IOB,Financial Services,Banks,nse_official
+IOC,Oil Gas & Consumable Fuels,Petroleum Products,nse_official
+IOLCP,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+ION,IT,IT Services,
+IONEXCHANG,Utilities,Other Utilities,nse_official
+IPCALAB,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+IPL,Chemicals,Fertilizers & Agrochemicals,nse_official
+IRB,Construction,Construction,nse_official
+IRCON,Construction,Construction,nse_official
+IRCTC,Consumer Services,Leisure Services,nse_official
+IREDA,Financial Services,Finance,nse_official
+IRFC,Financial Services,Finance,nse_official
+IRIS,Information Technology,IT - Software,nse_official
+IRISDOREME,Textiles,Textiles & Apparels,nse_official
+IRMENERGY,Oil Gas & Consumable Fuels,Gas,nse_official
+ISFT,Consumer Services,Retailing,nse_official
+ISGEC,Construction,Construction,nse_official
+ISHANCH,Chemicals,Chemicals & Petrochemicals,nse_official
 ISMT,Metals,Steel Pipes,
-ITC,FMCG,FMCG - Foods,
-ITCHOTELS,Consumer,Hotels,
-IXIGO,Internet,Travel Tech,
-JAGSNPHARM,Pharma,Pharma API,
-JAIBALAJI,Metals,Steel,
+ITC,Fast Moving Consumer Goods,Diversified FMCG,nse_official
+ITCHOTELS,Consumer Services,Leisure Services,nse_official
+ITDC,Consumer Services,Leisure Services,nse_official
+ITI,Telecommunication,Telecom - Equipment & Accessories,nse_official
+IVALUE,Information Technology,IT - Hardware,nse_official
+IVC,Financial Services,Capital Markets,nse_official
+IVP,Chemicals,Chemicals & Petrochemicals,nse_official
+IXIGO,Consumer Services,Leisure Services,nse_official
+J&KBANK,Financial Services,Banks,nse_official
+JAGRAN,Media Entertainment & Publication,Media,nse_official
+JAGSNPHARM,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+JAIBALAJI,Metals & Mining,Ferrous Metals,nse_official
+JAICORPLTD,Capital Goods,Industrial Products,nse_official
 JAIINFRA,Infra,Infra,
+JAINREC,Metals & Mining,Diversified Metals,nse_official
+JAIPURKURT,Textiles,Textiles & Apparels,nse_official
 JAISWAL,Metals,Steel,
 JAISWALNIC,Metals,Steel,
 JAMNA,Auto,Auto Ancillaries,
-JAMNAAUTO,Auto,Auto Ancillaries,
+JAMNAAUTO,Automobile and Auto Components,Auto Components,nse_official
 JANA,Banking,Small Finance Banks,
 JANATA,Banking,Regional Banks,
-JAYAGROGN,Chemicals,Specialty Chemicals - Agri,
-JB,Pharma,Formulations,
-JBCHEPHARM,Pharma,Pharma Formulations,
-JBMA,Auto,Metal Forgings & Castings,
+JARO,Consumer Services,Other Consumer Services,nse_official
+JASH,Capital Goods,Industrial Manufacturing,nse_official
+JAYAGROGN,Chemicals,Chemicals & Petrochemicals,nse_official
+JAYBARMARU,Automobile and Auto Components,Auto Components,nse_official
+JAYKAY,Capital Goods,Aerospace & Defense,nse_official
+JAYNECOIND,Capital Goods,Industrial Products,nse_official
+JAYSREETEA,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+JB,Pharma,Pharma Formulations,
+JBCHEPHARM,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+JBMA,Automobile and Auto Components,Auto Components,nse_official
 JCHAC,Consumer,Air Conditioners,
-JETFREIGHT,Shipping,Logistics,
-JINDALPOLY,Packaging,Packaging - Films,
-JINDALSAW,Metals,Steel Pipes,
-JINDALSTEL,Metals,Steel,
+JETFREIGHT,Services,Transport Services,nse_official
+JGCHEM,Chemicals,Chemicals & Petrochemicals,nse_official
+JHS,Fast Moving Consumer Goods,Personal Products,nse_official
+JINDALPHOT,Financial Services,Finance,nse_official
+JINDALPOLY,Capital Goods,Industrial Products,nse_official
+JINDALSAW,Capital Goods,Industrial Products,nse_official
+JINDALSTEL,Metals & Mining,Ferrous Metals,nse_official
+JINDRILL,Oil Gas & Consumable Fuels,Oil,nse_official
+JINDWORLD,Textiles,Textiles & Apparels,nse_official
+JIOFIN,Financial Services,Finance,nse_official
+JISLDVREQS,Capital Goods,Industrial Products,nse_official
+JISLJALEQS,Capital Goods,Industrial Products,nse_official
 JKBANK,Banking,Regional Banks,
-JKCEMENT,Infra,Cement,
-JKIL,Infra,Cement,
-JKPAPER,Packaging,Paper & Packaging,
-JMFINANCIL,Financials,Wealth Management,
+JKCEMENT,Construction Materials,Cement & Cement Products,nse_official
+JKIL,Construction,Construction,nse_official
+JKIPL,Capital Goods,Agricultural Commercial & Construction Vehicles,nse_official
+JKLAKSHMI,Construction Materials,Cement & Cement Products,nse_official
+JKPAPER,Forest Materials,Paper Forest & Jute Products,nse_official
+JKTYRE,Automobile and Auto Components,Auto Components,nse_official
+JLHL,Healthcare,Healthcare Services,nse_official
+JMA,Automobile and Auto Components,Auto Components,nse_official
+JMFINANCIL,Financial Services,Finance,nse_official
 JMT,Auto,Auto Ancillaries,
-JMTAUTOLTD,Auto,Auto Components,
+JMTAUTOLTD,Automobile and Auto Components,Auto Components,nse_official
+JNKINDIA,Capital Goods,Industrial Manufacturing,nse_official
+JOCIL,Chemicals,Chemicals & Petrochemicals,nse_official
 JOJALGOLD,Consumer,Jewellery,
-JPASSOCIAT,Infra,EPC & Construction,
-JPOLYINVST,Financials,Investment Companies,
-JPPOWER,Energy,Power Generation,
-JSFB,Banking,Small Finance Banks,
+JPASSOCIAT,Construction,Construction,nse_official
+JPOLYINVST,Financial Services,Finance,nse_official
+JPPOWER,Power,Power,nse_official
+JSFB,Financial Services,Banks,nse_official
 JSHL,Metals,Steel,
-JSL,Metals,Steel,
+JSL,Metals & Mining,Ferrous Metals,nse_official
+JSLL,Consumer Services,Leisure Services,nse_official
 JSPL,Metals,Steel,
 JSW,Infra,Ports,
 JSWCEM,Infra,Cement,
-JSWENERGY,Energy,Power Generation,
-JSWESL,Energy,Power,
-JSWHL,Metals,Metals,
-JSWISPL,Metals,Steel,
-JSWREALTY,RealEstate,Residential RE,
-JSWSTEEL,Metals,Steel,
+JSWCEMENT,Construction Materials,Cement & Cement Products,nse_official
+JSWENERGY,Power,Power,nse_official
+JSWESL,Energy,Power Generation,
+JSWHL,Financial Services,Finance,nse_official
+JSWINFRA,Services,Transport Infrastructure,nse_official
+JSWISPL,Capital Goods,Industrial Products,nse_official
+JSWREALTY,RealEstate,Real Estate - Residential,
+JSWSTEEL,Metals & Mining,Ferrous Metals,nse_official
+JTEKTINDIA,Automobile and Auto Components,Auto Components,nse_official
+JTLIND,Capital Goods,Industrial Products,nse_official
 JTLINFRA,Metals,Steel Pipes,
 JUBILANT,Consumer,Diversified Consumer,
 JUBILANTIND,Chemicals,Specialty Chemicals,
-JUBLFOOD,FMCG,QSR,
-JUBLPHARMA,Pharma,Pharma API - CDMO,
-JUSTDIAL,Internet,Local Search,
-JYOTHY,Consumer,Personal Care,
-JYOTHYLAB,FMCG,FMCG - Personal Care,
-JYOTICNC,Cap Goods,Machine Tools,
+JUBLCPL,Chemicals,Chemicals & Petrochemicals,nse_official
+JUBLFOOD,Consumer Services,Leisure Services,nse_official
+JUBLINGREA,Chemicals,Chemicals & Petrochemicals,nse_official
+JUBLPHARMA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+JUNIPER,Consumer Services,Leisure Services,nse_official
+JUSTDIAL,Consumer Services,Retailing,nse_official
+JWL,Capital Goods,Industrial Manufacturing,nse_official
+JYOTHY,Consumer,FMCG - Personal Care,
+JYOTHYLAB,Fast Moving Consumer Goods,Household Products,nse_official
+JYOTICNC,Capital Goods,Industrial Manufacturing,nse_official
 JYOTIRES,Auto,Auto Ancillaries,
-JYOTISTRUC,Cap Goods,Power Towers,
+JYOTISTRUC,Capital Goods,Electrical Equipment,nse_official
+KABRAEXTRU,Capital Goods,Industrial Manufacturing,nse_official
 KAJARIA,Consumer,Tiles,
-KAJARIACER,Consumer,Tiles,
-KAKATCEM,Infra,Cement,
-KALINDEE,Cap Goods,Rail Electrification,
-KALPATPOWR,Energy,Power Transmission,
-KALYANI,Metals,Metal Forgings & Castings,
-KALYANKJIL,Consumer,Gold Jewelry,
-KANSAINER,Packaging,Packaging,
+KAJARIACER,Consumer Durables,Consumer Durables,nse_official
+KAKATCEM,Construction Materials,Cement & Cement Products,nse_official
+KALAMANDIR,Consumer Services,Retailing,nse_official
+KALINDEE,CONSTRUCTION,CONSTRUCTION,nse_official
+KALPATARU,Realty,Realty,nse_official
+KALPATPOWR,Infra,Construction & Engineering,
+KALYANI,Capital Goods,Agricultural Commercial & Construction Vehicles,nse_official
+KALYANIFRG,Capital Goods,Industrial Products,nse_official
+KALYANKJIL,Consumer Durables,Consumer Durables,nse_official
+KAMATHOTEL,Consumer Services,Leisure Services,nse_official
+KAMDHENU,Capital Goods,Industrial Products,nse_official
+KAMOPAINTS,Consumer Durables,Consumer Durables,nse_official
+KANANIIND,Consumer Durables,Consumer Durables,nse_official
+KANORICHEM,Capital Goods,Industrial Manufacturing,nse_official
+KANPRPLA,Capital Goods,Industrial Products,nse_official
+KANSAINER,Consumer Durables,Consumer Durables,nse_official
+KARMAENG,Power,Power,nse_official
 KARNATKABANK,Banking,Regional Banks,
-KARURVYSYA,Banking,Regional Banks,
-KAYNES,Electronics,Electronic Components,
-KDDL,Consumer,Jewelry & Watches,
-KEC,Cap Goods,Power T&D,
+KARURVYSYA,Financial Services,Banks,nse_official
+KAUSHALYA,Consumer Services,Leisure Services,nse_official
+KAYA,Consumer Services,Leisure Services,nse_official
+KAYNES,Capital Goods,Industrial Manufacturing,nse_official
+KCP,Construction Materials,Cement & Cement Products,nse_official
+KCPSUGIND,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+KDDL,Consumer Durables,Consumer Durables,nse_official
+KEC,Construction,Construction,nse_official
 KECIL,Cap Goods,Engineering,
 KECINTL,Cap Goods,Power T&D,
-KECL,Cap Goods,Power Transmission,
-KEI,Cables,Cables & Wires,
+KECL,Capital Goods,Electrical Equipment,nse_official
+KEEPLEARN,Consumer Services,Other Consumer Services,nse_official
+KEI,Capital Goods,Industrial Products,nse_official
+KELLTONTEC,Information Technology,IT - Services,nse_official
 KENERGY,Renewable,Renewable,
-KENNAMETAL,Cap Goods,Cutting Tools,
-KERNEX,Auto,Auto Safety Systems,
-KESORAMIND,Infra,Cement,
-KEYSTONE,RealEstate,Residential RE,
-KFINTECH,Financials,Financial Technology,
-KHADIM,Consumer,Footwear,
-KICL,Chemicals,Specialty Chemicals,
-KIMS,Pharma,Hospitals,
+KENNAMETAL,Cap Goods,Industrial Machinery,
+KERNEX,Services,Transport Services,nse_official
+KESORAMIND,Textiles,Textiles & Apparels,nse_official
+KEYFINSERV,Financial Services,Capital Markets,nse_official
+KEYSTONE,RealEstate,Real Estate - Residential,
+KFINTECH,Financial Services,Capital Markets,nse_official
+KHADIM,Consumer Durables,Consumer Durables,nse_official
+KHAICHEM,Chemicals,Fertilizers & Agrochemicals,nse_official
+KHAITANLTD,Consumer Durables,Consumer Durables,nse_official
+KHANDSE,Financial Services,Capital Markets,nse_official
+KICL,Financial Services,Finance,nse_official
+KILITCH,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+KIMS,Healthcare,Healthcare Services,nse_official
 KINETIC,Auto,Auto OEM - 2W,
-KIOCL,Metals,Iron Ore & Mining,
-KIRIIND,Renewable,Green Hydrogen,
+KINGFA,Capital Goods,Industrial Products,nse_official
+KIOCL,Metals & Mining,Ferrous Metals,nse_official
+KIRIIND,Renewable,Renewable Energy,
+KIRIINDUS,Chemicals,Chemicals & Petrochemicals,nse_official
 KIRILOSENG,Cap Goods,Pumps & Compressors,
 KIRILOSKAR,Cap Goods,Pumps & Compressors,
-KIRLOSBROS,Cap Goods,Pumps,
-KIRLOSENG,Cap Goods,Pumps & Compressors,
+KIRLOSBROS,Capital Goods,Industrial Products,nse_official
+KIRLOSENG,Capital Goods,Industrial Products,nse_official
+KIRLOSIND,Capital Goods,Industrial Products,nse_official
 KIRLOSKAR,Cap Goods,Pumps & Compressors,
-KITEX,Textiles,Textiles - Apparel,
-KMEW,Cap Goods,Engineering,
-KMSUGAR,Sugar,Sugar,
+KIRLPNU,Capital Goods,Industrial Products,nse_official
+KITEX,Textiles,Textiles & Apparels,nse_official
+KKCL,Textiles,Textiles & Apparels,nse_official
+KMEW,Services,Engineering Services,nse_official
+KMSUGAR,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+KNAGRI,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
 KNR,Infra,Roads & Highways,
-KNRCON,Infra,Roads & Highways,
-KOLTEPATIL,RealEstate,Real Estate - Residential,
+KNRCON,Construction,Construction,nse_official
+KOHINOOR,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+KOKUYOCMLN,Fast Moving Consumer Goods,Household Products,nse_official
+KOLTEPATIL,Realty,Realty,nse_official
+KOPRAN,Healthcare,Pharmaceuticals & Biotechnology,nse_official
 KOTAK,Banking,Private Banks,
-KOTAKBANK,Banking,Private Banks,
-KOTHARIPRO,Agri,Agri Processing,
+KOTAKBANK,Financial Services,Banks,nse_official
+KOTARISUG,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+KOTHARIPET,Chemicals,Chemicals & Petrochemicals,nse_official
+KOTHARIPRO,Services,Commercial Services & Supplies,nse_official
+KOTYARK,Oil Gas & Consumable Fuels,Petroleum Products,nse_official
 KPCL,Energy,Power Generation,
-KPIL,Auto,Auto Components,
+KPEL,Power,Power,nse_official
+KPIGREEN,Power,Power,nse_official
+KPIL,Construction,Construction,nse_official
 KPIT,IT,IT Engineering,
-KPITTECH,IT,IT Services,
+KPITTECH,Information Technology,IT - Software,nse_official
 KPR,Textiles,Garments,
-KPRMILL,Textiles,Textiles - Spinning,KPR Mill spinning
-KRBL,Agri,Rice / Agri,
-KRN,Cap Goods,Heat Exchangers,
-KRSNAA,Pharma,Diagnostics,
-KSB,Cap Goods,Pumps & Compressors,
-KSCL,Agri,Seeds & Agri,
-KTKBANK,Banking,Regional Banks,
+KPRMILL,Textiles,Textiles & Apparels,nse_official
+KRBL,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+KREBSBIO,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+KRIDHANINF,Construction,Construction,nse_official
+KRISHANA,Chemicals,Fertilizers & Agrochemicals,nse_official
+KRISHIVAL,Fast Moving Consumer Goods,Food Products,nse_official
+KRISHNADEF,Capital Goods,Aerospace & Defense,nse_official
+KRITI,Capital Goods,Industrial Products,nse_official
+KRITIKA,Capital Goods,Industrial Products,nse_official
+KRITINUT,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+KRN,Capital Goods,Industrial Products,nse_official
+KRONOX,Chemicals,Chemicals & Petrochemicals,nse_official
+KROSS,Automobile and Auto Components,Auto Components,nse_official
+KRSNAA,Healthcare,Healthcare Services,nse_official
+KRYSTAL,Services,Commercial Services & Supplies,nse_official
+KSB,Capital Goods,Industrial Products,nse_official
+KSCL,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+KSHINTL,Capital Goods,Industrial Products,nse_official
+KSL,Capital Goods,Industrial Products,nse_official
+KSOLVES,Information Technology,IT - Software,nse_official
+KTKBANK,Financial Services,Banks,nse_official
+KUANTUM,Forest Materials,Paper Forest & Jute Products,nse_official
 KUANTUMGLO,Consumer,Packaging,
-KWALITY,Consumer,Dairy,
+KWALITY,CONSUMER GOODS,CONSUMER NON DURABLES,nse_official
+KWIL,Fast Moving Consumer Goods,Food Products,nse_official
 L&T,Infra,EPC & Construction,
-LAKSHMI,Agri,Agri,
+LAGNAM,Textiles,Textiles & Apparels,nse_official
+LAKSHMI,Cap Goods,Textile Machinery,
 LAKSHMIBANK,Banking,Regional Banks,
 LAKSHVIL,Banking,Regional Banks,
-LAKSHVILAS,Banking,Regional Banks,
-LALPATHLAB,Pharma,Diagnostics,
-LARSEN,Cap Goods,EPC & Engineering,
-LATENTVIEW,IT,Data Analytics,
+LAKSHVILAS,FINANCIAL SERVICES,BANKS,nse_official
+LAL,Textiles,Textiles & Apparels,nse_official
+LALPATHLAB,Healthcare,Healthcare Services,nse_official
+LAMBODHARA,Textiles,Textiles & Apparels,nse_official
+LANDMARK,Automobile and Auto Components,Automobiles,nse_official
+LAOPALA,Consumer Durables,Consumer Durables,nse_official
+LARSEN,Cap Goods,Construction & Engineering,
+LASA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+LATENTVIEW,Information Technology,IT - Software,nse_official
+LATTEYS,Capital Goods,Industrial Products,nse_official
 LAURUS,Pharma,Pharma API,
-LAURUSLABS,Pharma,API & Bulk Drugs,
+LAURUSLABS,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+LAXMIDENTL,Healthcare,Healthcare Equipment & Supplies,nse_official
+LAXMIINDIA,Financial Services,Finance,nse_official
 LEEHOLIDAY,Consumer,Hotels,
-LEHAR,Consumer,Footwear,
-LEMERITE,Financials,Investment Companies,
+LEHAR,Consumer,Consumer Retail - Footwear,
+LEMERITE,Textiles,Textiles & Apparels,nse_official
 LEMONTRE,Consumer,Hotels,
-LENSKART,Consumer,Eyewear Retail,
-LGBBROSLTD,Textiles,Textiles - Fabric,
-LGEINDIA,Consumer,Consumer Electronics,
-LIBERTY,Consumer,Footwear,
-LICHSGFIN,Financials,Housing Finance,
-LICI,Financials,Insurance,
-LIKHITHA,Infra,Pipeline EPC,
-LINCOLN,Chemicals,Specialty Chemicals,
+LEMONTREE,Consumer Services,Leisure Services,nse_official
+LENSKART,Consumer Services,Retailing,nse_official
+LFIC,Financial Services,Finance,nse_official
+LGBBROSLTD,Automobile and Auto Components,Auto Components,nse_official
+LGEINDIA,Consumer Durables,Consumer Durables,nse_official
+LGHL,Consumer Durables,Consumer Durables,nse_official
+LIBAS,Textiles,Textiles & Apparels,nse_official
+LIBERTSHOE,Consumer Durables,Consumer Durables,nse_official
+LIBERTY,Consumer,Consumer Retail - Footwear,
+LICHSGFIN,Financial Services,Finance,nse_official
+LICI,Financial Services,Insurance,nse_official
+LIKHITHA,Construction,Construction,nse_official
+LINC,Fast Moving Consumer Goods,Household Products,nse_official
+LINCOLN,Healthcare,Pharmaceuticals & Biotechnology,nse_official
 LINCOLNCAP,Chemicals,Specialty Chemicals,
-LINDE,Chemicals,Industrial Gases,
-LLOYDS,Consumer,Consumer Appliances,
-LLOYDSENT,Metals,Steel,
-LLOYDSME,Metals,Steel,
-LOKESHMACH,Cap Goods,Machine Tools,
-LOTUSEYE,Pharma,Eye Hospitals,
-LOVABLE,Consumer,Innerwear & Hosiery,
-LT,Agri,Agri,
-LTF,Financials,Consumer Finance,
-LTFOODS,Agri,Rice,
+LINDE,Chemicals,Specialty Chemicals,
+LINDEINDIA,Chemicals,Chemicals & Petrochemicals,nse_official
+LLOYDS,Consumer Services,Leisure Services,nse_official
+LLOYDSENGG,Capital Goods,Industrial Manufacturing,nse_official
+LLOYDSENT,Metals & Mining,Metals & Minerals Trading,nse_official
+LLOYDSME,Metals & Mining,Minerals & Mining,nse_official
+LMW,Capital Goods,Industrial Manufacturing,nse_official
+LODHA,Realty,Realty,nse_official
+LOKESHMACH,Capital Goods,Industrial Manufacturing,nse_official
+LORDSCHLO,Chemicals,Chemicals & Petrochemicals,nse_official
+LOTUSDEV,Realty,Realty,nse_official
+LOTUSEYE,Healthcare,Healthcare Services,nse_official
+LOVABLE,Textiles,Textiles & Apparels,nse_official
+LPDC,Realty,Realty,nse_official
+LT,Construction,Construction,nse_official
+LTF,Financial Services,Finance,nse_official
+LTFOODS,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
 LTI,IT,IT Services,
 LTIM,IT,IT Services,
-LTTS,IT,IT Engineering,
-LUMAXIND,Auto,Auto Lighting,
-LUMAXTECH,Auto,Auto Ancillaries,
-LUPIN,Pharma,Pharma Formulations,
+LTM,Information Technology,IT - Software,nse_official
+LTTS,Information Technology,IT - Services,nse_official
+LUMAXIND,Automobile and Auto Components,Auto Components,nse_official
+LUMAXTECH,Automobile and Auto Components,Auto Components,nse_official
+LUPIN,Healthcare,Pharmaceuticals & Biotechnology,nse_official
 LUX,Textiles,Textiles - Innerwear,
-LUXIND,Textiles,Textiles - Innerwear,
-LXCHEM,Chemicals,Specialty Chemicals,
+LUXIND,Textiles,Textiles & Apparels,nse_official
+LXCHEM,Chemicals,Chemicals & Petrochemicals,nse_official
+LYKALABS,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+LYPSAGEMS,Consumer Durables,Consumer Durables,nse_official
 M&M,Auto,Auto OEM - 4W,
 M&MFIN,Financials,Vehicle Finance,
-MACPOWER,Cap Goods,Machine Tools,
+MACPOWER,Capital Goods,Industrial Manufacturing,nse_official
 MACROTECH,RealEstate,Real Estate - Residential,
-MAHABANK,Banking,PSU Banks,
-MAHESHWARI,Shipping,Shipping,
+MADHAV,Consumer Durables,Consumer Durables,nse_official
+MADHUCON,Construction,Construction,nse_official
+MADRASFERT,Chemicals,Fertilizers & Agrochemicals,nse_official
+MAGADSUGAR,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+MAGNUM,Forest Materials,Paper Forest & Jute Products,nse_official
+MAHABANK,Financial Services,Banks,nse_official
+MAHAPEXLTD,Financial Services,Finance,nse_official
+MAHEPC,Capital Goods,Industrial Manufacturing,nse_official
+MAHESHWARI,Diversified,Diversified,nse_official
 MAHGL,Energy,City Gas Distribution,
 MAHINDCIE,Auto,Metal Forgings & Castings,
 MAHINDHOLIDAY,Consumer,Travel & Tourism,
 MAHINDRACIE,Auto,Metal Forgings & Castings,
-MAHLIFE,RealEstate,Real Estate - Residential,
-MAHLOG,Shipping,Logistics,
-MAHSCOOTER,Auto,Auto OEM - 2W,
+MAHLIFE,Realty,Realty,nse_official
+MAHLOG,Services,Transport Services,nse_official
+MAHSCOOTER,Financial Services,Finance,nse_official
+MAHSEAMLES,Capital Goods,Industrial Products,nse_official
+MAITHANALL,Metals & Mining,Ferrous Metals,nse_official
 MAKEMYTRIP,Internet,Travel Tech,
-MANAKSIA,Metals,Steel,
-MANAKSTEEL,Metals,Steel,
-MANALIPETC,Metals,Steel Pipes,
-MANAPPURAM,Financials,Gold Loans,
-MANCREDIT,Financials,NBFC,
+MALLCOM,Capital Goods,Industrial Products,nse_official
+MALUPAPER,Forest Materials,Paper Forest & Jute Products,nse_official
+MAMATA,Capital Goods,Industrial Manufacturing,nse_official
+MANAKCOAT,Capital Goods,Industrial Products,nse_official
+MANAKSIA,Capital Goods,Industrial Products,nse_official
+MANAKSTEEL,Metals & Mining,Ferrous Metals,nse_official
+MANALIPETC,Chemicals,Chemicals & Petrochemicals,nse_official
+MANAPPURAM,Financial Services,Finance,nse_official
+MANBA,Financial Services,Finance,nse_official
+MANCREDIT,Financial Services,Finance,nse_official
 MANGLAM,Metals,Steel Wires,
-MANGLMCEM,Infra,Cement,
-MANKIND,Pharma,Pharma Formulations,
-MANOMAY,Textiles,Textiles,
-MANYAVAR,Textiles,Apparel Retail,
-MAPMYINDIA,Internet,Digital Maps,
-MARICO,FMCG,FMCG - Personal Care,
-MARKSANS,Pharma,Formulations,
-MARUTI,Auto,Auto OEM - 4W,
-MASTEK,IT,IT Services,
-MAWANASUG,Sugar,Sugar,
+MANGLMCEM,Construction Materials,Cement & Cement Products,nse_official
+MANINDS,Capital Goods,Industrial Products,nse_official
+MANINFRA,Realty,Realty,nse_official
+MANKIND,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+MANOMAY,Textiles,Textiles & Apparels,nse_official
+MANORAMA,Fast Moving Consumer Goods,Food Products,nse_official
+MANORG,Chemicals,Chemicals & Petrochemicals,nse_official
+MANUGRAPH,Capital Goods,Industrial Manufacturing,nse_official
+MANYAVAR,Consumer Services,Retailing,nse_official
+MAPMYINDIA,Information Technology,IT - Software,nse_official
+MARALOVER,Textiles,Textiles & Apparels,nse_official
+MARATHON,Realty,Realty,nse_official
+MARICO,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+MARINE,Capital Goods,Industrial Manufacturing,nse_official
+MARKOLINES,Construction,Construction,nse_official
+MARKSANS,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+MARSONS,Capital Goods,Electrical Equipment,nse_official
+MARUTI,Automobile and Auto Components,Automobiles,nse_official
+MASFIN,Financial Services,Finance,nse_official
+MASKINVEST,Financial Services,Finance,nse_official
+MASTEK,Information Technology,IT - Software,nse_official
+MASTERTR,Financial Services,Capital Markets,nse_official
+MATRIMONY,Consumer Services,Retailing,nse_official
+MAWANASUG,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+MAXESTATES,Realty,Realty,nse_official
 MAXFIN,Financials,NBFC,
-MAXHEALTH,Pharma,Hospitals,
+MAXHEALTH,Healthcare,Healthcare Services,nse_official
+MAXIND,Financial Services,Finance,nse_official
 MAXLIFE,Financials,Life Insurance,
-MAZDOCK,Defense,Shipbuilding,
+MAYURUNIQ,Consumer Durables,Consumer Durables,nse_official
+MAZDA,Capital Goods,Industrial Manufacturing,nse_official
+MAZDOCK,Capital Goods,Industrial Manufacturing,nse_official
+MBAPL,Chemicals,Fertilizers & Agrochemicals,nse_official
+MBEL,Construction,Construction,nse_official
+MBLINFRA,Construction,Construction,nse_official
 MCDOWELL-N,FMCG,FMCG - Beverages,
 MCLEODRUS,Agri,Tea Plantations,
-MCX,Financials,Capital Markets,
-MCXINDIA,Financials,Commodities Exchange,
-MDL,Cap Goods,Shipbuilding,
-MEDANTA,Pharma,Hospitals,
-MEDKART,Pharma,Generic Pharma Retail,
-MEDPLUS,Pharma,Pharmacy Retail,
-MEGASTAR,Consumer,Entertainment,
-MESCAB,Cables,Cables,
-METRO,Consumer,Footwear,
-METROBRAND,Consumer,Footwear,
-METROPOLIS,Pharma,Diagnostics,
-MFSL,Financials,Insurance & Finance,
-MGEL,Metals,Metal & Mining,
-MGL,Energy,Gas Distribution,
-MIDHANI,Defense,Aerospace Alloys,
+MCLEODRUSS,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+MCLOUD,Information Technology,IT - Software,nse_official
+MCX,Financial Services,Capital Markets,nse_official
+MCXINDIA,Financials,Capital Markets,
+MDL,Consumer Durables,Consumer Durables,nse_official
+MEDANTA,Healthcare,Healthcare Services,nse_official
+MEDIASSIST,Financial Services,Insurance,nse_official
+MEDICAMEQ,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+MEDICO,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+MEDKART,Pharma,Pharmacy Retail,
+MEDPLUS,Consumer Services,Retailing,nse_official
+MEESHO,Consumer Services,Retailing,nse_official
+MEGASTAR,Fast Moving Consumer Goods,Food Products,nse_official
+MEIL,Capital Goods,Electrical Equipment,nse_official
+MENONBE,Automobile and Auto Components,Auto Components,nse_official
+MESCAB,Cables,Cables & Wires,
+METRO,Consumer,Consumer Retail - Footwear,
+METROBRAND,Consumer Durables,Consumer Durables,nse_official
+METROPOLIS,Healthcare,Healthcare Services,nse_official
+MFML,Textiles,Textiles & Apparels,nse_official
+MFSL,Financial Services,Insurance,nse_official
+MGEL,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+MGL,Oil Gas & Consumable Fuels,Gas,nse_official
+MHLXMIRU,Textiles,Textiles & Apparels,nse_official
+MHRIL,Consumer Services,Leisure Services,nse_official
+MICEL,Capital Goods,Industrial Products,nse_official
+MIDHANI,Capital Goods,Aerospace & Defense,nse_official
+MIDWESTLTD,Consumer Durables,Consumer Durables,nse_official
 MINDA,Auto,Auto Ancillaries,
+MINDACORP,Automobile and Auto Components,Auto Components,nse_official
 MINDAIND,Auto,Auto Ancillaries,
-MINDSPACE,RealEstate,REIT,
+MINDSPACE,Realty,Realty,nse_official
+MINDTECK,Information Technology,IT - Software,nse_official
 MIRC,Consumer,Consumer Electronics,
-MIRCELECTR,Consumer,Electronics,
-MISHRA,Metals,Specialty Metals,
+MIRCELECTR,Consumer Durables,Consumer Durables,nse_official
+MIRZAINT,Consumer Durables,Consumer Durables,nse_official
+MISHRA,Metals,Non-Ferrous Metals,
+MITCON,Services,Commercial Services & Supplies,nse_official
+MITTAL,Textiles,Textiles & Apparels,nse_official
+MKPL,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
 MKTGCD,Packaging,Packaging,
-MMTC,Metals,Metal Trading,
-MOBIKWIK,Internet,Fintech,
+MMFL,Automobile and Auto Components,Auto Components,nse_official
+MMP,Metals & Mining,Non - Ferrous Metals,nse_official
+MMTC,Services,Commercial Services & Supplies,nse_official
+MOBIKWIK,Financial Services,Financial Technology (Fintech),nse_official
+MODINATUR,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+MODIRUBBER,Automobile and Auto Components,Auto Components,nse_official
+MODIS,Realty,Realty,nse_official
+MODISONLTD,Capital Goods,Electrical Equipment,nse_official
+MODTHREAD,Textiles,Textiles & Apparels,nse_official
 MOFSL,Financials,Wealth Management,
-MOIL,Metals,Manganese Mining,
-MOLD,Cap Goods,Moldtek,
+MOHITIND,Textiles,Textiles & Apparels,nse_official
+MOIL,Metals & Mining,Minerals & Mining,nse_official
+MOKSH,Consumer Durables,Consumer Durables,nse_official
+MOL,Chemicals,Fertilizers & Agrochemicals,nse_official
+MOLD,Cap Goods,Plastic Pipes,
 MOLD-TEK,Packaging,Packaging - Rigid,
+MOLDTECH,Construction,Construction,nse_official
 MOLDTEK,Packaging,Packaging - Containers,
-MOLDTKPAC,Packaging,Rigid Packaging,
-MOSCHIP,Electronics,Semiconductors,
+MOLDTKPAC,Capital Goods,Industrial Products,nse_official
+MONARCH,Financial Services,Capital Markets,nse_official
+MONEYBOXX,Financial Services,Finance,nse_official
+MONTECARLO,Textiles,Textiles & Apparels,nse_official
+MOREPENLAB,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+MOSCHIP,Information Technology,IT - Hardware,nse_official
 MOSDOH,Energy,Renewable,
-MOTHERSON,Auto,Auto Ancillaries,
-MOTILALOFS,Financials,Wealth Management,
-MPHASIS,IT,IT Services,
-MRF,Auto,Tyres,
-MRPL,Energy,Oil Refining,
-MSTCLTD,Metals,Metal & Mining,
+MOTHERSON,Automobile and Auto Components,Auto Components,nse_official
+MOTILALOFS,Financial Services,Capital Markets,nse_official
+MOTISONS,Consumer Durables,Consumer Durables,nse_official
+MOTOGENFIN,Services,Commercial Services & Supplies,nse_official
+MPHASIS,Information Technology,IT - Software,nse_official
+MPSLTD,Consumer Services,Other Consumer Services,nse_official
+MRF,Automobile and Auto Components,Auto Components,nse_official
+MRPL,Oil Gas & Consumable Fuels,Petroleum Products,nse_official
+MSPL,Capital Goods,Industrial Products,nse_official
+MSTCLTD,Services,Commercial Services & Supplies,nse_official
+MSUMI,Automobile and Auto Components,Auto Components,nse_official
 MTAR,Defense,Aerospace & Defense,
-MTARTECH,Defense,Aerospace & Defense,
-MUKANDFIN,Metals,Steel,
-MUTHOOTCAP,Financials,Gold Loans,
-MUTHOOTFIN,Financials,Gold Loans,
-MWL,Cap Goods,Engineering,
-NAGAFERT,Defense,Defense - Explosives,
-NAHAREXP,Textiles,Textiles - Spinning,
-NAHARSPING,Textiles,Textiles - Spinning,
+MTARTECH,Capital Goods,Electrical Equipment,nse_official
+MTNL,Telecommunication,Telecom - Services,nse_official
+MUFIN,Financial Services,Finance,nse_official
+MUFTI,Consumer Services,Retailing,nse_official
+MUKANDFIN,Financials,NBFC,
+MUKANDLTD,Metals & Mining,Ferrous Metals,nse_official
+MUKKA,Fast Moving Consumer Goods,Food Products,nse_official
+MUKTAARTS,Media Entertainment & Publication,Entertainment,nse_official
+MUNJALAU,Automobile and Auto Components,Auto Components,nse_official
+MUNJALSHOW,Automobile and Auto Components,Auto Components,nse_official
+MURUDCERA,Consumer Durables,Consumer Durables,nse_official
+MUTHOOTCAP,Financial Services,Finance,nse_official
+MUTHOOTFIN,Financial Services,Finance,nse_official
+MUTHOOTMF,Financial Services,Finance,nse_official
+MVGJL,Consumer Durables,Consumer Durables,nse_official
+MWL,Capital Goods,Industrial Products,nse_official
+NACLIND,Chemicals,Fertilizers & Agrochemicals,nse_official
+NAGAFERT,Chemicals,Fertilizers & Agrochemicals,nse_official
+NAGREEKCAP,Financial Services,Finance,nse_official
+NAGREEKEXP,Textiles,Textiles & Apparels,nse_official
+NAHARCAP,Financial Services,Finance,nse_official
+NAHAREXP,Other,Other,nse_official
+NAHARINDUS,Textiles,Textiles & Apparels,nse_official
+NAHARPOLY,Capital Goods,Industrial Products,nse_official
+NAHARSPING,Textiles,Textiles & Apparels,nse_official
 NAINITALBNK,Banking,Regional Banks,
 NALCO,Metals,Aluminium,
+NAM-INDIA,Financial Services,Capital Markets,nse_official
 NARAYANA,Pharma,Hospitals,
-NARMADA,Chemicals,Specialty Chemicals,
-NATCO,Pharma,Formulations,
-NATCOPHARM,Pharma,Pharma Formulations,
-NATHPULP,Consumer,Paper & Pulp,
-NATIONALUM,Metals,Aluminium,
-NAUKRI,Internet,Online Recruitment,
+NARMADA,Fast Moving Consumer Goods,Food Products,nse_official
+NATCAPSUQ,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+NATCO,Pharma,Pharma Formulations,
+NATCOPHARM,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+NATHBIOGEN,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+NATHPULP,Consumer,Paper,
+NATIONALUM,Metals & Mining,Non - Ferrous Metals,nse_official
+NAUKRI,Consumer Services,Retailing,nse_official
+NAVA,Power,Power,nse_official
 NAVINFIN,Financials,Microfinance,
-NAVINFLUOR,Chemicals,Specialty Chemicals,
-NAZARA,Internet,Gaming,
-NBCC,Infra,Govt Construction,
-NCC,Infra,Construction EPC,
-NCLIND,Chemicals,Specialty Chemicals - Alkali,
-NDLVENTURE,Financials,Investment Companies,
-NDTV,Consumer,TV Broadcasting,
-NELCAST,Metals,Metal Forgings & Castings,
-NEOGEN,Chemicals,Specialty Chemicals,
-NESCO,RealEstate,Commercial RE,
-NESTLEIND,FMCG,FMCG - Foods,
+NAVINFLUOR,Chemicals,Chemicals & Petrochemicals,nse_official
+NAVKARCORP,Services,Transport Services,nse_official
+NAVKARURB,Construction,Construction,nse_official
+NAVNETEDUL,Fast Moving Consumer Goods,Household Products,nse_official
+NAZARA,Media Entertainment & Publication,Entertainment,nse_official
+NBCC,Construction,Construction,nse_official
+NBIFIN,Financial Services,Finance,nse_official
+NCC,Construction,Construction,nse_official
+NCLIND,Construction Materials,Cement & Cement Products,nse_official
+NDGL,Financial Services,Finance,nse_official
+NDL,Textiles,Textiles & Apparels,nse_official
+NDLVENTURE,Financial Services,Finance,nse_official
+NDRAUTO,Automobile and Auto Components,Auto Components,nse_official
+NDTV,Media Entertainment & Publication,Entertainment,nse_official
+NECCLTD,Services,Transport Services,nse_official
+NECLIFE,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+NELCAST,Capital Goods,Industrial Products,nse_official
+NELCO,Information Technology,IT - Hardware,nse_official
+NEOGEN,Chemicals,Chemicals & Petrochemicals,nse_official
+NEPHROPLUS,Healthcare,Healthcare Services,nse_official
+NESCO,Services,Commercial Services & Supplies,nse_official
+NESTLEIND,Fast Moving Consumer Goods,Food Products,nse_official
 NETSOL,IT,IT Services,
-NETWEB,IT,IT Services,
-NETWORK18,Consumer,Media & Entertainment,
-NEULANDLAB,Pharma,API & Bulk Drugs,
-NEWGEN,IT,IT Services,
+NETWEB,Information Technology,IT - Services,nse_official
+NETWORK18,Media Entertainment & Publication,Entertainment,nse_official
+NEULANDLAB,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+NEWGEN,Information Technology,IT - Software,nse_official
+NEXTMEDIA,Media Entertainment & Publication,Entertainment,nse_official
 NEXUS,RealEstate,REIT,
-NFL,Agri,Fertilisers,
+NFL,Chemicals,Fertilizers & Agrochemicals,nse_official
+NGIL,Fast Moving Consumer Goods,Food Products,nse_official
+NGLFINE,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+NH,Healthcare,Healthcare Services,nse_official
 NHLIND,Pharma,Hospitals,
-NHPC,Energy,Power Generation,
-NIACINDIA,Financials,Non-Life Insurance,
-NIACL,Financials,Non-Life Insurance,
+NHPC,Power,Power,nse_official
+NIACINDIA,Financials,General Insurance,
+NIACL,Financial Services,Insurance,nse_official
 NIARE,Financials,Reinsurance,
+NIBE,Capital Goods,Aerospace & Defense,nse_official
+NIBL,Capital Goods,Industrial Products,nse_official
 NIFTYMET,Metals,Steel,
 NIINSYS,IT,IT Services,
-NIIT,IT,IT Education,
-NIITMTS,IT,IT Training,
+NIIT,IT,Education,
+NIITLTD,Consumer Services,Other Consumer Services,nse_official
+NIITMTS,Consumer Services,Other Consumer Services,nse_official
 NIITNX,IT,IT Services,
 NIITTECH,IT,IT Services,
 NIKHILAD,Textiles,Technical Textiles,
-NILE,Metals,Metal & Mining,
-NILKAMAL,Consumer,Plastics & Furniture,
-NINSYS,IT,IT Services,
+NILAINFRA,Realty,Realty,nse_official
+NILASPACES,Realty,Realty,nse_official
+NILE,Metals & Mining,Minerals & Mining,nse_official
+NILKAMAL,Consumer Durables,Consumer Durables,nse_official
+NINSYS,Information Technology,IT - Software,nse_official
+NIPPOBATRY,Fast Moving Consumer Goods,Household Products,nse_official
 NIPPONAMC,Financials,Asset Management,
 NIPPONSEIMC,Financials,Asset Management,
+NIRAJ,Construction,Construction,nse_official
+NITCO,Consumer Durables,Consumer Durables,nse_official
 NITIN,Textiles,Yarn & Fabric,
-NITINSPIN,Textiles,Textiles - Spinning,
-NITIRAJ,Textiles,Textiles - Fabric,
+NITINSPIN,Textiles,Textiles & Apparels,nse_official
+NITIRAJ,Capital Goods,Electrical Equipment,nse_official
 NITISHK,Consumer,Tiles,
-NLCINDIA,Energy,Power Generation,
-NMDC,Metals,Metal & Mining,
+NIVABUPA,Financial Services,Insurance,nse_official
+NKIND,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+NLCINDIA,Power,Power,nse_official
+NMDC,Metals & Mining,Minerals & Mining,nse_official
 NMSPACK,Packaging,Packaging - Rigid,
-NMSWORKS,Textiles,Textiles,
-NOCIL,Chemicals,Specialty Chemicals,
-NOVARTIS,Pharma,Formulations,
-NPCIL,Energy,Nuclear Power,
+NMSWORKS,Textiles,Textiles - Synthetic,
+NOCIL,Chemicals,Chemicals & Petrochemicals,nse_official
+NOIDATOLL,Services,Transport Infrastructure,nse_official
+NORTHARC,Financial Services,Finance,nse_official
+NOVAAGRI,Chemicals,Fertilizers & Agrochemicals,nse_official
+NOVARTIS,Pharma,Pharma Formulations,
+NPCIL,Energy,Power Generation,
+NPST,Financial Services,Financial Technology (Fintech),nse_official
 NPTC,Energy,Power Generation,
-NRAIL,Cap Goods,Rails,
-NSDL,Financials,Financial Technology,
-NSLNISP,Metals,Steel,
-NTPC,Energy,Power Generation,
-NUCLEUS,IT,IT Products,
-NUVAMA,Financials,Wealth Management,
-NUVOCO,Infra,Cement,
-NXTDIGITAL,Telecom,Cable TV,
-NYKAA,Internet,Beauty & Fashion Retail,
-OBEROIREAL,RealEstate,Residential RE,
-OBEROIRLTY,RealEstate,Residential RE,
-OCCL,Metals,Refractories,
-OFSS,IT,IT Services,
-OIL,Energy,Oil & Gas,
+NRAIL,Forest Materials,Paper Forest & Jute Products,nse_official
+NRBBEARING,Automobile and Auto Components,Auto Components,nse_official
+NRL,Metals & Mining,Metals & Minerals Trading,nse_official
+NSDL,Financials,Fintech,
+NSIL,Financial Services,Finance,nse_official
+NSLNISP,Metals & Mining,Ferrous Metals,nse_official
+NTPC,Power,Power,nse_official
+NTPCGREEN,Power,Power,nse_official
+NUCLEUS,Information Technology,IT - Software,nse_official
+NURECA,Healthcare,Healthcare Equipment & Supplies,nse_official
+NUVAMA,Financial Services,Capital Markets,nse_official
+NUVOCO,Construction Materials,Cement & Cement Products,nse_official
+NXTDIGITAL,Telecom,Broadcasting,
+NYKAA,Consumer Services,Retailing,nse_official
+OAL,Chemicals,Chemicals & Petrochemicals,nse_official
+OBCL,Services,Transport Services,nse_official
+OBEROIREAL,RealEstate,Real Estate - Residential,
+OBEROIRLTY,Realty,Realty,nse_official
+OCCL,Chemicals,Chemicals & Petrochemicals,nse_official
+OCCLLTD,Chemicals,Chemicals & Petrochemicals,nse_official
+ODIGMA,Information Technology,IT - Services,nse_official
+OFSS,Information Technology,IT - Software,nse_official
+OIL,Oil Gas & Consumable Fuels,Oil,nse_official
+OILCOUNTUB,Oil Gas & Consumable Fuels,Oil,nse_official
 OILINDIA,Energy,Oil Exploration,
-OLA,Auto,Electric Vehicles,
+OLA,Auto,EV Ecosystem,
+OLAELEC,Automobile and Auto Components,Automobiles,nse_official
 OLARIDER,Auto,Auto OEM - EV,
-OLECTRA,Renewable,EV Vehicles,
-OMAXE,RealEstate,Residential RE,
-ONELIFECAP,Financials,Capital Markets,
-ONGC,Energy,Oil & Gas,
-ONMOBILE,IT,IT Products,
-OPTIEMUS,Cables,Optical Fiber Cables,
-ORICONENT,Packaging,Packaging - Containers,
-ORIENTBELL,Consumer,Tiles,
+OLECTRA,Automobile and Auto Components,Automobiles,nse_official
+OMAXAUTO,Automobile and Auto Components,Auto Components,nse_official
+OMAXE,Realty,Realty,nse_official
+OMFREIGHT,Services,Transport Services,nse_official
+OMINFRAL,Construction,Construction,nse_official
+OMNI,Capital Goods,Industrial Manufacturing,nse_official
+ONELIFECAP,Financial Services,Capital Markets,nse_official
+ONEPOINT,Services,Commercial Services & Supplies,nse_official
+ONESOURCE,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+ONGC,Oil Gas & Consumable Fuels,Oil,nse_official
+ONMOBILE,Media Entertainment & Publication,Media,nse_official
+ONWARDTEC,Information Technology,IT - Services,nse_official
+OPTIEMUS,Telecommunication,Telecom - Equipment & Accessories,nse_official
+ORBTEXP,Textiles,Textiles & Apparels,nse_official
+ORCHASP,Information Technology,IT - Software,nse_official
+ORCHPHARMA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+ORICONENT,Capital Goods,Industrial Products,nse_official
+ORIENTALTL,Consumer Durables,Consumer Durables,nse_official
+ORIENTBELL,Consumer Durables,Consumer Durables,nse_official
+ORIENTCEM,Construction Materials,Cement & Cement Products,nse_official
+ORIENTCER,Capital Goods,Industrial Products,nse_official
 ORIENTELC,Financials,Insurance,
-ORIENTELEC,Consumer,Consumer Electricals,
+ORIENTELEC,Consumer Durables,Consumer Durables,nse_official
 ORIENTGREEN,Renewable,Wind Energy,
-ORIENTINS,Financials,Non-Life Insurance,
-OWM,Textiles,Woolen Mills,
-PAGEIND,Textiles,Textiles - Innerwear,
-PAGES,Textiles,Apparel Retail,
+ORIENTHOT,Consumer Services,Leisure Services,nse_official
+ORIENTINS,Financials,General Insurance,
+ORIENTLTD,Capital Goods,Industrial Products,nse_official
+ORIENTPPR,Forest Materials,Paper Forest & Jute Products,nse_official
+ORIENTTECH,Information Technology,IT - Services,nse_official
+ORISSAMINE,Metals & Mining,Minerals & Mining,nse_official
+ORKLAINDIA,Fast Moving Consumer Goods,Food Products,nse_official
+OSIAHYPER,Consumer Services,Retailing,nse_official
+OSWALAGRO,Services,Commercial Services & Supplies,nse_official
+OSWALGREEN,Financial Services,Finance,nse_official
+OSWALPUMPS,Capital Goods,Industrial Products,nse_official
+OSWALSEEDS,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+OWM,Textiles,Textiles - Synthetic,
+PACEDIGITK,Telecommunication,Telecom - Services,nse_official
+PAGEIND,Textiles,Textiles & Apparels,nse_official
+PAGES,Textiles,Consumer Retail - Apparel,
 PAHARPUR,Cap Goods,Heat Exchange & Boilers,
-PANACEA,Pharma,Pharma Packaging,
-PARABDRUGS,Pharma,Pharma API,
-PARADEEP,Chemicals,Agri Chemicals & Fertilisers,
+PAISALO,Financial Services,Finance,nse_official
+PAKKA,Forest Materials,Paper Forest & Jute Products,nse_official
+PALASHSECU,Fast Moving Consumer Goods,Food Products,nse_official
+PALREDTEC,Information Technology,IT - Services,nse_official
+PANACEA,Pharma,Pharma API,
+PANACEABIO,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+PANAMAPET,Oil Gas & Consumable Fuels,Petroleum Products,nse_official
+PANSARI,Realty,Realty,nse_official
+PAR,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+PARABDRUGS,PHARMA,PHARMACEUTICALS,nse_official
+PARACABLES,Capital Goods,Industrial Products,nse_official
+PARADEEP,Chemicals,Fertilizers & Agrochemicals,nse_official
 PARAG,Consumer,Dairy,
-PARAMOUNT,Cables,Cables,
-PARAS,Defense,Defense,
-PASHUPATI,Textiles,Cotton / Agri,
-PATANJALI,Agri,FMCG - Foods,
+PARAGMILK,Fast Moving Consumer Goods,Food Products,nse_official
+PARAMOUNT,Textiles,Textiles & Apparels,nse_official
+PARAS,Capital Goods,Aerospace & Defense,nse_official
+PARKHOSPS,Healthcare,Healthcare Services,nse_official
+PARKHOTELS,Consumer Services,Leisure Services,nse_official
+PARSVNATH,Realty,Realty,nse_official
+PASHUPATI,Textiles,Textiles & Apparels,nse_official
+PASUPTAC,Chemicals,Chemicals & Petrochemicals,nse_official
+PATANJALI,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
 PATANJALIFO,Agri,FMCG - Foods,
 PATEL,Infra,EPC & Construction,
-PATELENG,Cap Goods,EPC,
-PAUSHAKLTD,Chemicals,Specialty Chemicals - Fluorine,
-PAYTM,Internet,Fintech,
-PCBL,Chemicals,Carbon Black,
-PCJEWELLER,Consumer,Jewellery,
-PERSISTENT,IT,IT Services,
-PETRONET,Energy,Gas Distribution,
-PFC,Financials,Power Finance,
-PFCINDIA,Financials,Power Finance,
-PFIZER,Pharma,Pharma Formulations,
-PFOCUS,Pharma,Pharma Formulations,
-PGEL,Electronics,Electronic Components,
-PGHH,FMCG,FMCG - Personal Care,
+PATELENG,Construction,Construction,nse_official
+PATELRMART,Consumer Services,Retailing,nse_official
+PATINTLOG,Services,Transport Services,nse_official
+PAUSHAKLTD,Chemicals,Chemicals & Petrochemicals,nse_official
+PAVNAIND,Automobile and Auto Components,Auto Components,nse_official
+PAYTM,Financial Services,Financial Technology (Fintech),nse_official
+PCBL,Chemicals,Chemicals & Petrochemicals,nse_official
+PCJEWELLER,Consumer Durables,Consumer Durables,nse_official
+PDMJEPAPER,Forest Materials,Paper Forest & Jute Products,nse_official
+PDSL,Textiles,Textiles & Apparels,nse_official
+PEARLPOLY,Consumer Durables,Consumer Durables,nse_official
+PENIND,Capital Goods,Industrial Manufacturing,nse_official
+PENINLAND,Realty,Realty,nse_official
+PERSISTENT,Information Technology,IT - Software,nse_official
+PETRONET,Oil Gas & Consumable Fuels,Gas,nse_official
+PFC,Financial Services,Finance,nse_official
+PFCINDIA,Financials,NBFC,
+PFIZER,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+PFOCUS,Media Entertainment & Publication,Entertainment,nse_official
+PFS,Financial Services,Finance,nse_official
+PGEL,Consumer Durables,Consumer Durables,nse_official
+PGHH,Fast Moving Consumer Goods,Personal Products,nse_official
+PGHL,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+PGIL,Textiles,Textiles & Apparels,nse_official
 PHILIPCARB,Metals,Graphite Electrodes,
-PHILIPSBV,Consumer,Healthcare Equipment,
-PHOENIXLTD,RealEstate,Real Estate - Commercial,
+PHILIPSBV,Consumer,Medical Devices,
+PHOENIXLTD,Realty,Realty,nse_official
 PI,Chemicals,Specialty Chemicals - Agri,
-PIDILITIND,Consumer,Adhesives & Chemicals,
-PIIND,Agri,Agro Chemicals,
+PICCADIL,Fast Moving Consumer Goods,Beverages,nse_official
+PIDILITIND,Chemicals,Chemicals & Petrochemicals,nse_official
+PIGL,Capital Goods,Electrical Equipment,nse_official
+PIIND,Chemicals,Fertilizers & Agrochemicals,nse_official
+PILANIINVS,Financial Services,Finance,nse_official
+PILITA,Consumer Durables,Consumer Durables,nse_official
+PINELABS,Financial Services,Financial Technology (Fintech),nse_official
+PIONEEREMB,Textiles,Textiles & Apparels,nse_official
+PIRAMALFIN,Financial Services,Finance,nse_official
 PIRAMALPHA,Pharma,Pharma Formulations,
-PIXTRANS,Cap Goods,Power Transmission,
-PKTEA,Agri,Tea Plantations,
-PLASTIBLEN,Infra,Pipes & Fittings,
+PITTIENG,Capital Goods,Industrial Manufacturing,nse_official
+PIXTRANS,Capital Goods,Industrial Products,nse_official
+PKTEA,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+PLASTIBLEN,Chemicals,Chemicals & Petrochemicals,nse_official
+PLATIND,Chemicals,Chemicals & Petrochemicals,nse_official
+PLAZACABLE,Capital Goods,Industrial Products,nse_official
 PMI,Renewable,EV Vehicles,
-PNB,Banking,PSU Banks,
-PNBHOUSING,Financials,Housing Finance,
-PNC,Infra,Roads & Highways,
-PNCINFRA,Infra,Roads & Highways,
-POLICYBZR,Internet,Insurance Technology,
-POLYCAB,Cables,Cables & Wires,
-POLYMED,Pharma,Medical Devices,
-POLYPLEX,Packaging,Packaging - Films,
-POWERGRID,Energy,Power Transmission,
-POWERGRIDINVIT,Infra,Power InvIT,
-POWERINDIA,Cap Goods,Electrical Equipment,
-POWERMECH,Cap Goods,Power Plant EPC,
+PNB,Financial Services,Banks,nse_official
+PNBGILTS,Financial Services,Finance,nse_official
+PNBHOUSING,Financial Services,Finance,nse_official
+PNC,Media Entertainment & Publication,Entertainment,nse_official
+PNCINFRA,Construction,Construction,nse_official
+PNGJL,Consumer Durables,Consumer Durables,nse_official
+PNGSREVA,Consumer Durables,Consumer Durables,nse_official
+POCL,Metals & Mining,Diversified Metals,nse_official
+PODDARMENT,Chemicals,Chemicals & Petrochemicals,nse_official
+POKARNA,Consumer Durables,Consumer Durables,nse_official
+POLICYBZR,Financial Services,Financial Technology (Fintech),nse_official
+POLYCAB,Capital Goods,Industrial Products,nse_official
+POLYMED,Healthcare,Healthcare Equipment & Supplies,nse_official
+POLYPLEX,Capital Goods,Industrial Products,nse_official
+PONNIERODE,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+POONAWALLA,Financial Services,Finance,nse_official
+POWERGRID,Power,Power,nse_official
+POWERGRIDINVIT,Infra,Power Generation,
+POWERINDIA,Capital Goods,Electrical Equipment,nse_official
+POWERMECH,Construction,Construction,nse_official
 POWMECH,Cap Goods,EPC,
-PRABHAT,Consumer,Dairy,
-PRAJIND,Sugar,Ethanol & Sugar,
+PPAP,Automobile and Auto Components,Auto Components,nse_official
+PPL,Capital Goods,Industrial Products,nse_official
+PPLPHARMA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+PRABHA,Oil Gas & Consumable Fuels,Oil,nse_official
+PRABHAT,CONSUMER GOODS,CONSUMER NON DURABLES,nse_official
+PRAENG,Realty,Realty,nse_official
+PRAJIND,Capital Goods,Industrial Manufacturing,nse_official
+PRAKASH,Metals & Mining,Ferrous Metals,nse_official
+PRAKASHSTL,Capital Goods,Industrial Products,nse_official
 PRATAAP,Consumer,Snacks,
-PRECWIRE,Cables,Cables & Wires,
-PREMIER,Defense,Defense,
-PREMIERENE,Renewable,Renewable Energy,
+PRAXIS,Consumer Services,Retailing,nse_official
+PRECAM,Automobile and Auto Components,Auto Components,nse_official
+PRECWIRE,Capital Goods,Industrial Products,nse_official
+PREMEXPLN,Chemicals,Chemicals & Petrochemicals,nse_official
+PREMIER,Capital Goods,Industrial Manufacturing,nse_official
+PREMIERENE,Capital Goods,Electrical Equipment,nse_official
 PREMIERENRG,Renewable,Solar Modules,
-PREMIERPOL,Packaging,Packaging - Plastics,
-PRESTIGE,RealEstate,Real Estate - Residential,
-PRICOL,Auto,Auto Ancillaries,
-PRICOLLTD,Auto,Auto Ancillaries,
-PRINCEPIPE,Metals,Steel Pipes,
+PREMIERPOL,Capital Goods,Industrial Products,nse_official
+PRESTIGE,Realty,Realty,nse_official
+PRICOL,AUTOMOBILE,AUTO ANCILLARIES,nse_official
+PRICOLLTD,Automobile and Auto Components,Auto Components,nse_official
+PRIMESECU,Financial Services,Finance,nse_official
+PRIMO,Chemicals,Chemicals & Petrochemicals,nse_official
+PRINCEPIPE,Capital Goods,Industrial Products,nse_official
 PRISMJOHNSN,Infra,Cement,
-PRIVISCL,Financials,Investment Companies,
-PROSTARM,Cap Goods,UPS & Power,
-PRSMJOHNSN,FMCG,FMCG - Foods,
-PRUDENT,Financials,Wealth Management,
-PSPPROJECT,Infra,EPC & Construction,
+PRITI,Consumer Durables,Consumer Durables,nse_official
+PRITIKAUTO,Automobile and Auto Components,Auto Components,nse_official
+PRIVISCL,Chemicals,Chemicals & Petrochemicals,nse_official
+PROSTARM,Capital Goods,Electrical Equipment,nse_official
+PROTEAN,Information Technology,IT - Services,nse_official
+PROZONER,Realty,Realty,nse_official
+PRSMJOHNSN,Construction Materials,Cement & Cement Products,nse_official
+PRUDENT,Financial Services,Capital Markets,nse_official
+PRUDMOULI,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+PSB,Financial Services,Banks,nse_official
+PSPPROJECT,Construction,Construction,nse_official
+PTC,Power,Power,nse_official
+PTCIL,Capital Goods,Industrial Products,nse_official
 PTCIND,Energy,Power Trading,
-PURAVANK,RealEstate,Residential RE,
+PTL,Services,Commercial Services & Supplies,nse_official
+PUNJABCHEM,Chemicals,Fertilizers & Agrochemicals,nse_official
+PURAVANK,RealEstate,Real Estate - Residential,
 PURAVANKARA,RealEstate,Real Estate - Residential,
-PVRINOX,Consumer,Multiplex,
-QUESS,IT,Staffing,
-QUICKHEAL,IT,Cybersecurity,
+PURVA,Realty,Realty,nse_official
+PVP,Realty,Realty,nse_official
+PVRINOX,Media Entertainment & Publication,Entertainment,nse_official
+PVSL,Automobile and Auto Components,Automobiles,nse_official
+PWL,Consumer Services,Other Consumer Services,nse_official
+PYRAMID,Capital Goods,Industrial Products,nse_official
+QPOWER,Capital Goods,Electrical Equipment,nse_official
+QUADFUTURE,Capital Goods,Industrial Products,nse_official
+QUESS,Services,Commercial Services & Supplies,nse_official
+QUICKHEAL,Information Technology,IT - Software,nse_official
+RACE,Utilities,Other Utilities,nse_official
 RACL,Auto,Auto Ancillaries,
-RADICO,FMCG,FMCG - Beverages,
+RACLGEAR,Automobile and Auto Components,Auto Components,nse_official
+RADAAN,Media Entertainment & Publication,Entertainment,nse_official
+RADHIKAJWE,Consumer Durables,Consumer Durables,nse_official
+RADIANTCMS,Services,Commercial Services & Supplies,nse_official
+RADICO,Fast Moving Consumer Goods,Beverages,nse_official
+RADIOCITY,Media Entertainment & Publication,Entertainment,nse_official
 RAIL,Infra,Infra,
-RAILTEL,Telecom,Telecom Infrastructure,
-RAILVIKAS,Infra,Railway Construction,
-RAINBOW,Pharma,Hospitals,
-RAJESHEXPO,Consumer,Jewellery,
-RALLIS,Chemicals,Specialty Chemicals - Agri,
-RAMAKRISHNA,Metals,Copper Products,
-RAMASTEEL,Metals,Steel,
-RAMCOCEM,Infra,Cement,
-RAMCOIND,IT,IT Products,
-RAMSARUP,Metals,Steel,
-RATEGAIN,Internet,Travel Tech,
+RAILTEL,Telecommunication,Telecom - Services,nse_official
+RAILVIKAS,Infra,Railway,
+RAIN,Chemicals,Chemicals & Petrochemicals,nse_official
+RAINBOW,Healthcare,Healthcare Services,nse_official
+RAJESHEXPO,Consumer Durables,Consumer Durables,nse_official
+RAJMET,Capital Goods,Industrial Products,nse_official
+RAJOOENG,Capital Goods,Industrial Manufacturing,nse_official
+RAJRATAN,Automobile and Auto Components,Auto Components,nse_official
+RAJSREESUG,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+RAJTV,Media Entertainment & Publication,Entertainment,nse_official
+RALLIS,Chemicals,Fertilizers & Agrochemicals,nse_official
+RAMAKRISHNA,Metals,Non-Ferrous Metals,
+RAMANEWS,Forest Materials,Paper Forest & Jute Products,nse_official
+RAMAPHO,Chemicals,Fertilizers & Agrochemicals,nse_official
+RAMASTEEL,Capital Goods,Industrial Products,nse_official
+RAMCOCEM,Construction Materials,Cement & Cement Products,nse_official
+RAMCOIND,Construction Materials,Other Construction Materials,nse_official
+RAMCOSYS,Information Technology,IT - Software,nse_official
+RAMKY,Construction,Construction,nse_official
+RAMRAT,Capital Goods,Electrical Equipment,nse_official
+RAMSARUP,METALS,FERROUS METALS,nse_official
+RANASUG,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+RANEHOLDIN,Financial Services,Finance,nse_official
+RATEGAIN,Information Technology,IT - Software,nse_official
 RATHI,Metals,Steel,
 RATNA,Metals,Steel,
-RATNAMANI,Metals,Steel Pipes,
+RATNAMANI,Capital Goods,Industrial Products,nse_official
+RATNAVEER,Capital Goods,Industrial Products,nse_official
 RATTANINDIA,Renewable,Renewable Energy,
-RAYMOND,Textiles,Textiles - Apparel,
-RBLBANK,Banking,Private Banks,
-RCF,Agri,Fertilizers,
-RECLTD,Financials,Power Finance,
+RAYMOND,Capital Goods,Industrial Manufacturing,nse_official
+RAYMONDLSL,Textiles,Textiles & Apparels,nse_official
+RAYMONDREL,Realty,Realty,nse_official
+RBA,Consumer Services,Leisure Services,nse_official
+RBLBANK,Financial Services,Banks,nse_official
+RBZJEWEL,Consumer Durables,Consumer Durables,nse_official
+RCF,Chemicals,Fertilizers & Agrochemicals,nse_official
+RECLTD,Financial Services,Finance,nse_official
+REDINGTON,Services,Commercial Services & Supplies,nse_official
+REDTAPE,Consumer Durables,Consumer Durables,nse_official
+REFEX,Chemicals,Chemicals & Petrochemicals,nse_official
+REGAAL,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
 REGEN,Renewable,Wind Energy,
-RELAXO,Consumer,Footwear,
-RELIANCE,Energy,Oil & Gas,
-RENUKA,Sugar,Sugar,
+REGENCERAM,Consumer Durables,Consumer Durables,nse_official
+RELAXO,Consumer Durables,Consumer Durables,nse_official
+RELCHEMQ,Textiles,Textiles & Apparels,nse_official
+RELIABLE,Financial Services,Finance,nse_official
+RELIANCE,Oil Gas & Consumable Fuels,Petroleum Products,nse_official
+RELIGARE,Financial Services,Finance,nse_official
+RELTD,Capital Goods,Electrical Equipment,nse_official
+REMSONSIND,Automobile and Auto Components,Auto Components,nse_official
+RENUKA,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
 REPCO,Financials,Housing Finance,
+REPCOHOME,Financial Services,Finance,nse_official
+REPL,Realty,Realty,nse_official
 REPPRO,Financials,Stock Broking,
-RICO,Auto,Auto Die Casting,
-RIIL,Cap Goods,Engineering,
-RITEFIL,Cap Goods,Filtration,
-RITES,Infra,Railway Consultancy,
-ROHLTD,Metals,Iron & Steel,
-ROSSARI,Chemicals,Specialty Chemicals,
-ROSSELL,Defense,Defense Aerospace,
-ROTO,Cap Goods,Pumps,
-ROUTE,IT,IT Services,
+REPRO,Media Entertainment & Publication,Printing & Publication,nse_official
+RESPONIND,Consumer Durables,Consumer Durables,nse_official
+RETAIL,Consumer Services,Retailing,nse_official
+RGL,Consumer Durables,Consumer Durables,nse_official
+RHETAN,Capital Goods,Industrial Products,nse_official
+RHIM,Capital Goods,Industrial Products,nse_official
+RHL,Consumer Services,Leisure Services,nse_official
+RICO,Auto,Auto Ancillaries,
+RICOAUTO,Automobile and Auto Components,Auto Components,nse_official
+RIIL,Services,Transport Services,nse_official
+RISHABH,Capital Goods,Electrical Equipment,nse_official
+RITCO,Services,Transport Services,nse_official
+RITEFIL,Cap Goods,Auto Ancillaries,
+RITES,Construction,Construction,nse_official
+RKDL,Fast Moving Consumer Goods,Beverages,nse_official
+RKEC,Construction,Construction,nse_official
+RKFORGE,Automobile and Auto Components,Auto Components,nse_official
+RKSWAMY,Media Entertainment & Publication,Media,nse_official
+RMDRIP,Capital Goods,Industrial Products,nse_official
+RML,Automobile and Auto Components,Auto Components,nse_official
+ROHLTD,Consumer Services,Leisure Services,nse_official
+ROLEXRINGS,Automobile and Auto Components,Auto Components,nse_official
+ROML,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+ROSSARI,Chemicals,Chemicals & Petrochemicals,nse_official
+ROSSELL,Defense,Aerospace & Defense,
+ROSSELLIND,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+ROSSTECH,Capital Goods,Aerospace & Defense,nse_official
+ROTO,Capital Goods,Industrial Products,nse_official
+ROUTE,Telecommunication,Telecom - Services,nse_official
 ROYALENF,Auto,Auto OEM - 2W,
-RPOWER,Energy,Power Generation,
-RPSGVENT,Cap Goods,Ventilation Equipment,
+RPEL,Capital Goods,Industrial Products,nse_official
+RPGLIFE,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+RPOWER,Power,Power,nse_official
+RPPINFRA,Construction,Construction,nse_official
+RPPL,Capital Goods,Industrial Products,nse_official
+RPSGVENT,Services,Commercial Services & Supplies,nse_official
+RPTECH,Information Technology,IT - Hardware,nse_official
 RR,Cables,Cables & Wires,
-RRKABEL,Cables,Cables,
-RSWM,Textiles,Textiles - Spinning,
+RRKABEL,Capital Goods,Industrial Products,nse_official
+RSL,Capital Goods,Industrial Products,nse_official
+RSSOFTWARE,Information Technology,IT - Software,nse_official
+RSWM,Textiles,Textiles & Apparels,nse_official
+RSYSTEMS,Information Technology,IT - Services,nse_official
+RTNINDIA,Consumer Services,Retailing,nse_official
 RTNL,Metals,Steel,
-RUBYMILLS,Textiles,Textiles - Fabric,
+RTNPOWER,Power,Power,nse_official
+RUBFILA,Capital Goods,Industrial Products,nse_official
+RUBICON,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+RUBYMILLS,Textiles,Textiles & Apparels,nse_official
 RUCHI,Agri,Edible Oils,
-RUPA,Textiles,Textiles - Innerwear,
-RVNL,Infra,Railway Construction,
-SABTN,Energy,City Gas Distribution,
-SADBHAV,Infra,Infra,
+RUCHINFRA,Services,Commercial Services & Supplies,nse_official
+RUCHIRA,Forest Materials,Paper Forest & Jute Products,nse_official
+RUDRA,Capital Goods,Industrial Products,nse_official
+RUPA,Textiles,Textiles & Apparels,nse_official
+RUSHIL,Consumer Durables,Consumer Durables,nse_official
+RUSTOMJEE,Realty,Realty,nse_official
+RVHL,Realty,Realty,nse_official
+RVNL,Construction,Construction,nse_official
+RVTH,Capital Goods,Industrial Manufacturing,nse_official
+SAATVIKGL,Capital Goods,Electrical Equipment,nse_official
+SABTN,Media Entertainment & Publication,Entertainment,nse_official
+SADBHAV,Construction,Construction,nse_official
+SADBHIN,Construction,Construction,nse_official
+SADHNANIQ,Chemicals,Chemicals & Petrochemicals,nse_official
+SAFARI,Consumer Durables,Consumer Durables,nse_official
 SAFEXPRESS,Infra,Logistics,
-SAGILITY,IT,BPO & KPO,
-SAHANA,Packaging,Packaging,
-SAHASRA,Electronics,Electronic Manufacturing,
-SAIL,Metals,Steel,
-SAILIFE,Pharma,Healthcare Services,
-SAKAR,Pharma,Pharma Formulations,
-SAKSOFT,IT,IT Services,
+SAGARDEEP,Capital Goods,Industrial Products,nse_official
+SAGCEM,Construction Materials,Cement & Cement Products,nse_official
+SAGILITY,Information Technology,IT - Services,nse_official
+SAHANA,Information Technology,IT - Services,nse_official
+SAHASRA,Capital Goods,Industrial Products,nse_official
+SAHYADRI,Construction Materials,Other Construction Materials,nse_official
+SAIL,Metals & Mining,Ferrous Metals,nse_official
+SAILIFE,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+SAKAR,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+SAKHTISUG,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+SAKSOFT,Information Technology,IT - Software,nse_official
 SAKTHI,Agri,Food Products,
-SALONA,Textiles,Textiles,
-SAMHI,Consumer,Hotels,
-SAMMAANCAP,Financials,Capital Markets,
+SAKUMA,Services,Commercial Services & Supplies,nse_official
+SALASAR,Capital Goods,Industrial Manufacturing,nse_official
+SALONA,Textiles,Textiles & Apparels,nse_official
+SALZERELEC,Capital Goods,Electrical Equipment,nse_official
+SAMBHAAV,Media Entertainment & Publication,Media,nse_official
+SAMBHV,Capital Goods,Industrial Products,nse_official
+SAMHI,Consumer Services,Leisure Services,nse_official
+SAMMAANCAP,Financial Services,Finance,nse_official
+SAMPANN,Capital Goods,Industrial Products,nse_official
 SAMVARDHANA,Auto,Auto Ancillaries,
-SANDHAR,Auto,Auto Components,
-SANDUMA,Metals,Metal & Mining,
-SANGAMIND,Textiles,Textiles - Fabric,
+SANATHAN,Textiles,Textiles & Apparels,nse_official
+SANDESH,Media Entertainment & Publication,Media,nse_official
+SANDHAR,Automobile and Auto Components,Auto Components,nse_official
+SANDUMA,Oil Gas & Consumable Fuels,Consumable Fuels,nse_official
+SANGAMIND,Textiles,Textiles & Apparels,nse_official
 SANGHI,Infra,Cement,
-SANGHIIND,Infra,Cement,
+SANGHIIND,Construction Materials,Cement & Cement Products,nse_official
 SANGHVI,Cap Goods,Cranes,
-SANGHVIMOV,Infra,Cranes & Lifting,
-SANOFI,Pharma,Pharma Formulations,
-SANSERA,Auto,Metal Forgings & Castings,
-SAPPHIRE,FMCG,QSR,
+SANGHVIMOV,Services,Commercial Services & Supplies,nse_official
+SANOFI,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+SANOFICONR,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+SANSERA,Automobile and Auto Components,Auto Components,nse_official
+SANSTAR,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+SAPPHIRE,Consumer Services,Leisure Services,nse_official
 SAPPHIREF,Consumer,QSR,
 SAPPHIREFD,Consumer,Food Products,
 SAPPHIREFOO,Consumer,Food Products,
 SARASWATCO,Banking,Regional Banks,
-SARDAEN,Metals,Steel,
-SAREGAMA,Consumer,Music & Media,
-SASKEN,IT,IT Engineering,
-SATIA,Consumer,Paper,
-SATIN,Financials,Microfinance,
-SAURASHCEM,Infra,Cement,
+SARDAEN,Metals & Mining,Ferrous Metals,nse_official
+SAREGAMA,Media Entertainment & Publication,Entertainment,nse_official
+SARLAPOLY,Textiles,Textiles & Apparels,nse_official
+SARVESHWAR,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+SASKEN,Information Technology,IT - Services,nse_official
+SASTASUNDR,Healthcare,Healthcare Services,nse_official
+SATIA,Forest Materials,Paper Forest & Jute Products,nse_official
+SATIN,Financial Services,Finance,nse_official
+SAURASHCEM,Construction Materials,Cement & Cement Products,nse_official
 SAURASHTRA,Infra,Cement,
-SBC,Financials,Investment Companies,
-SBCL,Banking,Regional Banks,
-SBFC,Financials,NBFC,
-SBILIFE,Financials,Life Insurance,
+SBC,Textiles,Textiles & Apparels,nse_official
+SBCL,Capital Goods,Industrial Products,nse_official
+SBFC,Financial Services,Finance,nse_official
+SBGLP,Realty,Realty,nse_official
+SBICARD,Financial Services,Finance,nse_official
+SBILIFE,Financial Services,Insurance,nse_official
 SBIMF,Financials,Asset Management,
-SBIN,Banking,PSU Banks,
-SCHAEFFLER,Auto,Bearings,
-SCHNEIDER,Cap Goods,Electrical Equipment,
-SCI,Shipping,Shipping,
+SBIN,Financial Services,Banks,nse_official
+SCHAEFFLER,Automobile and Auto Components,Auto Components,nse_official
+SCHAND,Media Entertainment & Publication,Printing & Publication,nse_official
+SCHNEIDER,Capital Goods,Electrical Equipment,nse_official
+SCI,Services,Transport Services,nse_official
+SCILAL,Financial Services,Finance,nse_official
+SCODATUBES,Capital Goods,Industrial Products,nse_official
 SCUF,Financials,Vehicle Finance,
+SDBL,Fast Moving Consumer Goods,Beverages,nse_official
 SEACOAST,Shipping,Shipping,
-SEAMECLTD,Shipping,Shipping Services,
+SEAMECLTD,Services,Transport Services,nse_official
+SECMARK,Information Technology,IT - Software,nse_official
 SECURE,Cables,Energy Meters,Energy metering
-SECURKLOUD,IT,IT Services,
-SENCO,Consumer,Gold Jewelry,
-SENORES,Pharma,Pharma Formulations,
+SECURKLOUD,Information Technology,IT - Services,nse_official
+SEDEMAC,Automobile and Auto Components,Auto Components,nse_official
+SEJALLTD,Capital Goods,Industrial Products,nse_official
+SELMC,Textiles,Textiles & Apparels,nse_official
+SEMAC,Construction,Construction,nse_official
+SENCO,Consumer Durables,Consumer Durables,nse_official
+SENORES,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+SEPC,Construction,Construction,nse_official
 SEQUENT,Pharma,Pharma API,
-SESHAPAPER,Packaging,Paper & Packaging,
-SETCO,Auto,Auto Ancillaries,
-SGIL,Electronics,Electronic Components,
-SGMART,Agri,Agri Products,
-SHALPAINTS,Consumer,Paints,
-SHARDACROP,Agri,Agro Chemicals,
-SHILPAMED,Pharma,Medical Devices,
-SHIVAUM,Textiles,Textiles,
-SHOPERSTOP,Consumer,Retail Fashion,
-SHOPSTOP,Consumer,Retail,
-SHREECEM,Infra,Cement,
+SERVOTECH,Capital Goods,Electrical Equipment,nse_official
+SESHAPAPER,Forest Materials,Paper Forest & Jute Products,nse_official
+SETCO,Automobile and Auto Components,Auto Components,nse_official
+SETL,Capital Goods,Industrial Manufacturing,nse_official
+SFL,Consumer Durables,Consumer Durables,nse_official
+SGFIN,Financial Services,Finance,nse_official
+SGIL,Capital Goods,Industrial Products,nse_official
+SGL,Textiles,Textiles & Apparels,nse_official
+SGMART,Metals & Mining,Metals & Minerals Trading,nse_official
+SHADOWFAX,Services,Transport Services,nse_official
+SHAH,Capital Goods,Industrial Products,nse_official
+SHAHALLOYS,Capital Goods,Industrial Products,nse_official
+SHAILY,Consumer Durables,Consumer Durables,nse_official
+SHAKTIPUMP,Capital Goods,Industrial Products,nse_official
+SHALBY,Healthcare,Healthcare Services,nse_official
+SHALPAINTS,Consumer Durables,Consumer Durables,nse_official
+SHANKARA,Consumer Services,Retailing,nse_official
+SHANTI,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+SHANTIGEAR,Capital Goods,Industrial Manufacturing,nse_official
+SHANTIGOLD,Consumer Durables,Consumer Durables,nse_official
+SHARDACROP,Chemicals,Fertilizers & Agrochemicals,nse_official
+SHARDAMOTR,Automobile and Auto Components,Auto Components,nse_official
+SHAREINDIA,Financial Services,Capital Markets,nse_official
+SHEKHAWATI,Textiles,Textiles & Apparels,nse_official
+SHEMAROO,Media Entertainment & Publication,Entertainment,nse_official
+SHILCTECH,Capital Goods,Electrical Equipment,nse_official
+SHILPAMED,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+SHIVALIK,Chemicals,Fertilizers & Agrochemicals,nse_official
+SHIVAMAUTO,Automobile and Auto Components,Auto Components,nse_official
+SHIVAMILLS,Textiles,Textiles & Apparels,nse_official
+SHIVATEX,Textiles,Textiles & Apparels,nse_official
+SHIVAUM,Services,Commercial Services & Supplies,nse_official
+SHK,Chemicals,Chemicals & Petrochemicals,nse_official
+SHOPERSTOP,Consumer Services,Retailing,nse_official
+SHOPSTOP,Consumer,Consumer Retail,
+SHRADHA,Realty,Realty,nse_official
+SHREDIGCEM,Construction Materials,Cement & Cement Products,nse_official
+SHREECEM,Construction Materials,Cement & Cement Products,nse_official
+SHREEJISPG,Services,Transport Services,nse_official
+SHREEPUSHK,Chemicals,Chemicals & Petrochemicals,nse_official
+SHREERAMA,Capital Goods,Industrial Products,nse_official
 SHREERENUKA,Sugar,Sugar,
+SHREYANIND,Forest Materials,Paper Forest & Jute Products,nse_official
 SHREYANS,Consumer,Paper,
-SHREYAS,Shipping,Shipping & Logistics,
-SHRIPISTON,Auto,Metal Forgings & Castings,
-SHRIRAMFIN,Financials,Vehicle Finance,
+SHREYAS,Shipping,Logistics,
+SHRINGARMS,Consumer Durables,Consumer Durables,nse_official
+SHRIPISTON,Automobile and Auto Components,Auto Components,nse_official
+SHRIRAMFIN,Financial Services,Finance,nse_official
 SHRIRAMFRT,Agri,Fertilisers,
-SHRIRAMPPS,Metals,Steel Wires,
+SHRIRAMPPS,Realty,Realty,nse_official
 SHYAM,Metals,Steel,
-SHYAMMETL,Metals,Steel,
+SHYAMCENT,Metals & Mining,Ferrous Metals,nse_official
+SHYAMMETL,Capital Goods,Industrial Products,nse_official
 SHYAMSTEEL,Metals,Steel,
-SIEMENS,Cap Goods,Automation & Drives,
+SHYAMTEL,Services,Commercial Services & Supplies,nse_official
+SIEMENS,Capital Goods,Electrical Equipment,nse_official
 SIEVERT,Infra,Water Treatment,
-SIGNATURE,RealEstate,Residential RE,
+SIGACHI,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+SIGIND,Services,Commercial Services & Supplies,nse_official
+SIGMA,Information Technology,IT - Services,nse_official
+SIGMAADV,Capital Goods,Aerospace & Defense,nse_official
+SIGNATURE,Realty,Realty,nse_official
+SIGNPOST,Media Entertainment & Publication,Media,nse_official
+SIKKO,Chemicals,Fertilizers & Agrochemicals,nse_official
+SIL,Realty,Realty,nse_official
+SILGO,Consumer Durables,Consumer Durables,nse_official
+SILINV,Financial Services,Finance,nse_official
+SILLYMONKS,Media Entertainment & Publication,Entertainment,nse_official
+SILVERTUC,Information Technology,IT - Software,nse_official
 SIMBHAOLI,Sugar,Sugar,
-SIS,IT,Facility Management,
-SIYARAM,Textiles,Suiting & Fabric,
-SJVN,Energy,Power Generation,
-SKFINDIA,Auto,Bearings,
-SKIL,Infra,Port & Infra,
-SKIPPER,Cap Goods,Power Towers,
-SKYGOLD,Consumer,Jewellery,
-SMCGLOBAL,Financials,Stock Broking,
+SIMPLEXINF,Construction,Construction,nse_official
+SINCLAIR,Consumer Services,Leisure Services,nse_official
+SINDHUTRAD,Oil Gas & Consumable Fuels,Consumable Fuels,nse_official
+SINGERIND,Consumer Durables,Consumer Durables,nse_official
+SINTERCOM,Automobile and Auto Components,Auto Components,nse_official
+SIRCA,Consumer Durables,Consumer Durables,nse_official
+SIS,Consumer Services,Other Consumer Services,nse_official
+SIYARAM,Textiles,Textiles - Apparel,
+SIYSIL,Textiles,Textiles & Apparels,nse_official
+SJS,Automobile and Auto Components,Auto Components,nse_official
+SJVN,Power,Power,nse_official
+SKFINDIA,Automobile and Auto Components,Auto Components,nse_official
+SKFINDUS,Capital Goods,Industrial Products,nse_official
+SKIL,Construction,Construction,nse_official
+SKIPPER,Capital Goods,Electrical Equipment,nse_official
+SKMEGGPROD,Fast Moving Consumer Goods,Food Products,nse_official
+SKYGOLD,Consumer Durables,Consumer Durables,nse_official
+SMARTLINK,Information Technology,IT - Hardware,nse_official
+SMARTWORKS,Services,Commercial Services & Supplies,nse_official
+SMCGLOBAL,Financial Services,Capital Markets,nse_official
 SMIFS,Financials,Stock Broking,
 SML,Auto,Auto OEM - CV,
-SMLISUZU,Auto,Commercial Vehicles,
+SMLISUZU,Other,Other,nse_official
+SMLMAH,Capital Goods,Agricultural Commercial & Construction Vehicles,nse_official
+SMLT,Capital Goods,Industrial Products,nse_official
 SMRUTHIORG,Pharma,Pharma API,
-SMSPHARMA,Pharma,Pharma API,
-SMVD,Packaging,Packaging,
-SNOWMAN,Infra,Cold Chain Logistics,
-SOBHA,RealEstate,Real Estate - Residential,
-SOLARA,Pharma,Pharma Formulations,
-SOLARBOMB,Defense,Defense - Ammunition,
+SMSPHARMA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+SMVD,Capital Goods,Industrial Products,nse_official
+SNOWMAN,Services,Transport Services,nse_official
+SOBHA,Realty,Realty,nse_official
+SOFTTECH,Information Technology,IT - Software,nse_official
+SOLARA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+SOLARBOMB,Defense,Aerospace & Defense,
 SOLARIND,Defense,Aerospace & Defense,
+SOLARINDS,Chemicals,Chemicals & Petrochemicals,nse_official
+SOLARWORLD,Construction,Construction,nse_official
+SOLEX,Capital Goods,Electrical Equipment,nse_official
 SOLUTIONK,Chemicals,Specialty Chemicals,
 SOMANY,Consumer,Tiles,
-SOMANYCERA,Consumer,Tiles,
-SONACOMS,Auto,Auto Ancillaries,
-SONAMLTD,Auto,Auto Ancillaries,
-SONATSOFTW,IT,IT Services,
+SOMANYCERA,Consumer Durables,Consumer Durables,nse_official
+SOMICONVEY,Capital Goods,Industrial Manufacturing,nse_official
+SONACOMS,Automobile and Auto Components,Auto Components,nse_official
+SONAMLTD,Consumer Durables,Consumer Durables,nse_official
+SONATSOFTW,Information Technology,IT - Software,nse_official
+SOTL,Oil Gas & Consumable Fuels,Petroleum Products,nse_official
+SOUTHBANK,Financial Services,Banks,nse_official
 SOUTHBNK,Banking,Regional Banks,
-SOUTHWEST,Consumer,Aviation,
-SPAL,Auto,Auto Ancillaries,
-SPANDANA,Financials,Microfinance,
-SPARC,Pharma,Drug Discovery,
-SPECIALITY,Consumer,Restaurants,
-SPECTRUM,Cables,Cables & Wires,
+SOUTHWEST,Services,Commercial Services & Supplies,nse_official
+SPAL,Textiles,Textiles & Apparels,nse_official
+SPANDANA,Financial Services,Finance,nse_official
+SPARC,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+SPCENET,Services,Commercial Services & Supplies,nse_official
+SPECIALITY,Consumer Services,Leisure Services,nse_official
+SPECTRUM,Capital Goods,Industrial Manufacturing,nse_official
 SPEL,Electronics,Semiconductors,
-SPENCERS,Consumer,Retail,
+SPENCERS,Consumer Services,Retailing,nse_official
 SPENTEX,Textiles,Yarn & Fabric,
-SPICEJET,Consumer,Aviation,
-SPLPETRO,Energy,Petroleum Products,
-SPML,Infra,Water EPC,
-SPORTKING,Textiles,Textiles - Synthetic,
-SRF,Chemicals,Specialty Chemicals,
-SRIKALAHASTHI,Agri,Agri,
-SRPL,Metals,Steel - Sponge Iron,
-SSWL,Metals,Steel - Wheels,
-STAR,Infra,Cement,
+SPIC,Chemicals,Fertilizers & Agrochemicals,nse_official
+SPICEJET,Services,Transport Services,nse_official
+SPLIL,Textiles,Textiles & Apparels,nse_official
+SPLPETRO,Chemicals,Chemicals & Petrochemicals,nse_official
+SPML,Infra,Construction & Engineering,
+SPMLINFRA,Construction,Construction,nse_official
+SPORTKING,Textiles,Textiles & Apparels,nse_official
+SRD,Chemicals,Chemicals & Petrochemicals,nse_official
+SREEL,Consumer Durables,Consumer Durables,nse_official
+SRF,Chemicals,Chemicals & Petrochemicals,nse_official
+SRGHFL,Financial Services,Finance,nse_official
+SRHHYPOLTD,Chemicals,Chemicals & Petrochemicals,nse_official
+SRIKALAHASTHI,Metals,Steel Pipes,
+SRM,Construction,Construction,nse_official
+SRPL,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+SRTL,Textiles,Textiles & Apparels,nse_official
+SSDL,Textiles,Textiles & Apparels,nse_official
+SSWL,Automobile and Auto Components,Auto Components,nse_official
+STALLION,Chemicals,Chemicals & Petrochemicals,nse_official
+STANLEY,Consumer Durables,Consumer Durables,nse_official
+STAR,Healthcare,Pharmaceuticals & Biotechnology,nse_official
 STARBUS,Auto,Auto OEM - CV,
+STARCEMENT,Construction Materials,Cement & Cement Products,nse_official
 STARCMT,Infra,Cement,
-STARHEALTH,Financials,Health Insurance,
+STARHEALTH,Financial Services,Insurance,nse_official
+STARPAPER,Forest Materials,Paper Forest & Jute Products,nse_official
 STARPAPL,Consumer,Paper,
-STEELCAS,Metals,Steel Tubes,
+STARTECK,Financial Services,Finance,nse_official
+STCINDIA,Services,Commercial Services & Supplies,nse_official
+STEELCAS,Capital Goods,Industrial Products,nse_official
+STEELCITY,Financial Services,Capital Markets,nse_official
+STEELXIND,Capital Goods,Industrial Products,nse_official
+STEL,Financial Services,Finance,nse_official
 STERLITE,Metals,Copper,
-STERLITEIND,Cables,Cables,
+STERLITEIND,Cables,Cables & Wires,
+STERTOOLS,Automobile and Auto Components,Auto Components,nse_official
 STFC,Financials,Vehicle Finance,
-STLTECH,Cables,Optical Fiber Cables,
+STLNETWORK,Telecommunication,Telecom - Services,nse_official
+STLTECH,Telecommunication,Telecom - Equipment & Accessories,nse_official
+STOVEKRAFT,Consumer Durables,Consumer Durables,nse_official
 STRIDES,Pharma,Pharma Formulations,
-STYLAMIND,Textiles,Textiles - Home,
-STYLEBAAZA,Textiles,Apparel Retail,
-SUBEX,IT,IT Products,
-SUBROS,Auto,Auto Ancillaries,
-SUDARSCHEM,Chemicals,Specialty Chemicals,
+STUDDS,Automobile and Auto Components,Auto Components,nse_official
+STYL,Financial Services,Financial Technology (Fintech),nse_official
+STYLAMIND,Consumer Durables,Consumer Durables,nse_official
+STYLEBAAZA,Consumer Services,Retailing,nse_official
+STYRENIX,Chemicals,Chemicals & Petrochemicals,nse_official
+SUBEX,IT,SOFTWARE,nse_official
+SUBEXLTD,Information Technology,IT - Software,nse_official
+SUBROS,Capital Goods,Industrial Products,nse_official
+SUDARCOLOR,Chemicals,Chemicals & Petrochemicals,nse_official
+SUDARSCHEM,Chemicals,Chemicals & Petrochemicals,nse_official
+SUDEEPPHRM,Healthcare,Pharmaceuticals & Biotechnology,nse_official
 SUGARIND,Agri,Agri,
-SULAVIN,Consumer,Wine,
-SUMEETINDS,Cables,Cables & Wires,
-SUMICHEM,Chemicals,Specialty Chemicals - Agri,
-SUNDARMFIN,Financials,NBFC,
-SUNDRMFAST,Auto,Metal Forgings & Castings,
-SUNFLAG,Metals,Steel,
-SUNPHARMA,Pharma,Pharma Formulations,
-SUNTECK,RealEstate,Real Estate - Residential,
-SUNTECKINS,Cap Goods,Water Tech,
-SUNTECKREAL,RealEstate,Residential RE,
-SUNTV,Consumer,Media & Entertainment,
+SUKHJITS,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+SULA,Fast Moving Consumer Goods,Beverages,nse_official
+SULAVIN,Consumer,Alcoholic Beverages,
+SUMEETINDS,Textiles,Textiles & Apparels,nse_official
+SUMICHEM,Chemicals,Fertilizers & Agrochemicals,nse_official
+SUMIT,Realty,Realty,nse_official
+SUMMITSEC,Financial Services,Finance,nse_official
+SUNCLAY,Automobile and Auto Components,Auto Components,nse_official
+SUNDARAM,Fast Moving Consumer Goods,Household Products,nse_official
+SUNDARMFIN,Financial Services,Finance,nse_official
+SUNDRMBRAK,Automobile and Auto Components,Auto Components,nse_official
+SUNDRMFAST,Automobile and Auto Components,Auto Components,nse_official
+SUNDROP,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+SUNFLAG,Capital Goods,Industrial Products,nse_official
+SUNPHARMA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+SUNTECK,Realty,Realty,nse_official
+SUNTECKINS,Cap Goods,IT Services,
+SUNTECKREAL,RealEstate,Real Estate - Residential,
+SUNTV,Media Entertainment & Publication,Entertainment,nse_official
+SUPERHOUSE,Consumer Durables,Consumer Durables,nse_official
+SUPERSPIN,Textiles,Textiles & Apparels,nse_official
 SUPRAGRI,Agri,Agri Products,
-SUPRAJIT,Auto,Auto Ancillaries,
-SUPREME,Packaging,Packaging - Plastics,
-SUPREMEIND,Packaging,Packaging - Plastics,
-SUPRIYA,Pharma,Pharma API,
+SUPRAJIT,Automobile and Auto Components,Auto Components,nse_official
+SUPREME,Realty,Realty,nse_official
+SUPREMEIND,Capital Goods,Industrial Products,nse_official
+SUPRIYA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+SURAJEST,Realty,Realty,nse_official
+SURAJLTD,Capital Goods,Industrial Products,nse_official
+SURAKSHA,Healthcare,Healthcare Services,nse_official
+SURANASOL,Capital Goods,Electrical Equipment,nse_official
+SURANAT&P,Power,Power,nse_official
 SURYA,Metals,Steel Pipes,
-SURYODAY,Banking,Small Finance Banks,
+SURYALAXMI,Textiles,Textiles & Apparels,nse_official
+SURYAROSNI,Capital Goods,Industrial Products,nse_official
+SURYODAY,Financial Services,Banks,nse_official
 SUTLEJ,Textiles,Textiles - Spinning,
+SUTLEJTEX,Textiles,Textiles & Apparels,nse_official
 SUTURA,Pharma,Medical Devices,
-SUVEN,Pharma,API & Bulk Drugs,
-SUVENPHAR,Pharma,Drug Discovery - CDMO,
+SUVEN,Healthcare,Healthcare Services,nse_official
+SUVENPHAR,Pharma,Pharma API,
 SUVENPHARM,Pharma,Pharma API,
+SUVIDHAA,Financial Services,Financial Technology (Fintech),nse_official
 SUVRDP,Pharma,Diagnostics,
-SUZLON,Renewable,Wind Energy,
-SWARAJENG,Auto,Tractors,
-SWIGGY,Internet,Food Delivery,
-SYMPHONY,Consumer,Air Coolers,
-SYRMA,Electronics,Electronic Components,
+SUYOG,Telecommunication,Telecom - Services,nse_official
+SUZLON,Capital Goods,Electrical Equipment,nse_official
+SVLL,Services,Transport Services,nse_official
+SWANCORP,Chemicals,Chemicals & Petrochemicals,nse_official
+SWARAJENG,Capital Goods,Industrial Products,nse_official
+SWELECTES,Capital Goods,Electrical Equipment,nse_official
+SWIGGY,Consumer Services,Retailing,nse_official
+SWSOLAR,Construction,Construction,nse_official
+SYMPHONY,Consumer Durables,Consumer Durables,nse_official
+SYNCOMF,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+SYNGENE,Healthcare,Healthcare Services,nse_official
+SYRMA,Capital Goods,Industrial Manufacturing,nse_official
+SYSTMTXC,Financial Services,Capital Markets,nse_official
 TAICHI,Textiles,Technical Textiles,
-TAJGVK,Consumer,Hotels,
-TANLA,IT,IT Services,
+TAINWALCHM,Capital Goods,Industrial Products,nse_official
+TAJGVK,Consumer Services,Leisure Services,nse_official
+TALBROAUTO,Automobile and Auto Components,Auto Components,nse_official
+TANLA,Information Technology,IT - Software,nse_official
 TARA,Consumer,Jewellery,
+TARACHAND,Services,Commercial Services & Supplies,nse_official
+TARAPUR,Capital Goods,Electrical Equipment,nse_official
+TARC,Realty,Realty,nse_official
+TARIL,Capital Goods,Electrical Equipment,nse_official
+TARSONS,Healthcare,Healthcare Equipment & Supplies,nse_official
 TASTY,Consumer,Food Products,
-TATACHEM,Chemicals,Agri Chemicals & Fertilisers,
+TASTYBITE,Fast Moving Consumer Goods,Food Products,nse_official
+TATACAP,Financial Services,Finance,nse_official
+TATACHEM,Chemicals,Chemicals & Petrochemicals,nse_official
 TATACHEMICAL,Chemicals,Specialty Chemicals - Alkali,
-TATACOFFEE,FMCG,FMCG - Foods,
-TATACOMM,Telecom,Telecom Services,
-TATACONSUM,FMCG,FMCG - Beverages,Tea and beverages
-TATAELXSI,IT,Engineering Services,
-TATAHOUSING,RealEstate,Residential RE,
-TATAINVEST,Financials,NBFC,
+TATACOFFEE,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+TATACOMM,Telecommunication,Telecom - Services,nse_official
+TATACONSUM,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+TATAELXSI,Information Technology,IT - Software,nse_official
+TATAHOUSING,RealEstate,Real Estate - Residential,
+TATAINVEST,Financial Services,Finance,nse_official
 TATAMET,Metals,Steel,
-TATAMETALI,Metals,Steel Pipes,
-TATAMOTOR,Auto,Diversified Vehicles,
+TATAMETALI,Metals & Mining,Ferrous Metals,nse_official
+TATAMOTOR,Auto,Auto OEM - 4W,
 TATAMOTORS,Auto,Auto OEM - 4W,
 TATAMOTR,Auto,Auto OEM - EV,
-TATAPOWER,Energy,Power Generation,
+TATAPOWER,Power,Power,nse_official
 TATASKY,Consumer,DTH,
-TATASTEEL,Metals,Steel,
-TATATECH,IT,Engineering Services,
+TATASTEEL,Metals & Mining,Ferrous Metals,nse_official
+TATATECH,Information Technology,IT - Services,nse_official
+TATVA,Chemicals,Chemicals & Petrochemicals,nse_official
 TBOTECH,Internet,B2B Marketplace,
-TCI,Shipping,Road Logistics,
-TCIEXP,Infra,Logistics,
+TBOTEK,Consumer Services,Leisure Services,nse_official
+TBZ,Consumer Durables,Consumer Durables,nse_official
+TCC,Consumer Services,Retailing,nse_official
+TCI,Services,Transport Services,nse_official
+TCIEXP,Services,Transport Services,nse_official
 TCIL,Shipping,Shipping,
-TCS,IT,IT Services,
-TDPOWERSYS,Cap Goods,Power Systems,
-TEAMGTY,Financials,Investment Companies,
-TEAMLEASE,IT,Staffing,
-TECHM,IT,IT Services,
-TECHNO,Cap Goods,Heat Exchange & Boilers,
-TEJAS,Telecom,Optical Networking,
-TEXINFRA,Infra,Construction,
-TEXMOPIPES,Cap Goods,Pipes,
-TEXRAIL,Cap Goods,Railway Equipment,
-TFCILTD,Financials,NBFC,
+TCPLPACK,Capital Goods,Industrial Products,nse_official
+TCS,Information Technology,IT - Software,nse_official
+TDPOWERSYS,Capital Goods,Electrical Equipment,nse_official
+TEAMGTY,Financial Services,Finance,nse_official
+TEAMLEASE,Services,Commercial Services & Supplies,nse_official
+TECHM,Information Technology,IT - Software,nse_official
+TECHNO,CONSTRUCTION,CONSTRUCTION PROJECT,nse_official
+TECHNOE,Construction,Construction,nse_official
+TECILCHEM,Chemicals,Chemicals & Petrochemicals,nse_official
+TEGA,Capital Goods,Industrial Manufacturing,nse_official
+TEJAS,Telecom,Telecom Equipment,
+TEJASNET,Telecommunication,Telecom - Equipment & Accessories,nse_official
+TEMBO,Capital Goods,Industrial Products,nse_official
+TENNIND,Automobile and Auto Components,Auto Components,nse_official
+TERASOFT,Information Technology,IT - Services,nse_official
+TEXINFRA,Services,Commercial Services & Supplies,nse_official
+TEXMOPIPES,Capital Goods,Industrial Products,nse_official
+TEXRAIL,Capital Goods,Industrial Manufacturing,nse_official
+TFCILTD,Financial Services,Finance,nse_official
+TFL,Financial Services,Finance,nse_official
+TGBHOTELS,Consumer Services,Leisure Services,nse_official
 TGSOLS,Pharma,Diagnostics,
-THANGAMAYL,Consumer,Gold Jewelry,
+THANGAMAYL,Consumer Durables,Consumer Durables,nse_official
+THEINVEST,Financial Services,Finance,nse_official
 THEJEWELS,Consumer,Jewellery,
-THERMAX,Cap Goods,Heat Exchange & Boilers,
-THYROCARE,Pharma,Diagnostics,
+THEJO,Capital Goods,Industrial Manufacturing,nse_official
+THELEELA,Consumer Services,Leisure Services,nse_official
+THEMISMED,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+THERMAX,Capital Goods,Electrical Equipment,nse_official
+THOMASCOOK,Consumer Services,Leisure Services,nse_official
+THOMASCOTT,Textiles,Textiles & Apparels,nse_official
+THYROCARE,Healthcare,Healthcare Services,nse_official
+TI,Fast Moving Consumer Goods,Beverages,nse_official
+TICL,Construction,Construction,nse_official
+TIGERLOGS,Services,Transport Services,nse_official
 TIGL,Metals,Steel - Structural,
-TIIL,Cap Goods,Textile Machinery,
-TIINDIA,Auto,Auto Ancillaries,
+TIIL,Capital Goods,Industrial Products,nse_official
+TIINDIA,Automobile and Auto Components,Auto Components,nse_official
+TIL,Capital Goods,Agricultural Commercial & Construction Vehicles,nse_official
 TILIND,FMCG,FMCG - Beverages,
-TIMETECHNO,Auto,Auto Ancillaries,
-TIMKEN,Auto,Bearings,
-TINPLATE,Metals,Tinplate,
-TIPS,Consumer,Music,
-TIPSINDLTD,Consumer,Music & Media,
-TIRUPATI,Metals,Graphite,
-TIRUPATIFL,Agri,Flour Milling,
-TITAGARH,Infra,Railway Equipment,
-TITAN,Consumer,Jewelry & Watches,
-TITANBYK,Consumer,Watches & Jewellery,
+TIMETECHNO,Capital Goods,Industrial Products,nse_official
+TIMKEN,Capital Goods,Industrial Products,nse_official
+TINNARUBR,Capital Goods,Industrial Products,nse_official
+TINPLATE,Capital Goods,Industrial Products,nse_official
+TIPS,Consumer,Music & Content,
+TIPSFILMS,Media Entertainment & Publication,Entertainment,nse_official
+TIPSINDLTD,Media,Music & Content,
+TIPSMUSIC,Media Entertainment & Publication,Entertainment,nse_official
+TIRUMALCHM,Chemicals,Chemicals & Petrochemicals,nse_official
+TIRUPATI,Capital Goods,Industrial Products,nse_official
+TIRUPATIFL,Capital Goods,Industrial Products,nse_official
+TITAGARH,Capital Goods,Industrial Manufacturing,nse_official
+TITAN,Consumer Durables,Consumer Durables,nse_official
+TITANBYK,Consumer,Jewellery,
 TLGLOBAL,Infra,Logistics,
+TMB,Financial Services,Banks,nse_official
 TMBBANK,Banking,Regional Banks,
+TMCV,Capital Goods,Agricultural Commercial & Construction Vehicles,nse_official
 TMKFINANCE,Financials,NBFC,
-TNPL,Consumer,Paper,
-TORNTPHARM,Pharma,Formulations,
-TORNTPHRM,Pharma,Formulations,
-TORNTPIPER,Infra,Gas Pipelines,
-TORNTPOWER,Energy,Power Generation,
-TRANSPEK,Chemicals,Specialty Chemicals,
-TRANSWORLD,Shipping,Shipping,
-TRAVELFOOD,FMCG,FMCG - Foods,
-TRENT,Consumer,Apparel Retail,
-TRIDENT,Textiles,Textiles - Home,
-TRIGYN,IT,IT Services,
-TRIVENI,Sugar,Sugar,
+TMPV,Automobile and Auto Components,Automobiles,nse_official
+TNPETRO,Chemicals,Chemicals & Petrochemicals,nse_official
+TNPL,Forest Materials,Paper Forest & Jute Products,nse_official
+TNTELE,Telecommunication,Telecom - Equipment & Accessories,nse_official
+TOKYOPLAST,Consumer Durables,Consumer Durables,nse_official
+TOLINS,Automobile and Auto Components,Auto Components,nse_official
+TORNTPHARM,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+TORNTPIPER,Infra,Gas Distribution,
+TORNTPOWER,Power,Power,nse_official
+TOTAL,Services,Transport Services,nse_official
+TOUCHWOOD,Consumer Services,Other Consumer Services,nse_official
+TPHQ,Construction,Construction,nse_official
+TPLPLASTEH,Capital Goods,Industrial Products,nse_official
+TRACXN,Services,Commercial Services & Supplies,nse_official
+TRANSPEK,Chemicals,Chemicals & Petrochemicals,nse_official
+TRANSRAILL,Capital Goods,Electrical Equipment,nse_official
+TRANSWORLD,Services,Transport Services,nse_official
+TRAVELFOOD,Consumer Services,Leisure Services,nse_official
+TREJHARA,Information Technology,IT - Software,nse_official
+TREL,Services,Transport Services,nse_official
+TRENT,Consumer Services,Retailing,nse_official
+TRF,Capital Goods,Industrial Manufacturing,nse_official
+TRIDENT,Textiles,Textiles & Apparels,nse_official
+TRIGYN,Information Technology,IT - Software,nse_official
+TRITURBINE,Capital Goods,Electrical Equipment,nse_official
+TRIVENI,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
 TRIVENIENG,Cap Goods,Engineering,
-TRIVENIGR,Cap Goods,Turbines,
+TRIVENIGR,Cap Goods,Industrial Machinery,
+TRU,Financial Services,Finance,nse_official
+TRUALT,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+TSFINV,Financial Services,Finance,nse_official
 TTK,Consumer,Pressure Cookers,
-TTML,Telecom,Telecom Services,
+TTKHLTCARE,Diversified,Diversified,nse_official
+TTKPRESTIG,Consumer Durables,Consumer Durables,nse_official
+TTML,Telecommunication,Telecom - Services,nse_official
 TTMT,Auto,Auto OEM - 4W,
 TUPPERWARE,Consumer,Plastics & Furniture,
-TV18BRDCST,Consumer,Media & Entertainment,
-TVSHLTD,Banking,Regional Banks,
-TVSMOTOR,Auto,Auto OEM - 2W,
+TV18BRDCST,Media Entertainment & Publication,Entertainment,nse_official
+TVSELECT,Information Technology,IT - Hardware,nse_official
+TVSHLTD,Financial Services,Finance,nse_official
+TVSMOTOR,Automobile and Auto Components,Automobiles,nse_official
 TVSMOTORS,Auto,Auto OEM - 2W,
-TVTODAY,Consumer,Media & Entertainment,
-UBL,FMCG,FMCG - Beverages,
-UCALFUEL,Auto,Fuel Systems,
+TVSSRICHAK,Automobile and Auto Components,Auto Components,nse_official
+TVTODAY,Media Entertainment & Publication,Entertainment,nse_official
+UBL,Fast Moving Consumer Goods,Beverages,nse_official
+UCAL,Automobile and Auto Components,Auto Components,nse_official
+UCALFUEL,Auto,Auto Ancillaries,
 UCO,Banking,PSU Banks,
-UFLEX,Packaging,Packaging - Films,
-UGARSUGAR,Sugar,Sugar,
-UJJIVAN,Banking,Small Finance Banks,
-UJJIVANSFB,Banking,Small Finance Banks,
-ULTRACEMCO,Infra,Cement,
-UNIINFO,IT,IT Services,
-UNIONBANK,Banking,PSU Banks,
-UNIPARTS,Auto,Auto Ancillaries,
-UNITDSPR,FMCG,FMCG - Beverages,
+UCOBANK,Financial Services,Banks,nse_official
+UDS,Services,Commercial Services & Supplies,nse_official
+UEL,Power,Power,nse_official
+UFBL,Consumer Services,Leisure Services,nse_official
+UFLEX,Capital Goods,Industrial Products,nse_official
+UFO,Media Entertainment & Publication,Entertainment,nse_official
+UGARSUGAR,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+UGROCAP,Financial Services,Finance,nse_official
+UJJIVAN,Financial Services,Finance,nse_official
+UJJIVANSFB,Financial Services,Banks,nse_official
+ULTRACEMCO,Construction Materials,Cement & Cement Products,nse_official
+UMAEXPORTS,Services,Commercial Services & Supplies,nse_official
+UMIYA-MRO,Telecommunication,Telecom - Equipment & Accessories,nse_official
+UNICHEMLAB,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+UNIDT,Capital Goods,Industrial Manufacturing,nse_official
+UNIECOM,Information Technology,IT - Software,nse_official
+UNIENTER,Chemicals,Chemicals & Petrochemicals,nse_official
+UNIINFO,Telecommunication,Telecom - Services,nse_official
+UNIMECH,Capital Goods,Aerospace & Defense,nse_official
+UNIONBANK,Financial Services,Banks,nse_official
+UNIPARTS,Automobile and Auto Components,Auto Components,nse_official
+UNITDSPR,Fast Moving Consumer Goods,Beverages,nse_official
+UNITECH,Realty,Realty,nse_official
+UNITEDPOLY,Textiles,Textiles & Apparels,nse_official
+UNITEDTEA,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+UNIVASTU,Construction,Construction,nse_official
+UNIVCABLES,Capital Goods,Industrial Products,nse_official
 UNO MINDA,Auto,Auto Ancillaries,
-UNOMINDA,Auto,Auto Ancillaries,
-UPL,Chemicals,Specialty Chemicals - Agri,
+UNOMINDA,Automobile and Auto Components,Auto Components,nse_official
+UPL,Chemicals,Fertilizers & Agrochemicals,nse_official
+URAVIDEF,Automobile and Auto Components,Auto Components,nse_official
+URBANCO,Consumer Services,Retailing,nse_official
+URJA,Capital Goods,Electrical Equipment,nse_official
 USHA,Metals,Steel Wires,
-UTIAMC,Financials,Asset Management,
-UTKARSHBNK,Banking,Small Finance Banks,
-UTTAMSUGAR,Sugar,Sugar,
+USHAMART,Capital Goods,Industrial Products,nse_official
+UTIAMC,Financial Services,Capital Markets,nse_official
+UTKARSHBNK,Financial Services,Banks,nse_official
+UTLSOLAR,Capital Goods,Electrical Equipment,nse_official
+UTTAMSUGAR,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+UYFINCORP,Financial Services,Finance,nse_official
+V2RETAIL,Consumer Services,Retailing,nse_official
 VA,Infra,EPC,
-VADILALIND,Consumer,Ice Cream,
-VAIBHAVGBL,Consumer,Jewellery,
-VAKRANGEE,IT,IT Services,
+VADILALIND,Fast Moving Consumer Goods,Food Products,nse_official
+VAIBHAVGBL,Consumer Durables,Consumer Durables,nse_official
+VAISHALI,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+VAKRANGEE,Information Technology,IT - Services,nse_official
+VALIANTLAB,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+VALIANTORG,Chemicals,Chemicals & Petrochemicals,nse_official
+VARDHACRLC,Textiles,Textiles & Apparels,nse_official
 VARDHMAN,Textiles,Textiles - Spinning,
-VARROC,Auto,Auto Ancillaries,
-VARUN,FMCG,FMCG - Beverages,
-VBL,FMCG,FMCG - Beverages,Varun beverages - PepsiCo bottler
-VBLLTD,Consumer,Beverages,
-VEDANT,Textiles,Apparel Retail,
-VEDANTA,Metals,Diversified Metals,
-VEDL,Metals,Diversified Metals,
-VENKYS,Agri,Poultry & Agri,
-VENTIVE,Consumer,Hospitality,
-VENUSREM,Pharma,Pharma API,
-VETOQUINOL,Pharma,Veterinary,
-VGUARD,Consumer,Consumer Electricals,
-VIJAYA,Pharma,Diagnostics,
+VARROC,Automobile and Auto Components,Auto Components,nse_official
+VARUN,Other,Other,nse_official
+VASCONEQ,Realty,Realty,nse_official
+VASWANI,Metals & Mining,Ferrous Metals,nse_official
+VBL,Fast Moving Consumer Goods,Beverages,nse_official
+VBLLTD,Consumer,FMCG - Beverages,
+VCL,Textiles,Textiles & Apparels,nse_official
+VEDANT,Textiles,Consumer Retail - Apparel,
+VEDANTA,Metals,Non-Ferrous Metals,
+VEDL,Metals & Mining,Diversified Metals,nse_official
+VEEDOL,Oil Gas & Consumable Fuels,Petroleum Products,nse_official
+VENKEYS,Fast Moving Consumer Goods,Food Products,nse_official
+VENKYS,Agri,Agri,
+VENTIVE,Consumer Services,Leisure Services,nse_official
+VENUSPIPES,Capital Goods,Industrial Products,nse_official
+VENUSREM,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+VERANDA,Consumer Services,Other Consumer Services,nse_official
+VERTOZ,Information Technology,IT - Services,nse_official
+VESUVIUS,Capital Goods,Industrial Products,nse_official
+VETO,Consumer Durables,Consumer Durables,nse_official
+VETOQUINOL,Pharma,Pharma Formulations,
+VGL,Textiles,Textiles & Apparels,nse_official
+VGUARD,Consumer Durables,Consumer Durables,nse_official
+VHL,Financial Services,Finance,nse_official
+VIDHIING,Chemicals,Chemicals & Petrochemicals,nse_official
+VIDYAWIRES,Capital Goods,Industrial Products,nse_official
+VIJAYA,Healthcare,Healthcare Services,nse_official
 VIJAYADIAG,Pharma,Diagnostics,
 VIJAYALAB,Pharma,Diagnostics,
 VIKAS,Cap Goods,Wires,
-VIMTALABS,Pharma,CRO & Testing Labs,
+VIKASECO,Chemicals,Chemicals & Petrochemicals,nse_official
+VIKASLIFE,Services,Commercial Services & Supplies,nse_official
+VIKRAMSOLR,Capital Goods,Electrical Equipment,nse_official
+VIKRAN,Construction,Construction,nse_official
+VIMTALABS,Healthcare,Healthcare Services,nse_official
 VINATI,Chemicals,Specialty Chemicals,
-VINATIORGA,Chemicals,Specialty Chemicals,
-VINDHYATEL,Cables,Optical Fibre,
+VINATIORGA,Chemicals,Chemicals & Petrochemicals,nse_official
+VINCOFE,Services,Commercial Services & Supplies,nse_official
+VINDHYATEL,Telecommunication,Telecom - Services,nse_official
+VINEETLAB,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+VINNY,Textiles,Textiles & Apparels,nse_official
+VINYLINDIA,Chemicals,Chemicals & Petrochemicals,nse_official
+VIPCLOTHNG,Textiles,Textiles & Apparels,nse_official
+VIPIND,Consumer Durables,Consumer Durables,nse_official
 VIPPY,Agri,Agri Processing,
-VISAKAIND,Metals,Steel,
+VIRINCHI,Information Technology,IT - Software,nse_official
+VISAKAIND,Construction Materials,Cement & Cement Products,nse_official
+VISASTEEL,Metals & Mining,Ferrous Metals,nse_official
+VISHNU,Chemicals,Chemicals & Petrochemicals,nse_official
+VISHWARAJ,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
 VISIONCARE,Pharma,Eye Hospitals,
-VMART,Consumer,Retail,V-Mart Retail
-VOLTAMP,Cap Goods,Transformers,
-VOLTAS,Consumer,Air Conditioners,
+VITAL,Chemicals,Chemicals & Petrochemicals,nse_official
+VIVIDHA,Textiles,Textiles & Apparels,nse_official
+VIVIMEDLAB,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+VIYASH,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+VLEGOV,Information Technology,IT - Services,nse_official
+VLSFINANCE,Financial Services,Finance,nse_official
+VMART,Consumer Services,Retailing,nse_official
+VMM,Consumer Services,Retailing,nse_official
+VMSTMT,Capital Goods,Industrial Products,nse_official
+VOLTAMP,Capital Goods,Electrical Equipment,nse_official
+VOLTAS,Consumer Durables,Consumer Durables,nse_official
+VPRPL,Construction,Construction,nse_official
+VRAJ,Metals & Mining,Ferrous Metals,nse_official
+VRLLOG,Services,Transport Services,nse_official
+VSSL,Capital Goods,Industrial Products,nse_official
 VST,Auto,Tractors,
-VSTIND,Consumer,Cigarettes,
-WAAREEENER,Renewable,Solar Panels,
-WABAG,Infra,Water Treatment,
+VSTIND,Fast Moving Consumer Goods,Cigarettes & Tobacco Products,nse_official
+VSTL,Capital Goods,Industrial Products,nse_official
+VSTTILLERS,Capital Goods,Agricultural Commercial & Construction Vehicles,nse_official
+VTL,Textiles,Textiles & Apparels,nse_official
+WAAREEENER,Capital Goods,Electrical Equipment,nse_official
+WAAREERTL,Capital Goods,Electrical Equipment,nse_official
+WABAG,Utilities,Other Utilities,nse_official
 WABCO,Auto,Auto Ancillaries,
+WAKEFIT,Consumer Durables,Consumer Durables,nse_official
 WALCHAND,Cap Goods,Engineering,
-WATERBASE,Agri,Aquaculture / Shrimp Feed,
+WALCHANNAG,Capital Goods,Industrial Manufacturing,nse_official
+WATERBASE,Fast Moving Consumer Goods,Food Products,nse_official
+WCIL,Services,Transport Services,nse_official
+WEALTH,Financial Services,Finance,nse_official
+WEBELSOLAR,Capital Goods,Electrical Equipment,nse_official
 WEBSOL,Renewable,Solar Panels,
-WELCABLE,Cables,Cables,
-WELCORP,Metals,Steel Pipes,
+WEIZMANIND,Textiles,Textiles & Apparels,nse_official
+WEL,Consumer Durables,Consumer Durables,nse_official
+WELCABLE,Cables,Cables & Wires,
+WELCORP,Capital Goods,Industrial Products,nse_official
+WELENT,Construction,Construction,nse_official
+WELINV,Financial Services,Finance,nse_official
 WELSPUN,Textiles,Home Textiles,
 WELSPUNIND,Textiles,Textiles - Home,
+WELSPUNLIV,Textiles,Textiles & Apparels,nse_official
 WELSPUNSP,Metals,Steel Pipes,
-WENDT,Cap Goods,Cutting Tools,
+WENDT,Capital Goods,Industrial Products,nse_official
 WESPAPER,Consumer,Paper,
-WESTLIFE,FMCG,QSR,
-WHEELS,Auto,Auto Ancillaries,
-WHIRLPOOL,Consumer,Consumer Appliances,
-WINDLAS,Pharma,Pharma Contract Mfg,
+WESTLIFE,Consumer Services,Leisure Services,nse_official
+WEWIN,Services,Commercial Services & Supplies,nse_official
+WEWORK,Services,Commercial Services & Supplies,nse_official
+WHEELS,Automobile and Auto Components,Auto Components,nse_official
+WHIRLPOOL,Consumer Durables,Consumer Durables,nse_official
+WILLAMAGOR,Financial Services,Finance,nse_official
+WINDLAS,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+WINDMACHIN,Capital Goods,Industrial Manufacturing,nse_official
 WINDWORLD,Renewable,Renewable,
-WIPRO,IT,IT Services,
-WOCKHARDT,Pharma,Formulations,
-WOCKPHARMA,Pharma,Pharma Formulations,
-WONDERLA,Consumer,Amusement Parks,
+WIPL,Consumer Durables,Consumer Durables,nse_official
+WIPRO,Information Technology,IT - Software,nse_official
+WOCKHARDT,Pharma,Pharma Formulations,
+WOCKPHARMA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+WONDERLA,Consumer Services,Leisure Services,nse_official
+WORTHPERI,Capital Goods,Industrial Products,nse_official
 WSFL,Agri,Edible Oils,
-XCHANGING,IT,IT Services,
-XPRESSBEES,Shipping,Last Mile Logistics,
-XPROINDIA,Packaging,Packaging - Films,
-YATHARTH,Pharma,Hospitals,
-YATRA,Consumer,Travel & Tourism,
-YESBANK,Banking,Private Banks,
-ZEEL,Consumer,Media & Entertainment,
+WSI,Construction,Construction,nse_official
+WSTCSTPAPR,Forest Materials,Paper Forest & Jute Products,nse_official
+XCHANGING,Information Technology,IT - Software,nse_official
+XELPMOC,Information Technology,IT - Software,nse_official
+XPRESSBEES,Shipping,Logistics,
+XPROINDIA,Capital Goods,Industrial Products,nse_official
+XTGLOBAL,Information Technology,IT - Software,nse_official
+YASHO,Chemicals,Chemicals & Petrochemicals,nse_official
+YATHARTH,Healthcare,Healthcare Services,nse_official
+YATRA,Consumer Services,Leisure Services,nse_official
+YESBANK,Financial Services,Banks,nse_official
+YUKEN,Capital Goods,Industrial Products,nse_official
+ZAGGLE,Information Technology,IT - Services,nse_official
+ZEEL,Media Entertainment & Publication,Entertainment,nse_official
+ZEELEARN,Consumer Services,Other Consumer Services,nse_official
 ZEN,Defense,Defense,
+ZENITHEXPO,Consumer Durables,Consumer Durables,nse_official
+ZENITHSTL,Capital Goods,Industrial Products,nse_official
 ZENSAR,IT,IT Services,
-ZENSARTECH,IT,IT Services,
+ZENSARTECH,Information Technology,IT - Software,nse_official
+ZENTEC,Capital Goods,Aerospace & Defense,nse_official
 ZERODHA,Financials,Stock Broking,
 ZF,Auto,Auto Ancillaries,
-ZODIAC,Defense,Aerospace Components,
+ZFCVINDIA,Automobile and Auto Components,Auto Components,nse_official
+ZIMLAB,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+ZODIAC,Construction,Construction,nse_official
+ZODIACLOTH,Textiles,Textiles & Apparels,nse_official
 ZOMATO,Internet,Food Delivery,
-ZYDUSLIFE,Pharma,Pharma Formulations,
-ZYDUSWELL,FMCG,FMCG - Foods,
+ZOTA,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+ZUARI,Chemicals,Fertilizers & Agrochemicals,nse_official
+ZUARIIND,Fast Moving Consumer Goods,Agricultural Food & other Products,nse_official
+ZYDUSLIFE,Healthcare,Pharmaceuticals & Biotechnology,nse_official
+ZYDUSWELL,Fast Moving Consumer Goods,Food Products,nse_official

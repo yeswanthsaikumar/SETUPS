@@ -64,26 +64,51 @@ def _throttle():
 #  DATA FRESHNESS
 # ═══════════════════════════════════════════════════════════════════════════
 
-def _is_stale(last_date_str: str) -> bool:
+def _is_stale(last_date_str: str, csv_path: Path | None = None) -> bool:
     if not last_date_str:
         return True
     try:
         last_date = datetime.date.fromisoformat(last_date_str)
     except ValueError:
         return True
-    today = datetime.datetime.now(IST).date()
+    now_ist = datetime.datetime.now(IST)
+    today = now_ist.date()
     days = (today - last_date).days
-    if days <= 0:
-        return False
-    if days > MAX_DATA_GAP_DAYS:
-        return True
-    biz = sum(1 for d in range(1, days + 1)
-              if (last_date + datetime.timedelta(days=d)).weekday() < 5)
-    if biz == 0:
-        return False
-    # Any business day gap means stale — fetch whatever Yahoo has available
-    # (Yahoo returns the previous completed trading day's data during market hours)
-    return True
+    if days > 0:
+        if days > MAX_DATA_GAP_DAYS:
+            return True
+        biz = sum(1 for d in range(1, days + 1)
+                  if (last_date + datetime.timedelta(days=d)).weekday() < 5)
+        # Any business day gap means stale — fetch whatever Yahoo has available
+        # (Yahoo returns the previous completed trading day's data during market hours)
+        return biz > 0
+
+    # days == 0 → CSV already has today's date. Check whether it was written
+    # during market hours (intraday snapshot) and we're now past market close.
+    # Today's bar is only a FINAL close once captured after 15:35 IST.
+    # Weekend: last_date == today only happens on Fri data being read Sat/Sun,
+    # which will have days<0, never here.
+    if csv_path is not None and today.weekday() < 5:
+        close_cutoff = now_ist.replace(hour=NSE_CLOSE_HOUR, minute=NSE_CLOSE_MIN,
+                                       second=0, microsecond=0)
+        try:
+            mtime = datetime.datetime.fromtimestamp(csv_path.stat().st_mtime, tz=IST)
+        except OSError:
+            return False
+        # If it's after market close and the file was written before close,
+        # the bar is intraday — refresh to grab the final close.
+        if now_ist >= close_cutoff and mtime < close_cutoff:
+            return True
+        # NEW: Pre-close on the same trading day, if the file was written
+        # earlier today (intraday snapshot from an earlier minute), consider
+        # it stale so the startup refresh picks it up. The fetcher-side
+        # `_strip_intraday_today` prevents re-capturing another partial row,
+        # but this lets us overwrite a yesterday-morning partial once yfinance
+        # has published yesterday's final close.
+        if now_ist < close_cutoff and mtime.date() == today \
+                and (now_ist - mtime).total_seconds() > 300:
+            return True
+    return False
 
 
 def _read_last_date(csv_path: Path) -> str:
@@ -154,7 +179,7 @@ def _find_stale_caches(symbol_filter=None, indian_only=False):
             ld = _read_last_date(f)
             if ld > best:
                 best = ld
-        if _is_stale(best):
+        if _is_stale(best, unified):
             stale.append((sym, unified, best))
     return stale
 
@@ -162,6 +187,35 @@ def _find_stale_caches(symbol_filter=None, indian_only=False):
 # ═══════════════════════════════════════════════════════════════════════════
 #  MULTI-SOURCE FETCH  (yfinance -> NSE India -> raw Yahoo v8)
 # ═══════════════════════════════════════════════════════════════════════════
+
+def _strip_intraday_today(bars: list[dict]) -> list[dict]:
+    """Drop any bar dated today (IST) if the NSE session has not yet closed.
+
+    All providers (Groww / yfinance / Yahoo v8) will happily return a
+    partial "today" candle built from intraday ticks while the session is
+    live. Writing that to disk as the day's row corrupts historical
+    analysis (EMAs, breakouts, etc.) and overwrites the previous row on the
+    next startup. We strip it at the fetch boundary so no caller ever sees
+    an in-progress bar.
+    """
+    if not bars:
+        return bars
+    now_ist = datetime.datetime.now(IST)
+    close_cutoff = now_ist.replace(hour=NSE_CLOSE_HOUR, minute=NSE_CLOSE_MIN,
+                                   second=0, microsecond=0)
+    if now_ist >= close_cutoff:
+        return bars
+    today_str = now_ist.date().isoformat()
+    filtered = [b for b in bars if b.get("date") != today_str]
+    if len(filtered) != len(bars):
+        try:
+            import sys as _s
+            print(f"  ⏳ dropped {len(bars) - len(filtered)} intraday bar(s) "
+                  f"for {today_str} (pre-close)", flush=True, file=_s.stderr)
+        except Exception:
+            pass
+    return filtered
+
 
 def _fetch_bars(symbol: str, from_date: str | None = None) -> list[dict]:
     """Try every source in priority order: Groww → yfinance → NSE India → raw Yahoo v8.
@@ -174,7 +228,16 @@ def _fetch_bars(symbol: str, from_date: str | None = None) -> list[dict]:
     if symbol.endswith(".NS") or symbol.endswith(".BO"):
         bars = _fetch_groww(symbol, from_date)
         if bars:
-            return bars
+            return _strip_intraday_today(bars)
+        # 0b. Groww live-quote fallback — synthesise today's bar when the
+        # historical endpoint is forbidden (common on basic API plans) or
+        # simply returned nothing. Only useful when we're post-market on a
+        # weekday and the CSV is missing at most a few sessions.
+        quote_bar = _fetch_groww_today_bar(symbol)
+        if quote_bar:
+            # Only accept if it's actually newer than what we already have.
+            if not from_date or quote_bar[0]["date"] > from_date:
+                return _strip_intraday_today(quote_bar)
 
     # Groww-only gate: for Indian stocks, stop here if fallbacks are forbidden.
     try:
@@ -190,17 +253,17 @@ def _fetch_bars(symbol: str, from_date: str | None = None) -> list[dict]:
     # 1. yfinance (fallback)
     bars = _fetch_yfinance(symbol, from_date)
     if bars:
-        return bars
+        return _strip_intraday_today(bars)
 
     # 2. NSE India direct (only for .NS stocks)
     if symbol.endswith(".NS"):
         bars = _fetch_nse_india(symbol, from_date)
         if bars:
-            return bars
+            return _strip_intraday_today(bars)
 
     # 3. Raw Yahoo v8 (last resort)
     bars = _fetch_raw_yahoo(symbol, from_date)
-    return bars
+    return _strip_intraday_today(bars)
 
 
 # ── Source 0: Groww API (primary for NSE stocks) ────────────────────────────
@@ -298,6 +361,68 @@ def _fetch_groww(symbol, from_date):
                 continue
 
         return sorted(bars, key=lambda b: b["date"])
+    except Exception:
+        return []
+
+
+# ── Source 0b: Groww live quote (today's bar fallback) ─────────────────────
+#
+# Groww's Developer API splits entitlements: `get_historical_candles` needs
+# a paid historical-data scope that many free/basic accounts don't have
+# (they get a 403 "Access forbidden for this request"). `get_quote` however
+# works on every account and returns today's session OHLC + last price +
+# cumulative volume — enough to synthesise today's daily bar.
+#
+# This fallback keeps the `postClose` (and any other incremental) refresh
+# working via Groww-only mode when the historical endpoint is forbidden,
+# instead of silently falling through to rate-limited Yahoo/NSE.
+
+def _fetch_groww_today_bar(symbol: str) -> list[dict]:
+    """Return [today_bar] synthesised from Groww `get_quote`, or [] on any
+    failure / if market hasn't produced a session yet.
+    """
+    try:
+        from groww_client import get_groww_client
+    except ImportError:
+        return []
+    client = get_groww_client()
+    if not client:
+        return []
+    try:
+        from growwapi import GrowwAPI
+        base_sym = symbol.replace(".NS", "").replace(".BO", "").upper()
+        _throttle()
+        q = client.get_quote(
+            trading_symbol=base_sym,
+            exchange=GrowwAPI.EXCHANGE_NSE,
+            segment=GrowwAPI.SEGMENT_CASH,
+            timeout=10,
+        )
+        if not isinstance(q, dict):
+            return []
+        ohlc = q.get("ohlc") or {}
+        o = ohlc.get("open")
+        h = ohlc.get("high")
+        lo = ohlc.get("low")
+        last = q.get("last_price")
+        vol = q.get("volume")
+        lt = q.get("last_trade_time")  # epoch seconds
+        if None in (o, h, lo, last, vol, lt):
+            return []
+        try:
+            o = float(o); h = float(h); lo = float(lo)
+            last = float(last); vol = int(float(vol)); lt = int(lt)
+        except (TypeError, ValueError):
+            return []
+        if min(o, h, lo, last) <= 0 or vol <= 0:
+            # Pre-open / no-trade session → skip, don't pollute cache
+            return []
+        ds = datetime.datetime.fromtimestamp(lt, IST).strftime("%Y-%m-%d")
+        # Safety: sanity check high/low envelope
+        hi = max(h, o, last)
+        low = min(lo, o, last)
+        return [dict(date=ds, open=round(o, 5), high=round(hi, 5),
+                     low=round(low, 5), close=round(last, 5), volume=vol)]
     except Exception:
         return []
 
@@ -614,7 +739,7 @@ def _find_legacy(sym):
 def refresh_symbol(sym, cache_path, last_date, force=False, dry_run=False):
     result = {"symbol": sym, "status": "skipped",
               "bars_added": 0, "last_date": last_date}
-    if not force and not _is_stale(last_date):
+    if not force and not _is_stale(last_date, cache_path):
         result["status"] = "fresh"
         return result
     if dry_run:
@@ -629,12 +754,82 @@ def refresh_symbol(sym, cache_path, last_date, force=False, dry_run=False):
     existing = sorted(by_date.values(), key=lambda b: b["date"])
     fetch_from = existing[-1]["date"] if existing else None
 
+    # The normal fetchers all internally add "+1 day" to from_date so we
+    # don't re-pull bars we already have. But that breaks two cases:
+    #
+    #  1. Last cached bar is TODAY (mid-session intraday snapshot). +1 day
+    #     would skip today entirely and we'd never overwrite it with the
+    #     final close.
+    #
+    #  2. Last cached bar is an EARLIER DATE but was captured intraday
+    #     (file mtime before 15:35 IST on that date). E.g. file written at
+    #     1:37 PM on 2026-04-20 with an intraday close; next day's refresh
+    #     queries 2026-04-21+ and never overwrites the 2026-04-20 row with
+    #     its finalized close.
+    #
+    # Both cases are fixed by backing `fetch_from` up one business day so
+    # the fetcher re-queries the suspect date and _merge_bars overwrites
+    # the intraday row with the final OHLCV.
+    today_ist = datetime.datetime.now(IST).date()
+    close_cutoff_today = datetime.datetime.now(IST).replace(
+        hour=NSE_CLOSE_HOUR, minute=NSE_CLOSE_MIN, second=0, microsecond=0)
+    try:
+        last_bar_date = datetime.date.fromisoformat(fetch_from) if fetch_from else None
+    except ValueError:
+        last_bar_date = None
+
+    should_back_up = False
+    if last_bar_date == today_ist:
+        should_back_up = True  # case 1
+    elif last_bar_date is not None and cache_path.exists():
+        # Case 2: last cached date < today; check whether that row was an
+        # intraday capture (file mtime before 15:35 IST on last_bar_date).
+        try:
+            mtime = datetime.datetime.fromtimestamp(cache_path.stat().st_mtime, tz=IST)
+            last_bar_close_cutoff = close_cutoff_today.replace(
+                year=last_bar_date.year, month=last_bar_date.month, day=last_bar_date.day)
+            # Only flag if mtime is ON last_bar_date AND before close. If mtime
+            # is a different day we've already refreshed it once post-close,
+            # so the row is the finalized close.
+            if (mtime.date() == last_bar_date) and (mtime < last_bar_close_cutoff):
+                should_back_up = True
+                print(f"  ↩  {sym}: last bar {last_bar_date} was intraday "
+                      f"(mtime {mtime.strftime('%H:%M')} IST); re-fetching to "
+                      f"overwrite with finalized close", flush=True)
+        except OSError:
+            pass
+
+    if should_back_up and last_bar_date is not None:
+        back = last_bar_date - datetime.timedelta(days=1)
+        # Roll back over weekends too
+        while back.weekday() >= 5:
+            back -= datetime.timedelta(days=1)
+        fetch_from = back.isoformat()
+
     new_bars = _fetch_bars(sym, from_date=fetch_from)
     time.sleep(RATE_LIMIT_DELAY)
 
     if not new_bars:
-        if legacy and existing:
-            _write_cache(cache_path, existing)
+        # Even with no new bars, a today-dated intraday row may already be
+        # persisted in `existing` from an earlier scan (e.g. the very first
+        # pre-market-close write before this safeguard existed). Strip it
+        # so downstream code never sees an unfinalized OHLCV row.
+        now_ist_now = datetime.datetime.now(IST)
+        close_cutoff_now = now_ist_now.replace(
+            hour=NSE_CLOSE_HOUR, minute=NSE_CLOSE_MIN, second=0, microsecond=0)
+        trimmed_existing = existing
+        if now_ist_now < close_cutoff_now and existing:
+            today_str = now_ist_now.date().isoformat()
+            trimmed_existing = [b for b in existing if b.get("date") != today_str]
+            if len(trimmed_existing) != len(existing):
+                print(f"  ⏳ {sym}: dropped {len(existing) - len(trimmed_existing)} "
+                      f"stale intraday {today_str} row(s) from cache", flush=True)
+                _write_cache(cache_path, trimmed_existing)
+                result["last_date"] = (
+                    trimmed_existing[-1]["date"] if trimmed_existing else last_date)
+        if legacy and trimmed_existing:
+            if trimmed_existing is existing:
+                _write_cache(cache_path, existing)
             for lf in legacy:
                 try:
                     lf.unlink()
@@ -643,7 +838,38 @@ def refresh_symbol(sym, cache_path, last_date, force=False, dry_run=False):
         result["status"] = "no_new_data"
         return result
 
+    # Detect whether the "new" bars contain anything truly novel (new date
+    # or a changed close for today's row vs what we already had).
+    old_by_date = {b["date"]: b for b in existing}
+    truly_changed = 0
+    for nb in new_bars:
+        ob = old_by_date.get(nb["date"])
+        if ob is None:
+            truly_changed += 1
+        else:
+            try:
+                if abs(float(ob.get("close", 0)) - float(nb.get("close", 0))) > 1e-6:
+                    truly_changed += 1
+            except (TypeError, ValueError):
+                pass
+
     merged = _merge_bars(existing, new_bars)
+
+    # Safety net: if we're pre-close and the merged cache somehow still
+    # carries a today-dated row (e.g. an older partial persisted from an
+    # earlier session and no fresh "today" bar was fetched to replace it),
+    # drop it so the last row reflects the most recently completed session.
+    now_ist_after = datetime.datetime.now(IST)
+    close_cutoff_after = now_ist_after.replace(
+        hour=NSE_CLOSE_HOUR, minute=NSE_CLOSE_MIN, second=0, microsecond=0)
+    if now_ist_after < close_cutoff_after:
+        today_str = now_ist_after.date().isoformat()
+        pre = len(merged)
+        merged = [b for b in merged if b.get("date") != today_str]
+        if len(merged) != pre:
+            print(f"  ⏳ {sym}: trimmed {pre - len(merged)} intraday "
+                  f"{today_str} row(s) before write", flush=True)
+
     _write_cache(cache_path, merged)
     for lf in legacy:
         try:
@@ -651,8 +877,8 @@ def refresh_symbol(sym, cache_path, last_date, force=False, dry_run=False):
         except Exception:
             pass
     result.update(
-        status="updated",
-        bars_added=len(new_bars),
+        status="updated" if truly_changed else "no_new_data",
+        bars_added=truly_changed,
         last_date=merged[-1]["date"] if merged else last_date,
     )
     return result
@@ -745,7 +971,7 @@ def refresh_nifty_index():
     existing = sorted(by_date.values(), key=lambda b: b["date"])
     last_date = existing[-1]["date"] if existing else ""
 
-    if not _is_stale(last_date):
+    if not _is_stale(last_date, nifty_path):
         print(f"✅ Nifty cache is fresh (last: {last_date})", flush=True)
         if legacy:
             _write_cache(nifty_path, existing)
@@ -759,7 +985,38 @@ def refresh_nifty_index():
     print(
         f"🔄 Refreshing Nifty 50 index (last: {last_date or 'none'})…",
         flush=True)
-    new = _fetch_bars("^NSEI", from_date=last_date if existing else None)
+
+    # Same intraday-snapshot back-up logic as refresh_symbol (see there for
+    # the full rationale). Ensures the Nifty CSV's latest bar always
+    # reflects the finalized close, not an intraday capture.
+    fetch_from = last_date if existing else None
+    try:
+        last_bar_date = datetime.date.fromisoformat(last_date) if last_date else None
+    except ValueError:
+        last_bar_date = None
+    today_ist = datetime.datetime.now(IST).date()
+    if last_bar_date is not None and nifty_path.exists():
+        should_back_up = (last_bar_date == today_ist)
+        if not should_back_up:
+            try:
+                mtime = datetime.datetime.fromtimestamp(nifty_path.stat().st_mtime, tz=IST)
+                cutoff = datetime.datetime.now(IST).replace(
+                    year=last_bar_date.year, month=last_bar_date.month, day=last_bar_date.day,
+                    hour=NSE_CLOSE_HOUR, minute=NSE_CLOSE_MIN, second=0, microsecond=0)
+                if (mtime.date() == last_bar_date) and (mtime < cutoff):
+                    should_back_up = True
+                    print(f"  ↩  ^NSEI: last bar {last_bar_date} was intraday "
+                          f"(mtime {mtime.strftime('%H:%M')} IST); re-fetching",
+                          flush=True)
+            except OSError:
+                pass
+        if should_back_up:
+            back = last_bar_date - datetime.timedelta(days=1)
+            while back.weekday() >= 5:
+                back -= datetime.timedelta(days=1)
+            fetch_from = back.isoformat()
+
+    new = _fetch_bars("^NSEI", from_date=fetch_from)
     if new:
         merged = _merge_bars(existing, new)
         _write_cache(nifty_path, merged)

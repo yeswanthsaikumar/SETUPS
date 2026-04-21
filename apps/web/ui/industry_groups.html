@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industry Groups | SETUPS</title>
+    <style>
+        :root{--bg:#080e1a;--bg2:#0f1623;--bg3:#162030;--bg4:#0c1220;--border:#1a2840;--border2:#243550;--text:#e2e8f0;--muted:#64748b;--dim:#334155;--green:#22c55e;--red:#ef4444;--yellow:#f59e0b;--blue:#3b82f6;--cyan:#06b6d4;--purple:#8b5cf6;--green-bg:#052e16;--red-bg:#450a0a;--yellow-bg:#422006}
+        *{box-sizing:border-box;margin:0;padding:0}
+        html,body{height:100%;overflow:hidden}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.45;display:flex;flex-direction:column}
+        ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:#2a3a50;border-radius:3px}
+
+        /* HEADER */
+        .page-header{padding:16px 20px 0;flex-shrink:0}
+        .page-title{display:flex;align-items:center;gap:10px;margin-bottom:2px}
+        .page-title h1{font-size:1.35rem;font-weight:800;color:#fff;letter-spacing:-.3px}
+        .page-title .badge{font-size:9px;background:#1e3a5f;color:#7dd3fc;padding:2px 8px;border-radius:4px;font-weight:700;text-transform:uppercase}
+        .subtitle{color:var(--muted);font-size:11.5px;margin-bottom:12px}
+
+        /* TAB BAR */
+        .tab-bar{display:flex;gap:2px;padding:0 20px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg)}
+        .tab-btn{padding:8px 16px;font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:all .15s}
+        .tab-btn:hover{color:var(--text)}
+        .tab-btn.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+
+        /* CONTROLS */
+        .controls{display:flex;gap:8px;align-items:center;padding:10px 20px;flex-wrap:wrap;flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border)}
+        .ctrl-input{background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:5px 10px;font-size:11.5px;outline:none;width:180px;transition:border-color .15s}
+        .ctrl-input:focus{border-color:var(--cyan)}
+        .ctrl-select{background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);padding:5px 8px;font-size:11.5px;outline:none}
+        .ctrl-btn{padding:5px 14px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;border:1px solid;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+        .ctrl-btn-primary{background:var(--bg3);border-color:var(--border2);color:var(--muted)}
+        .ctrl-btn-primary:hover{border-color:var(--cyan);color:var(--cyan)}
+        .ctrl-btn-accent{background:#1d4ed8;border-color:#2563eb;color:#fff}
+        .ctrl-btn-accent:hover{background:#2563eb}
+        .ctrl-spacer{flex:1}
+
+        /* STATS BAR */
+        .stats-bar{display:flex;gap:10px;padding:12px 20px;flex-shrink:0;overflow-x:auto}
+        .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 16px;min-width:115px;transition:border-color .2s}
+        .stat-card:hover{border-color:var(--border2)}
+        .stat-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+        .stat-value{font-size:1.25rem;font-weight:900;line-height:1.3;margin-top:2px}
+        .stat-value.pos{color:var(--green)}.stat-value.neg{color:var(--red)}.stat-value.blue{color:var(--cyan)}.stat-value.yellow{color:var(--yellow)}
+
+        /* TABLE CONTAINER */
+        .table-wrap{flex:1;overflow:auto;padding:0 20px 20px}
+        table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px}
+        thead{position:sticky;top:0;z-index:5}
+        th{background:var(--bg2);color:var(--muted);padding:8px 8px;text-align:left;cursor:pointer;border-bottom:1px solid var(--border);white-space:nowrap;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;user-select:none;transition:color .15s}
+        th:hover{color:var(--cyan)}
+        td{padding:7px 8px;border-bottom:1px solid #111827;white-space:nowrap;transition:background .1s}
+        tr:hover td{background:var(--bg2)}
+        tr.top-row td{background:rgba(34,197,94,.04)}
+        tr.bottom-row td{background:rgba(239,68,68,.03)}
+        .pos{color:var(--green)}.neg{color:var(--red)}
+        .group-link{color:var(--cyan);text-decoration:none;cursor:pointer;font-weight:600;transition:color .15s}
+        .group-link:hover{color:#67e8f9;text-decoration:underline}
+
+        /* BADGES */
+        .badge-pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;border:1px solid}
+        .badge-acc{background:var(--green-bg);color:var(--green);border-color:#16a34a44}
+        .badge-dist{background:var(--red-bg);color:var(--red);border-color:#7f1d1d44}
+        .badge-dry{background:var(--yellow-bg);color:var(--yellow);border-color:#92400e44}
+        .badge-neutral{background:var(--bg3);color:var(--muted);border-color:var(--border)}
+        .rank-badge{display:inline-flex;align-items:center;justify-content:center;width:24px;height:20px;border-radius:5px;font-size:10px;font-weight:800}
+        .rank-top{background:#052e16;color:var(--green);border:1px solid #16a34a44}
+        .rank-mid{background:var(--bg3);color:var(--muted);border:1px solid var(--border)}
+        .rank-bot{background:var(--red-bg);color:var(--red);border:1px solid #7f1d1d44}
+
+        /* BREADTH BAR */
+        .breadth-bar{display:inline-flex;align-items:center;gap:4px;min-width:80px}
+        .breadth-fill{height:6px;border-radius:3px;background:var(--bg3);width:50px;overflow:hidden;position:relative}
+        .breadth-fill-inner{height:100%;border-radius:3px;transition:width .3s}
+
+        /* LOADING */
+        .loading{display:flex;align-items:center;justify-content:center;flex:1;color:var(--muted);font-size:13px;gap:8px}
+        .spinner{width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--cyan);border-radius:50%;animation:spin .7s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        /* MODAL */
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.65);z-index:999;justify-content:center;align-items:center;backdrop-filter:blur(4px)}
+        .modal-overlay.active{display:flex}
+        .modal{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:0;width:92%;max-width:780px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 25px 60px rgba(0,0,0,.5)}
+        .modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+        .modal-header h2{font-size:1.1rem;font-weight:800;color:#fff}
+        .modal-close{background:none;border:1px solid var(--border2);color:var(--muted);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+        .modal-close:hover{border-color:var(--red);color:var(--red);background:var(--red-bg)}
+        .modal-body{overflow-y:auto;padding:16px 20px 20px;flex:1}
+        .modal-stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+
+        /* RS CHART */
+        .rs-chart{width:100%;height:260px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:16px;position:relative;overflow:hidden}
+        .rs-chart canvas{width:100%;height:100%}
+
+        /* CUSTOM TAB */
+        .custom-form{display:flex;gap:8px;align-items:center;padding:16px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin:12px 20px}
+        .custom-form input{flex:1}
+        .custom-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:border-color .15s}
+        .custom-card:hover{border-color:var(--border2)}
+        .custom-card-name{font-weight:700;color:var(--cyan);font-size:13px}
+        .custom-card-tickers{color:var(--muted);font-size:11px;flex:1}
+        .custom-card-actions{display:flex;gap:6px}
+
+        /* ROTATION TAB */
+        .rotation-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
+        .rotation-wrap canvas{border-radius:12px;border:1px solid var(--border)}
+
+        /* TAB CONTENT */
+        .tab-content{display:none;flex:1;overflow:hidden;flex-direction:column}
+        .tab-content.active{display:flex}
+
+        .heat-cell{font-variant-numeric:tabular-nums}
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <div class="page-title">
+        <h1>📊 Industry Group Rotation</h1>
+        <span class="badge">RS RANKING</span>
+    </div>
+    <p class="subtitle">Live relative strength ranking, breadth, 52-week highs, volume patterns per industry group</p>
+</div>
+
+<div class="tab-bar">
+    <button class="tab-btn active" data-tab="groups" onclick="showTab('groups')">Industry Groups</button>
+    <button class="tab-btn" data-tab="custom" onclick="showTab('custom')">Custom Groups</button>
+    <button class="tab-btn" data-tab="rotation" onclick="showTab('rotation')">Rotation Matrix</button>
+</div>
+
+<!-- GROUPS TAB -->
+<div class="tab-content active" id="tab-groups">
+    <div class="controls">
+        <input type="text" class="ctrl-input" id="search" placeholder="🔍 Filter groups..." oninput="filterGroups()">
+        <select class="ctrl-select" id="level-filter" onchange="changeLevel()" title="Classification level (from nse_stock_enriched.csv)">
+            <option value="industry">Industry (default)</option>
+            <option value="macro">Macro Sector</option>
+            <option value="sector">Sector</option>
+            <option value="basic_industry">Basic Industry</option>
+            <option value="theme">Theme</option>
+        </select>
+        <select class="ctrl-select" id="sector-filter" onchange="filterGroups()">
+            <option value="">All Sectors</option>
+        </select>
+        <select class="ctrl-select" id="sort-by" onchange="sortGroups()">
+            <option value="rsScore">RS Score ↓</option>
+            <option value="breadthScore">Breadth ↓</option>
+            <option value="avgRet5d">5D Return ↓</option>
+            <option value="avgRet20d">20D Return ↓</option>
+            <option value="pct52wHigh">52W Highs ↓</option>
+            <option value="avgVolRatio">Vol Ratio ↓</option>
+            <option value="stockCount">Stock Count ↓</option>
+        </select>
+        <div class="ctrl-spacer"></div>
+        <span id="group-count" style="color:var(--muted);font-size:11px"></span>
+        <button class="ctrl-btn ctrl-btn-primary" onclick="refreshData()">🔄 Refresh</button>
+    </div>
+
+    <div class="stats-bar" id="stats-bar"></div>
+
+    <div id="stale-warning" style="display:none;background:#422006;color:#fbbf24;padding:6px 14px;border-radius:6px;font-size:11px;margin-bottom:8px;font-weight:600"></div>
+    <div id="groups-loading" class="loading"><div class="spinner"></div> Loading industry groups...</div>
+    <div class="table-wrap" id="table-wrap" style="display:none">
+        <table id="groups-table">
+            <thead>
+                <tr>
+                    <th onclick="sortBy('rsRank')" style="width:36px">#</th>
+                    <th onclick="sortBy('group')">Group</th>
+                    <th onclick="sortBy('sector')">Sector</th>
+                    <th onclick="sortBy('stockCount')" style="text-align:center">Stk</th>
+                    <th onclick="sortBy('rsScore')">RS</th>
+                    <th onclick="sortBy('breadthScore')">Breadth</th>
+                    <th onclick="sortBy('pctAbove20ma')">%&gt;20</th>
+                    <th onclick="sortBy('pctAbove50ma')">%&gt;50</th>
+                    <th onclick="sortBy('pct52wHigh')">52WH</th>
+                    <th onclick="sortBy('avgRet5d')">5D%</th>
+                    <th onclick="sortBy('avgRet20d')">20D%</th>
+                    <th onclick="sortBy('avgRet60d')">60D%</th>
+                    <th onclick="sortBy('avgVolRatio')">VolR</th>
+                    <th>Pattern</th>
+                </tr>
+            </thead>
+            <tbody id="groups-body"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- CUSTOM TAB -->
+<div class="tab-content" id="tab-custom">
+    <div class="custom-form">
+        <input type="text" class="ctrl-input" id="cg-name" placeholder="Group name (e.g. My Power Stocks)">
+        <input type="text" class="ctrl-input" id="cg-tickers" placeholder="Tickers (comma separated)" style="width:260px">
+        <button class="ctrl-btn ctrl-btn-accent" onclick="createCustomGroup()">+ Create</button>
+    </div>
+    <div id="custom-groups-list" style="padding:8px 20px;overflow-y:auto;flex:1"></div>
+</div>
+
+<!-- ROTATION TAB -->
+<div class="tab-content" id="tab-rotation">
+    <div style="padding:12px 20px 0">
+        <p class="subtitle">X-axis: RS Score (momentum) &nbsp;|&nbsp; Y-axis: Breadth Score (health) &nbsp;|&nbsp; Bubble size = stock count</p>
+    </div>
+    <div class="rotation-wrap">
+        <canvas id="rotation-canvas" width="750" height="520"></canvas>
+    </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detail-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="modal-title">Group Detail</h2>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <div id="modal-stats" class="modal-stats"></div>
+            <div class="rs-chart"><canvas id="rs-chart-canvas"></canvas></div>
+            <div id="modal-members"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let allGroups = [];
+let filteredGroups = [];
+let currentSort = {field: 'rsScore', desc: true};
+let currentLevel = 'industry';
+
+// Adapts the multi-level /api/groups payload to match the field shape the
+// existing render code expects (g.group + g.sector + stockCount). For the
+// legacy /api/industry-groups endpoint each row already has `group` and
+// `sector`, so this function is a no-op in that path.
+function _adaptGroupsPayload(rows, level) {
+    return (rows || []).map(g => {
+        const name = g.group || g.name || g.themeName || '';
+        const parent = g.sector || g.parent || '';
+        return Object.assign({}, g, {
+            group: name,
+            sector: parent || (level === 'theme' ? 'Theme' : 'Other'),
+            // Preserve extra multi-level fields so future UI additions can use them
+            _level: g.level || level,
+            _themeName: g.themeName,
+            _themeDescription: g.themeDescription,
+            _rotationScore: g.rotationScore,
+        });
+    });
+}
+
+function changeLevel() {
+    currentLevel = document.getElementById('level-filter').value || 'industry';
+    fetchGroups();
+}
+
+async function _fetchGroupsForCurrentLevel() {
+    if (currentLevel === 'industry') {
+        const resp = await fetch('/api/industry-groups?min_stocks=2');
+        const data = await resp.json();
+        return {
+            groups: data.groups || [],
+            cachedAt: data.cachedAt,
+            cacheAgeSec: data.cacheAgeSec,
+            bgRefreshing: data.bgRefreshing,
+            ohlcvRefreshing: data.ohlcvRefreshing,
+            ohlcvProgress: data.ohlcvProgress,
+        };
+    }
+    const resp = await fetch(`/api/groups?level=${encodeURIComponent(currentLevel)}&min_stocks=2`);
+    const data = await resp.json();
+    return {
+        groups: _adaptGroupsPayload(data.groups || [], currentLevel),
+        cachedAt: data.cachedAt,
+        cacheAgeSec: data.cacheAgeSec,
+        bgRefreshing: false,
+        ohlcvRefreshing: false,
+        ohlcvProgress: null,
+    };
+}
+
+async function fetchGroups() {
+    document.getElementById('groups-loading').style.display = 'flex';
+    document.getElementById('table-wrap').style.display = 'none';
+    try {
+        const data = await _fetchGroupsForCurrentLevel();
+        allGroups = data.groups || [];
+
+        // Cold start: server returned empty + bgRefreshing=true. Show a helpful
+        // message and poll every 3s until the first build lands (~5-15s).
+        if (allGroups.length === 0 && data.bgRefreshing) {
+            const loadingEl = document.getElementById('groups-loading');
+            loadingEl.innerHTML =
+                '<span class="spinner"></span>' +
+                '<span style="margin-left:10px">First-time build in progress… this takes ~10-20 seconds on cold start.</span>';
+            setTimeout(fetchGroups, 3000);
+            return;
+        }
+
+        populateSectorFilter();
+        filterGroups();
+        renderStats();
+        // Show staleness warning if cache is old OR a background refresh is in flight
+        const ageSec = data.cacheAgeSec;
+        const bg = data.bgRefreshing;
+        const staleEl = document.getElementById('stale-warning');
+        if (staleEl) {
+            if (bg) {
+                staleEl.innerHTML = '⏳ Recomputing with latest prices in background… will auto-update shortly.';
+                staleEl.style.display = '';
+            } else if (ageSec !== null && ageSec > 1800) {
+                const ageMin = Math.round(ageSec / 60);
+                const ageStr = ageMin > 60 ? Math.round(ageMin/60) + 'h ' + (ageMin%60) + 'm' : ageMin + 'm';
+                staleEl.innerHTML = '⚠️ Data is ' + ageStr + ' old. Click 🔄 Refresh to force update.';
+                staleEl.style.display = '';
+            } else {
+                const stampedAt = data.cachedAt ? new Date(data.cachedAt * 1000).toLocaleTimeString() : '—';
+                staleEl.innerHTML = '✅ Last refreshed at ' + stampedAt + (ageSec !== null ? ' (' + ageSec + 's ago)' : '');
+                staleEl.style.display = '';
+                staleEl.style.background = 'transparent';
+                staleEl.style.color = 'var(--muted)';
+            }
+        }
+        document.getElementById('groups-loading').style.display = 'none';
+        document.getElementById('table-wrap').style.display = '';
+    } catch(e) {
+        document.getElementById('groups-loading').innerHTML = `<span style="color:var(--red)">Error: ${e.message}</span>`;
+    }
+}
+
+// ── Auto-refresh loop ─────────────────────────────────────────────────────
+// Silently re-fetch every 5 min while the tab is visible so prices stay live.
+// But — while an OHLCV refresh is running (pulling today's closes), poll every
+// 10s so the user sees the fresh numbers as soon as they land.
+let _fastPollTimer = null;
+async function silentRefresh() {
+    if (document.hidden) return;
+    try {
+        const data = await _fetchGroupsForCurrentLevel();
+        allGroups = data.groups || [];
+        populateSectorFilter();
+        filterGroups();  // re-applies current filter + sort + renderTable
+        renderStats();
+        const staleEl = document.getElementById('stale-warning');
+        if (staleEl) {
+            const stampedAt = data.cachedAt ? new Date(data.cachedAt * 1000).toLocaleTimeString() : '—';
+            const ageSec = data.cacheAgeSec;
+            let msg = '';
+            if (data.ohlcvRefreshing) {
+                const p = data.ohlcvProgress || {};
+                const pctStr = p.total ? ` ${p.done}/${p.total} (${p.pct}%)` : '';
+                msg = '⏳ Pulling today\'s closes' + pctStr + '… table will auto-update when complete.';
+                staleEl.style.background = 'var(--yellow-bg)';
+                staleEl.style.color = 'var(--yellow)';
+            } else if (data.bgRefreshing) {
+                msg = '⏳ Recomputing… Last refreshed ' + stampedAt + (ageSec !== null ? ' (' + ageSec + 's ago)' : '');
+                staleEl.style.background = 'transparent';
+                staleEl.style.color = 'var(--muted)';
+            } else {
+                msg = '✅ Last refreshed at ' + stampedAt + (ageSec !== null ? ' (' + ageSec + 's ago)' : '');
+                staleEl.style.background = 'transparent';
+                staleEl.style.color = 'var(--muted)';
+            }
+            staleEl.innerHTML = msg;
+            staleEl.style.display = '';
+        }
+
+        // Fast-poll while OHLCV refresh is in flight.
+        if (data.ohlcvRefreshing || data.bgRefreshing) {
+            if (_fastPollTimer) clearTimeout(_fastPollTimer);
+            _fastPollTimer = setTimeout(silentRefresh, 10 * 1000);
+        } else if (_fastPollTimer) {
+            clearTimeout(_fastPollTimer);
+            _fastPollTimer = null;
+        }
+    } catch(_) { /* swallow — next tick will retry */ }
+}
+setInterval(silentRefresh, 5 * 60 * 1000);
+// Also refresh when the tab becomes visible after being hidden for a while.
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) silentRefresh();
+});
+
+function populateSectorFilter() {
+    const sectors = [...new Set(allGroups.map(g => g.sector))].sort();
+    const sel = document.getElementById('sector-filter');
+    sel.innerHTML = '<option value="">All Sectors</option>' +
+        sectors.map(s => `<option value="${s}">${s}</option>`).join('');
+}
+
+function filterGroups() {
+    const search = document.getElementById('search').value.toLowerCase();
+    const sector = document.getElementById('sector-filter').value;
+    filteredGroups = allGroups.filter(g => {
+        if (search && !g.group.toLowerCase().includes(search) && !g.sector.toLowerCase().includes(search)) return false;
+        if (sector && g.sector !== sector) return false;
+        return true;
+    });
+    sortGroups();
+}
+
+function sortGroups() {
+    const sortByVal = document.getElementById('sort-by').value;
+    currentSort.field = sortByVal;
+    currentSort.desc = true;
+    filteredGroups.sort((a, b) => (b[sortByVal] || 0) - (a[sortByVal] || 0));
+    renderTable();
+}
+
+function sortBy(field) {
+    if (currentSort.field === field) currentSort.desc = !currentSort.desc;
+    else { currentSort.field = field; currentSort.desc = true; }
+    filteredGroups.sort((a, b) => {
+        let va = a[field], vb = b[field];
+        if (typeof va === 'string') return currentSort.desc ? vb.localeCompare(va) : va.localeCompare(vb);
+        return currentSort.desc ? (vb||0) - (va||0) : (va||0) - (vb||0);
+    });
+    renderTable();
+}
+
+function renderStats() {
+    const total = allGroups.length;
+    const bullish = allGroups.filter(g => g.breadthScore > 60).length;
+    const bearish = allGroups.filter(g => g.breadthScore < 30).length;
+    const accumulating = allGroups.filter(g => g.volPattern === 'ACCUMULATION').length;
+    const distributing = allGroups.filter(g => g.volPattern === 'DISTRIBUTION').length;
+    const avgRS = total ? (allGroups.reduce((s,g) => s + (g.rsScore||0), 0) / total).toFixed(1) : 0;
+    const topGroup = allGroups[0];
+    document.getElementById('stats-bar').innerHTML = `
+        <div class="stat-card"><div class="stat-label">Total Groups</div><div class="stat-value blue">${total}</div></div>
+        <div class="stat-card"><div class="stat-label">Bullish (&gt;60)</div><div class="stat-value pos">${bullish}</div></div>
+        <div class="stat-card"><div class="stat-label">Bearish (&lt;30)</div><div class="stat-value neg">${bearish}</div></div>
+        <div class="stat-card"><div class="stat-label">Accumulating</div><div class="stat-value" style="color:var(--green)">${accumulating}</div></div>
+        <div class="stat-card"><div class="stat-label">Distributing</div><div class="stat-value neg">${distributing}</div></div>
+        <div class="stat-card"><div class="stat-label">Avg RS</div><div class="stat-value ${avgRS > 0 ? 'pos' : 'neg'}">${avgRS}</div></div>
+        ${topGroup ? `<div class="stat-card"><div class="stat-label">🏆 Top Group</div><div class="stat-value" style="font-size:.85rem;color:var(--cyan)">${topGroup.group.substring(0,18)}</div></div>` : ''}
+    `;
+}
+
+function _breadthColor(v) {
+    if (v >= 70) return 'var(--green)';
+    if (v >= 50) return '#4ade80';
+    if (v >= 30) return 'var(--yellow)';
+    return 'var(--red)';
+}
+
+function _retClass(v) { return v > 0.05 ? 'pos' : v < -0.05 ? 'neg' : ''; }
+
+function renderTable() {
+    const total = allGroups.length;
+    document.getElementById('group-count').textContent = `${filteredGroups.length} of ${total} groups`;
+    const tbody = document.getElementById('groups-body');
+    tbody.innerHTML = filteredGroups.map((g, i) => {
+        const rank = g.rsRank || i+1;
+        const rankCls = rank <= 5 ? 'rank-top' : rank > total - 5 ? 'rank-bot' : 'rank-mid';
+        const rowCls = rank <= 5 ? 'top-row' : rank > total - 5 ? 'bottom-row' : '';
+        const patternBadge =
+            g.volPattern === 'ACCUMULATION' ? '<span class="badge-pill badge-acc">● ACC</span>' :
+            g.volPattern === 'DISTRIBUTION' ? '<span class="badge-pill badge-dist">● DIST</span>' :
+            g.volPattern === 'DRY' ? '<span class="badge-pill badge-dry">● DRY</span>' :
+            '<span class="badge-pill badge-neutral">—</span>';
+        const bc = _breadthColor(g.breadthScore||0);
+        const bw = Math.max(2, Math.min(100, g.breadthScore||0));
+        return `<tr class="${rowCls}">
+            <td><span class="rank-badge ${rankCls}">${rank}</span></td>
+            <td><a class="group-link" onclick="showDetail('${g.group.replace(/'/g,"\\'")}')">${g.group}</a></td>
+            <td style="color:var(--muted)">${g.sector}</td>
+            <td style="text-align:center">${g.stockCount}</td>
+            <td class="heat-cell ${g.rsScore > 0 ? 'pos' : 'neg'}" style="font-weight:700">${(g.rsScore||0).toFixed(1)}</td>
+            <td><div class="breadth-bar"><div class="breadth-fill"><div class="breadth-fill-inner" style="width:${bw}%;background:${bc}"></div></div><span style="font-size:11px;font-weight:600;color:${bc}">${(g.breadthScore||0).toFixed(0)}</span></div></td>
+            <td>${(g.pctAbove20ma||0).toFixed(0)}%</td>
+            <td>${(g.pctAbove50ma||0).toFixed(0)}%</td>
+            <td>${(g.pct52wHigh||0).toFixed(0)}%</td>
+            <td class="heat-cell ${_retClass(g.avgRet5d)}">${(g.avgRet5d||0).toFixed(1)}%</td>
+            <td class="heat-cell ${_retClass(g.avgRet20d)}">${(g.avgRet20d||0).toFixed(1)}%</td>
+            <td class="heat-cell ${_retClass(g.avgRet60d)}">${(g.avgRet60d||0).toFixed(1)}%</td>
+            <td style="font-variant-numeric:tabular-nums">${(g.avgVolRatio||1).toFixed(2)}</td>
+            <td>${patternBadge}</td>
+        </tr>`;
+    }).join('');
+}
+
+async function showDetail(groupName) {
+    // Drill-down endpoint only supports industry-level groups. For other
+    // levels (macro / sector / basic_industry / theme) we just skip the
+    // modal — the user can switch back to the industry view to drill in.
+    if (currentLevel !== 'industry') {
+        alert('Drill-down is available only on the Industry level.\nSwitch the level selector to "Industry (default)" to open group details.');
+        return;
+    }
+    const modal = document.getElementById('detail-modal');
+    modal.classList.add('active');
+    document.getElementById('modal-title').textContent = groupName;
+    document.getElementById('modal-stats').innerHTML = '<div class="loading" style="padding:10px"><div class="spinner"></div> Loading...</div>';
+    document.getElementById('modal-members').innerHTML = '';
+
+    try {
+        const [detailResp, rsResp] = await Promise.all([
+            fetch(`/api/industry-groups/${encodeURIComponent(groupName)}?fresh=true`),
+            fetch(`/api/industry-groups/${encodeURIComponent(groupName)}/rs-history?days=120`)
+        ]);
+        const detail = await detailResp.json();
+        const rsData = await rsResp.json();
+
+        document.getElementById('modal-stats').innerHTML = `
+            <div class="stat-card"><div class="stat-label">RS Score</div><div class="stat-value ${detail.rsScore>0?'pos':'neg'}">${(detail.rsScore||0).toFixed(1)}</div></div>
+            <div class="stat-card"><div class="stat-label">Breadth</div><div class="stat-value blue">${(detail.breadthScore||0).toFixed(0)}</div></div>
+            <div class="stat-card"><div class="stat-label">52W Highs</div><div class="stat-value">${detail.at52wHighCount||0}<span style="color:var(--muted);font-size:11px"> / ${detail.stockCount}</span></div></div>
+            <div class="stat-card"><div class="stat-label">Vol Pattern</div><div class="stat-value" style="font-size:.85rem">${detail.volPattern||'—'}</div></div>
+            <div class="stat-card"><div class="stat-label">20D Return</div><div class="stat-value ${detail.avgRet20d>0?'pos':'neg'}">${(detail.avgRet20d||0).toFixed(1)}%</div></div>
+        `;
+
+        drawRSChart(rsData.rsLine || []);
+
+        const members = detail.members || [];
+        document.getElementById('modal-members').innerHTML = `
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                <span style="font-weight:700;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Members</span>
+                <span style="font-size:10px;background:var(--bg3);color:var(--muted);padding:1px 7px;border-radius:99px;font-weight:700">${members.length}</span>
+            </div>
+            <table><thead><tr><th>Symbol</th><th>Close</th><th>Day %</th><th>From 52WH</th></tr></thead>
+            <tbody>${members.map(m => `<tr>
+                <td style="font-weight:600">${m.symbol}</td>
+                <td>₹${m.close}</td>
+                <td class="${(m.dayChangePct||0)>0?'pos':'neg'}" style="font-weight:600">${(m.dayChangePct||0).toFixed(2)}%</td>
+                <td class="neg">${(m.pctFrom52wHigh||0).toFixed(1)}%</td>
+            </tr>`).join('')}</tbody></table>
+        `;
+    } catch(e) {
+        document.getElementById('modal-stats').innerHTML = `<div style="color:var(--red);padding:10px">Error: ${e.message}</div>`;
+    }
+}
+
+function drawRSChart(rsLine) {
+    const canvas = document.getElementById('rs-chart-canvas');
+    if (!canvas || !rsLine.length) return;
+    const ctx = canvas.getContext('2d');
+
+    // HiDPI support for crisp rendering
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.parentElement.clientWidth;
+    const H = 252;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, W, H);
+
+    const pad = {t: 28, b: 32, l: 44, r: 16};
+    const cW = W - pad.l - pad.r;
+    const cH = H - pad.t - pad.b;
+
+    const values = rsLine.map(r => r.rs);
+    const dates = rsLine.map(r => r.date || '');
+    const dataMin = Math.min(...values);
+    const dataMax = Math.max(...values);
+    const range = dataMax - dataMin || 1;
+    const min = dataMin - range * 0.08;
+    const max = dataMax + range * 0.08;
+    const xStep = cW / Math.max(1, values.length - 1);
+    const toX = i => pad.l + i * xStep;
+    const toY = v => pad.t + cH - ((v - min) / (max - min)) * cH;
+
+    // Background
+    ctx.fillStyle = '#080e1a';
+    ctx.fillRect(0, 0, W, H);
+
+    // Y-axis grid + labels
+    const yTicks = 5;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i <= yTicks; i++) {
+        const v = min + (max - min) * (i / yTicks);
+        const y = toY(v);
+        ctx.strokeStyle = '#111b2e';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+        ctx.fillStyle = '#4a5568';
+        ctx.font = '10px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.fillText(v.toFixed(1), pad.l - 6, y);
+    }
+
+    // Reference line at 100 (baseline)
+    const y100 = toY(100);
+    if (y100 > pad.t && y100 < H - pad.b) {
+        ctx.save();
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(pad.l, y100); ctx.lineTo(W - pad.r, y100); ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = '#64748b';
+        ctx.textAlign = 'left';
+        ctx.font = 'bold 9px -apple-system, sans-serif';
+        ctx.fillText('Nifty = 100', W - pad.r - 62, y100 - 6);
+    }
+
+    // X-axis date labels
+    ctx.fillStyle = '#4a5568';
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const labelInterval = Math.max(1, Math.floor(values.length / 6));
+    for (let i = 0; i < values.length; i += labelInterval) {
+        const d = dates[i];
+        if (d) ctx.fillText(d.slice(5), toX(i), H - pad.b + 6);
+    }
+    if (dates.length > 1) {
+        ctx.textAlign = 'right';
+        ctx.fillText(dates[dates.length - 1].slice(5), toX(values.length - 1), H - pad.b + 6);
+    }
+
+    // Gradient fill under RS line
+    const lastVal = values[values.length - 1];
+    const isUp = lastVal >= 100;
+    const baseColor = isUp ? [34, 197, 94] : [239, 68, 68];
+    const grad = ctx.createLinearGradient(0, pad.t, 0, H - pad.b);
+    grad.addColorStop(0, `rgba(${baseColor.join(',')}, 0.18)`);
+    grad.addColorStop(0.6, `rgba(${baseColor.join(',')}, 0.06)`);
+    grad.addColorStop(1, `rgba(${baseColor.join(',')}, 0)`);
+    ctx.beginPath();
+    for (let i = 0; i < values.length; i++) {
+        const x = toX(i), y = toY(values[i]);
+        if (i === 0) { ctx.moveTo(x, y); continue; }
+        const px = toX(i - 1), py = toY(values[i - 1]);
+        const cpx = (px + x) / 2;
+        ctx.bezierCurveTo(cpx, py, cpx, y, x, y);
+    }
+    ctx.lineTo(toX(values.length - 1), H - pad.b);
+    ctx.lineTo(pad.l, H - pad.b);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Glow effect
+    const lineColor = isUp ? '#22c55e' : '#ef4444';
+    ctx.save();
+    ctx.strokeStyle = isUp ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.25)';
+    ctx.lineWidth = 6;
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.filter = 'blur(4px)';
+    ctx.beginPath();
+    for (let i = 0; i < values.length; i++) {
+        const x = toX(i), y = toY(values[i]);
+        if (i === 0) { ctx.moveTo(x, y); continue; }
+        const px = toX(i - 1), py = toY(values[i - 1]);
+        ctx.bezierCurveTo((px + x) / 2, py, (px + x) / 2, y, x, y);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // RS Line (main) — smooth bezier
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.beginPath();
+    for (let i = 0; i < values.length; i++) {
+        const x = toX(i), y = toY(values[i]);
+        if (i === 0) { ctx.moveTo(x, y); continue; }
+        const px = toX(i - 1), py = toY(values[i - 1]);
+        ctx.bezierCurveTo((px + x) / 2, py, (px + x) / 2, y, x, y);
+    }
+    ctx.stroke();
+
+    // End dot with ring
+    const lastX = toX(values.length - 1);
+    const lastY = toY(lastVal);
+    ctx.beginPath(); ctx.arc(lastX, lastY, 6, 0, Math.PI * 2);
+    ctx.fillStyle = isUp ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(lastX, lastY, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = lineColor; ctx.fill();
+    ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // Value label at end
+    ctx.fillStyle = lineColor;
+    ctx.font = 'bold 12px -apple-system, sans-serif';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+    ctx.fillText(lastVal.toFixed(1), lastX - 10, lastY - 10);
+
+    // Title
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText('RS vs Nifty (120d)', pad.l + 2, 6);
+
+    // Change badge
+    const firstVal = values[0] || 100;
+    const changePct = ((lastVal / firstVal - 1) * 100).toFixed(1);
+    const changeStr = (parseFloat(changePct) >= 0 ? '+' : '') + changePct + '%';
+    ctx.font = 'bold 11px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = parseFloat(changePct) >= 0 ? '#22c55e' : '#ef4444';
+    ctx.fillText(changeStr, W - pad.r - 2, 6);
+
+    // Tooltip on hover
+    canvas._rsLine = rsLine;
+    canvas._chartP = { pad, cW, values };
+    if (!canvas._hasListener) {
+        canvas._hasListener = true;
+        canvas.addEventListener('mousemove', function(e) {
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const p = this._chartP; if (!p) return;
+            const rl = this._rsLine; if (!rl) return;
+            const idx = Math.round((mx - p.pad.l) / (p.cW / Math.max(1, p.values.length - 1)));
+            if (idx < 0 || idx >= rl.length) { canvas.title = ''; return; }
+            const pt = rl[idx];
+            canvas.title = pt.date + '\nRS: ' + pt.rs.toFixed(1) + '  |  Group: ' + ((pt.groupReturn||0)>=0?'+':'') + (pt.groupReturn||0).toFixed(1) + '%  |  Nifty: ' + ((pt.niftyReturn||0)>=0?'+':'') + (pt.niftyReturn||0).toFixed(1) + '%';
+        });
+    }
+}
+
+function closeModal() {
+    document.getElementById('detail-modal').classList.remove('active');
+}
+
+function showTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    if (tab === 'custom') loadCustomGroups();
+    if (tab === 'rotation') drawRotationMatrix();
+}
+
+async function loadCustomGroups() {
+    try {
+        const resp = await fetch('/api/custom-groups');
+        const data = await resp.json();
+        const groups = data.groups || [];
+        const div = document.getElementById('custom-groups-list');
+        if (!groups.length) {
+            div.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">No custom groups yet. Create one above!</div>';
+            return;
+        }
+        div.innerHTML = groups.map(g => `
+            <div class="custom-card">
+                <div style="flex:1">
+                    <div class="custom-card-name">${g.name}</div>
+                    <div class="custom-card-tickers">${g.tickers.length} stocks: ${g.tickers.join(', ')}</div>
+                </div>
+                <div class="custom-card-actions">
+                    <button class="ctrl-btn ctrl-btn-primary" onclick="viewCustomGroup('${g.name.replace(/'/g,"\\'")}')">View</button>
+                    <button class="ctrl-btn" style="background:var(--red-bg);border-color:#7f1d1d44;color:var(--red)" onclick="deleteCustomGroup('${g.name.replace(/'/g,"\\'")}')">✕</button>
+                </div>
+            </div>
+        `).join('');
+    } catch(e) {
+        document.getElementById('custom-groups-list').innerHTML = `<div style="color:var(--red);padding:20px">Error: ${e.message}</div>`;
+    }
+}
+
+async function createCustomGroup() {
+    const name = document.getElementById('cg-name').value.trim();
+    const tickers = document.getElementById('cg-tickers').value.split(',').map(t => t.trim()).filter(Boolean);
+    if (!name || !tickers.length) { alert('Enter name and tickers'); return; }
+    await fetch('/api/custom-groups', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name, tickers})});
+    document.getElementById('cg-name').value = '';
+    document.getElementById('cg-tickers').value = '';
+    loadCustomGroups();
+}
+
+async function deleteCustomGroup(name) {
+    if (!confirm(`Delete "${name}"?`)) return;
+    await fetch(`/api/custom-groups/${encodeURIComponent(name)}`, {method:'DELETE'});
+    loadCustomGroups();
+}
+
+async function viewCustomGroup(name) {
+    const modal = document.getElementById('detail-modal');
+    modal.classList.add('active');
+    document.getElementById('modal-title').textContent = name;
+    document.getElementById('modal-stats').innerHTML = '<div class="loading" style="padding:10px"><div class="spinner"></div> Loading...</div>';
+    document.getElementById('modal-members').innerHTML = '';
+    try {
+        const resp = await fetch(`/api/custom-groups/${encodeURIComponent(name)}/metrics`);
+        const detail = await resp.json();
+        document.getElementById('modal-stats').innerHTML = `
+            <div class="stat-card"><div class="stat-label">RS Score</div><div class="stat-value ${detail.rsScore>0?'pos':'neg'}">${(detail.rsScore||0).toFixed(1)}</div></div>
+            <div class="stat-card"><div class="stat-label">Breadth</div><div class="stat-value blue">${(detail.breadthScore||0).toFixed(0)}</div></div>
+            <div class="stat-card"><div class="stat-label">Stocks</div><div class="stat-value">${detail.stockCount||0}</div></div>
+        `;
+        const members = detail.members || [];
+        document.getElementById('modal-members').innerHTML = `
+            <table><thead><tr><th>Symbol</th><th>Close</th><th>Day %</th><th>From 52WH</th></tr></thead>
+            <tbody>${members.map(m => `<tr>
+                <td style="font-weight:600">${m.symbol}</td><td>₹${m.close}</td>
+                <td class="${(m.dayChangePct||0)>0?'pos':'neg'}" style="font-weight:600">${(m.dayChangePct||0).toFixed(2)}%</td>
+                <td class="neg">${(m.pctFrom52wHigh||0).toFixed(1)}%</td>
+            </tr>`).join('')}</tbody></table>
+        `;
+    } catch(e) {
+        document.getElementById('modal-stats').innerHTML = `<div style="color:var(--red);padding:10px">Error: ${e.message}</div>`;
+    }
+}
+
+function drawRotationMatrix() {
+    const canvas = document.getElementById('rotation-canvas');
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = 750 * dpr; canvas.height = 520 * dpr;
+    canvas.style.width = '750px'; canvas.style.height = '520px';
+    ctx.scale(dpr, dpr);
+    const W = 750, H = 520;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#0f1623';
+    ctx.fillRect(0, 0, W, H);
+
+    if (!allGroups.length) { ctx.fillStyle='#64748b'; ctx.font='13px sans-serif'; ctx.fillText('Loading...', W/2-30, H/2); return; }
+
+    const pad = 55;
+
+    // Axes
+    ctx.strokeStyle = '#1a2840'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, H-pad); ctx.lineTo(W-pad, H-pad); ctx.stroke();
+
+    // Quadrant dividers
+    const midX = (pad + W - pad) / 2;
+    const midY = (pad + H - pad) / 2;
+    ctx.strokeStyle = '#1a2840';
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(midX, pad); ctx.lineTo(midX, H-pad); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad, midY); ctx.lineTo(W-pad, midY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Quadrant fills
+    ctx.globalAlpha = 0.04;
+    ctx.fillStyle = '#22c55e'; ctx.fillRect(midX, pad, W-pad-midX, midY-pad);
+    ctx.fillStyle = '#f59e0b'; ctx.fillRect(pad, pad, midX-pad, midY-pad);
+    ctx.fillStyle = '#ef4444'; ctx.fillRect(pad, midY, midX-pad, H-pad-midY);
+    ctx.fillStyle = '#64748b'; ctx.fillRect(midX, midY, W-pad-midX, H-pad-midY);
+    ctx.globalAlpha = 1;
+
+    // Quadrant labels
+    ctx.font = 'bold 11px -apple-system, sans-serif';
+    ctx.fillStyle = '#22c55e'; ctx.fillText('LEADING ↗', W-pad-70, pad+16);
+    ctx.fillStyle = '#f59e0b'; ctx.fillText('IMPROVING ↑', pad+6, pad+16);
+    ctx.fillStyle = '#ef4444'; ctx.fillText('LAGGING ↙', pad+6, H-pad-8);
+    ctx.fillStyle = '#64748b'; ctx.fillText('WEAKENING ↓', W-pad-80, H-pad-8);
+
+    // Axis labels
+    ctx.fillStyle = '#475569'; ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillText('RS Score →', W/2-30, H-12);
+    ctx.save(); ctx.translate(14, H/2+25); ctx.rotate(-Math.PI/2); ctx.fillText('Breadth Score →', 0, 0); ctx.restore();
+
+    // Data
+    const rss = allGroups.map(g => g.rsScore || 0);
+    const brs = allGroups.map(g => g.breadthScore || 0);
+    const rsMin = Math.min(...rss)-3, rsMax = Math.max(...rss)+3;
+    const brMin = Math.min(...brs)-3, brMax = Math.max(...brs)+3;
+
+    allGroups.forEach(g => {
+        const x = pad + ((g.rsScore||0) - rsMin) / (rsMax - rsMin) * (W - 2*pad);
+        const y = (H - pad) - ((g.breadthScore||0) - brMin) / (brMax - brMin) * (H - 2*pad);
+        const r = Math.max(4, Math.min(12, (g.stockCount||2) / 2));
+
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+        let col;
+        if (g.rsScore > 0 && g.breadthScore > 50) col = '#22c55e';
+        else if (g.rsScore < 0 && g.breadthScore < 50) col = '#ef4444';
+        else if (g.rsScore > 0) col = '#64748b';
+        else col = '#f59e0b';
+        ctx.globalAlpha = 0.7;
+        ctx.fillStyle = col;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        if (g.rsRank <= 5 || g.rsRank >= allGroups.length - 3) {
+            ctx.fillStyle = '#c9d1d9';
+            ctx.font = '9px -apple-system, sans-serif';
+            ctx.fillText(g.group.substring(0, 14), x + r + 3, y - 3);
+        }
+    });
+}
+
+function refreshData() {
+    // Force a server-side recompute, then re-fetch so the user sees prices
+    // refreshed from the latest CSV cache immediately.
+    const staleEl = document.getElementById('stale-warning');
+    if (staleEl) {
+        staleEl.innerHTML = '⏳ Forcing OHLCV refresh (pulling today\'s closes) — can take 30-120s on first run after market close…';
+        staleEl.style.display = '';
+        staleEl.style.background = 'var(--yellow-bg)';
+        staleEl.style.color = 'var(--yellow)';
+    }
+    fetch('/api/industry-groups/refresh', {method: 'POST'})
+        .catch(() => {})  // non-fatal — we still re-fetch below
+        .finally(() => {
+            // Poll for up to ~3 minutes: the OHLCV refresh can take 30-180s
+            // for all NSE symbols, and the industry-groups recompute kicks in
+            // only AFTER that completes. Poll every 5s; stop once bgRefreshing
+            // flips false AND we've seen at least one fresh snapshot.
+            const started = Date.now();
+            const MAX_MS = 3 * 60 * 1000;
+            let sawRunning = false;
+            const poll = () => {
+                if (Date.now() - started > MAX_MS) return;
+                silentRefresh().then(() => {
+                    // Re-read the banner text we just set in silentRefresh;
+                    // if an OHLCV refresh started, keep polling longer.
+                    const bgNow = document.getElementById('stale-warning')?.innerHTML || '';
+                    if (bgNow.includes('Updating')) sawRunning = true;
+                    // Stop early once we've seen a run complete
+                    if (sawRunning && !bgNow.includes('Updating')) return;
+                    setTimeout(poll, 5000);
+                });
+            };
+            fetchGroups();
+            setTimeout(poll, 4000);
+        });
+}
+
+// Init
+fetchGroups();
+document.getElementById('detail-modal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>
+

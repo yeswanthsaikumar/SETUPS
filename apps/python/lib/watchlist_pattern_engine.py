@@ -158,13 +158,32 @@ def fetch_prices(symbol: str, market: str = "india", days: int = 504) -> dict | 
     cache_key = f"prices_{yf_sym}_{days}"
     cached = _cache_load(cache_key, _CACHE_TTL_PRICE)
     if cached:
-        # Validate cache is fresh through today — if last date is > 5 calendar days old, re-fetch
+        # Validate cache is fresh through today. Previously this used a
+        # 5-calendar-day threshold which let e.g. a Friday close satisfy a
+        # Wednesday request (Fri→Wed = 5 cal days, 3 biz days). For the
+        # ^NSEI benchmark that caused the RS table to show "Nifty asof
+        # 2026-04-17" when today was 2026-04-21. Now we fall through if the
+        # gap in *business days* is >= 1 — any missed trading day invalidates.
         cached_dates = cached.get("dates", [])
         if cached_dates:
-            last_dt = datetime.strptime(cached_dates[-1], "%Y-%m-%d")
-            if (datetime.now() - last_dt).days > 5:
-                pass  # stale — fall through to re-fetch
-            else:
+            try:
+                last_dt = datetime.strptime(cached_dates[-1], "%Y-%m-%d").date()
+                today = datetime.now().date()
+                gap_days = (today - last_dt).days
+                if gap_days > 0:
+                    biz_gap = sum(
+                        1 for d in range(1, gap_days + 1)
+                        if (last_dt + timedelta(days=d)).weekday() < 5
+                    )
+                    if biz_gap > 0:
+                        # stale — fall through to re-fetch
+                        pass
+                    else:
+                        return cached
+                else:
+                    return cached
+            except Exception:
+                # On any parse error, trust the TTL load and return cache.
                 return cached
 
     # Groww-only gate: for Indian stocks, forbid yfinance live fetch here.
