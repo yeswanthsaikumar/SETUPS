@@ -1064,6 +1064,286 @@ def industry_groups_page() -> FileResponse:
     return FileResponse(INDUSTRY_GROUPS_UI)
 
 
+# ── Trading Playbook (daily read) ────────────────────────────────────────────
+# Serves docs/TRADING_PLAYBOOK.md (and its evidence companion) through three
+# surfaces:
+#   GET /playbook                         → styled reader UI (?doc=evidence to
+#                                            load the companion document)
+#   GET /api/playbook/markdown[?doc=…]    → raw markdown source
+#   GET /api/playbook/download[?doc=…]    → self-contained HTML, print-to-PDF
+_PLAYBOOK_UI_PATH = ROOT / "apps" / "web" / "ui" / "playbook.html"
+_PLAYBOOK_DOCS: dict[str, dict] = {
+    "playbook": {
+        "path":  ROOT / "docs" / "TRADING_PLAYBOOK.md",
+        "title": "The Trading Playbook",
+        "dek":   "Why chart patterns work, which ones actually pay, and the "
+                 "distilled philosophies of the traders who pioneered them.",
+        "file":  "Trading_Playbook.html",
+    },
+    "evidence": {
+        "path":  ROOT / "docs" / "TRADING_PLAYBOOK_EVIDENCE.md",
+        "title": "Trading Playbook — Evidence",
+        "dek":   "Hard statistics, audited track records, and academic research "
+                 "behind every claim in the playbook.",
+        "file":  "Trading_Playbook_Evidence.html",
+    },
+}
+
+
+def _resolve_playbook_doc(doc: str | None) -> dict:
+    key = (doc or "playbook").strip().lower()
+    if key not in _PLAYBOOK_DOCS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"unknown doc {key!r}; expected one of "
+                   f"{sorted(_PLAYBOOK_DOCS)}",
+        )
+    meta = _PLAYBOOK_DOCS[key]
+    if not meta["path"].exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"source markdown missing: {meta['path'].name}",
+        )
+    return meta
+
+
+@app.get("/playbook")
+def playbook_page() -> FileResponse:
+    """Serve the reader UI. The client picks the doc via ?doc=evidence."""
+    if not _PLAYBOOK_UI_PATH.exists():
+        raise HTTPException(status_code=404, detail="Playbook UI not found")
+    return FileResponse(_PLAYBOOK_UI_PATH, media_type="text/html")
+
+
+@app.get("/api/playbook/markdown")
+def playbook_markdown(doc: str = "playbook") -> Response:
+    """Raw markdown source (default: playbook; doc=evidence for companion)."""
+    meta = _resolve_playbook_doc(doc)
+    text = meta["path"].read_text(encoding="utf-8")
+    return Response(
+        content=text,
+        media_type="text/markdown; charset=utf-8",
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.get("/api/playbook/meta")
+def playbook_meta() -> dict:
+    """List available playbook documents so the UI can render a switcher."""
+    return {
+        "docs": [
+            {"key": k, "title": v["title"], "dek": v["dek"]}
+            for k, v in _PLAYBOOK_DOCS.items()
+            if v["path"].exists()
+        ],
+    }
+
+
+@app.get("/api/playbook/download")
+def playbook_download(doc: str = "playbook") -> Response:
+    """Self-contained HTML (no network). Save-as-PDF friendly."""
+    meta = _resolve_playbook_doc(doc)
+    md = meta["path"].read_text(encoding="utf-8")
+
+    # Tiny server-side markdown → HTML. Handles the subset the playbook uses:
+    # # h1 / ## h2 / ### h3 / #### h4, bold/italic/code, blockquote, ordered +
+    # unordered lists, fenced code, horizontal rule, GFM tables, inline links.
+    # Good enough to produce a clean printable artefact without any third-
+    # party deps on the server side.
+    import html as _html
+    import re as _re
+
+    def _inline(s: str) -> str:
+        s = _html.escape(s)
+        # code spans first (protect them from further subs)
+        s = _re.sub(r"`([^`]+)`", r"<code>\1</code>", s)
+        # bold, italic
+        s = _re.sub(r"\*\*([^\*]+)\*\*", r"<strong>\1</strong>", s)
+        s = _re.sub(r"(?<!\w)\*([^\*]+)\*", r"<em>\1</em>", s)
+        s = _re.sub(r"(?<!_)_([^_]+)_(?!\w)", r"<em>\1</em>", s)
+        # links [text](url)
+        s = _re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', s)
+        return s
+
+    def _slug(text: str) -> str:
+        t = _re.sub(r"<[^>]+>", "", text).lower()
+        t = _re.sub(r"[^\w\s-]", "", t).strip()
+        return _re.sub(r"\s+", "-", t) or "section"
+
+    lines = md.splitlines()
+    out: list[str] = []
+    i = 0
+    in_code = False
+    while i < len(lines):
+        ln = lines[i]
+        stripped = ln.rstrip()
+        if stripped.startswith("```"):
+            if not in_code:
+                out.append("<pre><code>")
+                in_code = True
+            else:
+                out.append("</code></pre>")
+                in_code = False
+            i += 1
+            continue
+        if in_code:
+            out.append(_html.escape(ln))
+            i += 1
+            continue
+        if not stripped.strip():
+            out.append("")
+            i += 1
+            continue
+        # Horizontal rule
+        if _re.match(r"^\s*---+\s*$", stripped):
+            out.append("<hr/>")
+            i += 1
+            continue
+        # Headings
+        m = _re.match(r"^(#{1,6})\s+(.*)$", stripped)
+        if m:
+            level = len(m.group(1))
+            text = _inline(m.group(2).rstrip("#").strip())
+            slug = _slug(text)
+            out.append(f'<h{level} id="{slug}">{text}</h{level}>')
+            i += 1
+            continue
+        # Blockquote (consecutive lines starting with >)
+        if stripped.startswith(">"):
+            block = []
+            while i < len(lines) and lines[i].startswith(">"):
+                block.append(_inline(lines[i].lstrip("> ").rstrip()))
+                i += 1
+            out.append("<blockquote><p>" + "<br/>".join(block) + "</p></blockquote>")
+            continue
+        # GFM table: header | separator | rows
+        if "|" in stripped and i + 1 < len(lines) and _re.match(
+                r"^\s*\|?\s*:?-{2,}", lines[i + 1]):
+            header_cells = [c.strip() for c in stripped.strip("|").split("|")]
+            i += 2  # skip separator row
+            rows: list[list[str]] = []
+            while i < len(lines) and "|" in lines[i] and lines[i].strip():
+                rows.append([c.strip() for c in lines[i].strip().strip("|").split("|")])
+                i += 1
+            th = "".join(f"<th>{_inline(c)}</th>" for c in header_cells)
+            tr_list = []
+            for r in rows:
+                td = "".join(f"<td>{_inline(c)}</td>" for c in r)
+                tr_list.append(f"<tr>{td}</tr>")
+            out.append(f"<table><thead><tr>{th}</tr></thead><tbody>"
+                       f"{''.join(tr_list)}</tbody></table>")
+            continue
+        # Ordered list
+        m = _re.match(r"^(\s*)(\d+)\.\s+(.*)$", stripped)
+        if m:
+            items = []
+            while i < len(lines):
+                mm = _re.match(r"^(\s*)(\d+)\.\s+(.*)$", lines[i])
+                if not mm:
+                    break
+                items.append(_inline(mm.group(3)))
+                i += 1
+            out.append("<ol>" + "".join(f"<li>{x}</li>" for x in items) + "</ol>")
+            continue
+        # Unordered list
+        m = _re.match(r"^(\s*)[\-\*]\s+(.*)$", stripped)
+        if m:
+            items = []
+            while i < len(lines):
+                mm = _re.match(r"^(\s*)[\-\*]\s+(.*)$", lines[i])
+                if not mm:
+                    break
+                items.append(_inline(mm.group(2)))
+                i += 1
+            out.append("<ul>" + "".join(f"<li>{x}</li>" for x in items) + "</ul>")
+            continue
+        # Paragraph (collapse consecutive non-blank non-special lines)
+        para = [_inline(stripped)]
+        i += 1
+        while i < len(lines):
+            nxt = lines[i]
+            if not nxt.strip():
+                break
+            if _re.match(r"^(#{1,6}\s|>|\s*---+\s*$|```|\s*[\-\*]\s|\s*\d+\.\s)",
+                         nxt):
+                break
+            if "|" in nxt and i + 1 < len(lines) and _re.match(
+                    r"^\s*\|?\s*:?-{2,}", lines[i + 1]):
+                break
+            para.append(_inline(nxt.rstrip()))
+            i += 1
+        out.append("<p>" + " ".join(para) + "</p>")
+
+    body_html = "\n".join(out)
+
+    # Print-friendly shell. No external CSS / JS so it works offline forever.
+    page = f"""<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/>
+<title>{_html.escape(meta['title'])} — Printable Edition</title>
+<style>
+  @page {{ size: A4; margin: 18mm 16mm 20mm; }}
+  html,body{{margin:0;padding:0;background:#fff;color:#111;
+    font-family:Georgia,'Times New Roman',serif;font-size:11pt;line-height:1.55}}
+  .container{{max-width:760px;margin:24px auto;padding:0 28px}}
+  h1,h2,h3,h4{{font-family:Georgia,serif;color:#111;letter-spacing:-.2px}}
+  h1{{font-size:26pt;border-bottom:2px solid #b8830c;padding-bottom:8px;margin:28pt 0 14pt;page-break-before:always}}
+  h1:first-of-type{{page-break-before:auto;margin-top:0;text-align:center;border:none;font-size:32pt}}
+  h2{{font-size:16pt;color:#8a5a00;margin:22pt 0 8pt}}
+  h3{{font-size:13pt;margin:16pt 0 6pt}}
+  h4{{font-size:11pt;color:#444;margin:12pt 0 4pt}}
+  p{{margin:0 0 10pt}}
+  ul,ol{{margin:0 0 10pt;padding-left:22pt}}
+  li{{margin:3pt 0}}
+  blockquote{{margin:10pt 0;padding:8pt 14pt;border-left:3px solid #b8830c;
+    background:#faf4e4;font-style:italic;color:#444}}
+  code{{font-family:Menlo,Consolas,monospace;background:#f5f2ea;padding:1pt 4pt;
+    border-radius:2pt;font-size:.85em}}
+  pre{{background:#f5f2ea;border:1px solid #e2dccc;border-radius:4pt;padding:10pt;
+    overflow:auto;page-break-inside:avoid}}
+  pre code{{background:none;padding:0;font-size:.82em}}
+  table{{border-collapse:collapse;width:100%;margin:10pt 0;font-family:Arial,sans-serif;
+    font-size:.9em;page-break-inside:avoid}}
+  th,td{{border:1px solid #d9d6cc;padding:6pt 8pt;text-align:left;vertical-align:top}}
+  th{{background:#f5f2ea;color:#8a5a00;font-weight:700;text-transform:uppercase;font-size:.85em;letter-spacing:.4px}}
+  hr{{border:0;border-top:1px solid #d9d6cc;margin:18pt 0}}
+  a{{color:#1d4ed8;text-decoration:none}}
+  .cover{{text-align:center;margin:0 0 26pt;padding:0 0 20pt;border-bottom:1px solid #d9d6cc}}
+  .cover .eyebrow{{font-family:Arial,sans-serif;letter-spacing:3px;text-transform:uppercase;
+    color:#b8830c;font-size:9pt;font-weight:700;margin-bottom:8pt}}
+  .cover .dek{{font-style:italic;color:#555;font-size:12pt;max-width:520px;margin:10pt auto 0;line-height:1.45}}
+  .meta{{font-family:Arial,sans-serif;color:#888;font-size:9pt;margin-top:12pt}}
+  .print-hint{{text-align:center;background:#fff5d6;border:1px solid #e8c566;
+    border-radius:6pt;padding:10pt 14pt;margin:14pt 0;font-family:Arial,sans-serif;font-size:10pt;color:#7a5a00}}
+  @media print {{ .print-hint {{ display:none }} }}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="cover">
+    <div class="eyebrow">SETUPS · Offline Edition</div>
+    <div style="font-size:30pt;font-weight:700;color:#111;font-family:Georgia,serif">{_html.escape(meta['title'])}</div>
+    <div class="dek">{_html.escape(meta['dek'])}</div>
+    <div class="meta">Generated {_html.escape(datetime.now().strftime('%B %d, %Y'))}
+      · source: <code>docs/{_html.escape(meta['path'].name)}</code></div>
+  </div>
+  <div class="print-hint">💡 This is a self-contained printable copy.
+    Press <strong>Cmd+P</strong> (Mac) or <strong>Ctrl+P</strong> (Windows)
+    and choose <em>Save as PDF</em> for a permanent offline reference.</div>
+  {body_html}
+</div>
+</body></html>"""
+
+    return Response(
+        content=page,
+        media_type="text/html; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="{meta["file"]}"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
 # ── Industry Groups API ──────────────────────────────────────────────────────
 # Provides live industry-level RS ranking, breadth, 52WH counts, volume profiles,
 # custom group management, and group detail drilldown.

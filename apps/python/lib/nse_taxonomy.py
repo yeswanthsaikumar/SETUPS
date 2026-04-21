@@ -276,7 +276,11 @@ def reload() -> None:
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def _clean(symbol: str) -> str:
-    return symbol.replace(".NS", "").replace(".BO", "").strip().upper()
+    # Uppercase FIRST so lowercase .ns / .bo suffixes are also stripped —
+    # previously "reliance.ns" survived as "RELIANCE.NS" and silently missed
+    # the map lookup.
+    s = (symbol or "").strip().upper()
+    return s.replace(".NS", "").replace(".BO", "").strip()
 
 
 def all_tickers() -> list[str]:
