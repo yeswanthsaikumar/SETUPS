@@ -739,8 +739,26 @@ def refresh_symbol(sym, cache_path, last_date, force=False, dry_run=False):
     time.sleep(RATE_LIMIT_DELAY)
 
     if not new_bars:
-        if legacy and existing:
-            _write_cache(cache_path, existing)
+        # Even with no new bars, a today-dated intraday row may already be
+        # persisted in `existing` from an earlier scan (e.g. the very first
+        # pre-market-close write before this safeguard existed). Strip it
+        # so downstream code never sees an unfinalized OHLCV row.
+        now_ist_now = datetime.datetime.now(IST)
+        close_cutoff_now = now_ist_now.replace(
+            hour=NSE_CLOSE_HOUR, minute=NSE_CLOSE_MIN, second=0, microsecond=0)
+        trimmed_existing = existing
+        if now_ist_now < close_cutoff_now and existing:
+            today_str = now_ist_now.date().isoformat()
+            trimmed_existing = [b for b in existing if b.get("date") != today_str]
+            if len(trimmed_existing) != len(existing):
+                print(f"  ⏳ {sym}: dropped {len(existing) - len(trimmed_existing)} "
+                      f"stale intraday {today_str} row(s) from cache", flush=True)
+                _write_cache(cache_path, trimmed_existing)
+                result["last_date"] = (
+                    trimmed_existing[-1]["date"] if trimmed_existing else last_date)
+        if legacy and trimmed_existing:
+            if trimmed_existing is existing:
+                _write_cache(cache_path, existing)
             for lf in legacy:
                 try:
                     lf.unlink()

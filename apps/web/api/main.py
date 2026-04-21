@@ -471,6 +471,81 @@ _cache_refresher = BackgroundCacheRefresher()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  PERIODIC CACHE REFRESH SCHEDULER
+#  Triggers a full OHLCV cache refresh every N seconds (default 3600 = 1 hour).
+#  The underlying BackgroundCacheRefresher._run also invalidates the
+#  industry-groups cache and RS-universe scan cache at the end, so every tick
+#  transitively refreshes those derived datasets too.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class PeriodicCacheRefreshScheduler:
+    """Fires BackgroundCacheRefresher.start() on a fixed interval.
+
+    • Interval via env SETUPS_REFRESH_INTERVAL_SECONDS (default 3600).
+    • Disabled via env SETUPS_DISABLE_PERIODIC_REFRESH=true.
+    • Skips a tick if a refresh is already running (no overlap).
+    • Daemon thread; stop() is idempotent.
+    """
+
+    def __init__(self, refresher: "BackgroundCacheRefresher",
+                 interval_seconds: int = 3600):
+        self._refresher = refresher
+        self._interval = max(60, int(interval_seconds))  # floor 60s
+        self._stop_evt = threading.Event()
+        self._thread: Optional[threading.Thread] = None
+        self._last_tick_at: Optional[str] = None
+        self._tick_count: int = 0
+
+    @property
+    def is_running(self) -> bool:
+        return self._thread is not None and self._thread.is_alive()
+
+    def status_dict(self) -> dict:
+        return {
+            "running": self.is_running,
+            "intervalSeconds": self._interval,
+            "lastTickAt": self._last_tick_at,
+            "tickCount": self._tick_count,
+        }
+
+    def start(self) -> None:
+        if self.is_running:
+            return
+        self._stop_evt.clear()
+        self._thread = threading.Thread(
+            target=self._loop, name="periodic-cache-refresh", daemon=True)
+        self._thread.start()
+        print(f"⏱  Periodic cache refresh scheduled every "
+              f"{self._interval}s ({self._interval // 60} min)", flush=True)
+
+    def stop(self) -> None:
+        self._stop_evt.set()
+
+    def _loop(self) -> None:
+        # Wait one full interval before the first scheduled tick — the
+        # startup refresh already kicked off once in lifespan().
+        while not self._stop_evt.wait(self._interval):
+            try:
+                if self._refresher.is_running:
+                    print("⏱  Periodic tick skipped — refresh still running",
+                          flush=True)
+                    continue
+                self._tick_count += 1
+                self._last_tick_at = datetime.now().isoformat(timespec="seconds")
+                print(f"⏱  Periodic cache refresh tick #{self._tick_count} "
+                      f"at {self._last_tick_at}", flush=True)
+                self._refresher.start(indian_only=True, workers=4, force=False)
+            except Exception as e:
+                print(f"⚠ Periodic refresh tick error: {e}", flush=True)
+
+
+_periodic_refresher = PeriodicCacheRefreshScheduler(
+    _cache_refresher,
+    interval_seconds=int(os.environ.get("SETUPS_REFRESH_INTERVAL_SECONDS", "3600")),
+)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  SELECTIVE SYMBOL REFRESH (refresh specific symbols inline, thread-safe)
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -526,6 +601,12 @@ def _is_price_stale(last_date_str: str, csv_path: Path | None = None) -> bool:
         except OSError:
             return False
         if now_ist >= close_cutoff and mtime < close_cutoff:
+            return True
+        # Pre-close: if the file was written earlier today (not in the last
+        # few minutes), treat as stale so reads trigger a refresh that will
+        # drop the in-progress bar and pull the finalized prior-day close.
+        if now_ist < close_cutoff and mtime.date() == today \
+                and (now_ist - mtime).total_seconds() > 300:
             return True
     return False
 
@@ -596,6 +677,14 @@ async def lifespan(app: FastAPI):
     else:
         print("⏭  Startup cache refresh skipped (env)", flush=True)
 
+    # ── PERIODIC HOURLY CACHE REFRESH ──
+    # Fires BackgroundCacheRefresher every SETUPS_REFRESH_INTERVAL_SECONDS
+    # (default 3600). Refresh also invalidates industry-groups + RS-scan caches.
+    if os.environ.get("SETUPS_DISABLE_PERIODIC_REFRESH", "").lower() in ("true", "1", "yes"):
+        print("⏭  Periodic cache refresh disabled (env)", flush=True)
+    else:
+        _periodic_refresher.start()
+
     # ── AUTO-START BREAKOUT ALERT SCANNER ──
     # Wire up dependencies and start the background scanner so alerts
     # are sent automatically (Telegram + Gmail) without manual trigger.
@@ -625,6 +714,10 @@ async def lifespan(app: FastAPI):
 
     # ── SHUTDOWN ──
     _breakout_scanner.stop()
+    try:
+        _periodic_refresher.stop()
+    except Exception:
+        pass
     print("👋 Shutting down…", flush=True)
 
 
@@ -1593,7 +1686,9 @@ def cache_refresh_status() -> dict:
     Get the current status of the background OHLCV cache refresh.
     Poll this endpoint to track progress.
     """
-    return _cache_refresher.status_dict()
+    status = _cache_refresher.status_dict()
+    status["periodic"] = _periodic_refresher.status_dict()
+    return status
 
 
 @app.post("/api/cache/refresh")
