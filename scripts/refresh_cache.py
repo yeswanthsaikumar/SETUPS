@@ -229,6 +229,15 @@ def _fetch_bars(symbol: str, from_date: str | None = None) -> list[dict]:
         bars = _fetch_groww(symbol, from_date)
         if bars:
             return _strip_intraday_today(bars)
+        # 0b. Groww live-quote fallback — synthesise today's bar when the
+        # historical endpoint is forbidden (common on basic API plans) or
+        # simply returned nothing. Only useful when we're post-market on a
+        # weekday and the CSV is missing at most a few sessions.
+        quote_bar = _fetch_groww_today_bar(symbol)
+        if quote_bar:
+            # Only accept if it's actually newer than what we already have.
+            if not from_date or quote_bar[0]["date"] > from_date:
+                return _strip_intraday_today(quote_bar)
 
     # Groww-only gate: for Indian stocks, stop here if fallbacks are forbidden.
     try:
@@ -352,6 +361,68 @@ def _fetch_groww(symbol, from_date):
                 continue
 
         return sorted(bars, key=lambda b: b["date"])
+    except Exception:
+        return []
+
+
+# ── Source 0b: Groww live quote (today's bar fallback) ─────────────────────
+#
+# Groww's Developer API splits entitlements: `get_historical_candles` needs
+# a paid historical-data scope that many free/basic accounts don't have
+# (they get a 403 "Access forbidden for this request"). `get_quote` however
+# works on every account and returns today's session OHLC + last price +
+# cumulative volume — enough to synthesise today's daily bar.
+#
+# This fallback keeps the `postClose` (and any other incremental) refresh
+# working via Groww-only mode when the historical endpoint is forbidden,
+# instead of silently falling through to rate-limited Yahoo/NSE.
+
+def _fetch_groww_today_bar(symbol: str) -> list[dict]:
+    """Return [today_bar] synthesised from Groww `get_quote`, or [] on any
+    failure / if market hasn't produced a session yet.
+    """
+    try:
+        from groww_client import get_groww_client
+    except ImportError:
+        return []
+    client = get_groww_client()
+    if not client:
+        return []
+    try:
+        from growwapi import GrowwAPI
+        base_sym = symbol.replace(".NS", "").replace(".BO", "").upper()
+        _throttle()
+        q = client.get_quote(
+            trading_symbol=base_sym,
+            exchange=GrowwAPI.EXCHANGE_NSE,
+            segment=GrowwAPI.SEGMENT_CASH,
+            timeout=10,
+        )
+        if not isinstance(q, dict):
+            return []
+        ohlc = q.get("ohlc") or {}
+        o = ohlc.get("open")
+        h = ohlc.get("high")
+        lo = ohlc.get("low")
+        last = q.get("last_price")
+        vol = q.get("volume")
+        lt = q.get("last_trade_time")  # epoch seconds
+        if None in (o, h, lo, last, vol, lt):
+            return []
+        try:
+            o = float(o); h = float(h); lo = float(lo)
+            last = float(last); vol = int(float(vol)); lt = int(lt)
+        except (TypeError, ValueError):
+            return []
+        if min(o, h, lo, last) <= 0 or vol <= 0:
+            # Pre-open / no-trade session → skip, don't pollute cache
+            return []
+        ds = datetime.datetime.fromtimestamp(lt, IST).strftime("%Y-%m-%d")
+        # Safety: sanity check high/low envelope
+        hi = max(h, o, last)
+        low = min(lo, o, last)
+        return [dict(date=ds, open=round(o, 5), high=round(hi, 5),
+                     low=round(low, 5), close=round(last, 5), volume=vol)]
     except Exception:
         return []
 
