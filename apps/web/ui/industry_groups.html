@@ -227,19 +227,40 @@ async function fetchGroups() {
         const resp = await fetch('/api/industry-groups?min_stocks=2');
         const data = await resp.json();
         allGroups = data.groups || [];
+
+        // Cold start: server returned empty + bgRefreshing=true. Show a helpful
+        // message and poll every 3s until the first build lands (~5-15s).
+        if (allGroups.length === 0 && data.bgRefreshing) {
+            const loadingEl = document.getElementById('groups-loading');
+            loadingEl.innerHTML =
+                '<span class="spinner"></span>' +
+                '<span style="margin-left:10px">First-time build in progress… this takes ~10-20 seconds on cold start.</span>';
+            setTimeout(fetchGroups, 3000);
+            return;
+        }
+
         populateSectorFilter();
         filterGroups();
         renderStats();
-        // Show staleness warning if cache is old
-        const ageMin = data.cacheAgeSec ? Math.round(data.cacheAgeSec / 60) : null;
+        // Show staleness warning if cache is old OR a background refresh is in flight
+        const ageSec = data.cacheAgeSec;
+        const bg = data.bgRefreshing;
         const staleEl = document.getElementById('stale-warning');
         if (staleEl) {
-            if (ageMin !== null && ageMin > 30) {
+            if (bg) {
+                staleEl.innerHTML = '⏳ Recomputing with latest prices in background… will auto-update shortly.';
+                staleEl.style.display = '';
+            } else if (ageSec !== null && ageSec > 1800) {
+                const ageMin = Math.round(ageSec / 60);
                 const ageStr = ageMin > 60 ? Math.round(ageMin/60) + 'h ' + (ageMin%60) + 'm' : ageMin + 'm';
-                staleEl.innerHTML = '⚠️ Data is ' + ageStr + ' old. Refreshing in background…';
+                staleEl.innerHTML = '⚠️ Data is ' + ageStr + ' old. Click 🔄 Refresh to force update.';
                 staleEl.style.display = '';
             } else {
-                staleEl.style.display = 'none';
+                const stampedAt = data.cachedAt ? new Date(data.cachedAt * 1000).toLocaleTimeString() : '—';
+                staleEl.innerHTML = '✅ Last refreshed at ' + stampedAt + (ageSec !== null ? ' (' + ageSec + 's ago)' : '');
+                staleEl.style.display = '';
+                staleEl.style.background = 'transparent';
+                staleEl.style.color = 'var(--muted)';
             }
         }
         document.getElementById('groups-loading').style.display = 'none';
@@ -248,6 +269,60 @@ async function fetchGroups() {
         document.getElementById('groups-loading').innerHTML = `<span style="color:var(--red)">Error: ${e.message}</span>`;
     }
 }
+
+// ── Auto-refresh loop ─────────────────────────────────────────────────────
+// Silently re-fetch every 5 min while the tab is visible so prices stay live.
+// But — while an OHLCV refresh is running (pulling today's closes), poll every
+// 10s so the user sees the fresh numbers as soon as they land.
+let _fastPollTimer = null;
+async function silentRefresh() {
+    if (document.hidden) return;
+    try {
+        const resp = await fetch('/api/industry-groups?min_stocks=2');
+        const data = await resp.json();
+        allGroups = data.groups || [];
+        populateSectorFilter();
+        filterGroups();  // re-applies current filter + sort + renderTable
+        renderStats();
+        const staleEl = document.getElementById('stale-warning');
+        if (staleEl) {
+            const stampedAt = data.cachedAt ? new Date(data.cachedAt * 1000).toLocaleTimeString() : '—';
+            const ageSec = data.cacheAgeSec;
+            let msg = '';
+            if (data.ohlcvRefreshing) {
+                const p = data.ohlcvProgress || {};
+                const pctStr = p.total ? ` ${p.done}/${p.total} (${p.pct}%)` : '';
+                msg = '⏳ Pulling today\'s closes' + pctStr + '… table will auto-update when complete.';
+                staleEl.style.background = 'var(--yellow-bg)';
+                staleEl.style.color = 'var(--yellow)';
+            } else if (data.bgRefreshing) {
+                msg = '⏳ Recomputing… Last refreshed ' + stampedAt + (ageSec !== null ? ' (' + ageSec + 's ago)' : '');
+                staleEl.style.background = 'transparent';
+                staleEl.style.color = 'var(--muted)';
+            } else {
+                msg = '✅ Last refreshed at ' + stampedAt + (ageSec !== null ? ' (' + ageSec + 's ago)' : '');
+                staleEl.style.background = 'transparent';
+                staleEl.style.color = 'var(--muted)';
+            }
+            staleEl.innerHTML = msg;
+            staleEl.style.display = '';
+        }
+
+        // Fast-poll while OHLCV refresh is in flight.
+        if (data.ohlcvRefreshing || data.bgRefreshing) {
+            if (_fastPollTimer) clearTimeout(_fastPollTimer);
+            _fastPollTimer = setTimeout(silentRefresh, 10 * 1000);
+        } else if (_fastPollTimer) {
+            clearTimeout(_fastPollTimer);
+            _fastPollTimer = null;
+        }
+    } catch(_) { /* swallow — next tick will retry */ }
+}
+setInterval(silentRefresh, 5 * 60 * 1000);
+// Also refresh when the tab becomes visible after being hidden for a while.
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) silentRefresh();
+});
 
 function populateSectorFilter() {
     const sectors = [...new Set(allGroups.map(g => g.sector))].sort();
@@ -357,7 +432,7 @@ async function showDetail(groupName) {
 
     try {
         const [detailResp, rsResp] = await Promise.all([
-            fetch(`/api/industry-groups/${encodeURIComponent(groupName)}`),
+            fetch(`/api/industry-groups/${encodeURIComponent(groupName)}?fresh=true`),
             fetch(`/api/industry-groups/${encodeURIComponent(groupName)}/rs-history?days=120`)
         ]);
         const detail = await detailResp.json();
@@ -737,7 +812,42 @@ function drawRotationMatrix() {
     });
 }
 
-function refreshData() { fetchGroups(); }
+function refreshData() {
+    // Force a server-side recompute, then re-fetch so the user sees prices
+    // refreshed from the latest CSV cache immediately.
+    const staleEl = document.getElementById('stale-warning');
+    if (staleEl) {
+        staleEl.innerHTML = '⏳ Forcing OHLCV refresh (pulling today\'s closes) — can take 30-120s on first run after market close…';
+        staleEl.style.display = '';
+        staleEl.style.background = 'var(--yellow-bg)';
+        staleEl.style.color = 'var(--yellow)';
+    }
+    fetch('/api/industry-groups/refresh', {method: 'POST'})
+        .catch(() => {})  // non-fatal — we still re-fetch below
+        .finally(() => {
+            // Poll for up to ~3 minutes: the OHLCV refresh can take 30-180s
+            // for all NSE symbols, and the industry-groups recompute kicks in
+            // only AFTER that completes. Poll every 5s; stop once bgRefreshing
+            // flips false AND we've seen at least one fresh snapshot.
+            const started = Date.now();
+            const MAX_MS = 3 * 60 * 1000;
+            let sawRunning = false;
+            const poll = () => {
+                if (Date.now() - started > MAX_MS) return;
+                silentRefresh().then(() => {
+                    // Re-read the banner text we just set in silentRefresh;
+                    // if an OHLCV refresh started, keep polling longer.
+                    const bgNow = document.getElementById('stale-warning')?.innerHTML || '';
+                    if (bgNow.includes('Updating')) sawRunning = true;
+                    // Stop early once we've seen a run complete
+                    if (sawRunning && !bgNow.includes('Updating')) return;
+                    setTimeout(poll, 5000);
+                });
+            };
+            fetchGroups();
+            setTimeout(poll, 4000);
+        });
+}
 
 // Init
 fetchGroups();

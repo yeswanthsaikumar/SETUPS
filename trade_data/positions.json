@@ -34,9 +34,9 @@
       "rating": "A+",
       "notes": "Good base, piror 1x retuns ipo stock, group is moving",
       "entry_date": "2026-04-09",
-      "status": "PARTIAL",
-      "exit_price": null,
-      "exit_date": null,
+      "status": "CLOSED",
+      "exit_price": 871.5,
+      "exit_date": "2026-04-21",
       "tags": [],
       "partial_exits": [
         {
@@ -44,10 +44,16 @@
           "quantity": 650,
           "price": 861.0,
           "reason": "TRAIL"
+        },
+        {
+          "date": "2026-04-21",
+          "quantity": 650,
+          "price": 881.99,
+          "reason": "T2_HIT"
         }
       ],
-      "remaining_quantity": 650,
-      "realized_pl": 37700.0
+      "remaining_quantity": 0,
+      "realized_pl": 89043.5
     },
     {
       "id": "7abd3d6f",
@@ -147,18 +153,18 @@
       "name": "gujalkali",
       "entry": 653.78,
       "quantity": 2000,
-      "remaining_quantity": 1000,
+      "remaining_quantity": 0,
       "sl": 710.0,
       "t1": 0.0,
       "t2": 0.0,
       "t3": 0.0,
       "setup": "BULL_FLAG",
       "rating": "A+",
-      "notes": "",
+      "notes": "good risk reward, want to loop for high risk:reward setups this is moved and extended booked profits",
       "entry_date": "2026-04-15",
-      "status": "PARTIAL",
-      "exit_price": null,
-      "exit_date": null,
+      "status": "CLOSED",
+      "exit_price": 731.24,
+      "exit_date": "2026-04-21",
       "tags": [],
       "partial_exits": [
         {
@@ -166,9 +172,15 @@
           "quantity": 1000,
           "price": 731.27,
           "reason": "T2_HIT"
+        },
+        {
+          "date": "2026-04-21",
+          "quantity": 1000,
+          "price": 731.21,
+          "reason": "MANUAL"
         }
       ],
-      "realized_pl": 77490.0
+      "realized_pl": 154920.0
     },
     {
       "id": "f32395f2",
@@ -285,20 +297,21 @@
       "name": "atherenergy",
       "entry": 877.0,
       "quantity": 1400,
-      "remaining_quantity": null,
+      "remaining_quantity": 0,
       "sl": 840.0,
       "t1": 0.0,
       "t2": 0.0,
       "t3": 0.0,
       "setup": "MEAN_REVERSION",
       "rating": "A",
-      "notes": "10 ema stop loss",
+      "notes": "move is not that strong",
       "entry_date": "2026-04-20",
-      "status": "OPEN",
-      "exit_price": null,
-      "exit_date": null,
+      "status": "CLOSED",
+      "exit_price": 883.5,
+      "exit_date": "2026-04-21",
       "tags": [],
-      "partial_exits": []
+      "partial_exits": [],
+      "realized_pl": 9100.0
     },
     {
       "id": "2acd5a53",
@@ -320,8 +333,72 @@
       "exit_date": null,
       "tags": [],
       "partial_exits": []
+    },
+    {
+      "id": "184a2636",
+      "symbol": "AVANTIFEED",
+      "name": "avantifeed",
+      "entry": 1565.0,
+      "quantity": 1000,
+      "remaining_quantity": 0,
+      "sl": 1540.0,
+      "t1": 0.0,
+      "t2": 0.0,
+      "t3": 0.0,
+      "setup": "BREAKOUT",
+      "rating": "B",
+      "notes": "found a better opportunity ",
+      "entry_date": "2026-04-21",
+      "status": "CLOSED",
+      "exit_price": 1564.0,
+      "exit_date": "2026-04-21",
+      "tags": [],
+      "partial_exits": [],
+      "realized_pl": -1000.0
+    },
+    {
+      "id": "7df3928e",
+      "symbol": "GROWW",
+      "name": "groww",
+      "entry": 197.86,
+      "quantity": 6150,
+      "remaining_quantity": null,
+      "sl": 193.15,
+      "t1": 0.0,
+      "t2": 0.0,
+      "t3": 0.0,
+      "setup": "MEAN_REVERSION",
+      "rating": "A",
+      "notes": "bounce from 50 ema",
+      "entry_date": "2026-04-21",
+      "status": "OPEN",
+      "exit_price": null,
+      "exit_date": null,
+      "tags": [],
+      "partial_exits": []
+    },
+    {
+      "id": "41f3fc9c",
+      "symbol": "MTARTECH",
+      "name": "mtartech",
+      "entry": 5092.0,
+      "quantity": 170,
+      "remaining_quantity": null,
+      "sl": 5000.0,
+      "t1": 0.0,
+      "t2": 0.0,
+      "t3": 0.0,
+      "setup": "RANGE_EXPANSION",
+      "rating": "A",
+      "notes": "range expansion on hourly time frame tight stop loss nad ",
+      "entry_date": "2026-04-21",
+      "status": "OPEN",
+      "exit_price": null,
+      "exit_date": null,
+      "tags": [],
+      "partial_exits": []
     }
   ],
   "created": "2026-04-14T11:55:48.601550",
-  "lastUpdated": "2026-04-20T22:33:35.852046"
+  "lastUpdated": "2026-04-21T10:07:42.207352"
 }

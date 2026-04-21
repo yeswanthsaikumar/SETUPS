@@ -397,6 +397,26 @@ class BackgroundCacheRefresher:
             # Auto-regenerate analysis dashboards after cache refresh
             self._auto_regenerate_dashboards()
 
+            # Invalidate industry-groups cache so /api/industry-groups rebuilds
+            # using freshly-landed OHLCV data. Runs in a background thread so
+            # it doesn't block the HTTP worker.
+            try:
+                global _INDUSTRY_CACHE_TS
+                _INDUSTRY_CACHE_TS = 0
+                self._append_log("\n🏭 Invalidating industry-groups cache — recomputing from fresh CSVs…\n")
+                _bg_refresh_industry_groups()
+            except Exception as _e:
+                self._append_log(f"⚠ Industry-groups invalidation error: {_e}\n")
+
+            # Also invalidate the RS-universe scan cache so the next call to
+            # the RS leaders endpoint picks up today's closes for CMP / scores.
+            try:
+                with _rs_scan_lock:
+                    _rs_scan_cache["ts"] = 0
+                self._append_log("📊 Invalidated RS-universe scan cache (CMP will refresh on next request)\n")
+            except Exception as _e:
+                self._append_log(f"⚠ RS-scan cache invalidation error: {_e}\n")
+
         except Exception as e:
             with self._lock:
                 self._status = "failed"
@@ -470,10 +490,14 @@ def _canonical_sym(symbol: str) -> str:
     return base + ".NS"
 
 
-def _is_price_stale(last_date_str: str) -> bool:
+def _is_price_stale(last_date_str: str, csv_path: Path | None = None) -> bool:
     """
     Proper IST-aware staleness check (mirrors refresh_cache._is_stale logic).
     Returns True if the cache needs refreshing.
+
+    Beyond date-gap, also flags intraday snapshots captured during market hours
+    as stale once market closes — i.e. if the file's mtime is before 15:35 IST
+    on today and we're now past 15:35 IST, the bar is NOT today's final close.
     """
     import datetime as _dt
     import zoneinfo as _zi
@@ -484,19 +508,26 @@ def _is_price_stale(last_date_str: str) -> bool:
     except ValueError:
         return True
     _ist = _zi.ZoneInfo("Asia/Kolkata")
-    today = _dt.datetime.now(_ist).date()
+    now_ist = _dt.datetime.now(_ist)
+    today = now_ist.date()
     gap = (today - last_date).days
-    if gap <= 0:
-        return False
-    if gap > 10:
-        return True
-    # Count business days in the gap
-    biz = sum(1 for d in range(1, gap + 1)
-              if (last_date + _dt.timedelta(days=d)).weekday() < 5)
-    if biz == 0:
-        return False
-    # Any business day gap means stale — refresh immediately
-    return True
+    if gap > 0:
+        if gap > 10:
+            return True
+        biz = sum(1 for d in range(1, gap + 1)
+                  if (last_date + _dt.timedelta(days=d)).weekday() < 5)
+        return biz > 0
+
+    # last_date == today → cache has today's bar. Might be an intraday snapshot.
+    if csv_path is not None and today.weekday() < 5:
+        close_cutoff = now_ist.replace(hour=15, minute=35, second=0, microsecond=0)
+        try:
+            mtime = _dt.datetime.fromtimestamp(csv_path.stat().st_mtime, tz=_ist)
+        except OSError:
+            return False
+        if now_ist >= close_cutoff and mtime < close_cutoff:
+            return True
+    return False
 
 
 def _refresh_symbol_if_stale(symbol: str, force: bool = False) -> bool:
@@ -522,8 +553,8 @@ def _refresh_symbol_if_stale(symbol: str, force: bool = False) -> bool:
         for sym in [ns, base]:
             csv_path = CACHE_DIR / f"{sym}.csv"
             last_date = _rc._read_last_date(csv_path)
-            if _is_price_stale(last_date):
-                result = _rc.refresh_symbol(sym, csv_path, last_date)
+            if force or _is_price_stale(last_date, csv_path):
+                result = _rc.refresh_symbol(sym, csv_path, last_date, force=force)
                 status = result.get("status", "")
                 if status == "updated":
                     return True
@@ -554,11 +585,14 @@ async def lifespan(app: FastAPI):
     """
     # ── STARTUP ──
     skip_env = os.environ.get("SETUPS_SKIP_STARTUP_REFRESH", "").lower()
+    force_env = os.environ.get("SETUPS_STARTUP_FORCE_REFRESH", "").lower()
     if skip_env not in ("true", "1", "yes"):
         # Only auto-refresh if the script hasn't already started one
         if not _cache_refresher.is_running:
-            print("🔄 Starting background OHLCV cache refresh…", flush=True)
-            _cache_refresher.start(indian_only=True, workers=4)
+            force_flag = force_env in ("true", "1", "yes")
+            label = " (FORCE)" if force_flag else ""
+            print(f"🔄 Starting background OHLCV cache refresh{label}…", flush=True)
+            _cache_refresher.start(indian_only=True, workers=4, force=force_flag)
     else:
         print("⏭  Startup cache refresh skipped (env)", flush=True)
 
@@ -765,22 +799,82 @@ import json as _json_mod
 _CUSTOM_GROUPS_PATH = TRADE_DATA_DIR / "custom_groups.json"
 _INDUSTRY_CACHE: dict = {}
 _INDUSTRY_CACHE_TS: float = 0
+_INDUSTRY_DISK_TS: float = 0  # last on-disk snapshot timestamp (for UI staleness display)
 _INDUSTRY_CACHE_TTL = 600  # seconds (10 min — data doesn't change fast)
 _INDUSTRY_DISK_PATH = TRADE_DATA_DIR / "industry_groups_cache.json"
 
+# Thread-local flag: when set, _read_ohlcv skips its inline per-symbol
+# stale-refresh thread spawn. Used by bulk callers (industry-groups compute)
+# to avoid flooding the machine with thousands of refresh threads.
+_bulk_read_ctx = threading.local()
+
+
+def _bulk_skip_stale() -> bool:
+    """True if the current thread is inside a bulk-read context."""
+    return bool(getattr(_bulk_read_ctx, "skip_stale_refresh", False))
+
+
+def _ig_worker_init():
+    """ThreadPoolExecutor initializer — propagates the bulk-read flag into
+    pool worker threads (thread-locals don't inherit automatically)."""
+    _bulk_read_ctx.skip_stale_refresh = True
+
+
+# ── Taxonomy cache (expensive to rebuild per request) ─────────────────────
+_TAXONOMY_CACHE: dict | None = None
+_TAXONOMY_CACHE_TS: float = 0
+_TAXONOMY_CACHE_TTL = 1800  # 30 min — taxonomy CSV rarely changes at runtime
+_TAXONOMY_LOCK = threading.Lock()
+
+
+def _load_taxonomy_cached() -> dict:
+    """Thread-safe cached load of the NSE sector/industry taxonomy.
+
+    Previously each industry-groups API call rebuilt the sector/industry maps
+    and re-read the 2600-line CSV — a measurable latency hit on hot endpoints
+    (/api/industry-groups, /api/industry-groups/{name}, /rs-history). Now we
+    load once per process and refresh after TTL."""
+    global _TAXONOMY_CACHE, _TAXONOMY_CACHE_TS
+    now = time.time()
+    if _TAXONOMY_CACHE is not None and (now - _TAXONOMY_CACHE_TS) < _TAXONOMY_CACHE_TTL:
+        return _TAXONOMY_CACHE
+    with _TAXONOMY_LOCK:
+        if _TAXONOMY_CACHE is not None and (time.time() - _TAXONOMY_CACHE_TS) < _TAXONOMY_CACHE_TTL:
+            return _TAXONOMY_CACHE
+        try:
+            sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python" / "lib"))
+            import nse_taxonomy
+            nse_taxonomy._SECTOR_MAP, nse_taxonomy._INDUSTRY_MAP = nse_taxonomy._build_maps()
+            _TAXONOMY_CACHE = nse_taxonomy.load_taxonomy() or {}
+        except Exception as e:
+            print(f"⚠ Failed to load taxonomy: {e}", flush=True)
+            _TAXONOMY_CACHE = {}
+        _TAXONOMY_CACHE_TS = time.time()
+        return _TAXONOMY_CACHE
+
 
 def _load_industry_cache_from_disk():
-    """Load industry groups from disk cache on startup for instant first load."""
-    global _INDUSTRY_CACHE, _INDUSTRY_CACHE_TS
+    """Load industry groups from disk cache on startup for instant first load.
+
+    IMPORTANT: We deliberately set _INDUSTRY_CACHE_TS = 0 (not the saved ts) so
+    the *first* /api/industry-groups call after web-app startup serves this
+    snapshot instantly AND triggers a background recompute against whatever
+    fresh CSV data the startup OHLCV refresh has landed. Without this, a cache
+    saved < TTL (10 min) before shutdown would be considered 'fresh' and the
+    UI would show yesterday's prices until TTL expires.
+    """
+    global _INDUSTRY_CACHE, _INDUSTRY_CACHE_TS, _INDUSTRY_DISK_TS
     try:
         if _INDUSTRY_DISK_PATH.exists():
             data = _json_mod.loads(_INDUSTRY_DISK_PATH.read_text())
-            ts = data.get("ts", 0)
             groups = data.get("groups", [])
+            disk_ts = float(data.get("ts", 0) or 0)
             if groups:
                 _INDUSTRY_CACHE = {"groups": groups}
-                _INDUSTRY_CACHE_TS = ts
-                print(f"✅ Loaded {len(groups)} industry groups from disk cache", flush=True)
+                _INDUSTRY_CACHE_TS = 0  # force stale → background refresh on first hit
+                _INDUSTRY_DISK_TS = disk_ts
+                print(f"✅ Loaded {len(groups)} industry groups from disk cache "
+                      f"(marked stale; will auto-refresh on first request)", flush=True)
     except Exception as e:
         print(f"⚠ Failed to load industry disk cache: {e}", flush=True)
 
@@ -946,26 +1040,35 @@ def _compute_group_metrics(group_name: str, tickers: list[str], sector: str = ""
 
 
 def _compute_all_industry_groups() -> list[dict]:
-    """Compute metrics for all industry groups. Cached for _INDUSTRY_CACHE_TTL seconds.
-    Uses stale-while-revalidate: returns stale cache immediately and refreshes in background.
-    On cold start, loads from disk cache for instant response."""
+    """Return industry-group metrics. Never blocks the caller.
+
+    Strategy (stale-while-revalidate, even on cold start):
+    - Fresh in-memory cache (< TTL) → return it directly.
+    - Stale in-memory cache (from disk or previous compute) → return it AND
+      kick a single background recompute.
+    - No cache at all (very first run, no disk snapshot) → return [] and kick a
+      background compute. Callers (e.g. the HTTP handler) will surface
+      `bgRefreshing=true` so the UI can show a "computing…" state instead of
+      hanging on a 30-60s request.
+    """
     global _INDUSTRY_CACHE, _INDUSTRY_CACHE_TS
-    import time as _t
-    now = _t.time()
+    now = time.time()
     if _INDUSTRY_CACHE and (now - _INDUSTRY_CACHE_TS) < _INDUSTRY_CACHE_TTL:
         return _INDUSTRY_CACHE.get("groups", [])
 
-    # Have stale cache (memory or disk-loaded) — return it and refresh in background
-    if _INDUSTRY_CACHE:
-        _bg_refresh_industry_groups()
-        return _INDUSTRY_CACHE.get("groups", [])
-
-    # No cache at all — must compute synchronously
-    return _do_compute_industry_groups()
+    # Stale or empty → refresh in background, return whatever we have now.
+    _bg_refresh_industry_groups()
+    return _INDUSTRY_CACHE.get("groups", []) if _INDUSTRY_CACHE else []
 
 
 _INDUSTRY_BG_LOCK = threading.Lock()
 _INDUSTRY_BG_RUNNING = False
+
+# Cap concurrency for the bulk OHLCV preload so the industry-groups compute
+# never saturates the box. Leaves headroom for request handlers, the OHLCV
+# cache refresher, and other background jobs — keeps the app smooth even
+# during a full recompute.
+_IG_WORKERS = max(2, min(8, (os.cpu_count() or 4) // 2 or 2))
 
 
 def _bg_refresh_industry_groups():
@@ -992,11 +1095,24 @@ def _do_compute_industry_groups() -> list[dict]:
     import time as _t
     t0 = _t.time()
 
+    # Suppress inline per-symbol refresh-thread spawning for the duration of
+    # this bulk load. With 2000+ CSVs we'd otherwise spawn thousands of
+    # threads that all hit Yahoo, choking CPU + network and making this
+    # compute take 30-60s instead of 3-5s. The global OHLCV refresher
+    # (_cache_refresher) handles keeping the on-disk cache fresh.
+    _bulk_read_ctx.skip_stale_refresh = True
     try:
-        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python" / "lib"))
-        import nse_taxonomy
-        nse_taxonomy._SECTOR_MAP, nse_taxonomy._INDUSTRY_MAP = nse_taxonomy._build_maps()
-        taxonomy = nse_taxonomy.load_taxonomy()
+        return _do_compute_industry_groups_inner(t0)
+    finally:
+        _bulk_read_ctx.skip_stale_refresh = False
+
+
+def _do_compute_industry_groups_inner(t0: float) -> list[dict]:
+    global _INDUSTRY_CACHE, _INDUSTRY_CACHE_TS
+    import time as _t
+
+    try:
+        taxonomy = _load_taxonomy_cached()
     except Exception:
         return []
 
@@ -1023,10 +1139,37 @@ def _do_compute_industry_groups() -> list[dict]:
         return (sym, rows) if rows and len(rows) >= 20 else (sym, None)
 
     preloaded: dict = {}
-    with ThreadPoolExecutor(max_workers=12) as pool:
+    with ThreadPoolExecutor(max_workers=_IG_WORKERS, initializer=_ig_worker_init) as pool:
         for sym, rows in pool.map(_load_one, all_syms):
             if rows:
                 preloaded[sym] = rows
+
+    # ── Freshness check: if many CSVs are stale-for-today, delegate one
+    # consolidated refresh to the OHLCV cache refresher (pooled, cooldowned).
+    # When that finishes it auto-invalidates this cache and kicks a recompute —
+    # so the next request will serve today's prices without any thread-storm.
+    # We can't let individual _read_ohlcv calls spawn refreshes (thread storm),
+    # so this is how freshness propagates during bulk compute.
+    try:
+        stale_syms: list[str] = []
+        sample = list(preloaded.items())[:150]  # sample — full stat scan is expensive
+        for sym, rows in sample:
+            if not rows:
+                continue
+            last_date = rows[-1]["date"]
+            csv_path = CACHE_DIR / f"{sym}.NS.csv"
+            if not csv_path.exists():
+                csv_path = CACHE_DIR / f"{sym}.csv"
+            if _is_price_stale(last_date, csv_path):
+                stale_syms.append(sym)
+        # If ≥10% of sample is stale and no refresh is in flight, kick one.
+        if sample and len(stale_syms) >= max(5, len(sample) // 10):
+            if not _cache_refresher.is_running:
+                print(f"🔄 Industry compute: {len(stale_syms)}/{len(sample)} sampled "
+                      f"CSVs are stale — kicking OHLCV cache refresh", flush=True)
+                _cache_refresher.start(indian_only=True, workers=4)
+    except Exception as _e:
+        print(f"⚠ Industry compute freshness probe error: {_e}", flush=True)
 
     # Compute Nifty's returns for true RS-vs-benchmark calculation
     nifty_returns = None
@@ -1054,10 +1197,54 @@ def _do_compute_industry_groups() -> list[dict]:
 
     _INDUSTRY_CACHE = {"groups": results}
     _INDUSTRY_CACHE_TS = _t.time()
+    globals()["_INDUSTRY_DISK_TS"] = _INDUSTRY_CACHE_TS
     _save_industry_cache_to_disk(results)
     elapsed = _t.time() - t0
     print(f"✅ Industry groups computed: {len(results)} groups, {len(preloaded)} tickers in {elapsed:.1f}s", flush=True)
     return results
+
+
+# ── Periodic self-refresher ─────────────────────────────────────────────────
+# Keeps the industry-groups cache warm even when no one is hitting the
+# endpoint, so the UI never has to wait on a full recompute. Runs at half the
+# TTL interval, single-threaded, low priority (best-effort nice).
+_INDUSTRY_PERIODIC_STARTED = False
+
+
+def _start_periodic_industry_refresher():
+    global _INDUSTRY_PERIODIC_STARTED
+    if _INDUSTRY_PERIODIC_STARTED:
+        return
+    _INDUSTRY_PERIODIC_STARTED = True
+
+    def _loop():
+        # Be a good neighbour: lower process-wide priority is too aggressive,
+        # but we can sleep a bit at startup so we don't fight with the
+        # startup OHLCV refresh for CPU/network.
+        try:
+            time.sleep(30)
+        except Exception:
+            pass
+        interval = max(60, _INDUSTRY_CACHE_TTL // 2)
+        while True:
+            try:
+                now = time.time()
+                # Only refresh if cache is actually stale; otherwise just idle.
+                if not _INDUSTRY_CACHE or (now - _INDUSTRY_CACHE_TS) >= _INDUSTRY_CACHE_TTL:
+                    _bg_refresh_industry_groups()
+            except Exception as e:
+                print(f"⚠ Industry periodic refresher error: {e}", flush=True)
+            try:
+                time.sleep(interval)
+            except Exception:
+                return
+
+    threading.Thread(target=_loop, name="industry-periodic-refresh", daemon=True).start()
+
+
+# Kick the periodic refresher now that all the helpers exist.
+if os.environ.get("SETUPS_SKIP_STARTUP_REFRESH", "").lower() not in ("true", "1", "yes"):
+    _start_periodic_industry_refresher()
 
 
 @app.get("/api/industry-groups")
@@ -1069,43 +1256,160 @@ def get_industry_groups(min_stocks: int = 2) -> dict:
         gc = dict(g)
         gc.pop("members", None)
         lite.append(gc)
-    # Include cache age so frontend can show staleness warning
-    cache_age = round(time.time() - _INDUSTRY_CACHE_TS) if _INDUSTRY_CACHE_TS else None
+    # Include cache age so frontend can show staleness warning.
+    # Prefer in-memory TS (post-compute); fall back to disk TS so a fresh
+    # startup can still tell the UI when the snapshot was made.
+    effective_ts = _INDUSTRY_CACHE_TS or _INDUSTRY_DISK_TS
+    cache_age = round(time.time() - effective_ts) if effective_ts else None
+    # Expose OHLCV refresh status so UI can show "pulling today's closes…"
+    # and poll faster while it's in flight.
+    ohlcv_status = _cache_refresher.status_dict()
+    ohlcv_running = ohlcv_status.get("status") == "running"
+    ohlcv_progress = None
+    if ohlcv_running:
+        done = ohlcv_status.get("symbolsDone", 0)
+        total = ohlcv_status.get("symbolsTotal", 0)
+        ohlcv_progress = {"done": done, "total": total,
+                          "pct": round(done / total * 100, 1) if total else 0}
     return {"groups": lite, "total": len(lite), "timestamp": time.time(),
-            "cachedAt": _INDUSTRY_CACHE_TS, "cacheAgeSec": cache_age}
+            "cachedAt": effective_ts or None, "cacheAgeSec": cache_age,
+            "bgRefreshing": _INDUSTRY_BG_RUNNING,
+            "ohlcvRefreshing": ohlcv_running,
+            "ohlcvProgress": ohlcv_progress,
+            "fromDiskSnapshot": bool(_INDUSTRY_CACHE) and _INDUSTRY_CACHE_TS == 0}
+
+
+@app.post("/api/industry-groups/refresh")
+def refresh_industry_groups(force: bool = False, prices: bool = True) -> dict:
+    """Invalidate the industry-groups cache and kick a background recompute
+    against the latest CSV cache. Returns immediately; poll /api/industry-groups
+    with `cacheAgeSec` to know when the new snapshot lands.
+
+    When prices=True (default), also kicks the OHLCV cache refresher so today's
+    closing bars are pulled into the CSVs before the recompute runs. This is
+    how the manual 🔄 Refresh button gets today's prices into the page when the
+    startup refresh didn't run (or hasn't run since market close).
+    """
+    global _INDUSTRY_CACHE_TS
+    _INDUSTRY_CACHE_TS = 0
+
+    # Kick OHLCV refresh first — when it finishes it will auto-invalidate
+    # and recompute industry groups (see BackgroundCacheRefresher._run).
+    ohlcv_started = False
+    if prices and not _cache_refresher.is_running:
+        try:
+            _cache_refresher.start(indian_only=True, workers=4)
+            ohlcv_started = True
+        except Exception as e:
+            print(f"⚠ OHLCV refresh kick failed: {e}", flush=True)
+
+    if force:
+        # Blocking full recompute (used by tests / manual debugging)
+        groups = _do_compute_industry_groups()
+        return {"ok": True, "mode": "sync", "count": len(groups),
+                "ohlcvRefreshStarted": ohlcv_started}
+    _bg_refresh_industry_groups()
+    return {"ok": True, "mode": "async", "bgRunning": _INDUSTRY_BG_RUNNING,
+            "ohlcvRefreshStarted": ohlcv_started,
+            "message": "Industry groups recompute started in background"
+                       + (" (after OHLCV refresh)" if ohlcv_started else "")}
 
 
 @app.get("/api/industry-groups/{group_name}")
-def get_industry_group_detail(group_name: str) -> dict:
+def get_industry_group_detail(group_name: str, fresh: bool = True) -> dict:
+    """Return metrics + member list for an industry group.
+
+    By default (`fresh=True`) recomputes the group from the latest CSV data so
+    member close / dayChange / 52WH percentages are always current — this is
+    the only way to guarantee the drilldown isn't showing a snapshot from the
+    last full industry-groups rebuild (which may be up to 10 min old).
+
+    Pass `fresh=false` to return the possibly-cached snapshot instead.
+    """
     import urllib.parse
     decoded = urllib.parse.unquote(group_name)
+
+    # Resolve tickers + sector for this group from the taxonomy — cheap.
+    taxonomy = _load_taxonomy_cached()
+
+    tickers: list[str] = []
+    sector = ""
+    for t, (sec, ind) in taxonomy.items():
+        if ind == decoded:
+            tickers.append(t)
+            if not sector:
+                sector = sec
+
+    if not tickers:
+        # Fall back to any cached entry so stale-but-known groups still respond
+        groups = _compute_all_industry_groups()
+        for g in groups:
+            if g.get("group") == decoded:
+                return g
+        raise HTTPException(status_code=404, detail=f"Industry group '{decoded}' not found")
+
+    if fresh:
+        # Pass Nifty returns for true RS-vs-benchmark calc.
+        # Bulk-read guard: prevent per-symbol refresh-thread storm while
+        # _compute_group_metrics walks members. For a small group (≤30 members)
+        # this is safe because the worst case is 30 refresh threads — well
+        # within the machine's tolerance and gives the user up-to-date prices.
+        use_bulk_flag = len(tickers) > 30
+        if use_bulk_flag:
+            _bulk_read_ctx.skip_stale_refresh = True
+        try:
+            nifty_rows = _read_ohlcv("^NSEI", days=300)
+            nifty_returns = None
+            if nifty_rows and len(nifty_rows) >= 61:
+                nc = [r["close"] for r in nifty_rows]
+                nifty_returns = {
+                    "r5":  (nc[-1] / nc[-6] - 1) * 100  if len(nc) >= 6  else 0,
+                    "r20": (nc[-1] / nc[-21] - 1) * 100 if len(nc) >= 21 else 0,
+                    "r60": (nc[-1] / nc[-61] - 1) * 100 if len(nc) >= 61 else 0,
+                }
+            result = _compute_group_metrics(decoded, tickers, sector,
+                                            nifty_returns=nifty_returns)
+        finally:
+            if use_bulk_flag:
+                _bulk_read_ctx.skip_stale_refresh = False
+
+        # For small groups (where we allowed per-symbol refresh), also probe
+        # for overall staleness and delegate to the OHLCV refresher so the
+        # NEXT click gets today's closes — the per-symbol threads take care
+        # of this group's symbols, but a consolidated refresh covers the rest.
+        if not use_bulk_flag and not _cache_refresher.is_running:
+            try:
+                stale_count = 0
+                for sym in tickers:
+                    csv_path = CACHE_DIR / f"{sym}.NS.csv"
+                    if not csv_path.exists():
+                        csv_path = CACHE_DIR / f"{sym}.csv"
+                    if not csv_path.exists():
+                        continue
+                    import refresh_cache as _rc
+                    ld = _rc._read_last_date(csv_path)
+                    if _is_price_stale(ld, csv_path):
+                        stale_count += 1
+                if stale_count >= max(1, len(tickers) // 3):
+                    print(f"🔄 Drilldown {decoded!r}: {stale_count}/{len(tickers)} "
+                          f"stale — kicking OHLCV refresh", flush=True)
+                    _cache_refresher.start(indian_only=True, workers=4)
+            except Exception:
+                pass
+        # Attach rsRank from cached list if present (cheap metadata)
+        for g in _INDUSTRY_CACHE.get("groups", []):
+            if g.get("group") == decoded:
+                result["rsRank"] = g.get("rsRank")
+                break
+        return result
+
+    # Non-fresh path: return cached snapshot if available
     groups = _compute_all_industry_groups()
     for g in groups:
         if g.get("group") == decoded:
-            # If loaded from disk cache (no members), compute this group on-the-fly
             if not g.get("members"):
-                try:
-                    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python" / "lib"))
-                    import nse_taxonomy
-                    nse_taxonomy._SECTOR_MAP, nse_taxonomy._INDUSTRY_MAP = nse_taxonomy._build_maps()
-                    taxonomy = nse_taxonomy.load_taxonomy()
-                    tickers = [t for t, (sec, ind) in taxonomy.items() if ind == decoded]
-                    if tickers:
-                        sector = g.get("sector", "")
-                        # Pass Nifty returns for true RS-vs-benchmark calc
-                        nifty_rows = _read_ohlcv("^NSEI", days=300)
-                        nifty_returns = None
-                        if nifty_rows and len(nifty_rows) >= 61:
-                            nc = [r["close"] for r in nifty_rows]
-                            nifty_returns = {
-                                "r5":  (nc[-1] / nc[-6] - 1) * 100  if len(nc) >= 6  else 0,
-                                "r20": (nc[-1] / nc[-21] - 1) * 100 if len(nc) >= 21 else 0,
-                                "r60": (nc[-1] / nc[-61] - 1) * 100 if len(nc) >= 61 else 0,
-                            }
-                        return _compute_group_metrics(decoded, tickers, sector,
-                                                     nifty_returns=nifty_returns)
-                except Exception:
-                    pass
+                # Disk cache stripped members — recompute this one group
+                return _compute_group_metrics(decoded, tickers, sector)
             return g
     raise HTTPException(status_code=404, detail=f"Industry group '{decoded}' not found")
 
@@ -1127,29 +1431,31 @@ def get_industry_group_rs_history(group_name: str, days: int = 120) -> dict:
     # If loaded from disk cache (no members), look up tickers from taxonomy
     if not members:
         try:
-            sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python" / "lib"))
-            import nse_taxonomy
-            nse_taxonomy._SECTOR_MAP, nse_taxonomy._INDUSTRY_MAP = nse_taxonomy._build_maps()
-            taxonomy = nse_taxonomy.load_taxonomy()
+            taxonomy = _load_taxonomy_cached()
             members = [t for t, (sec, ind) in taxonomy.items() if ind == decoded]
         except Exception:
             pass
     if not members:
         return {"group": decoded, "rsLine": []}
 
-    nifty_rows = _read_ohlcv("^NSEI", days=days + 50)
-    nifty_map = {r["date"]: r["close"] for r in nifty_rows} if nifty_rows else {}
+    # Read in bulk without spawning per-symbol refresh threads.
+    _bulk_read_ctx.skip_stale_refresh = True
+    try:
+        nifty_rows = _read_ohlcv("^NSEI", days=days + 50)
+        nifty_map = {r["date"]: r["close"] for r in nifty_rows} if nifty_rows else {}
 
-    all_dates: dict[str, list[float]] = {}
-    for sym in members[:30]:
-        rows = _read_ohlcv(sym, days=days + 50)
-        if not rows or len(rows) < 20:
-            continue
-        base_close = rows[0]["close"]
-        for r in rows:
-            d = r["date"]
-            normed = (r["close"] / base_close) * 100
-            all_dates.setdefault(d, []).append(normed)
+        all_dates: dict[str, list[float]] = {}
+        for sym in members[:30]:
+            rows = _read_ohlcv(sym, days=days + 50)
+            if not rows or len(rows) < 20:
+                continue
+            base_close = rows[0]["close"]
+            for r in rows:
+                d = r["date"]
+                normed = (r["close"] / base_close) * 100
+                all_dates.setdefault(d, []).append(normed)
+    finally:
+        _bulk_read_ctx.skip_stale_refresh = False
 
     if not all_dates:
         return {"group": decoded, "rsLine": []}
@@ -1309,7 +1615,7 @@ def cache_refresh_trigger(req: CacheRefreshRequest | None = None) -> dict:
 
 
 @app.post("/api/cache/refresh-symbols")
-def cache_refresh_specific_symbols(symbols: list[str]) -> dict:
+def cache_refresh_specific_symbols(symbols: list[str], force: bool = False) -> dict:
     """
     Synchronously refresh specific symbols' cache (for small lists like watchlist/positions).
     Use this when you need fresh data for a few stocks immediately.
@@ -1325,10 +1631,92 @@ def cache_refresh_specific_symbols(symbols: list[str]) -> dict:
         sym_clean = sym.strip().upper()
         if not sym_clean:
             continue
-        updated = _refresh_symbol_if_stale(sym_clean)
+        updated = _refresh_symbol_if_stale(sym_clean, force=force)
         results[sym_clean] = "updated" if updated else "fresh_or_cooldown"
 
     return {"results": results, "count": len(results)}
+
+
+@app.post("/api/cache/fix-intraday")
+def cache_fix_intraday_snapshots(
+    dry_run: bool = False,
+    workers: int = 8,
+) -> dict:
+    """
+    Scan every Indian OHLCV cache file for an "intraday snapshot" — i.e. the
+    CSV's last row is dated D and the file mtime is on D but before the 15:35
+    IST market close. Those rows contain an intraday price, not the finalized
+    close, and the normal "+1 day" fetcher logic would never re-query that
+    date. This endpoint lists every affected file and (unless `dry_run=true`)
+    kicks a forced refresh against them via the BackgroundCacheRefresher,
+    which uses the intraday-aware back-up logic in refresh_symbol() to pull
+    the finalized close and overwrite the bad row.
+
+    Returns immediately; poll /api/cache/refresh-status for progress.
+    """
+    import datetime as _dt, zoneinfo as _zi
+    _ist = _zi.ZoneInfo("Asia/Kolkata")
+
+    affected: list[dict] = []
+    for p in sorted(CACHE_DIR.glob("*.NS.csv")):
+        try:
+            sym = p.name.replace(".csv", "")
+            # Cheap last-date read via refresh_cache helper
+            try:
+                import refresh_cache as _rc
+                last_date_str = _rc._read_last_date(p)
+            except Exception:
+                last_date_str = ""
+            if not last_date_str:
+                continue
+            try:
+                last_date = _dt.date.fromisoformat(last_date_str)
+            except ValueError:
+                continue
+            mtime = _dt.datetime.fromtimestamp(p.stat().st_mtime, tz=_ist)
+            # Only flag if the file's last-row date matches the mtime date
+            # AND the file was written before market close (15:35 IST).
+            if mtime.date() != last_date:
+                continue
+            cutoff = mtime.replace(hour=15, minute=35, second=0, microsecond=0)
+            if mtime < cutoff:
+                affected.append({
+                    "symbol": sym,
+                    "last_date": last_date_str,
+                    "mtime": mtime.strftime("%Y-%m-%d %H:%M IST"),
+                })
+        except Exception:
+            pass
+
+    if dry_run:
+        return {
+            "ok": True, "mode": "dry_run",
+            "count": len(affected),
+            "affected": affected[:500],
+            "truncated": len(affected) > 500,
+        }
+
+    if not affected:
+        return {"ok": True, "mode": "idle", "count": 0,
+                "message": "No intraday-stuck CSVs found"}
+
+    syms = [a["symbol"] for a in affected]
+    # Force-refresh via the background manager. Its _run() reload()s
+    # refresh_cache before executing, so the intraday back-up logic in the
+    # latest refresh_symbol() is guaranteed to apply even without a server
+    # restart.
+    start_result = _cache_refresher.start(
+        symbols=syms, force=True, indian_only=True, workers=workers,
+    )
+    return {
+        "ok": True, "mode": "async",
+        "count": len(affected),
+        "affected_preview": affected[:50],
+        "truncated": len(affected) > 50,
+        "refresher": start_result,
+        "message": f"Force-refreshing {len(affected)} intraday-stuck CSV(s) — "
+                   f"poll /api/cache/refresh-status for progress.",
+    }
 
 
 # ── VPN / Proxy Toggle API ────────────────────────────────────────────────────
@@ -1891,7 +2279,7 @@ def market_phases_endpoint(
     Detect Nifty50 market phases: decline, consolidation, recovery.
     Returns structured phase map for the last `days` trading days.
     """
-    market_prices = _wpe.fetch_market_prices(days=max(days, 252))
+    market_prices = _get_fresh_nifty_benchmark(days=max(days, 252))
     if not market_prices:
         raise HTTPException(status_code=503, detail="Could not fetch Nifty50 data")
 
@@ -2024,9 +2412,21 @@ def _read_ohlcv(symbol: str, days: int = 0, market: str = "india") -> list[dict]
     # Non-blocking: returns current (possibly stale) data immediately;
     # refreshes in background thread so the NEXT read gets fresh data.
     # Uses IST-aware business-day logic matching refresh_cache._is_stale().
-    if rows:
+    #
+    # BUT: when a bulk caller (industry-groups compute) has set the
+    # skip_stale_refresh thread-local flag, suppress the spawn — otherwise
+    # a single compute over 2000+ tickers would launch thousands of daemon
+    # threads that saturate CPU / lock / Yahoo. The periodic OHLCV refresher
+    # (_cache_refresher) handles on-disk freshness for that path.
+    if _bulk_skip_stale():
+        pass
+    elif rows:
         last_date = rows[-1]["date"]
-        if _is_price_stale(last_date):
+        # Prefer the actual CSV file used for the read (falls back to .NS.csv)
+        _csv_for_stale = CACHE_DIR / f"{base}.NS.csv"
+        if not _csv_for_stale.exists():
+            _csv_for_stale = CACHE_DIR / f"{base}.csv"
+        if _is_price_stale(last_date, _csv_for_stale):
             threading.Thread(
                 target=_refresh_symbol_if_stale,
                 args=(symbol,),
@@ -2043,6 +2443,115 @@ def _read_ohlcv(symbol: str, days: int = 0, market: str = "india") -> list[dict]
     if days and days > 0 and len(rows) > days:
         rows = rows[-days:]
     return rows
+
+
+# ── Fresh Nifty benchmark helper ──────────────────────────────────────────
+# Every page that shows a "Nifty asof" or relies on the Nifty benchmark
+# must route through this function so they all share the same source and
+# freshness semantics:
+#   1. Primary:  OHLCV CSV cache (cache/^NSEI.csv) — same source as stock
+#                data, kept fresh by BackgroundCacheRefresher + the IST-aware
+#                staleness check.
+#   2. If the OHLCV bar is stale (past-close intraday, or >0 biz-day gap),
+#      do a SYNCHRONOUS refresh_nifty_index() call — single symbol, ≤2 s —
+#      then re-read the cache. Guarantees nifty_asof == current trading day
+#      by the time the calling endpoint returns.
+#   3. If the OHLCV cache stays empty after refresh, fall back to
+#      _wpe.fetch_market_prices (yfinance side-cache). Whichever has the
+#      newer last-date wins.
+_NIFTY_BENCHMARK_LOCK = threading.Lock()
+_NIFTY_LAST_SYNC_TS: float = 0
+_NIFTY_SYNC_COOLDOWN = 60  # seconds — avoid hammering refresh_nifty_index
+_NIFTY_RESULT_CACHE: dict = {}  # days → {"data": dict, "ts": float, "asof": str}
+_NIFTY_RESULT_TTL = 30         # seconds — memoize helper output to amortize fallback cost
+
+
+def _get_fresh_nifty_benchmark(days: int = 260) -> dict | None:
+    """Return a Nifty50 price dict in wpe format with the freshest possible
+    last-date. See section header above for the source-priority rules.
+
+    Safe to call from any endpoint — the sync refresh is cooldowned
+    (`_NIFTY_SYNC_COOLDOWN` seconds) so bursts of parallel requests don't
+    each trigger a Yahoo hit.
+    """
+    global _NIFTY_LAST_SYNC_TS
+
+    # Fast path: recent memoized result.
+    cached = _NIFTY_RESULT_CACHE.get(days)
+    if cached and (time.time() - cached.get("ts", 0)) < _NIFTY_RESULT_TTL:
+        return cached["data"]
+
+    def _read_csv_rows() -> list[dict]:
+        try:
+            return _read_ohlcv("^NSEI", days=days, market="us") or []
+        except Exception:
+            return []
+
+    rows = _read_csv_rows()
+    nifty_csv = CACHE_DIR / "^NSEI.csv"
+
+    # Sync refresh if stale — but only once per cooldown window per process.
+    ran_sync_refresh = False
+    try:
+        if rows and _is_price_stale(rows[-1]["date"], nifty_csv):
+            with _NIFTY_BENCHMARK_LOCK:
+                now_ts = time.time()
+                if now_ts - _NIFTY_LAST_SYNC_TS >= _NIFTY_SYNC_COOLDOWN:
+                    _NIFTY_LAST_SYNC_TS = now_ts
+                    ran_sync_refresh = True
+                    try:
+                        sys.path.insert(0, str(ROOT / "scripts"))
+                        import refresh_cache as _rc
+                        _rc.refresh_nifty_index()
+                        rows = _read_csv_rows()
+                    except Exception as _e:
+                        print(f"⚠ _get_fresh_nifty_benchmark sync refresh failed: {_e}", flush=True)
+                    # Only kick the full OHLCV refresher when we actually ran a
+                    # sync refresh AND it didn't produce fresh bars (likely Yahoo
+                    # doesn't have today's close yet or network issue).
+                    if (not rows or _is_price_stale(rows[-1]["date"], nifty_csv)) \
+                            and not _cache_refresher.is_running:
+                        _cache_refresher.start(indian_only=True, workers=4)
+    except Exception:
+        pass
+
+    primary = None
+    if rows and len(rows) >= 20:
+        primary = {
+            "symbol": "^NSEI", "yf_symbol": "^NSEI",
+            "dates":  [r["date"]  for r in rows],
+            "open":   [r["open"]  for r in rows],
+            "high":   [r["high"]  for r in rows],
+            "low":    [r["low"]   for r in rows],
+            "close":  [r["close"] for r in rows],
+            "volume": [r["volume"] for r in rows],
+        }
+
+    # Fallback + newer-source check: only hit the yfinance side-cache when
+    # the primary is empty OR we just tried a sync refresh and it failed to
+    # advance the date. Otherwise we'd pay yfinance latency on every request.
+    result = primary
+    try:
+        primary_stale = bool(rows) and _is_price_stale(rows[-1]["date"], nifty_csv)
+        if (primary is None) or (primary_stale and ran_sync_refresh):
+            alt = _wpe.fetch_market_prices(days=days)
+            if alt and alt.get("dates"):
+                if primary is None or alt["dates"][-1] > primary["dates"][-1]:
+                    if primary is not None:
+                        print(f"🔁 Nifty benchmark: using _wpe source (asof={alt['dates'][-1]}) "
+                              f"over OHLCV (asof={primary['dates'][-1]})", flush=True)
+                    result = alt
+    except Exception:
+        pass
+
+    if result is not None:
+        _NIFTY_RESULT_CACHE[days] = {
+            "data": result,
+            "ts": time.time(),
+            "asof": (result.get("dates") or [None])[-1],
+        }
+    return result
+
 
 def _calc_ema(closes: list[float], period: int) -> list[Optional[float]]:
     result: list[Optional[float]] = [None] * len(closes)
@@ -3735,7 +4244,7 @@ def watchlist_market_health() -> dict:
     out: dict = {"generatedAt": datetime.now().isoformat(timespec="seconds")}
     # Nifty spot + phase
     try:
-        prices = _wpe.fetch_market_prices(days=260)
+        prices = _get_fresh_nifty_benchmark(days=260)
         if prices:
             closes = prices.get("close", []) or []
             dates  = prices.get("dates", []) or []
@@ -3837,14 +4346,28 @@ def _compute_rs_universe(
     Thread-safe, memoized for _RS_SCAN_TTL seconds.
     """
     now = time.time()
+
+    # Fetch freshest-possible Nifty benchmark (shared helper — same source as
+    # every other page that shows "Nifty asof"). Triggers a sync index refresh
+    # if the OHLCV cache is stale; falls back to yfinance side-cache if needed.
+    market_prices = _get_fresh_nifty_benchmark(days=260)
+    live_nifty_asof = (market_prices or {}).get("dates", [None])[-1] if market_prices else None
+
     with _rs_scan_lock:
         cached = _rs_scan_cache.get("data")
         if cached and (now - _rs_scan_cache.get("ts", 0)) < _RS_SCAN_TTL \
                 and cached.get("_params") == (top_n, min_price, min_bars, max_symbols):
-            return cached
+            # Bypass the TTL if the live ^NSEI CSV has a newer last-date than
+            # what the cached scan was computed against. Otherwise the RS
+            # table keeps showing e.g. "Nifty 2026-04-17" for ≤30 min even
+            # though fresh bars have already landed on disk.
+            cached_asof = cached.get("nifty_asof")
+            if (not live_nifty_asof) or (not cached_asof) or live_nifty_asof <= cached_asof:
+                return cached
+            print(f"🔁 RS-universe cache asof={cached_asof} < live ^NSEI {live_nifty_asof} "
+                  f"— invalidating and recomputing", flush=True)
+            _rs_scan_cache["ts"] = 0  # force recompute below
 
-    # 1. Fetch Nifty benchmark
-    market_prices = _wpe.fetch_market_prices(days=260)
     if not market_prices or not market_prices.get("close"):
         raise HTTPException(status_code=503, detail="Could not fetch Nifty50 data for RS benchmark")
 
@@ -3896,10 +4419,37 @@ def _compute_rs_universe(
         }
 
     scored: list[dict] = []
-    with ThreadPoolExecutor(max_workers=12) as pool:
+    # Use the bulk-read initializer so pool workers don't each spawn per-symbol
+    # refresh threads (5000+ symbols × stale → thread-storm freeze).
+    with ThreadPoolExecutor(max_workers=12, initializer=_ig_worker_init) as pool:
         for res in pool.map(_score_one, universe):
             if res is not None:
                 scored.append(res)
+
+    # ── Freshness probe ──────────────────────────────────────────────────
+    # The bulk-read flag above prevents _read_ohlcv from spawning per-symbol
+    # refresh threads (thread-storm), but that means CMP in the RS leaders
+    # table reflects whatever's on disk — which is yesterday's close if the
+    # OHLCV refresher hasn't run since market close. Delegate one consolidated
+    # refresh to the OHLCV cache refresher when we detect staleness. When it
+    # finishes we invalidate the RS scan cache so the next call recomputes.
+    try:
+        stale_count = 0
+        sample = scored[:150]
+        for row in sample:
+            sym = row["symbol"]
+            csv_path = CACHE_DIR / f"{sym}.NS.csv"
+            if not csv_path.exists():
+                csv_path = CACHE_DIR / f"{sym}.csv"
+            if _is_price_stale(row.get("lastDate", ""), csv_path):
+                stale_count += 1
+        if sample and stale_count >= max(5, len(sample) // 10):
+            if not _cache_refresher.is_running:
+                print(f"🔄 RS-universe: {stale_count}/{len(sample)} sampled "
+                      f"CSVs are stale — kicking OHLCV cache refresh", flush=True)
+                _cache_refresher.start(indian_only=True, workers=4)
+    except Exception as _e:
+        print(f"⚠ RS-universe freshness probe error: {_e}", flush=True)
 
     # 3. Sort by rs_score desc; tiebreak by excess_pct
     scored.sort(key=lambda x: (x["rs_score"], x.get("excess_pct") or 0), reverse=True)
@@ -4265,7 +4815,10 @@ def get_price_data_for_symbols(symbols: str = "") -> dict:
                 "prevClose": round(prev, 2) if prev else None,
                 "dayChangePct": round((cmp - prev) / prev * 100, 2) if prev and prev > 0 else None,
                 "lastDate": last_date,
-                "isStale": _is_price_stale(last_date) if last_date else True,
+                "isStale": _is_price_stale(
+                    last_date,
+                    CACHE_DIR / f"{sym.upper().replace('.NS','').replace('.BO','')}.NS.csv",
+                ) if last_date else True,
             }
     return {"prices": prices, "count": len(prices)}
 
