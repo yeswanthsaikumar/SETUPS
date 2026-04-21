@@ -4944,6 +4944,28 @@ class BreakoutAlertConfigUpdate(BaseModel):
     gmail_address: Optional[str] = None
     gmail_app_password: Optional[str] = None
     email_to: Optional[str] = None
+    # Custom rules replace-all (optional bulk update)
+    custom_rules: Optional[list[dict]] = None
+
+
+class CustomAlertRulePayload(BaseModel):
+    """Schema for creating/updating one custom alert rule.
+
+    All fields optional on PATCH; on POST `timeframe`, `metric`,
+    `operator`, `threshold` are required (validated at handler).
+    """
+    id: Optional[str] = None
+    name: Optional[str] = None
+    enabled: Optional[bool] = None
+    symbol: Optional[str] = None                 # "" or "*" = watchlist-wide
+    timeframe: Optional[str] = None              # 5m/15m/30m/1h/1d/1wk/1mo
+    metric: Optional[str] = None                 # price|volume|volume_ratio|price_pct_change
+    operator: Optional[str] = None               # >|>=|<|<=|==|crosses_above|crosses_below
+    threshold: Optional[float] = None
+    reference: Optional[str] = None              # absolute|avg|prev_close|prev_high|prev_low|highest|lowest
+    reference_bars: Optional[int] = None
+    cooldown_minutes: Optional[int] = None
+    channels: Optional[list[str]] = None         # subset of ["telegram","email"]
 
 
 @app.get("/api/breakout-alerts/status")
@@ -4972,6 +4994,126 @@ def update_breakout_alert_config(update: BreakoutAlertConfigUpdate) -> dict:
     _breakout_scanner.state.save_config(new_config)
     return {"ok": True, "config": {k: v for k, v in _asdict(new_config).items()
                                     if k not in ("gmail_app_password",)}}
+
+
+# ── Custom per-timeframe alert rules CRUD ──────────────────────────────────
+
+_VALID_TIMEFRAMES = {"5m", "15m", "30m", "60m", "1h", "1d", "1wk", "1mo"}
+_VALID_METRICS = {"price", "volume", "volume_ratio", "price_pct_change"}
+_VALID_OPERATORS = {">", ">=", "<", "<=", "==", "crosses_above", "crosses_below"}
+_VALID_REFERENCES = {"absolute", "avg", "prev_close", "prev_high", "prev_low",
+                      "highest", "lowest"}
+_VALID_CHANNELS = {"telegram", "email"}
+
+
+def _validate_rule(rule: dict, partial: bool = False) -> None:
+    """Raise HTTPException on invalid rule payload."""
+    from fastapi import HTTPException
+    required = ("timeframe", "metric", "operator", "threshold")
+    if not partial:
+        for k in required:
+            if rule.get(k) in (None, ""):
+                raise HTTPException(400, f"Field '{k}' is required")
+    if "timeframe" in rule and rule["timeframe"] and rule["timeframe"] not in _VALID_TIMEFRAMES:
+        raise HTTPException(400, f"timeframe must be one of {sorted(_VALID_TIMEFRAMES)}")
+    if "metric" in rule and rule["metric"] and rule["metric"] not in _VALID_METRICS:
+        raise HTTPException(400, f"metric must be one of {sorted(_VALID_METRICS)}")
+    if "operator" in rule and rule["operator"] and rule["operator"] not in _VALID_OPERATORS:
+        raise HTTPException(400, f"operator must be one of {sorted(_VALID_OPERATORS)}")
+    if "reference" in rule and rule["reference"] and rule["reference"] not in _VALID_REFERENCES:
+        raise HTTPException(400, f"reference must be one of {sorted(_VALID_REFERENCES)}")
+    if "channels" in rule and rule["channels"]:
+        bad = [c for c in rule["channels"] if c not in _VALID_CHANNELS]
+        if bad:
+            raise HTTPException(400, f"unknown channels: {bad}")
+
+
+@app.get("/api/breakout-alerts/custom-rules")
+def list_custom_alert_rules() -> dict:
+    """Return every persisted custom alert rule."""
+    config = _breakout_scanner.state.load_config()
+    return {"rules": list(config.custom_rules or []),
+            "count": len(config.custom_rules or []),
+            "supported": {
+                "timeframes": sorted(_VALID_TIMEFRAMES),
+                "metrics": sorted(_VALID_METRICS),
+                "operators": sorted(_VALID_OPERATORS),
+                "references": sorted(_VALID_REFERENCES),
+                "channels": sorted(_VALID_CHANNELS),
+            }}
+
+
+@app.post("/api/breakout-alerts/custom-rules")
+def create_custom_alert_rule(payload: CustomAlertRulePayload) -> dict:
+    """Create a new custom alert rule. Returns the stored rule with its id."""
+    import uuid
+    from dataclasses import asdict as _asdict
+    rule = {k: v for k, v in payload.model_dump(exclude_unset=True).items()
+            if v is not None}
+    _validate_rule(rule, partial=False)
+    rule.setdefault("id", uuid.uuid4().hex[:12])
+    rule.setdefault("name", f"{rule.get('metric','')}-{rule.get('timeframe','')}")
+    rule.setdefault("enabled", True)
+    rule.setdefault("symbol", "")
+    rule.setdefault("reference", "absolute")
+    rule.setdefault("reference_bars", 20)
+    rule.setdefault("cooldown_minutes", 60)
+    rule.setdefault("channels", ["telegram"])
+
+    config = _breakout_scanner.state.load_config()
+    rules = list(config.custom_rules or [])
+    rules.append(rule)
+    data = _asdict(config)
+    data["custom_rules"] = rules
+    _breakout_scanner.state.save_config(AlertConfig(**data))
+    return {"ok": True, "rule": rule}
+
+
+@app.patch("/api/breakout-alerts/custom-rules/{rule_id}")
+def update_custom_alert_rule(rule_id: str, payload: CustomAlertRulePayload) -> dict:
+    """Partially update a rule by id."""
+    from fastapi import HTTPException
+    from dataclasses import asdict as _asdict
+    patch = {k: v for k, v in payload.model_dump(exclude_unset=True).items()
+             if v is not None and k != "id"}
+    _validate_rule(patch, partial=True)
+
+    config = _breakout_scanner.state.load_config()
+    rules = list(config.custom_rules or [])
+    for i, r in enumerate(rules):
+        if r.get("id") == rule_id:
+            rules[i] = {**r, **patch}
+            data = _asdict(config)
+            data["custom_rules"] = rules
+            _breakout_scanner.state.save_config(AlertConfig(**data))
+            return {"ok": True, "rule": rules[i]}
+    raise HTTPException(404, f"rule {rule_id} not found")
+
+
+@app.delete("/api/breakout-alerts/custom-rules/{rule_id}")
+def delete_custom_alert_rule(rule_id: str) -> dict:
+    """Delete a rule by id."""
+    from fastapi import HTTPException
+    from dataclasses import asdict as _asdict
+    config = _breakout_scanner.state.load_config()
+    rules = list(config.custom_rules or [])
+    new_rules = [r for r in rules if r.get("id") != rule_id]
+    if len(new_rules) == len(rules):
+        raise HTTPException(404, f"rule {rule_id} not found")
+    data = _asdict(config)
+    data["custom_rules"] = new_rules
+    _breakout_scanner.state.save_config(AlertConfig(**data))
+    return {"ok": True, "deleted": rule_id, "remaining": len(new_rules)}
+
+
+@app.post("/api/breakout-alerts/custom-rules/evaluate-now")
+def evaluate_custom_rules_now(symbols: list[str] | None = None) -> dict:
+    """Dry-run every enabled rule (ignores cooldown). Returns list of fired alerts."""
+    if _breakout_scanner._read_ohlcv is None:
+        _breakout_scanner._read_ohlcv = _read_ohlcv
+    fired = _breakout_scanner.evaluate_custom_rules_now(symbols=symbols)
+    return {"fired": fired, "count": len(fired),
+            "evaluatedAt": datetime.now().isoformat(timespec="seconds")}
 
 
 @app.post("/api/breakout-alerts/scan-now")

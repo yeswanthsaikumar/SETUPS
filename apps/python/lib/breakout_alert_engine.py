@@ -56,6 +56,11 @@ class AlertConfig:
     consolidation_days: int = 5
     consolidation_max_range_pct: float = 20
     min_rs_score: float = 0
+    # ── Custom user-defined alert rules ───────────────────────────────────
+    # Each rule is a dict (see CustomAlertRule) and evaluated per tick across
+    # its configured timeframe. Kept as list[dict] so AlertState JSON
+    # serialization stays schema-free.
+    custom_rules: list = field(default_factory=list)
 
 
 @dataclass
@@ -1361,6 +1366,330 @@ class AlertState:
         return {}
 
 
+# ─── Custom User-Defined Alert Rules ────────────────────────────────────────
+#
+# Free-form per-timeframe alerts so users can configure arbitrary
+# volume- or price-based triggers without touching engine code.
+#
+# Rule schema (stored as dict inside AlertConfig.custom_rules):
+#   id:              str (uuid-ish)       — stable key; auto-generated if absent
+#   name:            str                  — human-readable label
+#   enabled:         bool                 — default True
+#   symbol:          str                  — "" or "*" → apply to every watchlist symbol
+#   timeframe:       str                  — "5m"|"15m"|"30m"|"60m"|"1h"|"1d"|"1wk"
+#   metric:          str                  — "price" | "volume" | "volume_ratio"
+#                                            | "price_pct_change"
+#   operator:        str                  — ">" | ">=" | "<" | "<=" | "=="
+#                                            | "crosses_above" | "crosses_below"
+#   threshold:       float                — RHS value to compare against
+#   reference:       str                  — "absolute" | "avg" | "prev_close"
+#                                            | "prev_high" | "prev_low"
+#                                            | "highest" | "lowest"
+#   reference_bars:  int                  — N for avg/highest/lowest (default 20)
+#   cooldown_minutes: int                 — suppress re-fire within this window
+#                                            (default 60)
+#   channels:        list[str]            — subset of ["telegram","email"]
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Supported yfinance interval strings + minimum-bars safety floor.
+_TIMEFRAME_ALIAS = {
+    "5m": "5m", "15m": "15m", "30m": "30m", "60m": "60m",
+    "1h": "60m", "1d": "1d", "1wk": "1wk", "1mo": "1mo",
+}
+_TIMEFRAME_YF_PERIOD = {
+    "5m": "5d", "15m": "5d", "30m": "1mo", "60m": "3mo",
+    "1h": "3mo", "1d": "1y", "1wk": "5y", "1mo": "max",
+}
+
+
+def _normalize_timeframe(tf: str) -> str:
+    tf = (tf or "1d").lower().strip()
+    return _TIMEFRAME_ALIAS.get(tf, "1d")
+
+
+def fetch_ohlcv_timeframe(
+    symbol: str,
+    timeframe: str,
+    bars: int = 100,
+    fallback_daily: Optional[list[dict]] = None,
+) -> list[dict]:
+    """
+    Unified OHLCV fetcher keyed by timeframe.
+
+    • Intraday timeframes (5m/15m/30m/60m) → yfinance
+    • Daily → prefer cached daily rows (pass via ``fallback_daily``); else yfinance
+    • Weekly/Monthly → resample daily rows (fallback_daily) or yfinance.
+
+    Returns a list of OHLCV dicts (date/datetime/open/high/low/close/volume),
+    sorted oldest→newest, trimmed to the last ``bars`` entries.
+    """
+    tf = _normalize_timeframe(timeframe)
+
+    # Weekly/monthly resample first if we already have daily rows — cheap + offline.
+    if tf in ("1wk", "1mo") and fallback_daily:
+        resampled = _resample_daily_to_higher(fallback_daily, tf)
+        if resampled:
+            return resampled[-bars:] if bars and len(resampled) > bars else resampled
+
+    # Daily: prefer cached daily data.
+    if tf == "1d" and fallback_daily:
+        rows = sorted(fallback_daily, key=lambda r: r.get("date", ""))
+        return rows[-bars:] if bars and len(rows) > bars else rows
+
+    # Anything else (or daily without cache) → yfinance.
+    try:
+        import yfinance as yf
+        ticker = symbol.upper()
+        if tf in ("5m", "15m", "30m", "60m") and not (ticker.endswith(".NS") or ticker.endswith(".BO")):
+            ticker = ticker + ".NS"
+        period = _TIMEFRAME_YF_PERIOD.get(tf, "1y")
+        df = yf.download(ticker, period=period, interval=tf, progress=False)
+        if df is None or df.empty:
+            return fallback_daily[-bars:] if (tf == "1d" and fallback_daily) else []
+        if hasattr(df.columns, "levels") and len(df.columns.levels) > 1:
+            df.columns = df.columns.get_level_values(0)
+        out = []
+        for ts, row in df.iterrows():
+            c = float(row.get("Close", 0) or 0)
+            if c <= 0:
+                continue
+            out.append({
+                "datetime": ts.strftime("%Y-%m-%d %H:%M"),
+                "date": ts.strftime("%Y-%m-%d"),
+                "time": ts.strftime("%H:%M"),
+                "open": float(row.get("Open", 0) or 0),
+                "high": float(row.get("High", 0) or 0),
+                "low": float(row.get("Low", 0) or 0),
+                "close": c,
+                "volume": float(row.get("Volume", 0) or 0),
+            })
+        return out[-bars:] if bars and len(out) > bars else out
+    except Exception as e:
+        print(f"⚠ fetch_ohlcv_timeframe({symbol},{tf}) failed: {e}", flush=True)
+        if tf == "1d" and fallback_daily:
+            return fallback_daily[-bars:] if bars and len(fallback_daily) > bars else fallback_daily
+        return []
+
+
+def _resample_daily_to_higher(daily: list[dict], tf: str) -> list[dict]:
+    """Bucket daily rows into weekly (ISO week) or monthly OHLCV."""
+    if not daily or tf not in ("1wk", "1mo"):
+        return []
+    rows = sorted(daily, key=lambda r: r.get("date", ""))
+    buckets: dict[str, list[dict]] = {}
+    for r in rows:
+        try:
+            d = datetime.fromisoformat(r["date"][:10]).date()
+        except Exception:
+            continue
+        if tf == "1wk":
+            iso_year, iso_week, _ = d.isocalendar()
+            key = f"{iso_year}-W{iso_week:02d}"
+        else:
+            key = f"{d.year}-{d.month:02d}"
+        buckets.setdefault(key, []).append(r)
+    out = []
+    for key in sorted(buckets.keys()):
+        bars_in_bucket = buckets[key]
+        out.append({
+            "date": bars_in_bucket[-1]["date"],
+            "datetime": bars_in_bucket[-1].get("date", ""),
+            "open": bars_in_bucket[0]["open"],
+            "high": max(b["high"] for b in bars_in_bucket),
+            "low": min(b["low"] for b in bars_in_bucket),
+            "close": bars_in_bucket[-1]["close"],
+            "volume": sum(b.get("volume", 0) for b in bars_in_bucket),
+        })
+    return out
+
+
+def _compute_reference_value(rule: dict, rows: list[dict]) -> Optional[float]:
+    """Resolve the rule's RHS reference value from the bar series."""
+    ref = (rule.get("reference") or "absolute").lower()
+    metric = (rule.get("metric") or "price").lower()
+    n = max(1, int(rule.get("reference_bars") or 20))
+    if not rows:
+        return None
+
+    # All comparisons exclude the latest (current) bar so "crosses" semantics work.
+    prev_rows = rows[:-1]
+    latest = rows[-1]
+
+    if ref == "absolute":
+        return float(rule.get("threshold", 0))
+    if ref == "prev_close":
+        return prev_rows[-1]["close"] if prev_rows else None
+    if ref == "prev_high":
+        return prev_rows[-1]["high"] if prev_rows else None
+    if ref == "prev_low":
+        return prev_rows[-1]["low"] if prev_rows else None
+
+    window = prev_rows[-n:] if prev_rows else []
+    if not window:
+        return None
+
+    if ref == "avg":
+        if metric == "volume" or metric == "volume_ratio":
+            return sum(r.get("volume", 0) for r in window) / len(window)
+        return sum(r.get("close", 0) for r in window) / len(window)
+    if ref == "highest":
+        if metric in ("volume", "volume_ratio"):
+            return max(r.get("volume", 0) for r in window)
+        return max(r.get("high", 0) for r in window)
+    if ref == "lowest":
+        if metric in ("volume", "volume_ratio"):
+            return min(r.get("volume", 0) for r in window)
+        return min(r.get("low", 0) for r in window)
+
+    # Unknown reference → treat as absolute threshold.
+    return float(rule.get("threshold", 0))
+
+
+def _compute_metric_value(rule: dict, rows: list[dict]) -> Optional[float]:
+    """Resolve the rule's LHS metric value on the latest bar."""
+    if not rows:
+        return None
+    metric = (rule.get("metric") or "price").lower()
+    latest = rows[-1]
+    prev = rows[-2] if len(rows) >= 2 else latest
+    if metric == "price":
+        return float(latest.get("close", 0))
+    if metric == "volume":
+        return float(latest.get("volume", 0))
+    if metric == "volume_ratio":
+        n = max(1, int(rule.get("reference_bars") or 20))
+        prev_rows = rows[:-1][-n:]
+        avg = sum(r.get("volume", 0) for r in prev_rows) / len(prev_rows) if prev_rows else 0
+        return (float(latest.get("volume", 0)) / avg) if avg > 0 else 0.0
+    if metric == "price_pct_change":
+        p = float(prev.get("close", 0))
+        return ((float(latest.get("close", 0)) - p) / p * 100.0) if p > 0 else 0.0
+    return None
+
+
+def _prev_metric_value(rule: dict, rows: list[dict]) -> Optional[float]:
+    """Same as _compute_metric_value but shifted one bar back (for crosses)."""
+    if len(rows) < 2:
+        return None
+    return _compute_metric_value(rule, rows[:-1])
+
+
+def _operator_matches(op: str, lhs: float, rhs: float,
+                       prev_lhs: Optional[float] = None) -> bool:
+    if lhs is None or rhs is None:
+        return False
+    op = (op or ">").strip()
+    if op == ">":
+        return lhs > rhs
+    if op == ">=":
+        return lhs >= rhs
+    if op == "<":
+        return lhs < rhs
+    if op == "<=":
+        return lhs <= rhs
+    if op == "==":
+        return abs(lhs - rhs) < 1e-9
+    if op == "crosses_above":
+        return prev_lhs is not None and prev_lhs <= rhs and lhs > rhs
+    if op == "crosses_below":
+        return prev_lhs is not None and prev_lhs >= rhs and lhs < rhs
+    return False
+
+
+def evaluate_custom_rule(rule: dict, rows: list[dict]) -> Optional[dict]:
+    """
+    Evaluate a custom rule against an OHLCV series (already at the rule's
+    configured timeframe).
+
+    Returns a dict describing the fired alert, or None if the rule does
+    not match. Does NOT enforce cooldown — that's the scanner's job
+    (keeps this function pure and unit-testable).
+    """
+    if not rule or not rule.get("enabled", True):
+        return None
+    if not rows or len(rows) < 2:
+        return None
+
+    lhs = _compute_metric_value(rule, rows)
+    rhs = _compute_reference_value(rule, rows)
+    if lhs is None or rhs is None:
+        return None
+
+    op = rule.get("operator", ">")
+    prev_lhs = _prev_metric_value(rule, rows) if op in ("crosses_above", "crosses_below") else None
+
+    if not _operator_matches(op, lhs, rhs, prev_lhs=prev_lhs):
+        return None
+
+    latest = rows[-1]
+    return {
+        "rule_id": rule.get("id", ""),
+        "rule_name": rule.get("name", "(unnamed rule)"),
+        "symbol": rule.get("symbol", "") or latest.get("_symbol", ""),
+        "timeframe": rule.get("timeframe", "1d"),
+        "metric": rule.get("metric", "price"),
+        "operator": op,
+        "reference": rule.get("reference", "absolute"),
+        "threshold": float(rule.get("threshold", 0)),
+        "value": round(lhs, 4),
+        "reference_value": round(rhs, 4),
+        "close": float(latest.get("close", 0)),
+        "volume": float(latest.get("volume", 0)),
+        "bar_datetime": latest.get("datetime") or latest.get("date", ""),
+        "bar_date": latest.get("date", ""),
+        "fired_at": datetime.now().isoformat(timespec="seconds"),
+    }
+
+
+def _format_custom_alert_message(alert: dict, html: bool = False) -> str:
+    b = "<b>" if html else "*"
+    be = "</b>" if html else "*"
+    nl = "<br>" if html else "\n"
+    line = "━" * 18
+    return (
+        f"🔔 {b}{alert.get('rule_name','Custom Alert')}{be}{nl}"
+        f"{line}{nl}"
+        f"📦 Symbol: {alert.get('symbol','')}{nl}"
+        f"⏱ Timeframe: {alert.get('timeframe','')}{nl}"
+        f"📐 {alert.get('metric','')} {alert.get('operator','')} "
+        f"{alert.get('reference','')} ({alert.get('threshold','')}){nl}"
+        f"📊 Value: {alert.get('value','')}  vs ref {alert.get('reference_value','')}{nl}"
+        f"💰 Close: ₹{alert.get('close',0):.2f}  Vol: {alert.get('volume',0):,.0f}{nl}"
+        f"🕒 Bar: {alert.get('bar_datetime','')}{nl}"
+    )
+
+
+def send_custom_alert_telegram(alert: dict, config: AlertConfig) -> bool:
+    if not config.telegram_enabled or not config.telegram_bot_token or not config.telegram_chat_id:
+        return False
+    try:
+        import urllib.request, urllib.error
+        url = f"https://api.telegram.org/bot{config.telegram_bot_token}/sendMessage"
+        msg = _format_custom_alert_message(alert, html=False)
+        payload = json.dumps({
+            "chat_id": config.telegram_chat_id,
+            "text": msg,
+            "parse_mode": "Markdown",
+        }).encode()
+        req = urllib.request.Request(url, data=payload,
+                                     headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return json.loads(resp.read()).get("ok", False)
+        except urllib.error.HTTPError:
+            payload2 = json.dumps({
+                "chat_id": config.telegram_chat_id,
+                "text": msg.replace("*", ""),
+            }).encode()
+            req2 = urllib.request.Request(url, data=payload2,
+                                          headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req2, timeout=10) as resp2:
+                return json.loads(resp2.read()).get("ok", False)
+    except Exception as e:
+        print(f"⚠ Custom alert Telegram failed: {e}", flush=True)
+        return False
+
+
 # ─── Background Scanner ─────────────────────────────────────────────────────
 
 class BreakoutScanner:
@@ -1384,6 +1713,9 @@ class BreakoutScanner:
         self._ema5_alerted_keys: set = set()  # position EMA5 alert dedup
         self._scan_mode: str = "idle"    # "intraday" | "daily" | "idle"
         self._load_positions_fn = None   # callback to load open positions
+        # Custom rule firing state: {rule_id: {symbol: iso_timestamp}}
+        self._custom_last_fired: dict[str, dict[str, str]] = {}
+        self._custom_fired_log: list[dict] = []   # recent fires for UI/status
 
     @property
     def is_running(self) -> bool:
@@ -1397,6 +1729,7 @@ class BreakoutScanner:
                 "lastSignalCount": len(self._last_scan_results),
                 "alertedCount": len(self._alerted_keys),
                 "scanMode": self._scan_mode,
+                "customRulesFiredRecent": list(self._custom_fired_log[-25:]),
             }
 
     def start(self):
@@ -1437,10 +1770,12 @@ class BreakoutScanner:
                         self._scan_mode = "intraday"
                         self._scan_intraday(config)
                         self._scan_positions_ema5(config)
+                        self._scan_custom_rules(config)
                     else:
                         self._scan_mode = "daily"
                         self._scan_daily(config)
                         self._scan_positions_ema5(config)
+                        self._scan_custom_rules(config)
             except Exception as e:
                 print(f"⚠ Breakout scanner error: {e}", flush=True)
 
@@ -1534,6 +1869,139 @@ class BreakoutScanner:
                         send_ema5_telegram_alert(alert, config)
             except Exception as e:
                 print(f"  ⚠ EMA5 position check {sym}: {e}", flush=True)
+
+    def _scan_custom_rules(self, config: AlertConfig) -> list[dict]:
+        """
+        Evaluate every enabled custom rule in ``config.custom_rules``.
+
+        • Rules with empty/``*`` symbol are fanned out across the watchlist.
+        • Intraday rules pull from yfinance via fetch_ohlcv_timeframe().
+        • Daily/weekly rules reuse the cached daily bars (+ resampling).
+        • Cooldown (``cooldown_minutes``) is enforced per (rule, symbol) pair.
+        """
+        rules = config.custom_rules or []
+        if not rules:
+            return []
+
+        watchlist = self._get_watchlist_symbols()
+        fired: list[dict] = []
+        now_iso = datetime.now().isoformat(timespec="seconds")
+
+        for rule in rules:
+            try:
+                if not rule.get("enabled", True):
+                    continue
+                tf = _normalize_timeframe(rule.get("timeframe", "1d"))
+                rule_sym = (rule.get("symbol") or "").strip().upper()
+                targets = [rule_sym] if rule_sym and rule_sym != "*" else watchlist
+                if not targets:
+                    continue
+
+                for sym in targets:
+                    try:
+                        if self._custom_in_cooldown(rule, sym):
+                            continue
+                        daily = self._get_ohlcv(sym, days=252) if tf != "1d" or True else None
+                        bars_needed = max(50, int(rule.get("reference_bars") or 20) + 5)
+                        rows = fetch_ohlcv_timeframe(
+                            sym, tf, bars=bars_needed, fallback_daily=daily)
+                        if not rows or len(rows) < 2:
+                            continue
+                        for r in rows:
+                            r["_symbol"] = sym
+                        alert = evaluate_custom_rule(rule, rows)
+                        if not alert:
+                            continue
+                        alert["symbol"] = sym
+                        fired.append(alert)
+                        self._custom_mark_fired(rule, sym, now_iso)
+                        self._dispatch_custom_alert(alert, rule, config)
+                    except Exception as e:
+                        print(f"  ⚠ custom-rule {rule.get('id','')} {sym}: {e}", flush=True)
+            except Exception as e:
+                print(f"  ⚠ custom-rule eval error: {e}", flush=True)
+
+        if fired:
+            with self._lock:
+                self._custom_fired_log.extend(fired)
+                self._custom_fired_log = self._custom_fired_log[-100:]
+        return fired
+
+    def _custom_in_cooldown(self, rule: dict, symbol: str) -> bool:
+        minutes = int(rule.get("cooldown_minutes") or 60)
+        if minutes <= 0:
+            return False
+        last_iso = self._custom_last_fired.get(rule.get("id", ""), {}).get(symbol)
+        if not last_iso:
+            return False
+        try:
+            last = datetime.fromisoformat(last_iso)
+        except Exception:
+            return False
+        return (datetime.now() - last).total_seconds() < minutes * 60
+
+    def _custom_mark_fired(self, rule: dict, symbol: str, iso_ts: str) -> None:
+        self._custom_last_fired.setdefault(rule.get("id", ""), {})[symbol] = iso_ts
+
+    def _dispatch_custom_alert(self, alert: dict, rule: dict, config: AlertConfig) -> None:
+        channels = rule.get("channels") or ["telegram"]
+        # Global kill-switch still honored.
+        if "telegram" in channels and config.telegram_enabled:
+            try:
+                send_custom_alert_telegram(alert, config)
+            except Exception as e:
+                print(f"  ⚠ custom telegram dispatch: {e}", flush=True)
+        if "email" in channels and config.email_enabled:
+            try:
+                # Reuse signal email path via lightweight wrapper.
+                from email.mime.text import MIMEText
+                from email.mime.multipart import MIMEMultipart
+                import smtplib
+                subj = f"🔔 {alert.get('rule_name','Alert')} — {alert.get('symbol','')}"
+                body = _format_custom_alert_message(alert, html=True)
+                msg = MIMEMultipart("alternative")
+                msg["Subject"] = subj
+                msg["From"] = config.gmail_address
+                msg["To"] = config.email_to
+                msg.attach(MIMEText(_format_custom_alert_message(alert, html=False),
+                                     "plain", "utf-8"))
+                msg.attach(MIMEText(
+                    f"<html><body style='font-family:monospace'>{body}</body></html>",
+                    "html", "utf-8"))
+                with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as server:
+                    server.login(config.gmail_address, config.gmail_app_password)
+                    server.sendmail(config.gmail_address, config.email_to, msg.as_string())
+            except Exception as e:
+                print(f"  ⚠ custom email dispatch: {e}", flush=True)
+
+    def evaluate_custom_rules_now(self, symbols: list[str] | None = None) -> list[dict]:
+        """Public dry-run — evaluate all custom rules ignoring cooldown."""
+        config = self.state.load_config()
+        fired: list[dict] = []
+        watchlist = symbols if symbols is not None else self._get_watchlist_symbols()
+        for rule in (config.custom_rules or []):
+            if not rule.get("enabled", True):
+                continue
+            tf = _normalize_timeframe(rule.get("timeframe", "1d"))
+            rule_sym = (rule.get("symbol") or "").strip().upper()
+            targets = [rule_sym] if rule_sym and rule_sym != "*" else watchlist
+            for sym in targets:
+                try:
+                    daily = self._get_ohlcv(sym, days=252)
+                    bars_needed = max(50, int(rule.get("reference_bars") or 20) + 5)
+                    rows = fetch_ohlcv_timeframe(sym, tf, bars=bars_needed,
+                                                  fallback_daily=daily)
+                    if not rows:
+                        continue
+                    for r in rows:
+                        r["_symbol"] = sym
+                    alert = evaluate_custom_rule(rule, rows)
+                    if alert:
+                        alert["symbol"] = sym
+                        fired.append(alert)
+                except Exception as e:
+                    print(f"  ⚠ dry-run {rule.get('id','')} {sym}: {e}", flush=True)
+        return fired
 
     def _process_signals(self, all_signals: list[BreakoutSignal], config: AlertConfig) -> list[BreakoutSignal]:
         """Filter dupes, send alerts, persist."""

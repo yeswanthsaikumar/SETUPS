@@ -168,6 +168,20 @@ def api_client(tmp_trade_data, tmp_cache, groww_mock, monkeypatch):
                         tmp_trade_data / "watchlist.json", raising=False)
     monkeypatch.setattr(api_main, "CACHE_DIR", tmp_cache, raising=False)
 
+    # Redirect breakout scanner's persistence to the temp dir so custom-rule
+    # CRUD tests don't share state across runs / with the real config file.
+    try:
+        from apps.python.lib.breakout_alert_engine import AlertState
+        api_main._breakout_scanner.state = AlertState(tmp_trade_data)
+        api_main._breakout_scanner.cache_dir = tmp_cache
+        # Clear any in-memory dedup/fire caches the singleton is carrying.
+        api_main._breakout_scanner._alerted_keys = set()
+        api_main._breakout_scanner._ema5_alerted_keys = set()
+        api_main._breakout_scanner._custom_last_fired = {}
+        api_main._breakout_scanner._custom_fired_log = []
+    except Exception:
+        pass
+
     with TestClient(api_main.app) as client:
         yield client
 

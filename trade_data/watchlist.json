@@ -358,5 +358,23 @@
     "id": "75df1761-5da5-4a6d-b5a7-d00b38055e22",
     "added_at": "2026-04-19T22:45:37",
     "source": "manual"
+  },
+  {
+    "symbol": "GROWW",
+    "name": "",
+    "notes": "",
+    "alert_price": null,
+    "setup": "Breakout",
+    "market": "india",
+    "bucket": "setup_breakout",
+    "conviction": 3,
+    "tags": [],
+    "add_price": 209.0,
+    "add_date": "2026-04-21",
+    "pair_symbol": null,
+    "pair_market": null,
+    "source": "manual",
+    "id": "c6a3ca81-cb34-400d-a9cd-ca27f9e050e3",
+    "added_at": "2026-04-21T13:48:09"
   }
 ]

@@ -362,20 +362,21 @@
       "name": "groww",
       "entry": 197.86,
       "quantity": 6150,
-      "remaining_quantity": null,
+      "remaining_quantity": 0,
       "sl": 193.15,
       "t1": 0.0,
       "t2": 0.0,
       "t3": 0.0,
       "setup": "MEAN_REVERSION",
       "rating": "A",
-      "notes": "bounce from 50 ema",
+      "notes": "nice breakout but trailing stop loss hit",
       "entry_date": "2026-04-21",
-      "status": "OPEN",
-      "exit_price": null,
-      "exit_date": null,
+      "status": "CLOSED",
+      "exit_price": 208.8,
+      "exit_date": "1999-04-21",
       "tags": [],
-      "partial_exits": []
+      "partial_exits": [],
+      "realized_pl": 67281.0
     },
     {
       "id": "41f3fc9c",
@@ -397,8 +398,29 @@
       "exit_date": null,
       "tags": [],
       "partial_exits": []
+    },
+    {
+      "id": "7bcaafa5",
+      "symbol": "GROWW",
+      "name": "groww",
+      "entry": 209.34,
+      "quantity": 5800,
+      "remaining_quantity": null,
+      "sl": 208.0,
+      "t1": 0.0,
+      "t2": 0.0,
+      "t3": 0.0,
+      "setup": "BREAKOUT",
+      "rating": "A+",
+      "notes": "",
+      "entry_date": "2026-04-21",
+      "status": "OPEN",
+      "exit_price": null,
+      "exit_date": null,
+      "tags": [],
+      "partial_exits": []
     }
   ],
   "created": "2026-04-14T11:55:48.601550",
-  "lastUpdated": "2026-04-21T10:07:42.207352"
+  "lastUpdated": "2026-04-21T13:59:43.110563"
 }
