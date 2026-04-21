@@ -1117,13 +1117,71 @@ def _load_taxonomy_cached() -> dict:
         try:
             sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python" / "lib"))
             import nse_taxonomy
-            nse_taxonomy._SECTOR_MAP, nse_taxonomy._INDUSTRY_MAP = nse_taxonomy._build_maps()
+            # reload() clears every enriched map (macro/basic/themes/name)
+            # and re-populates _SECTOR_MAP/_INDUSTRY_MAP from nse_stock_taxonomy.csv
+            # followed by nse_stock_enriched.csv — so downstream multi-level
+            # endpoints (/api/groups, /api/sector-rotation) see today's CSVs.
+            if hasattr(nse_taxonomy, "reload"):
+                nse_taxonomy.reload()
+            else:
+                nse_taxonomy._SECTOR_MAP, nse_taxonomy._INDUSTRY_MAP = nse_taxonomy._build_maps()
             _TAXONOMY_CACHE = nse_taxonomy.load_taxonomy() or {}
         except Exception as e:
             print(f"⚠ Failed to load taxonomy: {e}", flush=True)
             _TAXONOMY_CACHE = {}
         _TAXONOMY_CACHE_TS = time.time()
         return _TAXONOMY_CACHE
+
+
+@app.post("/api/taxonomy/reload")
+def reload_taxonomy() -> dict:
+    """Force-reload the NSE sector/industry taxonomy from disk and invalidate
+    downstream caches (industry groups + RS scan) so the UI picks up the new
+    classifications on the next request.
+
+    Useful after running `scripts/build_nse_industry_taxonomy.py` — lets you
+    refresh the in-memory taxonomy without restarting the web server.
+    """
+    global _TAXONOMY_CACHE, _TAXONOMY_CACHE_TS, _INDUSTRY_CACHE_TS
+    with _TAXONOMY_LOCK:
+        _TAXONOMY_CACHE = None
+        _TAXONOMY_CACHE_TS = 0
+    tax = _load_taxonomy_cached()
+    _INDUSTRY_CACHE_TS = 0  # force industry-groups recompute on next hit
+    # Also clear the multi-level groups cache (macro/sector/basic_industry/
+    # theme) and the industry-groups disk snapshot — otherwise stale
+    # classifications survive the reload for up to 10 minutes.
+    try:
+        with _GROUPS_LEVEL_LOCK:
+            _GROUPS_LEVEL_CACHE.clear()
+    except Exception:
+        pass
+    try:
+        if _INDUSTRY_DISK_PATH.exists():
+            _INDUSTRY_DISK_PATH.unlink()
+    except Exception:
+        pass
+    # Drop auto-classify cache so any yfinance overrides from a prior taxonomy
+    # don't win against the fresh enriched CSV.
+    try:
+        _auto_cache = ROOT / "cache" / "auto_classify_cache.json"
+        if _auto_cache.exists():
+            _auto_cache.unlink()
+    except Exception:
+        pass
+    try:
+        with _rs_scan_lock:
+            _rs_scan_cache["ts"] = 0
+    except Exception:
+        pass
+    _bg_refresh_industry_groups()
+    return {
+        "ok": True,
+        "taxonomyEntries": len(tax),
+        "message": "Taxonomy reloaded; industry-groups + multi-level groups + "
+                   "RS-scan + auto-classify caches invalidated. A background "
+                   "recompute of /api/industry-groups has been kicked off.",
+    }
 
 
 def _load_industry_cache_from_disk():
@@ -1392,11 +1450,13 @@ def _do_compute_industry_groups_inner(t0: float) -> list[dict]:
     industry_tickers: dict[str, list[str]] = {}
     industry_sectors: dict[str, str] = {}
     for ticker, (sector, industry) in taxonomy.items():
-        if sector == "Other" and industry == "Other":
+        # Skip unclassified rows: any ticker that NSE couldn't bucket into
+        # a concrete industry is noise for RS/breadth aggregation.
+        if not industry or industry == "Other":
             continue
         industry_tickers.setdefault(industry, []).append(ticker)
         if industry not in industry_sectors:
-            industry_sectors[industry] = sector
+            industry_sectors[industry] = sector or "Other"
 
     groups_to_compute = [(ind, tks) for ind, tks in industry_tickers.items() if len(tks) >= 2]
 
@@ -1518,6 +1578,293 @@ def _start_periodic_industry_refresher():
 # Kick the periodic refresher now that all the helpers exist.
 if os.environ.get("SETUPS_SKIP_STARTUP_REFRESH", "").lower() not in ("true", "1", "yes"):
     _start_periodic_industry_refresher()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Multi-level groups  (macro / sector / industry / basic_industry / theme)
+# ─────────────────────────────────────────────────────────────────────────────
+# The existing /api/industry-groups endpoint groups stocks by NSE `industry`
+# only. For sector-rotation and relative-strength analysis we want to look at
+# the same RS metrics at multiple classification layers simultaneously:
+#
+#   macro           → NSE macro-economic sector (~20 buckets) — broadest rotation lens
+#   sector          → NSE sector (~55)  — standard Nifty-index bucketing
+#   industry        → NSE industry (~250) — what /api/industry-groups already serves
+#   basic_industry  → NSE basic_industry (~200) — finest NSE level, pure-play peers
+#   theme           → Curated thematic overlay (~30) — cuts across NSE hierarchy
+#                     (Defense, EV, Renewables, Railways, PSU Capex, CDMO, …)
+#
+# Themes are multi-label (a stock can live in several themes, e.g. RELIANCE
+# sits in both oil_upstream + oil_downstream). Every other level is single-
+# label. Theme rules live in data/themes.json; membership is precomputed by
+# scripts/apply_themes.py into data/nse_stock_enriched.csv.
+#
+# Caching is per-level with its own TTL timestamp. We reuse the industry cache
+# for level="industry" so existing callers benefit from the same disk-warmed
+# snapshot and periodic refresher.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_GROUPS_LEVEL_CACHE: dict[str, dict] = {}   # level → {"groups": [...], "ts": float}
+_GROUPS_LEVEL_LOCK = threading.Lock()
+_VALID_LEVELS = ("macro", "sector", "industry", "basic_industry", "theme")
+
+
+def _taxonomy_module():
+    """Return the live nse_taxonomy module (imported once)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python" / "lib"))
+    import nse_taxonomy  # noqa: F401
+    return nse_taxonomy
+
+
+def _compute_groups_for_level(level: str) -> list[dict]:
+    """Compute RS/breadth/volume metrics for every group at the given level.
+
+    Mirrors _do_compute_industry_groups_inner's algorithm but groups tickers
+    by the requested classification level. The expensive work — loading OHLCV
+    for ~2,500 tickers in parallel and computing Nifty baseline returns — is
+    shared across all groups within a single call. Results are cached per
+    level with a 10-min TTL.
+    """
+    import time as _t
+    if level not in _VALID_LEVELS:
+        raise ValueError(f"unknown level {level!r}")
+
+    t0 = _t.time()
+    tax_mod = _taxonomy_module()
+    groups_map = tax_mod.group_tickers_by(level)          # {group → [tickers]}
+    parent_map = tax_mod.group_parent_map(level)          # {group → parent_name}
+    theme_meta = {m["key"]: m for m in tax_mod.list_themes()} if level == "theme" else {}
+
+    # Filter groups worth computing
+    groups_to_compute = [(g, tks) for g, tks in groups_map.items() if len(tks) >= 2]
+
+    # Bulk-load OHLCV in parallel (shared across all groups)
+    all_syms = set()
+    for _, tks in groups_to_compute:
+        all_syms.update(tks)
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _load_one(sym):
+        rows = _read_ohlcv(sym, days=300)
+        return (sym, rows) if rows and len(rows) >= 20 else (sym, None)
+
+    preloaded: dict = {}
+    with ThreadPoolExecutor(max_workers=_IG_WORKERS,
+                            initializer=_ig_worker_init) as pool:
+        for sym, rows in pool.map(_load_one, all_syms):
+            if rows:
+                preloaded[sym] = rows
+
+    # Nifty baseline returns (for true RS-vs-benchmark)
+    nifty_returns = None
+    nifty_rows = _read_ohlcv("^NSEI", days=300)
+    if nifty_rows and len(nifty_rows) >= 61:
+        nc = [r["close"] for r in nifty_rows]
+        nifty_returns = {
+            "r5":  (nc[-1] / nc[-6]  - 1) * 100 if len(nc) >= 6  else 0,
+            "r20": (nc[-1] / nc[-21] - 1) * 100 if len(nc) >= 21 else 0,
+            "r60": (nc[-1] / nc[-61] - 1) * 100 if len(nc) >= 61 else 0,
+        }
+
+    # Per-group metrics
+    results = []
+    for g, tickers in groups_to_compute:
+        parent = parent_map.get(g, "")
+        r = _compute_group_metrics(g, tickers, parent,
+                                   preloaded=preloaded, nifty_returns=nifty_returns)
+        if r.get("stockCount", 0) < 2:
+            continue
+        r["level"]  = level
+        r["parent"] = parent   # industry's sector, basic's industry, etc.
+        if level == "theme":
+            meta = theme_meta.get(g, {})
+            r["themeName"]        = meta.get("name", g)
+            r["themeDescription"] = meta.get("description", "")
+        results.append(r)
+
+    # Rotation score: catches nascent leadership changes. Positive = group's
+    # 1M outperformance has accelerated versus its 3M trend. Negative = momentum
+    # is cooling, even if 3M still looks strong. Ranked independently of rsScore.
+    for r in results:
+        r5  = r.get("return5d")  or 0
+        r20 = r.get("return20d") or 0
+        r60 = r.get("return60d") or 0
+        nr  = nifty_returns or {}
+        # RS-vs-Nifty over each horizon
+        rs5  = r5  - (nr.get("r5")  or 0)
+        rs20 = r20 - (nr.get("r20") or 0)
+        rs60 = r60 - (nr.get("r60") or 0)
+        # Rotation = short-term RS acceleration vs medium-term RS
+        # Positive → momentum accelerating (emerging leader)
+        # Negative → momentum cooling (leader → laggard transition)
+        r["rotationScore"] = round(rs20 - (rs60 / 3), 2)
+        r["rsVsNifty5d"]   = round(rs5, 2)
+        r["rsVsNifty20d"]  = round(rs20, 2)
+        r["rsVsNifty60d"]  = round(rs60, 2)
+
+    results.sort(key=lambda x: -(x.get("rsScore") or 0))
+    for i, r in enumerate(results):
+        r["rsRank"] = i + 1
+
+    elapsed = _t.time() - t0
+    print(f"✅ Groups[{level}] computed: {len(results)} groups, "
+          f"{len(preloaded)} tickers in {elapsed:.1f}s", flush=True)
+    return results
+
+
+def _get_level_groups(level: str, max_age: int = 600) -> list[dict]:
+    """Cached accessor. For level='industry' we piggyback on the existing
+    _INDUSTRY_CACHE so warmth is shared with /api/industry-groups."""
+    now = time.time()
+
+    if level == "industry":
+        # Reuse existing industry cache (already disk-warmed at startup).
+        if _INDUSTRY_CACHE and (now - _INDUSTRY_CACHE_TS) < max_age:
+            return _INDUSTRY_CACHE.get("groups", [])
+        # Fall through to the existing path (handles disk snapshot, bg refresh).
+        return _compute_all_industry_groups()
+
+    cached = _GROUPS_LEVEL_CACHE.get(level)
+    if cached and (now - cached["ts"]) < max_age:
+        return cached["groups"]
+
+    with _GROUPS_LEVEL_LOCK:
+        cached = _GROUPS_LEVEL_CACHE.get(level)
+        if cached and (time.time() - cached["ts"]) < max_age:
+            return cached["groups"]
+        groups = _compute_groups_for_level(level)
+        _GROUPS_LEVEL_CACHE[level] = {"groups": groups, "ts": time.time()}
+        return groups
+
+
+@app.get("/api/groups/levels")
+def api_groups_levels() -> dict:
+    """List the classification levels available to /api/groups, plus theme
+    metadata. Use this to populate a level-selector dropdown in the UI."""
+    tax_mod = _taxonomy_module()
+    return {
+        "levels": [
+            {"key": "macro",          "name": "Macro Sector",
+             "description": "NSE macro-economic sector (broadest)",
+             "count": len(tax_mod.list_macros())},
+            {"key": "sector",         "name": "Sector",
+             "description": "NSE sector (standard index bucketing)",
+             "count": len(tax_mod.list_sectors())},
+            {"key": "industry",       "name": "Industry",
+             "description": "NSE industry (default grouping)",
+             "count": len(tax_mod.list_industries())},
+            {"key": "basic_industry", "name": "Basic Industry",
+             "description": "NSE basic_industry (finest official level)",
+             "count": len(tax_mod.list_basic_industries())},
+            {"key": "theme",          "name": "Theme",
+             "description": "Curated thematic overlay (multi-label)",
+             "count": len(tax_mod.list_themes())},
+        ],
+        "themes": tax_mod.list_themes(),
+    }
+
+
+@app.get("/api/groups")
+def api_groups(level: str = "industry", min_stocks: int = 2,
+               sort_by: str = "rsScore") -> dict:
+    """Unified multi-level groups endpoint for relative-strength & rotation.
+
+    Query params:
+      level   : one of macro | sector | industry | basic_industry | theme
+      min_stocks : drop groups smaller than this (default 2)
+      sort_by : rsScore (default) | rotationScore | breadthScore | return20d
+    """
+    if level not in _VALID_LEVELS:
+        raise HTTPException(status_code=400,
+                            detail=f"level must be one of {_VALID_LEVELS}")
+    groups = _get_level_groups(level)
+    groups = [g for g in groups if g.get("stockCount", 0) >= min_stocks]
+
+    # Sorting
+    key = sort_by if sort_by in ("rsScore", "rotationScore", "breadthScore",
+                                 "return5d", "return20d", "return60d") else "rsScore"
+    groups = sorted(groups, key=lambda g: -(g.get(key) or 0))
+
+    # Strip heavy member arrays (same lite convention as /api/industry-groups)
+    lite = []
+    for g in groups:
+        gc = dict(g)
+        gc.pop("members", None)
+        lite.append(gc)
+
+    ts = (_INDUSTRY_CACHE_TS if level == "industry"
+          else _GROUPS_LEVEL_CACHE.get(level, {}).get("ts", 0))
+    return {
+        "level":      level,
+        "sortBy":     key,
+        "groups":     lite,
+        "total":      len(lite),
+        "cachedAt":   ts or None,
+        "cacheAgeSec": round(time.time() - ts) if ts else None,
+        "timestamp":  time.time(),
+    }
+
+
+@app.post("/api/groups/refresh")
+def api_groups_refresh(level: str | None = None) -> dict:
+    """Invalidate the multi-level groups cache (all levels if none given)."""
+    global _INDUSTRY_CACHE_TS
+    with _GROUPS_LEVEL_LOCK:
+        if level is None:
+            _GROUPS_LEVEL_CACHE.clear()
+            _INDUSTRY_CACHE_TS = 0
+            return {"cleared": "all"}
+        if level not in _VALID_LEVELS:
+            raise HTTPException(status_code=400,
+                                detail=f"level must be one of {_VALID_LEVELS}")
+        if level == "industry":
+            _INDUSTRY_CACHE_TS = 0
+        _GROUPS_LEVEL_CACHE.pop(level, None)
+        return {"cleared": level}
+
+
+@app.get("/api/sector-rotation")
+def api_sector_rotation(level: str = "sector", top_n: int = 10) -> dict:
+    """Sector / theme rotation dashboard.
+
+    Returns the strongest and weakest groups at the chosen level sorted by
+    *rotationScore* (not rsScore). rotationScore = rsVsNifty20d - rsVsNifty60d/3,
+    so positive = outperformance accelerating (emerging leadership) and
+    negative = outperformance cooling (leaders rolling over). Pair this with
+    /api/groups?sort_by=rsScore to see absolute vs directional strength.
+    """
+    if level not in _VALID_LEVELS:
+        raise HTTPException(status_code=400,
+                            detail=f"level must be one of {_VALID_LEVELS}")
+    groups = _get_level_groups(level)
+    groups = [g for g in groups if g.get("stockCount", 0) >= 3]
+    by_rot = sorted(groups, key=lambda g: -(g.get("rotationScore") or 0))
+
+    def _slim(g: dict) -> dict:
+        return {
+            "name":           g.get("name") or g.get("industry"),
+            "parent":         g.get("parent") or g.get("sector", ""),
+            "stockCount":     g.get("stockCount"),
+            "rsScore":        g.get("rsScore"),
+            "rotationScore":  g.get("rotationScore"),
+            "rsVsNifty5d":    g.get("rsVsNifty5d"),
+            "rsVsNifty20d":   g.get("rsVsNifty20d"),
+            "rsVsNifty60d":   g.get("rsVsNifty60d"),
+            "return5d":       g.get("return5d"),
+            "return20d":      g.get("return20d"),
+            "return60d":      g.get("return60d"),
+            "breadthScore":   g.get("breadthScore"),
+            "pctAbove50ma":   g.get("pctAbove50ma"),
+            "themeName":      g.get("themeName"),
+        }
+
+    return {
+        "level":     level,
+        "timestamp": time.time(),
+        "emerging":  [_slim(g) for g in by_rot[:top_n]],       # accelerating
+        "cooling":   [_slim(g) for g in by_rot[-top_n:][::-1]],# decelerating
+    }
 
 
 @app.get("/api/industry-groups")

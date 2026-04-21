@@ -1,0 +1,225 @@
+{
+  "_comment": "Thematic overlay for NSE stocks. Each theme can match via any of: basic_industry (regex on NSE official field), industry, sector, macro, ticker (exact, comma-sep), or name_regex on company name. A stock can belong to multiple themes. Rules are intentionally hand-curated — they express the analyst's view of what moves together in the market cycle, not the NSE classification.",
+  "version": 1,
+  "themes": [
+    {
+      "key": "defense",
+      "name": "Defense & Aerospace",
+      "description": "Defense ordnance, shipyards, electronics, UAVs, and aerospace suppliers. Strong capex + PLI tailwinds.",
+      "basic_industry": ["Defence", "Aerospace"],
+      "industry": ["Aerospace & Defense"],
+      "ticker": "HAL,BEL,BDL,MAZDOCK,COCHINSHIP,GRSE,ASTRAMICRO,DATAPATTNS,MTARTECH,PARAS,IDEAFORGE,ZENTEC,SIKA,APOLLO,PTC,BEML"
+    },
+    {
+      "key": "ev",
+      "name": "Electric Vehicles",
+      "description": "EV OEMs, battery makers, motor/BLDC & power electronics suppliers, EV charging infra.",
+      "basic_industry": ["2/3 Wheelers", "Passenger Cars & Utility Vehicles", "Auto Components & Equipments", "Batteries"],
+      "ticker": "TATAPOWER,TATAMOTORS,OLAELEC,M&M,ASHOKLEY,TVSMOTOR,EICHERMOT,BAJAJ-AUTO,HEROMOTOCO,EXIDEIND,AMARAJABAT,HBLPOWER,BOSCHLTD,SONACOMS,UNOMINDA,MOTHERSON,SUBROS,JBM,GREAVESCOT,LUMAXIND",
+      "name_regex": "(electric|EV|battery|lithium|BLDC)"
+    },
+    {
+      "key": "renewables",
+      "name": "Renewables & Clean Energy",
+      "description": "Solar, wind, hydro, green hydrogen, energy storage. Adani Green / NTPC Green + manufacturers.",
+      "basic_industry": ["Electric Utilities", "Renewable Energy"],
+      "ticker": "ADANIGREEN,TATAPOWER,NTPC,JSWENERGY,TORNTPOWER,KPIGREEN,ACMESOLAR,INOXWIND,SUZLON,WEBELSOLAR,WAAREE,PREMIER,BOROSIL,BORORENEW,OILNSES,SWSOLAR,SWELECTES,SIEMENS,ABB,BHEL",
+      "name_regex": "(solar|wind|renewable|green|hydrogen|clean energy)"
+    },
+    {
+      "key": "semis",
+      "name": "Semiconductors & Electronics Manufacturing",
+      "description": "Indian EMS/ODM, display glass, PCB, semicap equipment suppliers.",
+      "basic_industry": ["Consumer Electronics", "Other Electrical Equipment"],
+      "ticker": "DIXON,KAYNES,SYRMA,CYIENTDLM,AMBER,POLYCAB,HAVELLS,PGEL,AVALON,EPACK,DCXINDIA,HONAUT",
+      "name_regex": "(semicon|semicond|fab|PCB|electronic|optoelectron)"
+    },
+    {
+      "key": "railways",
+      "name": "Railways & Metro Capex",
+      "description": "Rolling stock, signaling, wheelsets, coaches, station redevelopment.",
+      "ticker": "IRFC,IRCTC,IRCON,RVNL,TITAGARH,TEXRAIL,JWL,BEML,CONCOR,RITES",
+      "name_regex": "(rail|metro|wagon|locomotive)"
+    },
+    {
+      "key": "psu_capex",
+      "name": "PSU Capex Beneficiaries",
+      "description": "State-owned enterprises riding India's infrastructure/defense/power capex cycle.",
+      "ticker": "BEL,BHEL,HAL,BDL,SAIL,NMDC,ONGC,NTPC,PFC,RECLTD,IOC,BPCL,HPCL,GAIL,COALINDIA,IRCON,RVNL,CONCOR,MAZDOCK,COCHINSHIP,GRSE,POWERGRID,NHPC,SJVN,OIL"
+    },
+    {
+      "key": "capex",
+      "name": "Broad Capital Goods Cycle",
+      "description": "Heavy engineering, turbines, T&D, industrial automation. Private capex barometer.",
+      "industry": ["Electrical Equipment"],
+      "basic_industry": ["Heavy Electrical Equipment", "Industrial Gases", "Other Electrical Equipment", "Industrial Products"],
+      "ticker": "LT,SIEMENS,ABB,CUMMINSIND,THERMAX,BHEL,HONAUT,TIMKEN,SCHAEFFLER,GVT&D,CGPOWER,HITACHIEN,KEI,POLYCAB,RRKABEL,APARINDS"
+    },
+    {
+      "key": "specialty_chem",
+      "name": "Specialty Chemicals",
+      "description": "Agrochemical intermediates, dyes/pigments, fluorochem, performance chemicals.",
+      "basic_industry": ["Chemicals", "Specialty Chemicals", "Dyes And Pigments", "Fertilizers", "Pesticides & Agrochemicals"],
+      "ticker": "PIIND,SRF,AARTIIND,NAVINFLUOR,DEEPAKNTR,ATUL,VINATIORGA,GALAXYSURF,CLEAN,ROSSARI,ALKYLAMINE,FINEORG,ARCHIDPLY,CHAMBLFERT,CROMPTON,COROMANDEL,UPL,BASF,TATACHEM,GHCL,AMRUTANJAN"
+    },
+    {
+      "key": "cdmo_pharma",
+      "name": "CDMO / CRAMS Pharma",
+      "description": "Contract drug manufacturing, APIs with scale. Pharma export cycle beneficiaries.",
+      "basic_industry": ["Pharmaceuticals"],
+      "ticker": "DIVISLAB,SYNGENE,LAURUSLABS,SUVENPHAR,NEULANDLAB,ENCUBE,PIRAMALPHL,GRANULES,AMIORG,BLUEJET,JUBLPHARMA,NGLFINE,FERMENTA"
+    },
+    {
+      "key": "branded_pharma",
+      "name": "Branded Formulations Pharma",
+      "description": "Domestic-led branded formulations — relatively lower China exposure.",
+      "basic_industry": ["Pharmaceuticals"],
+      "ticker": "SUNPHARMA,CIPLA,DRREDDY,LUPIN,TORNTPHARM,ABBOTINDIA,IPCALAB,ALKEM,AUROPHARMA,MANKIND,GLAND,SANOFI,PFIZER,GLENMARK,INDOCO,AJANTPHARM,NATCOPHARM,JBCHEPHARM,BIOCON,ZYDUSLIFE,ERIS,EMCURE"
+    },
+    {
+      "key": "hospitals",
+      "name": "Hospitals & Healthcare Services",
+      "description": "Listed hospital chains and diagnostics.",
+      "basic_industry": ["Healthcare Services"],
+      "industry": ["Healthcare Services"],
+      "ticker": "APOLLOHOSP,MAXHEALTH,FORTIS,NARAYANHRO,RAINBOW,KIMS,HCG,DRLALPATHLAB,METROPOLIS,THYROCARE,KRSNAA,VIJAYA"
+    },
+    {
+      "key": "private_banks",
+      "name": "Private Banks",
+      "description": "Private-sector banks (high retail + corporate mix).",
+      "basic_industry": ["Private Sector Bank"],
+      "ticker": "HDFCBANK,ICICIBANK,AXISBANK,KOTAKBANK,INDUSINDBK,IDFCFIRSTB,FEDERALBNK,RBLBANK,CSBBANK,CITYUNIONBNK,KARURVYSYA,DCBBANK,KTKBANK,TMB,DHANBANK"
+    },
+    {
+      "key": "psu_banks",
+      "name": "PSU Banks",
+      "description": "Public-sector banks — cheap multiples, cyclical book growth.",
+      "basic_industry": ["Public Sector Bank"],
+      "ticker": "SBIN,BANKBARODA,PNB,CANBK,UNIONBANK,BANKINDIA,IDBI,INDIANB,CENTRALBK,UCOBANK,IOB,PSB,J&KBANK,MAHABANK"
+    },
+    {
+      "key": "small_fin_banks",
+      "name": "Small Finance & Microfinance",
+      "description": "SFBs and NBFC-MFIs — granular retail credit.",
+      "basic_industry": ["Other Bank", "Small Finance Bank"],
+      "ticker": "AUBANK,EQUITASBNK,UJJIVANSFB,SURYODAY,ESAFSFB,UTKARSHBNK,FINOPB,CREDITACC,FUSION,SPANDANA,BANDHANBNK,SATIN"
+    },
+    {
+      "key": "nbfc",
+      "name": "NBFC — Retail & Diversified",
+      "description": "Retail-lending NBFCs (housing, gold, vehicle, MFI, personal).",
+      "basic_industry": ["Non Banking Financial Company (NBFC)", "Housing Finance Company"],
+      "ticker": "BAJFINANCE,BAJAJFINSV,CHOLAFIN,SHRIRAMFIN,M&MFIN,MUTHOOTFIN,MANAPPURAM,LICHSGFIN,PNBHOUSING,REPCOHOME,HOMEFIRST,ABCAPITAL,PFC,RECLTD,IRFC,IREDA,AAVAS,APTUS,SUNDARMFIN,POONAWALLA,FIVESTAR,MAS,SAMMAN"
+    },
+    {
+      "key": "capital_markets",
+      "name": "Capital Markets & Exchanges",
+      "description": "Brokers, AMCs, depositories, exchanges — leveraged on retail-investor flow.",
+      "basic_industry": ["Stockbroking & Allied", "Asset Management Company", "Other Capital Markets"],
+      "industry": ["Capital Markets"],
+      "ticker": "BSE,MCX,CDSL,CAMS,KFINTECH,HDFCAMC,NAM-INDIA,UTIAMC,ABSLAMC,ANGELONE,360ONE,MOTILALOFS,NUVAMA,IEX,IIFL,JMFINANCIL,5PAISA,ICICIGI,GROWW,SMALLCAP"
+    },
+    {
+      "key": "life_insurance",
+      "name": "Life Insurance",
+      "description": "Listed life insurers.",
+      "basic_industry": ["Life Insurance"],
+      "ticker": "LICI,SBILIFE,HDFCLIFE,ICICIPRULI,MAXFIN,IPRUAMC"
+    },
+    {
+      "key": "general_insurance",
+      "name": "General & Health Insurance",
+      "description": "Non-life and standalone health insurers.",
+      "basic_industry": ["General Insurance", "Health Insurance"],
+      "ticker": "ICICIGI,STARHEALTH,NIACL,GICRE,MEDIASSIST,NIVABUPA"
+    },
+    {
+      "key": "fmcg_staples",
+      "name": "FMCG Staples",
+      "description": "Rural-tied consumption staples — food, personal care.",
+      "industry": ["Diversified FMCG", "Personal Products", "Agricultural Food & other Products"],
+      "ticker": "HINDUNILVR,ITC,NESTLEIND,DABUR,GODREJCP,MARICO,COLPAL,EMAMILTD,JYOTHYLAB,GILLETTE,PGHH,TATACONSUM,BRITANNIA,PATANJALI,HERITGFOOD,BAJAJCON,VBL,RADICO,VADILALIND"
+    },
+    {
+      "key": "discretionary",
+      "name": "Premium Consumer Discretionary",
+      "description": "Urban consumption — jewelry, QSR, apparel, travel, liquor.",
+      "industry": ["Consumer Durables", "Consumer Services", "Leisure Services", "Retailing", "Textiles & Apparels"],
+      "ticker": "TITAN,DMART,TRENT,NYKAA,ABFRL,PAGEIND,PAYTM,ZOMATO,SWIGGY,NAUKRI,POLICYBZR,JUBLFOOD,DEVYANI,WESTLIFE,SAPPHIRE,THOMASCOOK,INDIAMART,RBA,KALYANKJIL,SENCO,PCJEWELLER,VEDL,VMART,V2RETAIL,VAIBHAVGBL"
+    },
+    {
+      "key": "metals",
+      "name": "Metals & Mining",
+      "description": "Ferrous + non-ferrous + miners — global-cyclical.",
+      "basic_industry": ["Iron & Steel", "Aluminium", "Copper", "Zinc", "Coal"],
+      "industry": ["Ferrous Metals", "Non - Ferrous Metals", "Minerals & Mining", "Metals & Minerals Trading"],
+      "ticker": "TATASTEEL,JSWSTEEL,SAIL,JINDALSTEL,NMDC,VEDL,HINDZINC,HINDCOPPER,HINDALCO,NALCO,RATNAMANI,JSL,APL,GPIL,MAITHANALL,MOIL,COALINDIA,ADANIENT"
+    },
+    {
+      "key": "cement",
+      "name": "Cement",
+      "description": "Cement producers — infra/housing proxy.",
+      "basic_industry": ["Cement & Cement Products"],
+      "ticker": "ULTRACEMCO,AMBUJACEM,ACC,SHREECEM,DALBHARAT,RAMCOCEM,JKCEMENT,JKLAKSHMI,HEIDELBERG,BIRLACORPN,INDIACEM,PRISMJOHNSN,KCP,UDAIPURCEM,SHREDIGCEM,ORIENTCEM,STARCEMENT"
+    },
+    {
+      "key": "oil_upstream",
+      "name": "Oil & Gas — Upstream",
+      "description": "E&P + gas exploration — levered on crude.",
+      "basic_industry": ["Oil Exploration & Production"],
+      "ticker": "ONGC,OIL,VEDL,RELIANCE,HOEC,SELAN"
+    },
+    {
+      "key": "oil_downstream",
+      "name": "Oil & Gas — Downstream & Gas Utilities",
+      "description": "Refiners, OMCs, gas distribution.",
+      "basic_industry": ["Refineries & Marketing", "LPG/CNG/PNG/LNG Supplier"],
+      "ticker": "RELIANCE,IOC,BPCL,HPCL,MRPL,GAIL,GUJGAS,IGL,MGL,ATGL,PETRONET,AEGISCHEM"
+    },
+    {
+      "key": "it_services",
+      "name": "IT Services",
+      "description": "Traditional IT services — TCS, Infosys, mid-tier.",
+      "basic_industry": ["Computers - Software & Consulting", "IT Enabled Services"],
+      "ticker": "TCS,INFY,HCLTECH,WIPRO,TECHM,LTIM,PERSISTENT,COFORGE,MPHASIS,LTTS,OFSS,KPITTECH,TATAELXSI,BSOFT,NIITMTS,INTELLECT,HAPPSTMNDS,ZENSARTECH,CAMS,CIEINDIA,RSYSTEMS"
+    },
+    {
+      "key": "new_age_tech",
+      "name": "New-Age Tech (Internet/Fintech)",
+      "description": "Listed internet & fintech IPOs — loss-making to profitable growth.",
+      "ticker": "ZOMATO,PAYTM,NYKAA,POLICYBZR,NAUKRI,IRCTC,CARTRADE,EASEMYTRIP,MAPMYINDIA,TBOTEK,TRACXN,YATRA,IXIGO,SWIGGY,FIRSTCRY,OLAELEC,SAMHI,JSWINFRA,INDIAMART",
+      "name_regex": "(online|digital|tech|fintech|platform|portal)"
+    },
+    {
+      "key": "realty",
+      "name": "Real Estate",
+      "description": "Residential, commercial and REITs.",
+      "industry": ["Realty"],
+      "ticker": "DLF,LODHA,GODREJPROP,OBEROIRLTY,PRESTIGE,BRIGADE,SOBHA,PHOENIXLTD,MAHLIFE,SUNTECK,NBCC,HEMIPROP,SIGNATURE,KEYSTONE,EMBASSY,MINDSPACE,BROOKFIELD"
+    },
+    {
+      "key": "data_center",
+      "name": "Data Center & Digital Infra",
+      "description": "DC REITs, hyperscaler suppliers, fibre & transmission beneficiaries.",
+      "ticker": "NETWEB,ANANTRAJ,NXTDIGITAL,RAILTEL,STLTECH,TEJAS,RVNL,IRCON,POWERMECH,BLUSTARCO",
+      "name_regex": "(data center|datacentre|hyperscale)"
+    },
+    {
+      "key": "rural_agri",
+      "name": "Rural & Agri",
+      "description": "Tractors, pumps, fertilizers, agri-inputs — rural demand cycle.",
+      "basic_industry": ["Fertilizers", "Pesticides & Agrochemicals"],
+      "ticker": "M&M,ESCORTS,VSTTILLERS,GODREJAGRO,KAVERIEED,COROMANDEL,CHAMBLFERT,DEEPAKFERT,MANGCHEFER,GSFC,GNFC,RCF,NFL,SUMICHEM,UPL,DHANUKA,PIIND,BAYERCROP,ASTEC,RALLIS,INSECTICID"
+    },
+    {
+      "key": "logistics",
+      "name": "Logistics & Supply Chain",
+      "description": "Port, 3PL, express, courier, warehousing.",
+      "industry": ["Transport Services"],
+      "basic_industry": ["Marine Port & Services", "Logistics Solution Provider"],
+      "ticker": "ADANIPORTS,JSWINFRA,BLUEDART,CONCOR,DELHIVERY,MAHLOG,TCIEXP,GATI,VRLLOG,ALLCARGO,SCI,GESHIP"
+    }
+  ]
+}
+

@@ -134,6 +134,13 @@
 <div class="tab-content active" id="tab-groups">
     <div class="controls">
         <input type="text" class="ctrl-input" id="search" placeholder="🔍 Filter groups..." oninput="filterGroups()">
+        <select class="ctrl-select" id="level-filter" onchange="changeLevel()" title="Classification level (from nse_stock_enriched.csv)">
+            <option value="industry">Industry (default)</option>
+            <option value="macro">Macro Sector</option>
+            <option value="sector">Sector</option>
+            <option value="basic_industry">Basic Industry</option>
+            <option value="theme">Theme</option>
+        </select>
         <select class="ctrl-select" id="sector-filter" onchange="filterGroups()">
             <option value="">All Sectors</option>
         </select>
@@ -219,13 +226,63 @@
 let allGroups = [];
 let filteredGroups = [];
 let currentSort = {field: 'rsScore', desc: true};
+let currentLevel = 'industry';
+
+// Adapts the multi-level /api/groups payload to match the field shape the
+// existing render code expects (g.group + g.sector + stockCount). For the
+// legacy /api/industry-groups endpoint each row already has `group` and
+// `sector`, so this function is a no-op in that path.
+function _adaptGroupsPayload(rows, level) {
+    return (rows || []).map(g => {
+        const name = g.group || g.name || g.themeName || '';
+        const parent = g.sector || g.parent || '';
+        return Object.assign({}, g, {
+            group: name,
+            sector: parent || (level === 'theme' ? 'Theme' : 'Other'),
+            // Preserve extra multi-level fields so future UI additions can use them
+            _level: g.level || level,
+            _themeName: g.themeName,
+            _themeDescription: g.themeDescription,
+            _rotationScore: g.rotationScore,
+        });
+    });
+}
+
+function changeLevel() {
+    currentLevel = document.getElementById('level-filter').value || 'industry';
+    fetchGroups();
+}
+
+async function _fetchGroupsForCurrentLevel() {
+    if (currentLevel === 'industry') {
+        const resp = await fetch('/api/industry-groups?min_stocks=2');
+        const data = await resp.json();
+        return {
+            groups: data.groups || [],
+            cachedAt: data.cachedAt,
+            cacheAgeSec: data.cacheAgeSec,
+            bgRefreshing: data.bgRefreshing,
+            ohlcvRefreshing: data.ohlcvRefreshing,
+            ohlcvProgress: data.ohlcvProgress,
+        };
+    }
+    const resp = await fetch(`/api/groups?level=${encodeURIComponent(currentLevel)}&min_stocks=2`);
+    const data = await resp.json();
+    return {
+        groups: _adaptGroupsPayload(data.groups || [], currentLevel),
+        cachedAt: data.cachedAt,
+        cacheAgeSec: data.cacheAgeSec,
+        bgRefreshing: false,
+        ohlcvRefreshing: false,
+        ohlcvProgress: null,
+    };
+}
 
 async function fetchGroups() {
     document.getElementById('groups-loading').style.display = 'flex';
     document.getElementById('table-wrap').style.display = 'none';
     try {
-        const resp = await fetch('/api/industry-groups?min_stocks=2');
-        const data = await resp.json();
+        const data = await _fetchGroupsForCurrentLevel();
         allGroups = data.groups || [];
 
         // Cold start: server returned empty + bgRefreshing=true. Show a helpful
@@ -278,8 +335,7 @@ let _fastPollTimer = null;
 async function silentRefresh() {
     if (document.hidden) return;
     try {
-        const resp = await fetch('/api/industry-groups?min_stocks=2');
-        const data = await resp.json();
+        const data = await _fetchGroupsForCurrentLevel();
         allGroups = data.groups || [];
         populateSectorFilter();
         filterGroups();  // re-applies current filter + sort + renderTable
@@ -424,6 +480,13 @@ function renderTable() {
 }
 
 async function showDetail(groupName) {
+    // Drill-down endpoint only supports industry-level groups. For other
+    // levels (macro / sector / basic_industry / theme) we just skip the
+    // modal — the user can switch back to the industry view to drill in.
+    if (currentLevel !== 'industry') {
+        alert('Drill-down is available only on the Industry level.\nSwitch the level selector to "Industry (default)" to open group details.');
+        return;
+    }
     const modal = document.getElementById('detail-modal');
     modal.classList.add('active');
     document.getElementById('modal-title').textContent = groupName;

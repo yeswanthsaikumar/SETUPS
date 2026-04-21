@@ -75,21 +75,33 @@ except Exception as _mb_err:
     def compute_sector_momentum_matrix(d): return d
     def screen_best_opportunities(d, **kw): return []
 
+# ── Taxonomy (sector / industry maps) ────────────────────────────────────────
+# Prefer the live nse_taxonomy module — it already merges
+# data/nse_stock_taxonomy.csv (2-level) + data/nse_stock_enriched.csv (4-level
+# + themes). Falling back to the local CSV loader keeps this script usable
+# even if nse_taxonomy import fails (e.g. pruned lib path in CI).
 _CSV_IND: dict[str, str] = {}
 _CSV_SEC: dict[str, str] = {}
-_CSV_PATH = ROOT / "data" / "nse_stock_taxonomy.csv"
-if _CSV_PATH.exists():
-    try:
-        with open(_CSV_PATH, newline="", encoding="utf-8") as f:
-            for row in csv.DictReader(f):
-                t = row.get("nse_ticker","").strip().upper()
-                s = row.get("sector","").strip()
-                i = row.get("industry","").strip()
-                if t and s: _CSV_SEC[t] = s
-                if t and i: _CSV_IND[t] = i
-    except Exception:
-        pass
+try:
+    import nse_taxonomy as _taxo  # type: ignore
+    _CSV_SEC = dict(_taxo._SECTOR_MAP)
+    _CSV_IND = dict(_taxo._INDUSTRY_MAP)
+except Exception:
+    _CSV_PATH = ROOT / "data" / "nse_stock_taxonomy.csv"
+    if _CSV_PATH.exists():
+        try:
+            with open(_CSV_PATH, newline="", encoding="utf-8") as f:
+                for row in csv.DictReader(f):
+                    t = row.get("nse_ticker","").strip().upper()
+                    s = row.get("sector","").strip()
+                    i = row.get("industry","").strip()
+                    if t and s: _CSV_SEC[t] = s
+                    if t and i: _CSV_IND[t] = i
+        except Exception:
+            pass
 
+# Enriched taxonomy wins over trade-plans fallbacks so new/re-classified
+# tickers are honoured on every render.
 INDUSTRY_MAP: dict[str, str] = {**_TP_IND, **_CSV_IND}
 SECTOR_MAP:   dict[str, str] = {**_TP_SEC, **_CSV_SEC}
 
@@ -293,6 +305,57 @@ CUSTOM_THEMES: dict[str, dict] = {
         ],
     },
 }
+
+
+# ── Auto-extend themes from data/themes.json + nse_stock_enriched.csv ────────
+# The curated CUSTOM_THEMES above ship with hand-picked emoji/color/stocks.
+# data/themes.json (authored by scripts/apply_themes.py) carries many more
+# themes — Railways, PSU Capex, CDMO, Nuclear, Ethanol, etc. — mapped to every
+# matching NSE ticker. We merge them in here so the dashboard automatically
+# gains each new theme as soon as it lands in the enriched CSV. Existing
+# entries are preserved verbatim, so curators keep full control.
+try:
+    import json as _json
+    _themes_json = ROOT / "data" / "themes.json"
+    if _themes_json.exists() and "_taxo" in globals():
+        _theme_stocks: dict[str, list[str]] = _taxo.group_tickers_by("theme")  # type: ignore
+        _theme_def = _json.loads(_themes_json.read_text(encoding="utf-8"))
+        # Simple emoji rotation so new themes don't all look the same on screen
+        _auto_emojis = ["🧭", "⚙️", "🔬", "🌿", "🚆", "🔌", "🏗️", "📡",
+                        "🧪", "⚡", "🛢️", "🛰️", "💡", "🧬", "🚢", "🍱"]
+        _auto_colors = ["#60a5fa", "#34d399", "#f472b6", "#fbbf24", "#a78bfa",
+                        "#f87171", "#22d3ee", "#fb923c", "#c084fc", "#86efac"]
+        _added = 0
+        for _i, _t in enumerate(_theme_def.get("themes", [])):
+            _k = _t.get("key") or ""
+            if not _k:
+                continue
+            _name = _t.get("name", _k)
+            _stocks = sorted({s.upper() for s in _theme_stocks.get(_k, [])})
+            if not _stocks:
+                continue
+            # Preserve an existing curated entry — only merge in tickers it
+            # hasn't already listed, never overwrite emoji/color/description.
+            if _name in CUSTOM_THEMES:
+                _existing = CUSTOM_THEMES[_name]
+                _merged = sorted(set(_existing.get("stocks", [])) | set(_stocks))
+                _existing["stocks"] = _merged
+                continue
+            CUSTOM_THEMES[_name] = {
+                "emoji":       _auto_emojis[_i % len(_auto_emojis)],
+                "color":       _auto_colors[_i % len(_auto_colors)],
+                "description": _t.get("description", ""),
+                "stocks":      _stocks,
+                # Mark as auto-derived so callers can sort/filter if they care
+                "_auto":       True,
+                "_key":        _k,
+            }
+            _added += 1
+        if _added:
+            print(f"  Auto-added {_added} theme(s) from data/themes.json "
+                  f"(total themes: {len(CUSTOM_THEMES)})")
+except Exception as _theme_err:
+    print(f"  ⚠ Theme auto-extend skipped: {_theme_err}")
 
 
 # ── Price helpers ──────────────────────────────────────────────────────────────

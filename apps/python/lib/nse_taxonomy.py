@@ -32,6 +32,9 @@ logger = logging.getLogger("NSETaxonomy")
 _ROOT      = Path(__file__).resolve().parents[3]   # SETUPS/
 _CSV_PATH  = _ROOT / "data" / "nse_stock_taxonomy.csv"
 _AUTO_CACHE= _ROOT / "cache" / "auto_classify_cache.json"
+# Rich 4-level NSE + themes (written by scripts/apply_themes.py)
+_ENRICHED_PATH = _ROOT / "data" / "nse_stock_enriched.csv"
+_THEMES_JSON   = _ROOT / "data" / "themes.json"
 
 # ── yfinance → our taxonomy mapping ──────────────────────────────────────────
 # When yfinance returns its own sector/industry, map it to our vocabulary.
@@ -153,6 +156,123 @@ def _build_maps() -> tuple[dict[str, str], dict[str, str]]:
 _SECTOR_MAP, _INDUSTRY_MAP = _build_maps()
 
 
+# ── Rich enriched loader (4-level NSE + themes) ───────────────────────────────
+# Populated from data/nse_stock_enriched.csv (written by scripts/apply_themes.py).
+# All four NSE levels are preserved, and each ticker carries its theme list.
+# This powers the multi-level /api/groups endpoint and sector-rotation analysis.
+_MACRO_MAP:          dict[str, str]       = {}
+_BASIC_INDUSTRY_MAP: dict[str, str]       = {}
+_NAME_MAP:           dict[str, str]       = {}
+_THEMES_MAP:         dict[str, list[str]] = {}
+_THEME_META:         dict[str, dict]      = {}  # theme_key → {name, description}
+
+
+def _load_enriched() -> None:
+    """Populate the rich maps from data/nse_stock_enriched.csv (best-effort)."""
+    if not _ENRICHED_PATH.exists():
+        return
+    # Canonical macro labels — the source CSV mixes upper-case ("COMMODITIES")
+    # and title-case ("Commodities") variants for the same logical bucket,
+    # which would split each macro into two groups downstream. Normalise here.
+    _MACRO_CANON = {
+        "COMMODITIES": "Commodities",
+        "CONSUMER": "Consumer Discretionary",
+        "ENERGY": "Energy",
+        "FINANCIAL SERVICES": "Financial Services",
+        "HEALTHCARE": "Healthcare",
+        "MANUFACTURING": "Industrials",
+        "SERVICES": "Services",
+        "IT": "Information Technology",
+        "Fast Moving Consumer Goods": "Consumer Staples",
+    }
+
+    def _canon_case(s: str) -> str:
+        """Fold ALL-CAPS sector/industry names to Title Case so the same
+        logical bucket arriving from different source layers (NSE website
+        vs NSE CSV vs manual overrides) collapses to one group."""
+        if not s:
+            return s
+        # Well-known acronyms / brand names that should stay upper-cased.
+        _ACRONYMS = {"IT", "FMCG", "NBFC", "PSU", "FII", "DII", "REIT",
+                     "BPO", "CDMO", "LPG", "CNG", "PNG", "LNG", "OMC",
+                     "AMC", "HFC", "EV"}
+        if s.upper() in _ACRONYMS:
+            return s.upper()
+        # Mostly-uppercase strings → title-case them. Leave mixed-case strings
+        # untouched so curated names ("IT Services", "IT-Software") keep
+        # their vendor casing.
+        if s == s.upper() and any(c.isalpha() for c in s):
+            # Title-case each token but preserve embedded acronyms.
+            import re as _re
+            def _tok(tok: str) -> str:
+                if tok.upper() in _ACRONYMS:
+                    return tok.upper()
+                return tok.capitalize()
+            return _re.sub(r"[A-Za-z]+", lambda m: _tok(m.group(0)), s)
+        return s
+
+    try:
+        with _ENRICHED_PATH.open(newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                t = (row.get("nse_ticker") or "").strip().upper()
+                if not t:
+                    continue
+                macro    = (row.get("macro") or "").strip()
+                macro    = _MACRO_CANON.get(macro, _canon_case(macro))
+                sector   = _canon_case((row.get("sector") or "").strip())
+                industry = _canon_case((row.get("industry") or "").strip())
+                basic    = _canon_case((row.get("basic_industry") or "").strip())
+                name     = (row.get("company_name") or "").strip()
+                themes_s = (row.get("themes") or "").strip()
+                if macro:    _MACRO_MAP[t] = macro
+                if basic:    _BASIC_INDUSTRY_MAP[t] = basic
+                if name:     _NAME_MAP[t] = name
+                if themes_s: _THEMES_MAP[t] = [k for k in themes_s.split(";") if k]
+                # Let the rich CSV override the 2-level fallback as well.
+                if sector:   _SECTOR_MAP[t]   = sector
+                if industry: _INDUSTRY_MAP[t] = industry
+        logger.debug("Loaded enriched taxonomy: %d macro, %d basic_industry, %d themed",
+                     len(_MACRO_MAP), len(_BASIC_INDUSTRY_MAP), len(_THEMES_MAP))
+    except Exception as e:
+        logger.warning("Could not load enriched taxonomy %s: %s", _ENRICHED_PATH, e)
+
+    # Theme metadata (names, descriptions) from themes.json
+    if _THEMES_JSON.exists():
+        try:
+            data = json.loads(_THEMES_JSON.read_text(encoding="utf-8"))
+            for t in data.get("themes", []):
+                k = t.get("key")
+                if k:
+                    _THEME_META[k] = {
+                        "key":  k,
+                        "name": t.get("name", k),
+                        "description": t.get("description", ""),
+                    }
+        except Exception as e:
+            logger.warning("Could not load themes.json: %s", e)
+
+
+_load_enriched()
+
+
+def reload() -> None:
+    """Reload both the 2-level and enriched taxonomies from disk.
+
+    Used by the web layer's /api/taxonomy/reload hook so the freshly-
+    rebuilt data/nse_stock_enriched.csv and data/nse_stock_taxonomy.csv
+    are picked up without restarting the process. Clears every global
+    map before re-populating to guarantee removed tickers disappear.
+    """
+    global _SECTOR_MAP, _INDUSTRY_MAP
+    _MACRO_MAP.clear()
+    _BASIC_INDUSTRY_MAP.clear()
+    _NAME_MAP.clear()
+    _THEMES_MAP.clear()
+    _THEME_META.clear()
+    _SECTOR_MAP, _INDUSTRY_MAP = _build_maps()
+    _load_enriched()
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def _clean(symbol: str) -> str:
@@ -203,6 +323,107 @@ def get_industry_sector_map() -> dict[str, str]:
         if ind not in result:
             result[ind] = _SECTOR_MAP.get(ticker, "Other")
     return result
+
+
+# ── Rich (4-level) + thematic accessors ───────────────────────────────────────
+# These are only populated if data/nse_stock_enriched.csv is present.
+# For tickers missing from the rich CSV the functions fall back to "Other".
+
+def get_macro(symbol: str) -> str:
+    """Return NSE macro-economic-sector for a ticker (e.g. 'Commodities')."""
+    return _MACRO_MAP.get(_clean(symbol), "Other")
+
+
+def get_basic_industry(symbol: str) -> str:
+    """Return NSE basic_industry (finest of the 4 NSE levels)."""
+    base = _clean(symbol)
+    return _BASIC_INDUSTRY_MAP.get(base) or _INDUSTRY_MAP.get(base, "Other")
+
+
+def get_company_name(symbol: str) -> str:
+    return _NAME_MAP.get(_clean(symbol), "")
+
+
+def get_themes(symbol: str) -> list[str]:
+    """Return the list of curated theme keys a ticker belongs to (possibly empty)."""
+    return list(_THEMES_MAP.get(_clean(symbol), []))
+
+
+def list_themes() -> list[dict]:
+    """Return theme metadata (key, name, description) for all known themes."""
+    return [dict(v) for _, v in sorted(_THEME_META.items())]
+
+
+def list_macros() -> list[str]:
+    return sorted(set(_MACRO_MAP.values()))
+
+
+def list_basic_industries() -> list[str]:
+    return sorted(set(_BASIC_INDUSTRY_MAP.values()))
+
+
+# ── Generic groupings for relative-strength / rotation analysis ──────────────
+# LEVELS is the set of group-by dimensions exposed to downstream consumers.
+# "theme" is multi-label (a stock can be in multiple themes); the rest are
+# single-label (one bucket per ticker).
+LEVELS = ("macro", "sector", "industry", "basic_industry", "theme")
+
+
+def group_tickers_by(level: str) -> dict[str, list[str]]:
+    """
+    Return {group_name -> [tickers]} for the requested classification level.
+
+    `level` must be one of LEVELS. For "theme", a single ticker may appear in
+    multiple groups (multi-label). For all other levels, each ticker appears
+    in exactly one group (labelled 'Other' when missing).
+    """
+    if level not in LEVELS:
+        raise ValueError(f"unknown level {level!r}; expected one of {LEVELS}")
+
+    groups: dict[str, list[str]] = {}
+
+    if level == "theme":
+        # Multi-label — iterate themes map directly.
+        for ticker, themes in _THEMES_MAP.items():
+            for k in themes:
+                groups.setdefault(k, []).append(ticker)
+        return groups
+
+    # Single-label: pick the source map for the chosen level.
+    source: dict[str, str] = {
+        "macro":          _MACRO_MAP,
+        "sector":         _SECTOR_MAP,
+        "industry":       _INDUSTRY_MAP,
+        "basic_industry": _BASIC_INDUSTRY_MAP,
+    }[level]
+
+    for ticker, name in source.items():
+        if not name:
+            continue
+        groups.setdefault(name, []).append(ticker)
+    return groups
+
+
+def group_parent_map(level: str) -> dict[str, str]:
+    """
+    For a child level, return {child_name -> parent_name}. The parent hierarchy
+    mirrors NSE's: basic_industry → industry → sector → macro.
+    For 'theme', parent is always '' (themes cut across NSE hierarchy).
+    """
+    parent_of = {
+        "basic_industry": ("industry", _BASIC_INDUSTRY_MAP, _INDUSTRY_MAP),
+        "industry":       ("sector",   _INDUSTRY_MAP,       _SECTOR_MAP),
+        "sector":         ("macro",    _SECTOR_MAP,         _MACRO_MAP),
+    }
+    if level not in parent_of:
+        return {}
+    _, child_map, parent_map = parent_of[level]
+    out: dict[str, str] = {}
+    for ticker, child in child_map.items():
+        if not child or child in out:
+            continue
+        out[child] = parent_map.get(ticker, "")
+    return out
 
 
 # ── Auto-classify via yfinance (fallback for unknown tickers) ─────────────────
