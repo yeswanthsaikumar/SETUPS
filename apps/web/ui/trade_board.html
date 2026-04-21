@@ -424,6 +424,11 @@
     .alert-tab.active{color:#7dd3fc;border-bottom-color:#0ea5e9}
     .alert-tab-content{animation:tabFadeIn .2s ease}
     @keyframes tabFadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+    /* Custom rule form */
+    .cr-lbl{color:var(--muted);display:block;margin-bottom:3px;font-size:10px;text-transform:uppercase;letter-spacing:.5px}
+    .cr-inp{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:12px;box-sizing:border-box}
+    .cr-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .cr-chip{font-size:10px;padding:2px 7px;border-radius:4px;background:var(--bg);border:1px solid var(--border);color:var(--muted);font-family:monospace}
     /* Signal cards */
     .sig-card{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;transition:border-color .15s,box-shadow .15s}
     .sig-card:hover{border-color:var(--border);box-shadow:0 2px 12px #00000033}
@@ -1035,6 +1040,7 @@
         <div id="alertTabs" style="display:flex;gap:2px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0;">
           <button class="alert-tab active" onclick="switchAlertTab('breakout',this)">🚀 Breakout Signals</button>
           <button class="alert-tab" onclick="switchAlertTab('ema5',this)">📉 Position 5 EMA</button>
+          <button class="alert-tab" onclick="switchAlertTab('custom',this)">🎛 Custom Rules</button>
           <button class="alert-tab" onclick="switchAlertTab('history',this)">📋 History</button>
           <button class="alert-tab" onclick="switchAlertTab('backtest',this)">📊 Backtest</button>
         </div>
@@ -1101,6 +1107,48 @@
           </div>
           <p style="color:var(--muted);font-size:11px;margin-bottom:14px;">Monitors open positions for price approaching, touching, or breaking below the 5 EMA trailing stop. Auto-runs with background scanner.</p>
           <div id="ema5Results"></div>
+        </div>
+
+        <!-- TAB: Custom Rules -->
+        <div class="alert-tab-content" id="alertTab-custom" style="display:none;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" onclick="crToggleForm()" id="crAddBtn">➕ New Rule</button>
+            <button class="btn btn-outline btn-sm" onclick="crEvaluateNow()">⚡ Evaluate Now (dry-run)</button>
+            <button class="btn btn-ghost btn-sm" onclick="crLoad()" style="font-size:11px;">🔄 Refresh</button>
+            <span style="font-size:11px;color:var(--muted);margin-left:4px;">Alert on any metric × timeframe × reference — configurable without code.</span>
+          </div>
+
+          <!-- Rule editor form (hidden by default) -->
+          <div id="crFormPanel" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px;margin-bottom:12px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <span id="crFormTitle" style="font-size:13px;font-weight:700;color:#93c5fd;">➕ New Custom Rule</span>
+              <button class="btn btn-ghost btn-sm" onclick="crCloseForm()" style="font-size:11px;">✕ Close</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;font-size:12px;">
+              <div><label class="cr-lbl">Name</label><input id="crName" type="text" placeholder="15m vol spike 3x" class="cr-inp"></div>
+              <div><label class="cr-lbl">Symbol <span style="color:var(--dim);text-transform:none;">(blank = watchlist)</span></label><input id="crSymbol" type="text" placeholder="RELIANCE.NS or blank" class="cr-inp"></div>
+              <div><label class="cr-lbl">Timeframe</label><select id="crTimeframe" class="cr-inp"></select></div>
+              <div><label class="cr-lbl">Metric</label><select id="crMetric" class="cr-inp"></select></div>
+              <div><label class="cr-lbl">Operator</label><select id="crOperator" class="cr-inp"></select></div>
+              <div><label class="cr-lbl">Threshold</label><input id="crThreshold" type="number" step="any" placeholder="3" class="cr-inp"></div>
+              <div><label class="cr-lbl">Reference</label><select id="crReference" class="cr-inp"></select></div>
+              <div><label class="cr-lbl">Reference Bars</label><input id="crRefBars" type="number" value="20" class="cr-inp"></div>
+              <div><label class="cr-lbl">Cooldown (min)</label><input id="crCooldown" type="number" value="60" class="cr-inp"></div>
+              <div style="display:flex;align-items:end;gap:10px;padding-bottom:4px;">
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" id="crChanTg" checked> Telegram</label>
+                <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" id="crChanEmail"> Email</label>
+              </div>
+              <div style="display:flex;align-items:end;padding-bottom:4px;"><label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="checkbox" id="crEnabled" checked> Enabled</label></div>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:8px;">
+              <button class="btn btn-primary btn-sm" onclick="crSave()" id="crSaveBtn">💾 Save Rule</button>
+              <button class="btn btn-ghost btn-sm" onclick="crCloseForm()">Cancel</button>
+              <span id="crFormMsg" style="font-size:11px;color:var(--muted);align-self:center;"></span>
+            </div>
+          </div>
+
+          <div id="crList"></div>
+          <div id="crFiredPanel" style="margin-top:14px;"></div>
         </div>
 
         <!-- TAB: History -->
@@ -3991,6 +4039,9 @@ function switchAlertTab(tab, btn) {
     const el = document.getElementById('boHistoryResults');
     if (el && !el.innerHTML.trim()) boLoadSignals2();
   }
+  if (tab === 'custom') {
+    crLoad();
+  }
 }
 
 async function boScanNow2(intraday=true) {
@@ -4207,6 +4258,199 @@ async function boTestAlert2() {
     const details=Object.entries(d.results||{}).map(([k,v])=>k+': '+v).join(', ');
     toast(d.message+' ('+details+')', d.ok?'success':'error');
   } catch(e){toast('Error: '+e.message,'error');}
+}
+
+// ─── Custom Alert Rules ──────────────────────────────────────────────────────
+let _crSupported = null;
+let _crEditingId = null;
+
+async function crLoad() {
+  const el = document.getElementById('crList');
+  if (el) el.innerHTML = '<div style="color:var(--muted);padding:12px 0;">Loading rules…</div>';
+  try {
+    const res = await fetch(API + '/api/breakout-alerts/custom-rules');
+    const d = await res.json();
+    _crSupported = d.supported || {};
+    crPopulateSelects();
+    crRenderList(d.rules || []);
+  } catch(e) {
+    if (el) el.innerHTML = '<div style="color:var(--red);padding:12px 0;">Error: ' + e.message + '</div>';
+  }
+}
+
+function crPopulateSelects() {
+  if (!_crSupported) return;
+  const fill = (id, vals, dflt) => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = vals.map(v => '<option value="'+v+'"'+(v===(current||dflt)?' selected':'')+'>'+v+'</option>').join('');
+  };
+  fill('crTimeframe', _crSupported.timeframes || [], '15m');
+  fill('crMetric', _crSupported.metrics || [], 'volume_ratio');
+  fill('crOperator', _crSupported.operators || [], '>=');
+  fill('crReference', _crSupported.references || [], 'absolute');
+}
+
+function crRenderList(rules) {
+  const el = document.getElementById('crList');
+  if (!el) return;
+  if (!rules.length) {
+    el.innerHTML = '<div style="text-align:center;padding:24px 0;color:var(--muted);"><div style="font-size:24px;margin-bottom:6px;">🎛</div>No custom rules yet. Click <b>New Rule</b> to add one.</div>';
+    return;
+  }
+  let h = '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">'+rules.length+' rule(s) configured</div>';
+  for (const r of rules) {
+    const sym = r.symbol && r.symbol !== '*' ? r.symbol : 'ALL watchlist';
+    const refStr = r.reference && r.reference !== 'absolute'
+      ? r.reference + (r.reference_bars ? '('+r.reference_bars+')' : '')
+      : 'absolute';
+    const dim = r.enabled === false ? 'opacity:.45;' : '';
+    h += '<div class="cr-card" style="'+dim+'">';
+    h += '<div style="flex:1;min-width:200px;">';
+    h += '<div style="font-weight:700;font-size:13px;">'+escapeHtml(r.name||'(unnamed)')+' <span style="font-size:10px;color:var(--muted);font-weight:400;">· '+sym+'</span></div>';
+    h += '<div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;">';
+    h += '<span class="cr-chip">'+escapeHtml(r.timeframe||'?')+'</span>';
+    h += '<span class="cr-chip">'+escapeHtml(r.metric||'?')+'</span>';
+    h += '<span class="cr-chip">'+escapeHtml(r.operator||'?')+' '+escapeHtml(String(r.threshold ?? ''))+'</span>';
+    h += '<span class="cr-chip">vs '+escapeHtml(refStr)+'</span>';
+    h += '<span class="cr-chip">cd '+(r.cooldown_minutes||0)+'m</span>';
+    if (Array.isArray(r.channels)) h += '<span class="cr-chip">'+r.channels.join('+')+'</span>';
+    h += '</div></div>';
+    h += '<div style="display:flex;gap:6px;">';
+    h += '<button class="btn btn-outline btn-sm" onclick="crToggleEnabled(\''+r.id+'\','+(r.enabled===false)+')" style="font-size:11px;">'+(r.enabled===false?'▶ Enable':'⏸ Disable')+'</button>';
+    h += '<button class="btn btn-ghost btn-sm" onclick="crEdit(\''+r.id+'\')" style="font-size:11px;">✏ Edit</button>';
+    h += '<button class="btn btn-ghost btn-sm" onclick="crDelete(\''+r.id+'\')" style="font-size:11px;color:var(--red);">🗑</button>';
+    h += '</div></div>';
+  }
+  el.innerHTML = h;
+  el.dataset.rules = JSON.stringify(rules);
+}
+
+function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function crToggleForm(){
+  const p=document.getElementById('crFormPanel');
+  if(p.style.display==='none'){ crResetForm(); p.style.display='block'; }
+  else{ p.style.display='none'; }
+}
+function crCloseForm(){document.getElementById('crFormPanel').style.display='none'; _crEditingId=null; document.getElementById('crFormMsg').textContent='';}
+
+function crResetForm(){
+  _crEditingId = null;
+  document.getElementById('crFormTitle').textContent = '➕ New Custom Rule';
+  document.getElementById('crName').value = '';
+  document.getElementById('crSymbol').value = '';
+  document.getElementById('crThreshold').value = '';
+  document.getElementById('crRefBars').value = 20;
+  document.getElementById('crCooldown').value = 60;
+  document.getElementById('crChanTg').checked = true;
+  document.getElementById('crChanEmail').checked = false;
+  document.getElementById('crEnabled').checked = true;
+  document.getElementById('crFormMsg').textContent = '';
+  crPopulateSelects();
+}
+
+function crEdit(id){
+  const list = document.getElementById('crList');
+  const rules = JSON.parse(list.dataset.rules || '[]');
+  const r = rules.find(x=>x.id===id);
+  if(!r) return;
+  _crEditingId = id;
+  document.getElementById('crFormPanel').style.display='block';
+  document.getElementById('crFormTitle').textContent = '✏ Edit Rule';
+  document.getElementById('crName').value = r.name || '';
+  document.getElementById('crSymbol').value = r.symbol && r.symbol!=='*' ? r.symbol : '';
+  document.getElementById('crThreshold').value = r.threshold ?? '';
+  document.getElementById('crRefBars').value = r.reference_bars ?? 20;
+  document.getElementById('crCooldown').value = r.cooldown_minutes ?? 60;
+  const ch = Array.isArray(r.channels) ? r.channels : [];
+  document.getElementById('crChanTg').checked = ch.includes('telegram');
+  document.getElementById('crChanEmail').checked = ch.includes('email');
+  document.getElementById('crEnabled').checked = r.enabled !== false;
+  crPopulateSelects();
+  document.getElementById('crTimeframe').value = r.timeframe || '15m';
+  document.getElementById('crMetric').value = r.metric || 'volume_ratio';
+  document.getElementById('crOperator').value = r.operator || '>=';
+  document.getElementById('crReference').value = r.reference || 'absolute';
+  document.getElementById('crFormMsg').textContent = '';
+}
+
+async function crSave(){
+  const msgEl = document.getElementById('crFormMsg');
+  const channels = [];
+  if (document.getElementById('crChanTg').checked) channels.push('telegram');
+  if (document.getElementById('crChanEmail').checked) channels.push('email');
+  const thr = parseFloat(document.getElementById('crThreshold').value);
+  if (isNaN(thr)) { msgEl.textContent='⚠ Threshold is required (number).'; msgEl.style.color='var(--red)'; return; }
+  if (!channels.length) { msgEl.textContent='⚠ Pick at least one channel.'; msgEl.style.color='var(--red)'; return; }
+  const payload = {
+    name: document.getElementById('crName').value.trim() || undefined,
+    symbol: document.getElementById('crSymbol').value.trim(),
+    timeframe: document.getElementById('crTimeframe').value,
+    metric: document.getElementById('crMetric').value,
+    operator: document.getElementById('crOperator').value,
+    threshold: thr,
+    reference: document.getElementById('crReference').value,
+    reference_bars: parseInt(document.getElementById('crRefBars').value) || 20,
+    cooldown_minutes: parseInt(document.getElementById('crCooldown').value) || 0,
+    channels,
+    enabled: document.getElementById('crEnabled').checked,
+  };
+  try{
+    const url = _crEditingId ? API+'/api/breakout-alerts/custom-rules/'+_crEditingId
+                             : API+'/api/breakout-alerts/custom-rules';
+    const method = _crEditingId ? 'PATCH' : 'POST';
+    const res = await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d = await res.json();
+    if(!res.ok){ msgEl.textContent='⚠ '+(d.detail||res.statusText); msgEl.style.color='var(--red)'; return; }
+    toast(_crEditingId ? 'Rule updated ✓' : 'Rule created ✓','success');
+    crCloseForm();
+    crLoad();
+  }catch(e){ msgEl.textContent='Error: '+e.message; msgEl.style.color='var(--red)'; }
+}
+
+async function crDelete(id){
+  if(!confirm('Delete this rule?')) return;
+  try{
+    const res = await fetch(API+'/api/breakout-alerts/custom-rules/'+id,{method:'DELETE'});
+    if(!res.ok){ const d=await res.json().catch(()=>({})); toast('Delete failed: '+(d.detail||res.statusText),'error'); return; }
+    toast('Rule deleted','success');
+    crLoad();
+  }catch(e){ toast('Error: '+e.message,'error'); }
+}
+
+async function crToggleEnabled(id, nextEnabled){
+  try{
+    const res = await fetch(API+'/api/breakout-alerts/custom-rules/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:nextEnabled})});
+    if(!res.ok){ const d=await res.json().catch(()=>({})); toast('Update failed: '+(d.detail||res.statusText),'error'); return; }
+    crLoad();
+  }catch(e){ toast('Error: '+e.message,'error'); }
+}
+
+async function crEvaluateNow(){
+  const el = document.getElementById('crFiredPanel');
+  el.innerHTML = '<div style="color:var(--muted);animation:blink 1.2s infinite;padding:10px 0;">⚡ Evaluating all enabled rules across watchlist…</div>';
+  try{
+    const res = await fetch(API+'/api/breakout-alerts/custom-rules/evaluate-now',{method:'POST',headers:{'Content-Type':'application/json'},body:'null'});
+    const d = await res.json();
+    const fired = d.fired || [];
+    if(!fired.length){
+      el.innerHTML = '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;color:var(--muted);font-size:12px;">✅ No rules fired right now ('+(d.evaluatedAt||'')+')</div>';
+      return;
+    }
+    let h = '<div style="font-size:12px;font-weight:700;margin-bottom:6px;">🔔 '+fired.length+' alert(s) would fire · '+(d.evaluatedAt||'')+'</div>';
+    for(const f of fired){
+      h += '<div class="cr-card" style="border-left:3px solid #f59e0b;">';
+      h += '<div style="flex:1;min-width:180px;"><b>'+escapeHtml(f.symbol||'?')+'</b> <span style="font-size:10px;color:var(--muted);">· '+escapeHtml(f.rule_name||f.rule_id||'')+'</span>';
+      if(f.message) h += '<div style="font-size:11px;color:var(--muted);margin-top:3px;">'+escapeHtml(f.message)+'</div>';
+      h += '</div>';
+      if(f.value!=null) h += '<span class="cr-chip">val '+(typeof f.value==='number'?f.value.toFixed(2):f.value)+'</span>';
+      if(f.reference_value!=null) h += '<span class="cr-chip">ref '+(typeof f.reference_value==='number'?f.reference_value.toFixed(2):f.reference_value)+'</span>';
+      h += '</div>';
+    }
+    el.innerHTML = h;
+  }catch(e){ el.innerHTML = '<div style="color:var(--red);">Error: '+e.message+'</div>'; }
 }
 
 // Load alert status when navigating to alerts page

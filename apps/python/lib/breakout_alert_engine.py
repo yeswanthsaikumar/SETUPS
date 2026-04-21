@@ -1716,6 +1716,11 @@ class BreakoutScanner:
         # Custom rule firing state: {rule_id: {symbol: iso_timestamp}}
         self._custom_last_fired: dict[str, dict[str, str]] = {}
         self._custom_fired_log: list[dict] = []   # recent fires for UI/status
+        self._custom_last_scan: Optional[str] = None
+        self._custom_last_fired_count: int = 0
+        self._custom_rule_count: int = 0
+        self._custom_last_error: Optional[str] = None
+        self._last_error: Optional[str] = None
 
     @property
     def is_running(self) -> bool:
@@ -1729,6 +1734,14 @@ class BreakoutScanner:
                 "lastSignalCount": len(self._last_scan_results),
                 "alertedCount": len(self._alerted_keys),
                 "scanMode": self._scan_mode,
+                "lastError": self._last_error,
+                "customRules": {
+                    "ruleCount": self._custom_rule_count,
+                    "lastScan": self._custom_last_scan,
+                    "lastFiredCount": self._custom_last_fired_count,
+                    "lastError": self._custom_last_error,
+                    "firedRecent": list(self._custom_fired_log[-25:]),
+                },
                 "customRulesFiredRecent": list(self._custom_fired_log[-25:]),
             }
 
@@ -1761,26 +1774,52 @@ class BreakoutScanner:
         Main scanner loop.
         During market hours: scan every 2 min using live 15-min intraday candles.
         After hours: scan once with daily data, then sleep longer.
+
+        Each sub-scan is guarded independently so a failure in one path (e.g.
+        breakout scan) does not suppress the others (EMA5 / custom rules).
         """
         while self._running:
             try:
                 config = self.state.load_config()
-                if config.enabled:
-                    if self._is_market_hours():
-                        self._scan_mode = "intraday"
-                        self._scan_intraday(config)
-                        self._scan_positions_ema5(config)
-                        self._scan_custom_rules(config)
-                    else:
-                        self._scan_mode = "daily"
-                        self._scan_daily(config)
-                        self._scan_positions_ema5(config)
-                        self._scan_custom_rules(config)
             except Exception as e:
-                print(f"⚠ Breakout scanner error: {e}", flush=True)
+                print(f"⚠ Scanner: load_config failed: {e}", flush=True)
+                config = None
 
-            config = self.state.load_config()
-            interval = config.scan_interval_seconds if self._is_market_hours() else 300
+            if config and config.enabled:
+                in_hours = self._is_market_hours()
+                self._scan_mode = "intraday" if in_hours else "daily"
+
+                # ── Breakout scan (primary signals) ──
+                try:
+                    if in_hours:
+                        self._scan_intraday(config)
+                    else:
+                        self._scan_daily(config)
+                except Exception as e:
+                    print(f"⚠ Breakout scan error: {e}", flush=True)
+                    self._last_error = f"breakout: {e}"
+
+                # ── Position EMA5 proximity ──
+                try:
+                    self._scan_positions_ema5(config)
+                except Exception as e:
+                    print(f"⚠ EMA5 scan error: {e}", flush=True)
+                    self._last_error = f"ema5: {e}"
+
+                # ── Custom user-defined rules (isolated from above) ──
+                try:
+                    fired = self._scan_custom_rules(config)
+                    with self._lock:
+                        self._custom_last_scan = datetime.now().isoformat(timespec="seconds")
+                        self._custom_last_fired_count = len(fired)
+                        self._custom_rule_count = len(config.custom_rules or [])
+                except Exception as e:
+                    print(f"⚠ Custom-rules scan error: {e}", flush=True)
+                    self._custom_last_error = f"{type(e).__name__}: {e}"
+
+            config = self.state.load_config() if config is None else config
+            interval = (config.scan_interval_seconds
+                        if (config and self._is_market_hours()) else 300)
             for _ in range(interval):
                 if not self._running:
                     return
@@ -2002,6 +2041,63 @@ class BreakoutScanner:
                 except Exception as e:
                     print(f"  ⚠ dry-run {rule.get('id','')} {sym}: {e}", flush=True)
         return fired
+
+    def dispatch_custom_rules_now(self, symbols: list[str] | None = None) -> dict:
+        """
+        Force-evaluate all enabled custom rules and actually dispatch matches
+        through the configured channels (Telegram / email), ignoring cooldown.
+        Used by the UI "Send Now" button to verify end-to-end delivery.
+        """
+        config = self.state.load_config()
+        dispatched: list[dict] = []
+        errors: list[str] = []
+        watchlist = symbols if symbols is not None else self._get_watchlist_symbols()
+        now_iso = datetime.now().isoformat(timespec="seconds")
+        for rule in (config.custom_rules or []):
+            if not rule.get("enabled", True):
+                continue
+            tf = _normalize_timeframe(rule.get("timeframe", "1d"))
+            rule_sym = (rule.get("symbol") or "").strip().upper()
+            targets = [rule_sym] if rule_sym and rule_sym != "*" else watchlist
+            for sym in targets:
+                try:
+                    daily = self._get_ohlcv(sym, days=252)
+                    bars_needed = max(50, int(rule.get("reference_bars") or 20) + 5)
+                    rows = fetch_ohlcv_timeframe(sym, tf, bars=bars_needed,
+                                                  fallback_daily=daily)
+                    if not rows:
+                        continue
+                    for r in rows:
+                        r["_symbol"] = sym
+                    alert = evaluate_custom_rule(rule, rows)
+                    if not alert:
+                        continue
+                    alert["symbol"] = sym
+                    self._dispatch_custom_alert(alert, rule, config)
+                    self._custom_mark_fired(rule, sym, now_iso)
+                    dispatched.append(alert)
+                except Exception as e:
+                    err = f"{rule.get('id','')} {sym}: {e}"
+                    errors.append(err)
+                    print(f"  ⚠ dispatch-now {err}", flush=True)
+        if dispatched:
+            with self._lock:
+                self._custom_fired_log.extend(dispatched)
+                self._custom_fired_log = self._custom_fired_log[-100:]
+        return {
+            "dispatched": dispatched,
+            "dispatchedCount": len(dispatched),
+            "errors": errors,
+            "channels_configured": {
+                "telegram": bool(config.telegram_enabled
+                                 and config.telegram_bot_token
+                                 and config.telegram_chat_id),
+                "email": bool(config.email_enabled
+                              and config.gmail_address
+                              and config.gmail_app_password
+                              and config.email_to),
+            },
+        }
 
     def _process_signals(self, all_signals: list[BreakoutSignal], config: AlertConfig) -> list[BreakoutSignal]:
         """Filter dupes, send alerts, persist."""

@@ -345,7 +345,26 @@ class BackgroundCacheRefresher:
                 return
 
             self._append_log(f"  Found {len(stale)} stale symbol(s)\n")
-            self._append_log("  Sources: yfinance → NSE India → raw Yahoo v8\n")
+            # Surface the REAL source priority + live Groww status so log
+            # readers know why updates might be empty.
+            try:
+                sys.path.insert(0, str(ROOT / "apps" / "python" / "lib"))
+                from groww_client import (  # type: ignore
+                    is_groww_available, groww_only_mode)
+                gw_live = is_groww_available()
+                gw_only = groww_only_mode()
+            except Exception:
+                gw_live, gw_only = False, False
+            self._append_log(
+                f"  Sources: Groww → yfinance → NSE India → raw Yahoo v8"
+                f"   [groww_available={gw_live}, groww_only={gw_only}]\n"
+            )
+            if not gw_live:
+                self._append_log(
+                    "  ⚠ Groww client unavailable — set GROWW_ACCESS_TOKEN "
+                    "(or GROWW_API_KEY + GROWW_API_SECRET) and restart. "
+                    "Falling back to rate-limited Yahoo/NSE will mostly return no_data.\n"
+                )
 
             # 3. Process symbols with thread pool
             stats_lock = threading.Lock()
@@ -546,6 +565,155 @@ _periodic_refresher = PeriodicCacheRefreshScheduler(
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  DAILY POST-CLOSE REFRESH SCHEDULER  (wall-clock, IST-pinned)
+#
+#  The hourly PeriodicCacheRefreshScheduler ticks on elapsed time from startup,
+#  which means nothing guarantees a refresh lands *after* NSE's 15:30 close
+#  cutoff (15:35 IST in `_is_price_stale`). If the server was started at, say,
+#  15:10 IST, the next tick isn't until 16:10 IST, so the Industry Groups page
+#  keeps showing pre-close intraday values for up to an hour.
+#
+#  This scheduler fires a single wall-clock refresh every weekday at
+#  SETUPS_POSTCLOSE_REFRESH_IST (default "15:40"), forcing today's finalized
+#  close into every CSV. End of that refresh also recomputes industry-groups
+#  and RS-scan caches (see BackgroundCacheRefresher._run).
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class PostCloseRefreshScheduler:
+    """Fires one BackgroundCacheRefresher.start(force=True) per weekday at a
+    fixed IST wall-clock time (default 15:40 IST, ~10 min after NSE close).
+
+    • Disabled via env SETUPS_DISABLE_POSTCLOSE_REFRESH=true.
+    • Time configurable via env SETUPS_POSTCLOSE_REFRESH_IST="HH:MM".
+    • Skips weekends.
+    • If the target time has already passed for *today* at startup and no
+      refresh has landed after the cutoff, fires once immediately.
+    • Daemon thread; stop() is idempotent.
+    """
+
+    def __init__(self, refresher: "BackgroundCacheRefresher",
+                 ist_hhmm: str = "15:40"):
+        self._refresher = refresher
+        try:
+            hh, mm = ist_hhmm.strip().split(":")
+            self._hour = max(0, min(23, int(hh)))
+            self._minute = max(0, min(59, int(mm)))
+        except Exception:
+            self._hour, self._minute = 15, 40
+        self._stop_evt = threading.Event()
+        self._thread: Optional[threading.Thread] = None
+        self._last_fire_at: Optional[str] = None
+        self._fire_count: int = 0
+
+    @property
+    def is_running(self) -> bool:
+        return self._thread is not None and self._thread.is_alive()
+
+    def status_dict(self) -> dict:
+        return {
+            "running": self.is_running,
+            "istTime": f"{self._hour:02d}:{self._minute:02d}",
+            "lastFireAt": self._last_fire_at,
+            "fireCount": self._fire_count,
+        }
+
+    def start(self) -> None:
+        if self.is_running:
+            return
+        self._stop_evt.clear()
+        self._thread = threading.Thread(
+            target=self._loop, name="postclose-cache-refresh", daemon=True)
+        self._thread.start()
+        print(f"⏰ Post-close refresh scheduled daily at "
+              f"{self._hour:02d}:{self._minute:02d} IST (Mon–Fri)", flush=True)
+
+    def stop(self) -> None:
+        self._stop_evt.set()
+
+    def _next_fire_delay(self) -> float:
+        """Seconds until the next weekday fire instant in IST."""
+        import datetime as _dt
+        import zoneinfo as _zi
+        ist = _zi.ZoneInfo("Asia/Kolkata")
+        now = _dt.datetime.now(ist)
+        target = now.replace(hour=self._hour, minute=self._minute,
+                             second=0, microsecond=0)
+        # If we've already passed today's target, aim for tomorrow.
+        if target <= now:
+            target = target + _dt.timedelta(days=1)
+        # Skip weekends (Sat=5, Sun=6).
+        while target.weekday() >= 5:
+            target = target + _dt.timedelta(days=1)
+        return max(1.0, (target - now).total_seconds())
+
+    def _should_fire_now(self) -> bool:
+        """True if we're past today's target on a weekday and no CSV has been
+        refreshed since — used for the one-shot catch-up at startup."""
+        import datetime as _dt
+        import zoneinfo as _zi
+        ist = _zi.ZoneInfo("Asia/Kolkata")
+        now = ist_now = _dt.datetime.now(ist)
+        if now.weekday() >= 5:
+            return False
+        target = now.replace(hour=self._hour, minute=self._minute,
+                             second=0, microsecond=0)
+        if now < target:
+            return False
+        # If any representative CSV in the cache was written after today's
+        # target, a post-close refresh already ran — don't duplicate.
+        try:
+            probe = CACHE_DIR / "RELIANCE.NS.csv"
+            if probe.exists():
+                mtime = _dt.datetime.fromtimestamp(probe.stat().st_mtime, tz=ist)
+                if mtime >= target:
+                    return False
+        except Exception:
+            pass
+        return True
+
+    def _loop(self) -> None:
+        # One-shot catch-up: if server started after today's close but before
+        # any refresh landed, fire immediately (after a brief delay so we
+        # don't fight the startup refresh for CPU/network).
+        try:
+            if self._should_fire_now():
+                self._stop_evt.wait(60)
+                if not self._stop_evt.is_set():
+                    self._fire("startup-catchup")
+        except Exception as e:
+            print(f"⚠ Post-close startup catch-up error: {e}", flush=True)
+
+        # Daily loop: sleep until next IST target, fire, repeat.
+        while not self._stop_evt.is_set():
+            delay = self._next_fire_delay()
+            if self._stop_evt.wait(delay):
+                return
+            try:
+                self._fire("scheduled")
+            except Exception as e:
+                print(f"⚠ Post-close fire error: {e}", flush=True)
+
+    def _fire(self, reason: str) -> None:
+        if self._refresher.is_running:
+            print(f"⏰ Post-close tick ({reason}) skipped — refresh already running",
+                  flush=True)
+            return
+        self._fire_count += 1
+        self._last_fire_at = datetime.now().isoformat(timespec="seconds")
+        print(f"⏰ Post-close cache refresh fire #{self._fire_count} "
+              f"({reason}) at {self._last_fire_at}", flush=True)
+        # force=True so yfinance re-fetches today's bar even if the CSV
+        # already has a same-date intraday snapshot.
+        self._refresher.start(indian_only=True, workers=4, force=True)
+
+
+_postclose_refresher = PostCloseRefreshScheduler(
+    _cache_refresher,
+    ist_hhmm=os.environ.get("SETUPS_POSTCLOSE_REFRESH_IST", "15:40"),
+)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  SELECTIVE SYMBOL REFRESH (refresh specific symbols inline, thread-safe)
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -685,6 +853,14 @@ async def lifespan(app: FastAPI):
     else:
         _periodic_refresher.start()
 
+    # ── DAILY POST-CLOSE REFRESH (wall-clock IST) ──
+    # Guarantees today's finalized 3:30 PM close lands into CSVs at ~15:40 IST
+    # regardless of when the server started. See PostCloseRefreshScheduler.
+    if os.environ.get("SETUPS_DISABLE_POSTCLOSE_REFRESH", "").lower() in ("true", "1", "yes"):
+        print("⏭  Post-close cache refresh disabled (env)", flush=True)
+    else:
+        _postclose_refresher.start()
+
     # ── AUTO-START BREAKOUT ALERT SCANNER ──
     # Wire up dependencies and start the background scanner so alerts
     # are sent automatically (Telegram + Gmail) without manual trigger.
@@ -702,13 +878,13 @@ async def lifespan(app: FastAPI):
     else:
         print("⏭  Breakout alert scanner disabled in config", flush=True)
 
-    # ── TELEGRAM BACKUP (once per day) ──
+    # ── TRADE-DATA BACKUP (once per day — iCloud + Telegram) ──
     try:
         sys.path.insert(0, str(ROOT / "scripts"))
-        from telegram_backup import run_backup_background
+        from icloud_backup import run_backup_background
         run_backup_background()
     except Exception as e:
-        print(f"☁️  Backup init: {e}", flush=True)
+        print(f"☁️  Backup init failed: {e}", flush=True)
 
     yield  # App is running
 
@@ -716,6 +892,10 @@ async def lifespan(app: FastAPI):
     _breakout_scanner.stop()
     try:
         _periodic_refresher.stop()
+    except Exception:
+        pass
+    try:
+        _postclose_refresher.stop()
     except Exception:
         pass
     print("👋 Shutting down…", flush=True)
@@ -1688,6 +1868,7 @@ def cache_refresh_status() -> dict:
     """
     status = _cache_refresher.status_dict()
     status["periodic"] = _periodic_refresher.status_dict()
+    status["postClose"] = _postclose_refresher.status_dict()
     return status
 
 
