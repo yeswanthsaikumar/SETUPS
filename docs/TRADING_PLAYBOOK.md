@@ -22,6 +22,14 @@
 14. [Trading Psychology — Mark Douglas & Beyond](#14-trading-psychology--mark-douglas--beyond)
 15. [A Unified Checklist](#15-a-unified-checklist)
 16. [Expected Returns vs. Reality (The Math)](#16-expected-returns-vs-reality-the-math)
+    - 16.4 [Risk:Reward × Win Rate Matrix](#164-riskreward--win-rate--expectancy-matrix)
+    - 16.5 [Per-100-Trades Dollar Outcome](#165-per-100-trades-dollar-outcome-risking-1r--500-on-100k)
+    - 16.6 [Drawdown → Recovery Math](#166-drawdown--recovery-math-the-asymmetry-of-losses)
+    - 16.7 [Position Sizing & Risk of Ruin](#167-position-sizing-impact--risk-of-ruin)
+    - 16.8 [Consecutive Loss Probability](#168-consecutive-loss-probability-you-will-hit-a-cold-streak)
+    - 16.9 [Compounding & CAGR Reality](#169-compounding--cagr-reality-check)
+    - 16.10 [Kelly Criterion](#1610-kelly-criterion--optimal-bet-sizing)
+    - 16.11 [Numbers You Must Memorize](#1611-numbers-you-must-memorize-the-cheat-sheet)
 17. [Common Failure Modes](#17-common-failure-modes)
 
 ---
@@ -507,6 +515,180 @@ If any box is unchecked → **no trade.**
 ### 16.3 Realistic Goal
 - 25–40% CAGR with 20% max drawdown = world-class over 10 years.
 - Most profitable traders compound 15–25% with <15% drawdown. That still beats 95% of funds.
+
+---
+
+### 16.4 Risk:Reward × Win Rate → Expectancy Matrix
+
+The single most important table in trading. **Expectancy (in R) per trade** = `(Win% × R) − (Loss% × 1)`, assuming loser = 1R.
+
+| Win Rate ↓ \ R:R → | **1.0R** | **1.5R** | **2.0R** | **2.5R** | **3.0R** | **4.0R** | **5.0R** |
+|---|---|---|---|---|---|---|---|
+| **20%** | −0.60 | −0.50 | −0.40 | −0.30 | −0.20 | **+0.00** | **+0.20** |
+| **25%** | −0.50 | −0.38 | −0.25 | −0.13 | **+0.00** | **+0.25** | **+0.50** |
+| **30%** | −0.40 | −0.25 | −0.10 | **+0.05** | **+0.20** | **+0.50** | **+0.80** |
+| **35%** | −0.30 | −0.13 | **+0.05** | **+0.23** | **+0.40** | **+0.75** | **+1.10** |
+| **40%** | −0.20 | **+0.00** | **+0.20** | **+0.40** | **+0.60** | **+1.00** | **+1.40** |
+| **45%** | −0.10 | **+0.13** | **+0.35** | **+0.58** | **+0.80** | **+1.25** | **+1.70** |
+| **50%** | **+0.00** | **+0.25** | **+0.50** | **+0.75** | **+1.00** | **+1.50** | **+2.00** |
+| **55%** | **+0.10** | **+0.38** | **+0.65** | **+0.93** | **+1.20** | **+1.75** | **+2.30** |
+| **60%** | **+0.20** | **+0.50** | **+0.80** | **+1.10** | **+1.40** | **+2.00** | **+2.60** |
+| **65%** | **+0.30** | **+0.63** | **+0.95** | **+1.28** | **+1.60** | **+2.25** | **+2.90** |
+| **70%** | **+0.40** | **+0.75** | **+1.10** | **+1.45** | **+1.80** | **+2.50** | **+3.20** |
+
+**Reading this table:**
+- **Red (negative) = you lose money long-term.** No matter how good your pattern recognition feels.
+- **The "break-even" diagonal** runs from 50% @ 1R → 33% @ 2R → 25% @ 3R → 20% @ 4R.
+- **Realistic swing traders** live at **40–50% WR × 2.5–3.5R** → expectancy **+0.4R to +1.0R**.
+- **Kullamägi-style episodic pivots** claim **30–40% WR × 5–10R** → expectancy **+0.8R to +3.0R** (but rare setups).
+
+---
+
+### 16.5 Per-100-Trades Dollar Outcome (Risking 1R = $500 on $100k)
+
+What does a given edge actually *earn* you over a 100-trade sample?
+
+| System | Win% | R:R | Expectancy | **Net R / 100 trades** | **$ on $100k (1R=$500)** | **% return** |
+|---|---|---|---|---|---|---|
+| Breakeven | 50% | 1.0 | 0.00R | 0R | $0 | 0% |
+| Weak | 40% | 1.5 | 0.00R | 0R | $0 | 0% |
+| Coin-flip + edge | 50% | 2.0 | +0.50R | +50R | **+$25,000** | **+25%** |
+| Kullamägi-lite | 40% | 3.0 | +0.60R | +60R | **+$30,000** | **+30%** |
+| Minervini swing | 45% | 3.0 | +0.80R | +80R | **+$40,000** | **+40%** |
+| Elite EP trader | 35% | 5.0 | +1.10R | +110R | **+$55,000** | **+55%** |
+| Zanger peak 1999 | 55% | 5.0 | +2.30R | +230R | **+$115,000** | **+115%** |
+| **Revenge trader** | **35%** | **1.5** | **−0.13R** | **−13R** | **−$6,500** | **−6.5%** |
+| **No-stop trader** | **70%** | **0.5** | **−0.15R** | **−15R** | **−$7,500** | **−7.5%** |
+
+> **Key insight:** A 35% WR with 5R setups *crushes* a 70% WR with 0.5R setups. **Size of winner vs. loser beats frequency of winning.** This is why pros hunt asymmetry, not accuracy.
+
+---
+
+### 16.6 Drawdown → Recovery Math (The Asymmetry of Losses)
+
+A loss requires a **disproportionately larger gain** to recover. This is the most underestimated number in trading.
+
+| Drawdown | **Required gain to recover** | Trades @ +1R (risking 1%) needed | Comment |
+|---|---|---|---|
+| −5% | +5.3% | 5 R | Trivial |
+| −10% | +11.1% | 11 R | Manageable |
+| −15% | +17.6% | 18 R | Painful |
+| −20% | **+25.0%** | 25 R | Size-down threshold |
+| −25% | +33.3% | 33 R | Confidence damaged |
+| −30% | +42.9% | 43 R | Career wound |
+| −40% | +66.7% | 67 R | Most never recover |
+| **−50%** | **+100%** | **100 R** | Psychology broken |
+| −60% | +150% | 150 R | Almost impossible |
+| −75% | +300% | 300 R | Dead account |
+| −90% | +900% | 900 R | Game over |
+
+**Rule:** **Never let a drawdown exceed 20%.** Beyond that, the math and the psychology both compound against you.
+
+---
+
+### 16.7 Position Sizing Impact & Risk of Ruin
+
+What happens if you take **N consecutive losers** at various per-trade risk levels?
+
+| Per-trade risk | After 5 losses | After 10 losses | After 20 losses | **Max losses before −50% DD** |
+|---|---|---|---|---|
+| **0.25%** | −1.2% | −2.5% | −4.9% | ~275 losses |
+| **0.5%** | −2.5% | −4.9% | −9.6% | ~140 losses |
+| **1.0%** | −4.9% | −9.6% | −18.2% | ~70 losses |
+| **2.0%** | −9.6% | −18.3% | −33.2% | **~35 losses** |
+| **3.0%** | −14.1% | −26.3% | −45.6% | **~23 losses** |
+| **5.0%** | −22.6% | −40.1% | −64.2% | **~14 losses** |
+| **10.0%** | −41.0% | −65.1% | −87.8% | **~7 losses** |
+| **20.0%** | −67.2% | −89.3% | −98.8% | **~4 losses** |
+
+> **Risk of Ruin (RoR)** at 50% WR: risking 2%/trade → RoR ~0.1%. Risking 10%/trade → RoR **~60%**. Risking 20%/trade → RoR **~99%**. The math is brutal and non-negotiable.
+
+**Minervini, Kullamägi, O'Neil all risk 0.25–1.25% per trade.** Not because they're timid — because they've done the math.
+
+---
+
+### 16.8 Consecutive Loss Probability (You WILL Hit a Cold Streak)
+
+At any given win rate, the probability of hitting **N losses in a row** over a 100-trade sample is uncomfortably high.
+
+| Win Rate | P(5 in a row) | P(7 in a row) | P(10 in a row) | **Expected max losing streak in 100 trades** |
+|---|---|---|---|---|
+| 30% | **~99.9%** | ~99% | ~87% | **10–12** |
+| 40% | ~99% | ~92% | ~60% | **8–10** |
+| 50% | ~96% | ~72% | ~31% | **6–7** |
+| 55% | ~88% | ~55% | ~16% | **5–6** |
+| 60% | ~73% | ~36% | ~7% | **4–5** |
+| 65% | ~54% | ~20% | ~2% | **4** |
+| 70% | ~33% | ~9% | <1% | **3** |
+
+**Implication:** If your system is 40% WR (normal for breakouts), **expect a 10-loser streak every ~100 trades.** That's **−10R** = **−10% drawdown at 1% risk**, or **−50% at 5% risk.** Plan for it mentally and mechanically *before* it happens.
+
+---
+
+### 16.9 Compounding & CAGR Reality Check
+
+$100,000 starting capital, compounded annually:
+
+| CAGR | 1 yr | 3 yr | 5 yr | 10 yr | 20 yr | 30 yr |
+|---|---|---|---|---|---|---|
+| 10% | $110k | $133k | $161k | $259k | $673k | $1.74M |
+| 15% | $115k | $152k | $201k | $405k | $1.64M | $6.62M |
+| **20%** | $120k | $173k | $249k | **$619k** | $3.83M | $23.7M |
+| **25%** | $125k | $195k | $305k | **$931k** | $8.67M | $80.8M |
+| **30%** | $130k | $220k | $371k | $1.38M | $19.0M | $262M |
+| 40% | $140k | $274k | $538k | $2.89M | $83.7M | — |
+| 50% | $150k | $338k | $759k | $5.77M | $332M | — |
+| 100% | $200k | $800k | $3.2M | $102M | — | — |
+
+**Reality checks:**
+- **Buffett's lifetime CAGR: ~20%.** Over 60 years, that's what made him rich. Consistency >>> home-run years.
+- A sustained **25% CAGR puts you in the top 0.1% of traders globally.**
+- 50%+ CAGR over 10+ years has been achieved by **fewer than ~20 documented traders ever.** Don't target it. If it happens, thank variance.
+- The game is **not** "hit 100% this year." It's "hit 25% every year for 20 years without blowing up."
+
+---
+
+### 16.10 Kelly Criterion — Optimal Bet Sizing
+
+Kelly formula: `Kelly% = W − [(1 − W) / R]` where W = win rate, R = avg win / avg loss.
+
+| Win% | R:R | **Full Kelly %** | **Half-Kelly (recommended)** | **Quarter-Kelly (safe)** |
+|---|---|---|---|---|
+| 40% | 2.0 | 10% | 5% | 2.5% |
+| 45% | 2.0 | 17.5% | 8.8% | 4.4% |
+| 50% | 2.0 | 25% | 12.5% | 6.3% |
+| 40% | 3.0 | 20% | 10% | 5% |
+| 50% | 3.0 | 33% | 16.5% | **8.3%** |
+| 40% | 5.0 | 28% | 14% | 7% |
+| 50% | 5.0 | 40% | 20% | 10% |
+
+**Why NOT full Kelly:** drawdowns at full Kelly are brutal (50%+ DDs are normal). Pros run **Half-Kelly or less**. Even Half-Kelly is aggressive — most champions actually run **Quarter-Kelly = ~1–2% per trade** on typical setups.
+
+**Sanity check:** If your Kelly % is negative → **your system has no edge. Stop trading it.**
+
+---
+
+### 16.11 Numbers You Must Memorize (The Cheat Sheet)
+
+Print this. Tape it to your monitor.
+
+| # | Number | Why it matters |
+|---|---|---|
+| 1 | **1%** | Max risk per trade (0.5% if learning) |
+| 2 | **7–8%** | O'Neil's max hard stop loss from entry |
+| 3 | **3:1** | Minimum R:R to bother taking a trade |
+| 4 | **5%** | Max above pivot before you stop chasing |
+| 5 | **20%** | Max drawdown before you cut size 50% |
+| 6 | **25%** | Required gain to recover a 20% DD |
+| 7 | **100%** | Required gain to recover a 50% DD |
+| 8 | **40% × 3R** | Minimum viable edge (+0.6R expectancy) |
+| 9 | **10 losses** | Plan for this streak per 100 trades @ 40% WR |
+| 10 | **5–10 positions** | Max concurrent (focus > diversification) |
+| 11 | **25% CAGR** | Top 0.1% of all traders; realistic north star |
+| 12 | **6%** | Max total open portfolio risk (Elder 2%/6%) |
+| 13 | **2×** | Min volume on breakout vs. 50-day avg (Zanger) |
+| 14 | **30-wk MA** | Weinstein's stage filter — above = Stage 2 |
+| 15 | **150 trades/yr** | Upper bound for quality swing system |
 
 ---
 

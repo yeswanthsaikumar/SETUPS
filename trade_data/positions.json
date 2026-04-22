@@ -419,8 +419,50 @@
       "exit_date": null,
       "tags": [],
       "partial_exits": []
+    },
+    {
+      "id": "79c31710",
+      "symbol": "ATHERENERG",
+      "name": "atherenergy",
+      "entry": 904.97,
+      "quantity": 1350,
+      "remaining_quantity": null,
+      "sl": 895.0,
+      "t1": 0.0,
+      "t2": 0.0,
+      "t3": 0.0,
+      "setup": "BULL_FLAG",
+      "rating": "A+",
+      "notes": "",
+      "entry_date": "2026-04-22",
+      "status": "OPEN",
+      "exit_price": null,
+      "exit_date": null,
+      "tags": [],
+      "partial_exits": []
+    },
+    {
+      "id": "471c3747",
+      "symbol": "BLISSGVS",
+      "name": "blissgvs",
+      "entry": 270.33,
+      "quantity": 2980,
+      "remaining_quantity": null,
+      "sl": 260.0,
+      "t1": 0.0,
+      "t2": 0.0,
+      "t3": 0.0,
+      "setup": "BREAKOUT",
+      "rating": "A+",
+      "notes": "",
+      "entry_date": "2026-04-22",
+      "status": "OPEN",
+      "exit_price": null,
+      "exit_date": null,
+      "tags": [],
+      "partial_exits": []
     }
   ],
   "created": "2026-04-14T11:55:48.601550",
-  "lastUpdated": "2026-04-21T13:59:43.110563"
+  "lastUpdated": "2026-04-22T09:47:35.886767"
 }
