@@ -861,6 +861,15 @@ async def lifespan(app: FastAPI):
     else:
         _postclose_refresher.start()
 
+    # ── EARNINGS CACHE PRE-WARM ──
+    # Kick off a background fetch of positions + watchlist so the /earnings
+    # dashboard is instant on first open. Fully non-blocking — daemon thread.
+    if os.environ.get("SETUPS_DISABLE_EARNINGS_PREWARM", "").lower() not in ("true", "1", "yes"):
+        try:
+            _prewarm_earnings_cache()
+        except Exception as _e:
+            print(f"⚠ earnings prewarm skipped: {_e}", flush=True)
+
     # ── AUTO-START BREAKOUT ALERT SCANNER ──
     # Wire up dependencies and start the background scanner so alerts
     # are sent automatically (Telegram + Gmail) without manual trigger.
@@ -1342,6 +1351,226 @@ def playbook_download(doc: str = "playbook") -> Response:
             "Cache-Control": "no-store",
         },
     )
+
+
+# ── Quarterly Earnings Results Dashboard ─────────────────────────────────────
+# Aggregates historical + upcoming earnings for positions / watchlist / custom
+# symbol sets into three actionable buckets:
+#   • UPCOMING within N days  → AVOID (volatility risk)
+#   • BEAT (surprise ≥ +5% or gap ≥ +4%) → PEG / post-earnings-drift candidates
+#   • MISS (surprise ≤ −5% or gap ≤ −4%) → AVOID / EXIT
+# The idea: stay out of results, enter after they print strong.
+_EARNINGS_UI_PATH = ROOT / "apps" / "web" / "ui" / "earnings.html"
+_EARNINGS_CACHE_PATH = TRADE_DATA_DIR / "earnings_cache.json"
+_NSE_EARNINGS_CACHE_PATH = TRADE_DATA_DIR / "nse_events_cache.json"
+_earnings_provider = None  # lazy — avoid import cost at module load
+
+
+def _get_earnings_provider():
+    global _earnings_provider
+    if _earnings_provider is None:
+        from earnings_provider import EarningsProvider
+        _earnings_provider = EarningsProvider(
+            cache_path=_EARNINGS_CACHE_PATH,
+            ttl_hours=24.0,
+            max_workers=3,
+            revalidate_after_hours=6.0,
+            # NSE India merge — authoritative source for Indian tickers.
+            nse_cache_path=_NSE_EARNINGS_CACHE_PATH,
+            # Let NSE-only events be classified via our local OHLCV cache —
+            # no extra Yahoo round-trip needed.
+            ohlcv_reader=_read_ohlcv,
+        )
+    return _earnings_provider
+
+
+def _prewarm_earnings_cache() -> None:
+    """Kick off a background fetch of every symbol in positions + watchlist
+    on server boot. Non-blocking — uses the provider's internal daemon thread.
+    """
+    try:
+        raw = _collect_scope_symbols("all")
+        if not raw:
+            return
+        names: dict[str, str] = {}
+        for bare, name in raw:
+            yf_sym = _normalise_symbol_for_yf(bare)
+            names[yf_sym] = name or bare
+        _get_earnings_provider().prewarm(list(names), names=names)
+        print(f"📊 earnings prewarm: scheduled {len(names)} symbols", flush=True)
+    except Exception as e:  # pragma: no cover
+        print(f"⚠ earnings prewarm failed: {e}", flush=True)
+
+
+def _collect_scope_symbols(scope: str) -> list[tuple[str, str]]:
+    """Return ``[(symbol, display_name), …]`` for the requested scope.
+
+    ``scope`` ∈ {"positions", "watchlist", "all"}. Unknown → "all".
+    """
+    pairs: dict[str, str] = {}  # symbol → name (last-wins)
+
+    if scope in {"positions", "all"}:
+        try:
+            data = json.loads(TRADE_BOARD_JSON.read_text(encoding="utf-8"))
+            for p in data.get("positions", []) or []:
+                sym = (p.get("symbol") or "").strip()
+                if not sym:
+                    continue
+                pairs[sym] = p.get("name") or sym
+        except Exception:
+            pass
+
+    if scope in {"watchlist", "all"}:
+        try:
+            items = json.loads(TRADE_WATCHLIST_JSON.read_text(encoding="utf-8"))
+            if isinstance(items, list):
+                for w in items:
+                    sym = (w.get("symbol") or "").strip()
+                    if not sym:
+                        continue
+                    pairs[sym] = w.get("name") or sym
+        except Exception:
+            pass
+
+    return [(s, n) for s, n in pairs.items()]
+
+
+def _normalise_symbol_for_yf(symbol: str, market_hint: str | None = None) -> str:
+    """Append ``.NS`` for Indian tickers missing a suffix.
+
+    Positions store bare ``MTARTECH``; yfinance expects ``MTARTECH.NS``. US
+    tickers already lack a suffix and Yahoo accepts them as-is.
+    """
+    s = symbol.strip().upper()
+    if "." in s or "-" in s:
+        return s
+    # Heuristic: alphabetic-only tickers of length ≤5 and confirmed US market
+    # stay unsuffixed; anything else (likely India) gets .NS.
+    if market_hint and market_hint.lower() == "us":
+        return s
+    return s + ".NS"
+
+
+@app.get("/earnings")
+def earnings_page() -> FileResponse:
+    """Serve the quarterly results dashboard UI."""
+    if not _EARNINGS_UI_PATH.exists():
+        raise HTTPException(status_code=404, detail="Earnings dashboard UI not found")
+    return FileResponse(_EARNINGS_UI_PATH, media_type="text/html")
+
+
+@app.get("/api/earnings/quarterly")
+def earnings_quarterly(
+    scope: str = "all",
+    days_ahead: int = 14,
+    days_back: int = 45,
+    force: bool = False,
+) -> dict:
+    """Return classified earnings events for the requested scope.
+
+    Parameters
+    ----------
+    scope : {"positions", "watchlist", "all"}
+    days_ahead : events scheduled within this many days → ``UPCOMING``
+    days_back  : events reported within this many days → ``BEAT|MISS|INLINE``
+    force      : bypass the 12h cache and refetch from Yahoo
+    """
+    from earnings_provider import summarize
+    scope = (scope or "all").lower()
+    if scope not in {"positions", "watchlist", "all"}:
+        scope = "all"
+
+    raw = _collect_scope_symbols(scope)
+    if not raw:
+        return {
+            "scope": scope, "symbols": 0, "totals": {},
+            "buckets": {"upcoming": [], "beats": [], "misses": [], "inline": []},
+            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "note": "No symbols in scope — add positions or watchlist entries.",
+        }
+
+    # Map bare → yfinance-suffixed; keep display name off the bare symbol.
+    yf_map: dict[str, str] = {}  # yf_sym → display
+    display_by_bare: dict[str, str] = {}  # bare → name
+    for bare, name in raw:
+        yf_sym = _normalise_symbol_for_yf(bare)
+        yf_map[yf_sym] = name or bare
+        display_by_bare[bare] = name or bare
+
+    provider = _get_earnings_provider()
+    events = provider.fetch_many(list(yf_map), names=yf_map, force=force)
+
+    # Restrict to the caller's window
+    today = datetime.utcnow().date()
+    kept = []
+    # Track the newest known event per symbol so we can report coverage gaps.
+    latest_by_sym: dict[str, tuple[str, int]] = {}  # bare → (date, days_until)
+    for e in events:
+        try:
+            d = datetime.fromisoformat(e.date).date()
+        except Exception:
+            continue
+        delta = (d - today).days
+        bare = e.symbol.replace(".NS", "")
+        # Record latest known event for coverage reporting
+        prev = latest_by_sym.get(bare)
+        if prev is None or d.isoformat() > prev[0]:
+            latest_by_sym[bare] = (d.isoformat(), delta)
+        if delta > days_ahead or delta < -days_back:
+            continue
+        # Re-expose a bare-symbol-friendly alias for the UI
+        e.symbol = bare  # type: ignore[misc]
+        if not e.name and bare in display_by_bare:
+            e.name = display_by_bare[bare]
+        kept.append(e)
+
+    summary = summarize(kept)
+
+    # Build a "stale coverage" list: symbols that exist in scope + have
+    # some cached data, but whose latest event is outside the days_back
+    # window. Lets the user see WHY a name (e.g. ANANDRATHI) is missing.
+    stale: list[dict] = []
+    for bare, display in display_by_bare.items():
+        latest = latest_by_sym.get(bare)
+        if not latest:
+            # No events ever fetched — covered by a separate "no_coverage"
+            # list below, not stale.
+            continue
+        latest_date, latest_delta = latest
+        # If latest event is within window (upcoming or recent), it's already
+        # in the buckets → skip.
+        if -days_back <= latest_delta <= days_ahead:
+            continue
+        stale.append({
+            "symbol": bare,
+            "name": display,
+            "latest_known_date": latest_date,
+            "days_since": -latest_delta if latest_delta < 0 else 0,
+            "days_until": latest_delta if latest_delta > 0 else 0,
+        })
+    stale.sort(key=lambda x: x["days_since"])
+
+    # Symbols Yahoo has never returned any data for (delisted / uncovered)
+    no_coverage = sorted(
+        bare for bare in display_by_bare
+        if bare not in latest_by_sym
+    )
+
+    return {
+        "scope": scope,
+        "symbols": len(yf_map),
+        "days_ahead": days_ahead,
+        "days_back": days_back,
+        "stale_coverage": stale,
+        "no_coverage": no_coverage,
+        **summary,
+    }
+
+
+@app.post("/api/earnings/refresh")
+def earnings_refresh(scope: str = "all") -> dict:
+    """Force-refresh the earnings cache for the given scope."""
+    return earnings_quarterly(scope=scope, days_ahead=30, days_back=60, force=True)
 
 
 # ── Industry Groups API ──────────────────────────────────────────────────────

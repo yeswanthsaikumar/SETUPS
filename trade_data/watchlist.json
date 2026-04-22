@@ -1998,5 +1998,23 @@
     "rs_score": 86,
     "rs_rank": 80,
     "rs_excess_pct": 44.9
+  },
+  {
+    "symbol": "ANANDRATHI",
+    "name": "anandrathi",
+    "notes": "",
+    "alert_price": null,
+    "setup": "Breakout",
+    "market": "india",
+    "bucket": "setup_breakout",
+    "conviction": 4,
+    "tags": [],
+    "add_price": 3650.2,
+    "add_date": "2026-04-22",
+    "pair_symbol": null,
+    "pair_market": null,
+    "source": "manual",
+    "id": "87c3d826-e824-48d1-97ab-94f0103aa589",
+    "added_at": "2026-04-22T12:48:41"
   }
 ]
