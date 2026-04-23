@@ -18,7 +18,8 @@
       "status": "CLOSED",
       "exit_price": 4000.0,
       "exit_date": "2026-04-10",
-      "tags": []
+      "tags": [],
+      "original_sl": 3450.0
     },
     {
       "id": "375daa66",
@@ -53,7 +54,8 @@
         }
       ],
       "remaining_quantity": 0,
-      "realized_pl": 89043.5
+      "realized_pl": 89043.5,
+      "original_sl": 860.0
     },
     {
       "id": "7abd3d6f",
@@ -82,7 +84,8 @@
         }
       ],
       "remaining_quantity": 0,
-      "realized_pl": 0.0
+      "realized_pl": 0.0,
+      "original_sl": 322.0
     },
     {
       "id": "061d5be8",
@@ -101,7 +104,8 @@
       "status": "CLOSED",
       "exit_price": 4936.0,
       "exit_date": "2026-04-16",
-      "tags": []
+      "tags": [],
+      "original_sl": 4115.0
     },
     {
       "id": "88085d48",
@@ -123,7 +127,8 @@
       "exit_date": "2026-04-15",
       "tags": [],
       "partial_exits": [],
-      "realized_pl": 0.0
+      "realized_pl": 0.0,
+      "original_sl": 1355.97
     },
     {
       "id": "902e5157",
@@ -145,7 +150,8 @@
       "exit_date": "2026-04-17",
       "tags": [],
       "partial_exits": [],
-      "realized_pl": -1400.0
+      "realized_pl": -1400.0,
+      "original_sl": 2800.0
     },
     {
       "id": "68059abf",
@@ -180,7 +186,8 @@
           "reason": "MANUAL"
         }
       ],
-      "realized_pl": 154920.0
+      "realized_pl": 154920.0,
+      "original_sl": 710.0
     },
     {
       "id": "f32395f2",
@@ -201,7 +208,8 @@
       "exit_price": 1418.0,
       "exit_date": "2026-04-13",
       "tags": [],
-      "partial_exits": []
+      "partial_exits": [],
+      "original_sl": 1200.0
     },
     {
       "id": "d8b1d175",
@@ -223,7 +231,8 @@
       "exit_date": "2026-04-17",
       "tags": [],
       "partial_exits": [],
-      "realized_pl": -1744.0
+      "realized_pl": -1744.0,
+      "original_sl": 1450.0
     },
     {
       "id": "12591509",
@@ -245,7 +254,8 @@
       "exit_date": "2026-04-17",
       "tags": [],
       "partial_exits": [],
-      "realized_pl": -18109.0
+      "realized_pl": -18109.0,
+      "original_sl": 730.0
     },
     {
       "id": "d9763710",
@@ -267,7 +277,8 @@
       "exit_date": "2026-04-20",
       "tags": [],
       "partial_exits": [],
-      "realized_pl": -21595.0
+      "realized_pl": -21595.0,
+      "original_sl": 376.0
     },
     {
       "id": "1b3f2a37",
@@ -311,7 +322,8 @@
       "exit_date": "2026-04-21",
       "tags": [],
       "partial_exits": [],
-      "realized_pl": 9100.0
+      "realized_pl": 9100.0,
+      "original_sl": 840.0
     },
     {
       "id": "2acd5a53",
@@ -320,7 +332,7 @@
       "entry": 351.0,
       "quantity": 3000,
       "remaining_quantity": null,
-      "sl": 346.0,
+      "sl": 375.0,
       "t1": 0.0,
       "t2": 0.0,
       "t3": 0.0,
@@ -332,7 +344,8 @@
       "exit_price": null,
       "exit_date": null,
       "tags": [],
-      "partial_exits": []
+      "partial_exits": [],
+      "original_sl": 375.0
     },
     {
       "id": "184a2636",
@@ -354,7 +367,8 @@
       "exit_date": "2026-04-21",
       "tags": [],
       "partial_exits": [],
-      "realized_pl": -1000.0
+      "realized_pl": -1000.0,
+      "original_sl": 1540.0
     },
     {
       "id": "7df3928e",
@@ -376,7 +390,8 @@
       "exit_date": "2026-04-21",
       "tags": [],
       "partial_exits": [],
-      "realized_pl": 67281.0
+      "realized_pl": 67281.0,
+      "original_sl": 193.15
     },
     {
       "id": "41f3fc9c",
@@ -385,7 +400,7 @@
       "entry": 5092.0,
       "quantity": 170,
       "remaining_quantity": null,
-      "sl": 5000.0,
+      "sl": 5099.0,
       "t1": 0.0,
       "t2": 0.0,
       "t3": 0.0,
@@ -397,7 +412,8 @@
       "exit_price": null,
       "exit_date": null,
       "tags": [],
-      "partial_exits": []
+      "partial_exits": [],
+      "original_sl": 5099.0
     },
     {
       "id": "7bcaafa5",
@@ -418,28 +434,31 @@
       "exit_price": null,
       "exit_date": null,
       "tags": [],
-      "partial_exits": []
+      "partial_exits": [],
+      "original_sl": 212.0
     },
     {
       "id": "79c31710",
       "symbol": "ATHERENERG",
       "name": "atherenergy",
-      "entry": 904.97,
+      "entry": 892.0,
       "quantity": 1350,
-      "remaining_quantity": null,
-      "sl": 863.0,
+      "remaining_quantity": 0,
+      "sl": 893.0,
       "t1": 0.0,
       "t2": 0.0,
       "t3": 0.0,
       "setup": "BULL_FLAG",
       "rating": "A+",
-      "notes": "",
+      "notes": "market closing weak and already extended too much from 20 ema, reducing open risk ",
       "entry_date": "2026-04-22",
-      "status": "OPEN",
-      "exit_price": null,
-      "exit_date": null,
+      "status": "CLOSED",
+      "exit_price": 895.45,
+      "exit_date": "2026-04-23",
       "tags": [],
-      "partial_exits": []
+      "partial_exits": [],
+      "original_sl": 863.0,
+      "realized_pl": 4657.5
     },
     {
       "id": "471c3747",
@@ -447,7 +466,7 @@
       "name": "blissgvs",
       "entry": 270.33,
       "quantity": 2980,
-      "remaining_quantity": null,
+      "remaining_quantity": 0,
       "sl": 260.0,
       "t1": 0.0,
       "t2": 0.0,
@@ -456,13 +475,15 @@
       "rating": "A+",
       "notes": "",
       "entry_date": "2026-04-22",
-      "status": "OPEN",
-      "exit_price": null,
-      "exit_date": null,
+      "status": "CLOSED",
+      "exit_price": 270.0,
+      "exit_date": "2026-04-23",
       "tags": [],
-      "partial_exits": []
+      "partial_exits": [],
+      "original_sl": 260.0,
+      "realized_pl": -983.4
     }
   ],
   "created": "2026-04-14T11:55:48.601550",
-  "lastUpdated": "2026-04-22T13:54:51.468152"
+  "lastUpdated": "2026-04-23T14:48:53.343858"
 }
