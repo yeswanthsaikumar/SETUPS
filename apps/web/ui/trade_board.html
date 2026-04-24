@@ -1017,6 +1017,15 @@
             <span class="wl-count" id="wlTotalCount">0</span>
           </div>
           <div style="flex:1"></div>
+          <select class="f-sel" id="wlPriorityFilter" onchange="renderWatchlist()" style="min-width:80px">
+            <option value="">All ⚡</option>
+            <option value="P1">🔥 P1</option>
+            <option value="P2">👀 P2</option>
+            <option value="P3">📋 P3</option>
+          </select>
+          <select class="f-sel" id="wlSectorFilter" onchange="renderWatchlist()" style="min-width:120px">
+            <option value="">All sectors</option>
+          </select>
           <select class="f-sel" id="wlSetupFilter" onchange="renderWatchlist()" style="min-width:140px">
             <option value="">All setups</option>
           </select>
@@ -1053,6 +1062,7 @@
         <!-- Tab bar -->
         <div id="alertTabs" style="display:flex;gap:2px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0;">
           <button class="alert-tab active" onclick="switchAlertTab('breakout',this)">🚀 Breakout Signals</button>
+          <button class="alert-tab" onclick="switchAlertTab('entry',this)">🎯 Entry Triggers</button>
           <button class="alert-tab" onclick="switchAlertTab('ema5',this)">📉 Position 5 EMA</button>
           <button class="alert-tab" onclick="switchAlertTab('custom',this)">🎛 Custom Rules</button>
           <button class="alert-tab" onclick="switchAlertTab('history',this)">📋 History</button>
@@ -1111,6 +1121,16 @@
             <span style="font-size:11px;color:var(--muted);margin-left:4px;">Detects breakout candles with volume surge + resistance level break on your watchlist.</span>
           </div>
           <div id="boResults2"></div>
+        </div>
+
+        <!-- TAB: Entry Triggers -->
+        <div class="alert-tab-content" id="alertTab-entry" style="display:none;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" onclick="entryCheckNow()" style="font-weight:700;">🎯 Check Entry Proximity</button>
+            <button class="btn btn-outline btn-sm" onclick="entryScanSend()" style="border-color:#0ea5e944;color:#0ea5e9;">📲 Check & Alert</button>
+            <span style="font-size:11px;color:var(--muted);margin-left:4px;">Watchlist stocks near their scan entry price — ready-to-enter setup triggers.</span>
+          </div>
+          <div id="entryResults"></div>
         </div>
 
         <!-- TAB: Position 5 EMA -->
@@ -1400,7 +1420,7 @@
       <!-- Row 1: basic filters -->
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
         <label style="font-size:11px;color:var(--muted)">Top N</label>
-        <input id="rsTopN" type="number" min="5" max="200" value="35" class="mi" style="width:70px">
+        <input id="rsTopN" type="number" min="5" max="500" value="35" class="mi" style="width:70px">
         <label style="font-size:11px;color:var(--muted)">Min Price ₹</label>
         <input id="rsMinPrice" type="number" value="50" class="mi" style="width:80px">
         <label style="font-size:11px;color:var(--muted)">Min Bars</label>
@@ -3566,6 +3586,16 @@ function renderWatchlist() {
   if (setupSel && setupSel.options.length <= 1 && wlSetupsVocab.length) {
     setupSel.innerHTML = '<option value="">All setups</option>' + wlSetupsVocab.map(s=>'<option>'+s+'</option>').join('');
   }
+  // Populate sector filter dynamically from watchlist data
+  const sectorSel = document.getElementById('wlSectorFilter');
+  if (sectorSel) {
+    const sectors = [...new Set(watchlistItems.map(i => i.sector).filter(Boolean).filter(s => s !== 'Other'))].sort();
+    const curVal = sectorSel.value;
+    if (sectors.length && sectorSel.options.length <= 1) {
+      sectorSel.innerHTML = '<option value="">All sectors</option>' + sectors.map(s => '<option value="'+s+'">'+s+'</option>').join('');
+      if (curVal) sectorSel.value = curVal;
+    }
+  }
   // Counts per bucket
   const counts = {};
   watchlistItems.forEach(it => { const b = it.bucket || 'watching'; counts[b] = (counts[b] || 0) + 1; });
@@ -3575,20 +3605,25 @@ function renderWatchlist() {
   // Filter
   const q = (document.getElementById('wlSearch')?.value || '').trim().toLowerCase();
   const setupF = document.getElementById('wlSetupFilter')?.value || '';
+  const sectorF = document.getElementById('wlSectorFilter')?.value || '';
+  const prioF = document.getElementById('wlPriorityFilter')?.value || '';
   let list = watchlistItems.filter(it => {
     if (wlActiveBucket !== 'ALL' && (it.bucket || 'watching') !== wlActiveBucket) return false;
-    if (setupF && (it.setup || '').toLowerCase() !== setupF.toLowerCase()) return false;
+    if (setupF && (it.setup || '').toLowerCase() !== setupF.toLowerCase() && (it.scanSetup || '').toLowerCase() !== setupF.toLowerCase()) return false;
+    if (sectorF && (it.sector || '') !== sectorF) return false;
+    if (prioF && (it.priority || 'P3') !== prioF) return false;
     if (q) {
-      const hay = [it.symbol, it.name, (it.tags||[]).join(' '), it.notes, it.setup, it.bucket].join(' ').toLowerCase();
+      const hay = [it.symbol, it.name, (it.tags||[]).join(' '), it.notes, it.setup, it.bucket, it.sector, it.industry, it.priority].join(' ').toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;
   });
-  // Sort: RS leaders bucket → by rank asc (best = rank 1), else return desc
+  // Sort: priority first (P1→P2→P3), then by context
+  const _priOrd = {'P1': 0, 'P2': 1, 'P3': 2};
   if (wlActiveBucket === 'rs_leaders') {
-    list.sort((a,b) => (a.rs_rank || 9999) - (b.rs_rank || 9999) || (b.rs_score || 0) - (a.rs_score || 0));
+    list.sort((a,b) => (_priOrd[a.priority||'P3']||2) - (_priOrd[b.priority||'P3']||2) || (a.rs_rank || 9999) - (b.rs_rank || 9999) || (b.rs_score || 0) - (a.rs_score || 0));
   } else {
-    list.sort((a,b) => (b.returnSinceAddPct || 0) - (a.returnSinceAddPct || 0) || (b.conviction || 0) - (a.conviction || 0));
+    list.sort((a,b) => (_priOrd[a.priority||'P3']||2) - (_priOrd[b.priority||'P3']||2) || (b.returnSinceAddPct || 0) - (a.returnSinceAddPct || 0) || (b.conviction || 0) - (a.conviction || 0));
   }
   document.getElementById('wlTotalCount').textContent = list.length + ' / ' + watchlistItems.length;
   if (!list.length) {
@@ -3608,6 +3643,16 @@ function buildWlCard(item) {
 
   // v2 specific badges
   const bucketLbl = item.bucket ? '<span class="wl-bucket-pill">' + _bucketLabel(item.bucket) + '</span>' : '';
+  // Priority badge
+  const _prio = item.priority || 'P3';
+  const _prioBg = _prio === 'P1' ? '#2a1a00' : _prio === 'P2' ? '#0a1a30' : '#1a1a1a';
+  const _prioClr = _prio === 'P1' ? '#ffd700' : _prio === 'P2' ? '#60a5fa' : '#64748b';
+  const _prioIcon = _prio === 'P1' ? '🔥' : _prio === 'P2' ? '👀' : '📋';
+  const prioBadge = '<span class="badge" style="background:'+_prioBg+';color:'+_prioClr+';border:1px solid '+_prioClr+'33;font-weight:800" title="Priority tier">'+_prioIcon+' '+_prio+'</span>';
+  // Near-entry badge
+  const nearEntryBadge = item.nearEntry
+    ? '<span class="badge" style="background:#1a2400;color:#a3e635;border:1px solid #a3e63544;font-weight:800;animation:blink 1.5s infinite" title="CMP within 2% of scan entry price (₹'+(item.scanEntry||'?')+')">🎯 NEAR ENTRY ' + (item.entryDistPct != null ? (item.entryDistPct >= 0 ? '+' : '') + item.entryDistPct.toFixed(1) + '%' : '') + '</span>'
+    : '';
   const autoBadge = item.source === 'auto_rs'
     ? '<span class="badge" style="background:#1a1a00;color:#facc15;border:1px solid #facc1544" title="Auto-generated by RS-Leader scan">⚡ AUTO RS' + (item.rs_rank ? ' #' + item.rs_rank : '') + (item.rs_score ? ' · ' + item.rs_score : '') + '</span>' : '';
   const ipoBadge = item.is_ipo
@@ -3646,7 +3691,7 @@ function buildWlCard(item) {
     ? '<div class="card-gain-day ' + dc + '">' + (dayPct >= 0 ? '▲' : '▼') + Math.abs(dayPct).toFixed(1) + '% today</div>' : '';
   const scanEntry = item.scanEntry ? parseFloat(item.scanEntry) : 0;
   const scanSl = item.scanSl ? parseFloat(item.scanSl) : 0;
-  const badges = [bucketLbl, autoBadge, ipoBadge, swingBadge, sectorBadge, setupBadge, ratingBadge, scanBadge, rsStr, emaBadge, volBadge, alertBadge, retChip, staleBadge].filter(Boolean).join('');
+  const badges = [prioBadge, nearEntryBadge, bucketLbl, autoBadge, ipoBadge, swingBadge, sectorBadge, setupBadge, ratingBadge, scanBadge, rsStr, emaBadge, volBadge, alertBadge, retChip, staleBadge].filter(Boolean).join('');
   const inScanCls = item.inScan ? ' wl-in-scan' : '';
   const mktFlag = item.market === 'us' ? '🇺🇸 ' : '🇮🇳 ';
   const cmpHtml = cmp
@@ -4268,6 +4313,98 @@ function switchAlertTab(tab, btn) {
   if (tab === 'custom') {
     crLoad();
   }
+  if (tab === 'entry') {
+    const el = document.getElementById('entryResults');
+    if (el && !el.innerHTML.trim()) entryCheckNow();
+  }
+}
+
+// ── Entry Proximity Alerts ───────────────────────────────────────────────────
+
+async function entryCheckNow() {
+  const el = document.getElementById('entryResults');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--muted);animation:blink 1.2s infinite;padding:20px 0;text-align:center;">🎯 Checking entry proximity…</div>';
+  try {
+    const res = await fetch(API + '/api/alerts/entry-proximity/check');
+    const data = await res.json();
+    if (!data.alerts || !data.alerts.length) {
+      el.innerHTML = '<div style="text-align:center;padding:30px 0;"><div style="font-size:28px;margin-bottom:8px;">🔍</div><div style="color:var(--muted);font-size:13px;">No watchlist items near their entry price</div><div style="color:var(--dim);font-size:11px;margin-top:4px;">Threshold: ±' + (data.threshold||2) + '% · Checked ' + data.totalWatchlist + ' items</div></div>';
+      return;
+    }
+    el.innerHTML = '<div style="font-size:11px;color:var(--cyan);margin-bottom:10px;">' + data.count + ' item(s) near entry · ' + data.checkedAt + '</div>' + renderEntryCards(data.alerts);
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--red);padding:16px;">Error: ' + e.message + '</div>';
+  }
+}
+
+async function entryScanSend() {
+  const el = document.getElementById('entryResults');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--muted);animation:blink 1.2s infinite;padding:20px 0;text-align:center;">📲 Scanning & sending alerts…</div>';
+  try {
+    const res = await fetch(API + '/api/alerts/entry-proximity/scan-send', {method:'POST'});
+    const data = await res.json();
+    const sentMsg = data.telegramSent > 0
+      ? '<div style="color:var(--green);font-size:11px;margin-bottom:8px;">📲 Sent ' + data.telegramSent + ' Telegram alert(s) (' + data.newAlerts + ' new)</div>'
+      : (data.newAlerts === 0 ? '<div style="color:var(--muted);font-size:11px;margin-bottom:8px;">No new alerts (already sent today)</div>' : '');
+    if (!data.alerts || !data.alerts.length) {
+      el.innerHTML = sentMsg + '<div style="text-align:center;padding:20px 0;color:var(--muted);">No items near entry price</div>';
+      return;
+    }
+    el.innerHTML = sentMsg + '<div style="font-size:11px;color:var(--cyan);margin-bottom:10px;">' + data.alerts.length + ' item(s) near entry · ' + data.checkedAt + '</div>' + renderEntryCards(data.alerts);
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--red);padding:16px;">Error: ' + e.message + '</div>';
+  }
+}
+
+function renderEntryCards(alerts) {
+  let h = '<div style="display:grid;gap:10px;">';
+  for (const a of alerts) {
+    const isAt = a.tier === 'AT_ENTRY';
+    const isNear = a.tier === 'NEAR_ENTRY';
+    const tierBg = isAt ? '#1a2400' : isNear ? '#0a1a30' : '#1a1a1a';
+    const tierClr = isAt ? '#a3e635' : isNear ? '#60a5fa' : '#94a3b8';
+    const tierBorder = isAt ? '#a3e63533' : isNear ? '#60a5fa33' : '#33415533';
+    const tierIcon = isAt ? '🎯' : isNear ? '📍' : '📊';
+    const tierLabel = a.tier.replace(/_/g, ' ');
+    const pClr = a.priority === 'P1' ? '#ffd700' : a.priority === 'P2' ? '#60a5fa' : '#64748b';
+    const pIcon = a.priority === 'P1' ? '🔥' : a.priority === 'P2' ? '👀' : '📋';
+    const distClr = a.distPct <= 0 ? '#a3e635' : a.distPct <= 1 ? '#fde68a' : '#94a3b8';
+
+    h += '<div style="background:var(--bg2);border:1px solid ' + tierBorder + ';border-left:3px solid ' + tierClr + ';border-radius:8px;padding:12px 14px;">';
+    // Header
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
+    h += '<span style="font-size:15px;font-weight:900;color:var(--text)">' + a.symbol + '</span>';
+    h += '<span style="background:' + tierBg + ';color:' + tierClr + ';padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;border:1px solid ' + tierBorder + '">' + tierIcon + ' ' + tierLabel + '</span>';
+    h += '<span style="color:' + pClr + ';font-size:10px;font-weight:700">' + pIcon + ' ' + a.priority + '</span>';
+    if (a.setup) h += '<span style="background:#162030;color:#93c5fd;padding:1px 6px;border-radius:3px;font-size:10px">' + a.setup + '</span>';
+    if (a.rating) h += '<span style="background:' + (a.rating === 'A+' ? '#052e16' : a.rating === 'A' ? '#0a1a2e' : '#1a1a1a') + ';color:' + (a.rating === 'A+' ? '#4ade80' : a.rating === 'A' ? '#60a5fa' : '#94a3b8') + ';padding:1px 5px;border-radius:3px;font-size:10px;font-weight:700">' + a.rating + '</span>';
+    h += '</div>';
+    // Price grid
+    h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:11px;">';
+    h += '<div><div style="color:var(--muted);font-size:9px;text-transform:uppercase">CMP</div><div style="font-weight:800;color:var(--text)">₹' + a.cmp.toLocaleString('en-IN') + '</div></div>';
+    h += '<div><div style="color:var(--muted);font-size:9px;text-transform:uppercase">Entry</div><div style="font-weight:800;color:#a3e635">₹' + a.scanEntry.toLocaleString('en-IN') + '</div></div>';
+    h += '<div><div style="color:var(--muted);font-size:9px;text-transform:uppercase">Distance</div><div style="font-weight:800;color:' + distClr + '">' + (a.distPct >= 0 ? '+' : '') + a.distPct.toFixed(1) + '%</div></div>';
+    h += '<div><div style="color:var(--muted);font-size:9px;text-transform:uppercase">SL</div><div style="font-weight:800;color:#f87171">₹' + (a.scanSl ? a.scanSl.toLocaleString('en-IN') : '—') + '</div></div>';
+    h += '</div>';
+    // Risk row
+    if (a.riskPerShare > 0) {
+      h += '<div style="margin-top:6px;display:flex;gap:12px;font-size:10px;color:var(--muted)">';
+      h += '<span>Risk/sh: ₹' + a.riskPerShare + '</span>';
+      if (a.rr) h += '<span>R:R ' + a.rr + 'x</span>';
+      if (a.sector) h += '<span style="margin-left:auto">' + a.sector + '</span>';
+      h += '</div>';
+    }
+    // Import button
+    h += '<div style="margin-top:8px;display:flex;gap:6px">';
+    h += '<button class="btn btn-green btn-xs" onclick="event.stopPropagation();importFromWL(\'' + a.id + '\')">→ Trade</button>';
+    h += '<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();showPage(\'watchlist\');document.getElementById(\'wlSearch\').value=\'' + a.symbol + '\';renderWatchlist()">📋 View</button>';
+    h += '</div>';
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
 }
 
 async function boScanNow2(intraday=true) {

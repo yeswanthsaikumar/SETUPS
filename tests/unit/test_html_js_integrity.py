@@ -326,6 +326,10 @@ class TestCriticalFunctionsDefined:
         "toast",
         "buildMetricsStrip",
         "buildRsLeaderStrip",
+        # Entry proximity alert functions
+        "entryCheckNow",
+        "entryScanSend",
+        "renderEntryCards",
     ]
 
     def test_required_functions_defined(self):

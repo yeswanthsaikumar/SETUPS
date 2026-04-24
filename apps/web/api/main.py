@@ -5385,6 +5385,9 @@ WATCHLIST_BUCKETS: list[dict] = [
     {"slug": "setup_range_exp", "label": "Setup · Range Exp.", "icon": "📐", "hint": "Range expansion / trend day"},
     {"slug": "setup_mean_rev",  "label": "Setup · Mean Rev.",  "icon": "↩️", "hint": "Oversold bounce"},
     {"slug": "setup_bull_flag", "label": "Setup · Bull Flag",  "icon": "🏁", "hint": "Flag / pennant"},
+    {"slug": "setup_ema_pb",    "label": "Setup · EMA Pullback", "icon": "📉", "hint": "Pullback to rising EMA (5/10/20/50)"},
+    {"slug": "setup_base_bo",   "label": "Setup · Base Breakout", "icon": "📦", "hint": "Flat base / cup breakout on volume"},
+    {"slug": "setup_ftd",       "label": "Setup · Follow-Through", "icon": "📈", "hint": "Follow-through day after correction"},
     {"slug": "setup_earnings",  "label": "Setup · Earnings",   "icon": "💼", "hint": "Pre / post earnings swing"},
     {"slug": "setup_ipo_base",  "label": "Setup · IPO Base",   "icon": "🆕", "hint": "First base after listing"},
     {"slug": "watching",        "label": "Just Watching",      "icon": "👀", "hint": "No setup yet, monitoring"},
@@ -5392,7 +5395,8 @@ WATCHLIST_BUCKETS: list[dict] = [
 
 WATCHLIST_SETUPS: list[str] = [
     "VCP", "Pullback", "Breakout", "Range Expansion", "Mean Reversion",
-    "Bull Flag", "Base Building", "Earnings Swing", "IPO Base",
+    "Bull Flag", "EMA Pullback", "Base Breakout", "Follow-Through Day",
+    "Base Building", "Earnings Swing", "IPO Base",
     "Cup & Handle", "Darvas Box", "Gap-n-Go", "Watching",
 ]
 
@@ -5416,7 +5420,7 @@ ADR_HINTS: dict[str, dict] = {
 
 
 def _migrate_watchlist_item(raw: dict) -> dict:
-    """Upgrade a v1 watchlist entry to v2 schema (idempotent)."""
+    """Upgrade a v1 watchlist entry to v2+ schema (idempotent)."""
     raw.setdefault("bucket",      "watching")
     raw.setdefault("market",      "india")
     raw.setdefault("setup",       raw.get("setup", ""))
@@ -5427,6 +5431,7 @@ def _migrate_watchlist_item(raw: dict) -> dict:
     raw.setdefault("pair_symbol", None)
     raw.setdefault("pair_market", None)
     raw.setdefault("source",      "manual")   # "manual" | "auto_rs"
+    raw.setdefault("priority",    None)        # P1 / P2 / P3 (auto-computed)
     return raw
 
 
@@ -5462,6 +5467,7 @@ class WatchlistItem(BaseModel):
     pair_symbol: Optional[str] = None       # cross-market pair (e.g. ADR)
     pair_market: Optional[Literal["india", "us"]] = None
     source: Literal["manual", "auto_rs"] = "manual"  # provenance flag
+    priority: Optional[str] = None          # P1 / P2 / P3 (auto-computed)
 
 
 class WatchlistItemUpdate(BaseModel):
@@ -5476,10 +5482,91 @@ class WatchlistItemUpdate(BaseModel):
     add_date: Optional[str] = None
     pair_symbol: Optional[str] = None
     pair_market: Optional[Literal["india", "us"]] = None
+    priority: Optional[str] = None
+
+
+# ── Smart categorization helpers ─────────────────────────────────────────────
+
+# Maps scan setup types → best-fit watchlist bucket slug
+_SETUP_TO_BUCKET: dict[str, str] = {
+    "VCP":                "setup_vcp",
+    "BREAKOUT":           "setup_breakout",
+    "BREAKOUT_PULLBACK":  "setup_pullback",
+    "RANGE_EXPANSION":    "setup_range_exp",
+    "MEAN_REVERSION":     "setup_mean_rev",
+    "BULL_FLAG":          "setup_bull_flag",
+    "EMA_PULLBACK":       "setup_ema_pb",
+    "BASE_BREAKOUT":      "setup_base_bo",
+    "FOLLOW_THROUGH":     "setup_ftd",
+    "EARNINGS":           "setup_earnings",
+    "IPO_BASE":           "setup_ipo_base",
+    "GAP_AND_GO":         "setup_breakout",
+    "CUP_HANDLE":         "setup_base_bo",
+    "DARVAS":             "setup_breakout",
+}
+
+
+def _resolve_best_bucket(scan_setup: str | None, is_ipo: bool = False,
+                          rs_score: int = 0) -> str:
+    """Pick the best bucket for an auto RS-leader based on scan signal data.
+
+    Priority order:
+    1. If the stock has a scan setup → use its matching setup_* bucket
+    2. If it's an IPO with no scan setup → setup_ipo_base
+    3. Otherwise → rs_leaders (catch-all for strong RS without a specific pattern)
+    """
+    if scan_setup:
+        bucket = _SETUP_TO_BUCKET.get(scan_setup.upper().replace(" ", "_"))
+        if bucket:
+            return bucket
+    if is_ipo:
+        return "setup_ipo_base"
+    return "rs_leaders"
+
+
+def _compute_priority(
+    conviction: int = 3,
+    rs_score: float | None = None,
+    scan_rating: str = "",
+    swing_score: float | None = None,
+    in_scan: bool = False,
+) -> str:
+    """Compute P1 / P2 / P3 priority tier for a watchlist item.
+
+    P1 (🔥 Actionable NOW) — high conviction + strong ranking + scan-confirmed
+    P2 (👀 Watch Closely)  — decent conviction + solid fundamentals
+    P3 (📋 On Radar)       — tracking, not yet ready
+    """
+    _rs = rs_score or 0
+    _sw = swing_score or 0
+    _rating_strong = scan_rating in ("A+", "A")
+
+    # P1: conviction ≥ 4 AND (elite RS ≥ 85 OR A+/A scan rating) AND in scan
+    if conviction >= 4 and (_rs >= 85 or _rating_strong) and in_scan:
+        return "P1"
+    # Also P1: swing ≥ 85 AND scan confirmed regardless of conviction
+    if _sw >= 85 and _rating_strong and in_scan:
+        return "P1"
+    # P2: conviction ≥ 3 AND RS ≥ 70 (or in scan)
+    if conviction >= 3 and (_rs >= 70 or in_scan):
+        return "P2"
+    # P3: everything else
+    return "P3"
+
+
+def _enrich_watchlist_priority(item: dict) -> None:
+    """Dynamically recompute priority based on latest enrichment data."""
+    item["priority"] = _compute_priority(
+        conviction=item.get("conviction", 3),
+        rs_score=item.get("rs_score") or item.get("rsScore"),
+        scan_rating=item.get("scanRating", ""),
+        swing_score=item.get("swing_score"),
+        in_scan=item.get("inScan", False),
+    )
 
 
 def _enrich_watchlist_item_lite(item: dict, sig_index: dict) -> None:
-    """Light-weight enrichment (CMP, day-change, return-since-add, pair, scan).
+    """Light-weight enrichment (CMP, day-change, return-since-add, pair, scan, priority).
     Shared between /watchlist and /watchlist/enriched."""
     sym = item.get("symbol", "")
     mkt = item.get("market") or "india"
@@ -5516,6 +5603,23 @@ def _enrich_watchlist_item_lite(item: dict, sig_index: dict) -> None:
         item["inScan"] = True
     else:
         item["inScan"] = False
+
+    # ── Priority tier (dynamic, recalculated each fetch) ──────────────────
+    _enrich_watchlist_priority(item)
+
+    # ── Entry proximity % (how close CMP is to scan entry price) ──────────
+    cmp_val = item.get("cmp")
+    scan_entry = item.get("scanEntry")
+    if cmp_val and scan_entry:
+        try:
+            se = float(scan_entry)
+            if se > 0:
+                dist = (cmp_val - se) / se * 100
+                item["entryDistPct"] = round(dist, 2)
+                # Near-entry flag (within ±2%)
+                item["nearEntry"] = abs(dist) <= 2.0
+        except (ValueError, TypeError):
+            pass
 
 
 @app.get("/api/trade-board/watchlist")
@@ -6012,8 +6116,8 @@ def rs_leaders_preview(
     min_adr=2.0    → filter out stocks with ADR% < 2% (low-volatility names).
     min_avg_vol=100000 → filter out illiquid micro-caps.
     """
-    if top <= 0 or top > 200:
-        raise HTTPException(status_code=400, detail="top must be between 1 and 200")
+    if top <= 0 or top > 500:
+        raise HTTPException(status_code=400, detail="top must be between 1 and 500")
     if refresh:
         with _rs_scan_lock:
             _rs_scan_cache["ts"] = 0
@@ -6024,7 +6128,7 @@ def rs_leaders_preview(
 
 
 class RsLeaderAutoAddRequest(BaseModel):
-    top:       int = Field(default=35, ge=1, le=100)
+    top:       int = Field(default=35, ge=1, le=500)
     min_price: float = 50.0
     min_bars:  int = 150
     refresh:   bool = False
@@ -6036,7 +6140,7 @@ class RsLeaderAutoAddRequest(BaseModel):
 
 
 @app.post("/api/trade-board/watchlist/rs-leaders/auto-add")
-def rs_leaders_auto_add(req: RsLeaderAutoAddRequest | None = None) -> dict:
+def rs_leaders_auto_add(req: Optional[RsLeaderAutoAddRequest] = None) -> dict:
     """
     Compute the top-N RS leaders (vs Nifty 50) and insert them into the
     watchlist with bucket="rs_leaders" and source="auto_rs".
@@ -6066,6 +6170,8 @@ def rs_leaders_auto_add(req: RsLeaderAutoAddRequest | None = None) -> dict:
     skipped_manual: list[str] = []
     removed_auto:  list[str] = []
     today = datetime.now().strftime("%Y-%m-%d")
+    # Load scan signals for smart bucket assignment
+    sig_index = _load_scan_signals_index()
 
     with _watchlist_lock:
         items = _load_watchlist()
@@ -6082,20 +6188,45 @@ def rs_leaders_auto_add(req: RsLeaderAutoAddRequest | None = None) -> dict:
         existing_syms = {(it.get("symbol") or "").upper(): it for it in items}
         for row in leaders:
             sym_u = row["symbol"].upper()
+            # Look up scan signal for this symbol
+            sig = (sig_index.get(sym_u) or sig_index.get(sym_u + ".NS")
+                   or sig_index.get(sym_u.replace(".NS", "")))
+            scan_setup = (sig.get("setup", "") if sig else "")
+            scan_rating = (sig.get("rating", "") if sig else "")
+            in_scan = bool(sig)
+
+            # Smart bucket: prefer setup_* bucket from scan signal, else rs_leaders
+            best_bucket = _resolve_best_bucket(
+                scan_setup, is_ipo=row.get("is_ipo", False),
+                rs_score=row.get("rs_score", 0),
+            )
+            # Derive friendly setup name from scan
+            best_setup = scan_setup.replace("_", " ").title() if scan_setup else ""
+            # Compute conviction + priority
+            _conviction = max(3, min(5, int((row["rs_score"] or 50) / 20)))
+            _priority = _compute_priority(
+                conviction=_conviction, rs_score=row.get("rs_score"),
+                scan_rating=scan_rating,
+                swing_score=row.get("swingScore"), in_scan=in_scan,
+            )
+
             if sym_u in existing_syms:
-                # It's still in the list → either we kept a manual entry or
-                # replace_existing_auto was False and the auto entry is still there.
                 existing = existing_syms[sym_u]
                 if existing.get("source") == "manual":
                     skipped_manual.append(sym_u)
                     continue
-                # It's an auto entry we kept — refresh rank tags / score
-                existing["conviction"] = max(3, min(5, int((row["rs_score"] or 50) / 20)))
+                # It's an auto entry we kept — refresh rank, bucket, priority
+                existing["conviction"] = _conviction
+                existing["priority"] = _priority
+                existing["bucket"] = best_bucket
+                existing["setup"] = best_setup or existing.get("setup", "")
                 _tags = {"rs_leader", f"rs{row['rs_score']}", f"rank{row['rank']}"}
                 if row.get("is_ipo"):
                     _tags.add("ipo")
                 if row.get("sector") and row["sector"] != "Other":
                     _tags.add(row["sector"].lower().replace(" ", "_"))
+                if _priority == "P1":
+                    _tags.add("p1")
                 existing["tags"] = list({*existing.get("tags", []), *_tags})
                 existing["notes"] = (
                     f"Auto RS-Leader rank #{row['rank']}  ·  RS {row['rs_score']} {row.get('rs_label','')}"
@@ -6111,19 +6242,21 @@ def rs_leaders_auto_add(req: RsLeaderAutoAddRequest | None = None) -> dict:
                 _tags.append("ipo")
             if row.get("sector") and row["sector"] != "Other":
                 _tags.append(row["sector"].lower().replace(" ", "_"))
+            if _priority == "P1":
+                _tags.append("p1")
             rec = {
                 "id":          str(uuid.uuid4()),
                 "symbol":      sym_u,
                 "market":      "india",
                 "name":        "",
-                "bucket":      "rs_leaders",
-                "setup":       "",
-                "conviction":  max(3, min(5, int((row["rs_score"] or 50) / 20))),
+                "bucket":      best_bucket,
+                "setup":       best_setup,
+                "conviction":  _conviction,
                 "tags":        _tags,
                 "add_price":   row.get("cmp"),
                 "add_date":    today,
                 "added_at":    datetime.now().isoformat(timespec="seconds"),
-                "alert_price": None,
+                "alert_price": float(sig["entry"]) if sig and sig.get("entry") else None,
                 "pair_symbol": hint.get("adr_symbol"),
                 "pair_market": hint.get("adr_market"),
                 "notes":       (
@@ -6132,6 +6265,7 @@ def rs_leaders_auto_add(req: RsLeaderAutoAddRequest | None = None) -> dict:
                     f"  ·  {row.get('sector', '')}"
                 ),
                 "source":      "auto_rs",
+                "priority":    _priority,
                 # extra diagnostic fields (preserved in JSON)
                 "rs_score":    row["rs_score"],
                 "rs_rank":     row["rank"],
@@ -6175,7 +6309,11 @@ def rs_leaders_remove_auto() -> dict:
 # ── Market Overview ────────────────────────────────────────────────────────────
 
 def _load_scan_signals_index(market: str = "india", timeframe: str = "daily") -> dict[str, dict]:
-    """Load latest scan signals into a symbol → record dict for quick lookup."""
+    """Load latest scan signals into a symbol → record dict for quick lookup.
+    Also merges weekly signals when loading daily, tagging with timeframe_alignment."""
+    index: dict[str, dict] = {}
+
+    # Load primary timeframe
     suffix = f"{market}_{timeframe}_full"
     for name in [f"open_trades_{suffix}_LATEST.json", f"vcp_hits_{suffix}_LATEST.json"]:
         p = OUTPUT_DIR / name
@@ -6184,10 +6322,54 @@ def _load_scan_signals_index(market: str = "india", timeframe: str = "daily") ->
         try:
             signals = json.loads(p.read_text(encoding="utf-8"))
             if isinstance(signals, list) and signals:
-                return {s.get("symbol", ""): s for s in signals}
+                for s in signals:
+                    sym = s.get("symbol", "")
+                    if sym:
+                        s["_timeframe"] = timeframe
+                        index[sym] = s
         except Exception:
             pass
-    return {}
+
+    # If loading daily, also check weekly signals for multi-timeframe alignment
+    if timeframe == "daily":
+        weekly_suffix = f"{market}_weekly_full"
+        weekly_syms: set[str] = set()
+        for name in [f"open_trades_{weekly_suffix}_LATEST.json", f"vcp_hits_{weekly_suffix}_LATEST.json"]:
+            p = OUTPUT_DIR / name
+            if not p.exists():
+                continue
+            try:
+                signals = json.loads(p.read_text(encoding="utf-8"))
+                if isinstance(signals, list):
+                    for s in signals:
+                        sym = s.get("symbol", "")
+                        if sym:
+                            weekly_syms.add(sym)
+            except Exception:
+                pass
+
+        # Tag daily entries that also have weekly confirmation
+        for sym in index:
+            if sym in weekly_syms:
+                index[sym]["timeframe_alignment"] = "BOTH_ALIGNED"
+            else:
+                index[sym]["timeframe_alignment"] = "DAILY_ONLY"
+
+    if not index:
+        # Fallback to original behavior
+        suffix = f"{market}_{timeframe}_full"
+        for name in [f"open_trades_{suffix}_LATEST.json", f"vcp_hits_{suffix}_LATEST.json"]:
+            p = OUTPUT_DIR / name
+            if not p.exists():
+                continue
+            try:
+                signals = json.loads(p.read_text(encoding="utf-8"))
+                if isinstance(signals, list) and signals:
+                    return {s.get("symbol", ""): s for s in signals}
+            except Exception:
+                pass
+
+    return index
 
 
 @app.get("/api/trade-board/market-overview")
@@ -6776,6 +6958,127 @@ def position_ema5_scan_and_alert(threshold: float = 1.5) -> dict:
         if ok:
             sent_count += 1
             print(f"  📉 EMA5 alert sent: {a['symbol']} {a['alert_type']} ₹{a['price']}", flush=True)
+
+    return {
+        "alerts": alerts,
+        "newAlerts": len(new_alerts),
+        "telegramSent": sent_count,
+        "checkedAt": datetime.now().isoformat(timespec="seconds"),
+    }
+
+
+# ── Watchlist Entry Proximity Alerts ──────────────────────────────────────────
+
+_entry_alerted_keys: set = set()
+
+
+@app.get("/api/alerts/entry-proximity/check")
+def entry_proximity_check(threshold: float = 2.0) -> dict:
+    """
+    Check all watchlist items for entry price proximity.
+    Returns items where CMP is within `threshold`% of their scan entry price.
+    Useful for entry timing on setup/breakout triggers.
+    """
+    with _watchlist_lock:
+        items = _load_watchlist()
+    sig_index = _load_scan_signals_index()
+    for item in items:
+        _enrich_watchlist_item_lite(item, sig_index)
+
+    alerts = []
+    for item in items:
+        cmp = item.get("cmp")
+        scan_entry_raw = item.get("scanEntry")
+        if not cmp or not scan_entry_raw:
+            continue
+        try:
+            se = float(scan_entry_raw)
+        except (ValueError, TypeError):
+            continue
+        if se <= 0:
+            continue
+        dist = (cmp - se) / se * 100
+        if abs(dist) > threshold:
+            continue
+        scan_sl = float(item.get("scanSl", 0) or 0)
+        risk = round(se - scan_sl, 2) if scan_sl > 0 else 0
+        rr = round((se * 1.15 - se) / (se - scan_sl), 1) if scan_sl > 0 and se > scan_sl else 0
+        tier = "AT_ENTRY" if abs(dist) <= 0.5 else ("NEAR_ENTRY" if dist <= 0 else "ABOVE_ENTRY")
+        alerts.append({
+            "symbol": item.get("symbol", ""),
+            "name": item.get("name", ""),
+            "tier": tier,
+            "cmp": cmp,
+            "scanEntry": se,
+            "scanSl": scan_sl,
+            "distPct": round(dist, 2),
+            "riskPerShare": risk,
+            "rr": rr,
+            "setup": item.get("scanSetup") or item.get("setup", ""),
+            "rating": item.get("scanRating", ""),
+            "bucket": item.get("bucket", ""),
+            "priority": item.get("priority", "P3"),
+            "conviction": item.get("conviction", 3),
+            "sector": item.get("sector", ""),
+            "rs_score": item.get("rs_score"),
+            "swing_score": item.get("swing_score"),
+            "dayChangePct": item.get("dayChangePct"),
+            "id": item.get("id", ""),
+        })
+
+    # Sort: AT_ENTRY first, then NEAR_ENTRY, then ABOVE_ENTRY; within tier by priority
+    priority_order = {"P1": 0, "P2": 1, "P3": 2}
+    tier_order = {"AT_ENTRY": 0, "NEAR_ENTRY": 1, "ABOVE_ENTRY": 2}
+    alerts.sort(key=lambda a: (tier_order.get(a["tier"], 9),
+                                priority_order.get(a["priority"], 9),
+                                abs(a["distPct"])))
+    return {
+        "alerts": alerts,
+        "count": len(alerts),
+        "threshold": threshold,
+        "totalWatchlist": len(items),
+        "checkedAt": datetime.now().isoformat(timespec="seconds"),
+    }
+
+
+@app.post("/api/alerts/entry-proximity/scan-send")
+def entry_proximity_scan_and_alert(threshold: float = 2.0) -> dict:
+    """
+    Scan watchlist for entry proximity AND send Telegram alerts for new ones.
+    Deduplicates: won't re-alert same symbol+tier+date combo.
+    """
+    global _entry_alerted_keys
+    check_result = entry_proximity_check(threshold)
+    alerts = check_result.get("alerts", [])
+    config = _breakout_scanner.state.load_config()
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    new_alerts = []
+    for a in alerts:
+        key = f"{a['symbol']}:{today}:{a['tier']}"
+        if key not in _entry_alerted_keys:
+            _entry_alerted_keys.add(key)
+            new_alerts.append(a)
+
+    sent_count = 0
+    if config.telegram_enabled and new_alerts:
+        for a in new_alerts:
+            emoji = "🎯" if a["tier"] == "AT_ENTRY" else "📍" if a["tier"] == "NEAR_ENTRY" else "📊"
+            tier_label = a["tier"].replace("_", " ")
+            text = (
+                f"{emoji} *ENTRY ALERT — {a['symbol']}*\n"
+                f"Tier: {tier_label} | Priority: {a['priority']}\n"
+                f"CMP: ₹{a['cmp']:,.2f} | Entry: ₹{a['scanEntry']:,.2f}\n"
+                f"Distance: {a['distPct']:+.1f}%\n"
+                f"Setup: {a['setup']} | Rating: {a['rating']}\n"
+                f"SL: ₹{a['scanSl']:,.2f} | Risk/sh: ₹{a['riskPerShare']}"
+                + (f" | R:R {a['rr']}x" if a['rr'] else "")
+                + (f"\nSector: {a['sector']}" if a['sector'] else "")
+            )
+            ok = send_telegram_text(text, config)
+            if ok:
+                sent_count += 1
+                print(f"  🎯 Entry alert sent: {a['symbol']} {a['tier']} ₹{a['cmp']}", flush=True)
 
     return {
         "alerts": alerts,
