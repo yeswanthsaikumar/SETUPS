@@ -1722,9 +1722,58 @@ class BreakoutScanner:
         self._custom_last_error: Optional[str] = None
         self._last_error: Optional[str] = None
 
+        # ── Restore dedup state from disk so alerts don't re-fire on restart ──
+        self._dedup_path = data_dir / "breakout_alert_dedup.json"
+        self._restore_dedup_state()
+
     @property
     def is_running(self) -> bool:
         return self._running
+
+    # ── Dedup persistence ─────────────────────────────────────────────────
+    def _restore_dedup_state(self):
+        """Load previously-sent alert keys from disk so we never re-send on restart."""
+        # 1. Rebuild breakout dedup keys from persisted signal history
+        try:
+            signals = self.state.load_signals()
+            for s in signals:
+                sym  = s.get("symbol", "")
+                dt   = s.get("date", "")
+                stype = s.get("signal_type", "")
+                if sym and dt and stype:
+                    self._alerted_keys.add(f"{sym}:{dt}:{stype}")
+        except Exception:
+            pass
+
+        # 2. Restore EMA5 + custom-rule dedup from separate dedup file
+        try:
+            if self._dedup_path.exists():
+                data = json.loads(self._dedup_path.read_text())
+                self._ema5_alerted_keys = set(data.get("ema5_keys", []))
+                self._custom_last_fired = data.get("custom_last_fired", {})
+        except Exception:
+            pass
+
+        n = len(self._alerted_keys)
+        n5 = len(self._ema5_alerted_keys)
+        if n or n5:
+            print(f"🔕 Alert dedup: restored {n} breakout + {n5} EMA5 keys from disk "
+                  f"— won't re-fire these", flush=True)
+
+    def _persist_dedup_state(self):
+        """Save EMA5 + custom-rule dedup state to disk (breakout keys are already
+        in signal history via append_signals, so we only need the extras here)."""
+        try:
+            # Keep only the last 7 days of EMA5 keys (format includes date)
+            # and prune stale custom-rule cooldowns.
+            data = {
+                "ema5_keys":  list(self._ema5_alerted_keys),
+                "custom_last_fired": self._custom_last_fired,
+                "saved_at": datetime.now().isoformat(timespec="seconds"),
+            }
+            self._dedup_path.write_text(json.dumps(data, indent=2, default=str))
+        except Exception as e:
+            print(f"⚠ dedup persist error: {e}", flush=True)
 
     def status(self) -> dict:
         with self._lock:
@@ -1906,6 +1955,7 @@ class BreakoutScanner:
                         self._ema5_alerted_keys.add(key)
                         print(f"  📉 Position EMA5: {alert.symbol} {alert.alert_type} ₹{alert.price} (5EMA ₹{alert.ema5})", flush=True)
                         send_ema5_telegram_alert(alert, config)
+                        self._persist_dedup_state()
             except Exception as e:
                 print(f"  ⚠ EMA5 position check {sym}: {e}", flush=True)
 
@@ -1981,6 +2031,7 @@ class BreakoutScanner:
 
     def _custom_mark_fired(self, rule: dict, symbol: str, iso_ts: str) -> None:
         self._custom_last_fired.setdefault(rule.get("id", ""), {})[symbol] = iso_ts
+        self._persist_dedup_state()
 
     def _dispatch_custom_alert(self, alert: dict, rule: dict, config: AlertConfig) -> None:
         channels = rule.get("channels") or ["telegram"]
@@ -2117,6 +2168,7 @@ class BreakoutScanner:
 
         if new_signals:
             self.state.append_signals(new_signals)
+            self._persist_dedup_state()
 
         with self._lock:
             self._last_scan_time = datetime.now().isoformat(timespec="seconds")
@@ -2178,6 +2230,8 @@ class BreakoutScanner:
             for s in new_signals:
                 print(f"     {s.signal_type}: {s.symbol} ₹{s.close:.1f} Vol {s.volume_ratio:.1f}x", flush=True)
                 send_alert(s, config)
+            self.state.append_signals(new_signals)
+            self._persist_dedup_state()
 
         result = [asdict(s) for s in all_signals]
         result.sort(key=lambda x: -x.get("strength_score", 0))

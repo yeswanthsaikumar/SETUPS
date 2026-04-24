@@ -4234,10 +4234,17 @@ def trade_board_ui() -> FileResponse:
 
 @app.get("/api/trade-board/summary")
 def trade_board_summary() -> dict:
+    from concurrent.futures import ThreadPoolExecutor
     with _board_lock:
         data = _load_board()
         _apply_trailing_stop_automation(data)
         positions = data.get("positions", [])
+    # Parallel live price pre-warm
+    open_syms = list({p.get("symbol", "") for p in positions
+                      if p.get("status") in ("OPEN", "PARTIAL") and p.get("symbol")})
+    if open_syms:
+        with ThreadPoolExecutor(max_workers=min(8, len(open_syms))) as pool:
+            list(pool.map(_get_live_price, open_syms))
     # Enrich with CMP and day change for open positions
     for p in positions:
         entry = p.get("entry", 0) or 0
@@ -4263,12 +4270,104 @@ def trade_board_summary() -> dict:
     stats = _compute_board_stats(positions)
     return {"stats": stats, "lastUpdated": data.get("lastUpdated")}
 
-@app.get("/api/trade-board/positions")
-def trade_board_positions(status: str = "") -> dict:
+
+@app.get("/api/trade-board/positions/fast")
+def trade_board_positions_fast(status: str = "") -> dict:
+    """Ultra-fast positions endpoint: returns raw data from disk with CSV-cached
+    prices only (no live API calls). ~50ms. Use for initial UI render."""
     with _board_lock:
         data = _load_board()
         _apply_trailing_stop_automation(data)
         positions = list(data.get("positions", []))
+    for p in positions:
+        entry = p.get("entry", 0) or 0
+        qty   = p.get("quantity", 1) or 1
+        remaining = p.get("remaining_quantity") or qty
+        if p.get("status") in ("OPEN", "PARTIAL"):
+            # CSV-only price (no live API calls)
+            rows = _read_ohlcv(p.get("symbol", ""), days=5)
+            cmp = rows[-1]["close"] if rows else None
+            prev_close = rows[-2]["close"] if len(rows) >= 2 else None
+            last_date = rows[-1]["date"] if rows else None
+            if cmp:
+                p["cmp"] = round(cmp, 2)
+                p["gainPct"] = round((cmp - entry) / entry * 100, 2) if entry else 0
+                p["gainAmt"] = round((cmp - entry) * remaining, 2) if entry else 0
+                p["lastPriceDate"] = last_date
+            if cmp and prev_close and prev_close > 0:
+                p["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
+                p["dayChangeAmt"] = round((cmp - prev_close) * remaining, 2)
+        elif p.get("exit_price") and entry:
+            ep = float(p["exit_price"])
+            p["gainPct"] = round((ep - entry) / entry * 100, 2)
+            pos_realized = p.get("realized_pl", 0) or 0
+            partial_qty_exited = sum(e.get("quantity", 0) for e in p.get("partial_exits", []))
+            exit_qty = qty - partial_qty_exited
+            p["gainAmt"] = round(pos_realized + (ep - entry) * exit_qty, 2)
+    if status:
+        positions = [p for p in positions if p.get("status") == status]
+    positions.sort(key=lambda p: (
+        0 if p.get("status") in ("OPEN", "PARTIAL") else 1,
+        -float(p.get("gainPct", 0) or 0)))
+    stats = _compute_board_stats(positions)
+    return {"positions": positions, "stats": stats, "lastUpdated": data.get("lastUpdated")}
+
+
+@app.get("/api/trade-board/watchlist/fast")
+def get_watchlist_fast() -> dict:
+    """Ultra-fast watchlist endpoint: returns raw data from disk with CSV-cached
+    prices only (no live API calls). ~100ms. Use for initial UI render."""
+    with _watchlist_lock:
+        items = _load_watchlist()
+    sig_index = _load_scan_signals_index()
+    for item in items:
+        sym = item.get("symbol", "")
+        mkt = item.get("market") or "india"
+        # CSV-only price (no live API calls)
+        rows = _read_ohlcv(sym, days=5, market=mkt)
+        cmp = rows[-1]["close"] if rows else None
+        prev_close = rows[-2]["close"] if len(rows) >= 2 else None
+        last_date = rows[-1]["date"] if rows else None
+        if cmp:
+            item["cmp"] = round(cmp, 2)
+            item["lastPriceDate"] = last_date
+        if cmp and prev_close and prev_close > 0:
+            item["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
+        ap = item.get("add_price")
+        if cmp and ap and ap > 0:
+            item["returnSinceAddPct"] = round((cmp - ap) / ap * 100, 2)
+            item["returnSinceAddAbs"] = round(cmp - ap, 2)
+        # Scan signal enrichment (no network calls)
+        sig = sig_index.get(sym) or sig_index.get(sym + ".NS") or sig_index.get(sym.replace(".NS", ""))
+        if sig:
+            item["scanSetup"] = sig.get("setup", "")
+            item["scanRating"] = sig.get("rating", "")
+            item["scanScore"] = sig.get("rankingScore") or sig.get("score")
+            item["scanEntry"] = sig.get("entry")
+            item["scanSl"] = sig.get("sl")
+            item["rsScore"] = sig.get("rsScore")
+            item["inScan"] = True
+        else:
+            item["inScan"] = False
+    return {
+        "items": items, "total": len(items),
+        "buckets": WATCHLIST_BUCKETS, "setups": WATCHLIST_SETUPS,
+    }
+
+
+@app.get("/api/trade-board/positions")
+def trade_board_positions(status: str = "") -> dict:
+    from concurrent.futures import ThreadPoolExecutor
+    with _board_lock:
+        data = _load_board()
+        _apply_trailing_stop_automation(data)
+        positions = list(data.get("positions", []))
+    # Parallel live price pre-warm for open positions
+    open_syms = list({p.get("symbol", "") for p in positions
+                      if p.get("status") in ("OPEN", "PARTIAL") and p.get("symbol")})
+    if open_syms:
+        with ThreadPoolExecutor(max_workers=min(8, len(open_syms))) as pool:
+            list(pool.map(_get_live_price, open_syms))
     # Enrich with current price and gain
     for p in positions:
         entry = p.get("entry", 0) or 0
@@ -4594,17 +4693,23 @@ def _enrich_position_metrics(p: dict) -> dict:
 
 @app.get("/api/trade-board/positions/enriched")
 def trade_board_positions_enriched(status: str = "") -> dict:
-    """Return positions enriched with 20EMA extension + volume records."""
+    """Return positions enriched with 20EMA extension + volume records.
+    Live prices are fetched in parallel (ThreadPoolExecutor) for speed."""
+    from concurrent.futures import ThreadPoolExecutor
     with _board_lock:
         data = _load_board()
         trail_state = _apply_trailing_stop_automation(data)
         positions = list(data.get("positions", []))
-    # Pre-warm live price cache for all open positions
-    open_syms = [p.get("symbol", "") for p in positions if p.get("status") in ("OPEN", "PARTIAL")]
-    for sym in open_syms:
-        if sym:
-            _get_live_price(sym)
-    for p in positions:
+
+    # ── PARALLEL live price pre-warm for all open positions ──────────────
+    open_positions = [p for p in positions if p.get("status") in ("OPEN", "PARTIAL")]
+    open_syms = list({p.get("symbol", "") for p in open_positions if p.get("symbol")})
+    if open_syms:
+        with ThreadPoolExecutor(max_workers=min(8, len(open_syms))) as pool:
+            list(pool.map(_get_live_price, open_syms))
+
+    # ── Enrichment helper (called per position in parallel) ─────────────
+    def _enrich_one(p):
         entry = p.get("entry", 0) or 0
         qty = p.get("quantity", 1) or 1
         remaining = p.get("remaining_quantity") if p.get("remaining_quantity") is not None else qty
@@ -4614,7 +4719,6 @@ def trade_board_positions_enriched(status: str = "") -> dict:
             if cmp:
                 p["cmp"] = round(cmp, 2)
                 p["gainPct"] = round((cmp - entry) / entry * 100, 2) if entry else 0
-                # Unrealized on remaining + realized from partials
                 unrealized = (cmp - entry) * remaining
                 pos_realized = p.get("realized_pl", 0) or 0
                 p["gainAmt"] = round(unrealized + pos_realized, 2) if entry else 0
@@ -4622,10 +4726,8 @@ def trade_board_positions_enriched(status: str = "") -> dict:
             if cmp and prev_close and prev_close > 0:
                 p["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
                 p["dayChangeAmt"] = round((cmp - prev_close) * remaining, 2)
-            # Enrich with 20EMA extension + volume records + ADR
             _enrich_position_metrics(p)
         elif entry:
-            # Closed position: use realized_pl if available, else compute from exit_price
             pos_realized = p.get("realized_pl", 0) or 0
             ep = float(p.get("exit_price") or entry)
             if pos_realized:
@@ -4634,6 +4736,11 @@ def trade_board_positions_enriched(status: str = "") -> dict:
             elif ep:
                 p["gainPct"] = round((ep - entry) / entry * 100, 2)
                 p["gainAmt"] = round((ep - entry) * qty, 2)
+
+    # Run enrichment in parallel threads (mostly I/O bound — CSV reads + cached price lookups)
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(_enrich_one, positions))
+
     if status:
         positions = [p for p in positions if p.get("status") == status]
     positions.sort(key=lambda p: (
@@ -4655,13 +4762,12 @@ def trade_board_watchlist_enriched() -> dict:
         items = _load_watchlist()
     sig_index = _load_scan_signals_index()
 
-    # Pre-warm live price cache sequentially — avoids NSE rate-limiting
-    # when ThreadPoolExecutor fires 8 concurrent requests.
-    for item in items:
-        sym = item.get("symbol", "")
-        mkt = item.get("market") or "india"
-        if sym and mkt != "us":
-            _get_live_price(sym)
+    # ── PARALLEL live price pre-warm (batch up to 10 concurrent) ─────────
+    india_syms = list({item.get("symbol", "") for item in items
+                       if item.get("symbol") and (item.get("market") or "india") != "us"})
+    if india_syms:
+        with ThreadPoolExecutor(max_workers=min(10, len(india_syms))) as pool:
+            list(pool.map(_get_live_price, india_syms))
 
     def _enrich_wl(item):
         _enrich_watchlist_item_lite(item, sig_index)
@@ -5414,9 +5520,16 @@ def _enrich_watchlist_item_lite(item: dict, sig_index: dict) -> None:
 
 @app.get("/api/trade-board/watchlist")
 def get_watchlist() -> dict:
+    from concurrent.futures import ThreadPoolExecutor
     with _watchlist_lock:
         items = _load_watchlist()
     sig_index = _load_scan_signals_index()
+    # Parallel live price pre-warm
+    india_syms = list({item.get("symbol", "") for item in items
+                       if item.get("symbol") and (item.get("market") or "india") != "us"})
+    if india_syms:
+        with ThreadPoolExecutor(max_workers=min(10, len(india_syms))) as pool:
+            list(pool.map(_get_live_price, india_syms))
     for item in items:
         _enrich_watchlist_item_lite(item, sig_index)
     return {
@@ -5596,10 +5709,17 @@ def _compute_rs_universe(
     top_n: int = 35,
     min_price: float = 50.0,
     min_bars: int = 150,
-    max_symbols: int = 0,  # 0 = all
+    max_symbols: int = 0,       # 0 = all
+    ipo_only: bool = False,     # return only IPO stocks (<126 bars)
+    sort_by: str = "swing",     # "swing" | "rs" | "adr" | "volume"
+    min_adr: float = 0.0,       # filter: minimum ADR% (e.g. 2.0 for ≥2%)
+    min_avg_vol: int = 0,       # filter: minimum 20d avg volume (e.g. 100000)
 ) -> dict:
     """
-    Rank every Indian stock in the cache by IBD-style RS vs Nifty 50.
+    Rank every Indian stock in the cache by IBD-style RS vs Nifty 50, enriched
+    with ADR%, volume metrics, trend data, sector/industry tags, and a composite
+    swing score designed to surface explosive-move candidates.
+
     Returns a dict with {top, total_scanned, computed, nifty_asof, generatedAt}.
     Thread-safe, memoized for _RS_SCAN_TTL seconds.
     """
@@ -5611,14 +5731,13 @@ def _compute_rs_universe(
     market_prices = _get_fresh_nifty_benchmark(days=260)
     live_nifty_asof = (market_prices or {}).get("dates", [None])[-1] if market_prices else None
 
+    _cache_key = (top_n, min_price, min_bars, max_symbols, ipo_only, sort_by, min_adr, min_avg_vol)
     with _rs_scan_lock:
         cached = _rs_scan_cache.get("data")
         if cached and (now - _rs_scan_cache.get("ts", 0)) < _RS_SCAN_TTL \
-                and cached.get("_params") == (top_n, min_price, min_bars, max_symbols):
+                and cached.get("_params") == _cache_key:
             # Bypass the TTL if the live ^NSEI CSV has a newer last-date than
-            # what the cached scan was computed against. Otherwise the RS
-            # table keeps showing e.g. "Nifty 2026-04-17" for ≤30 min even
-            # though fresh bars have already landed on disk.
+            # what the cached scan was computed against.
             cached_asof = cached.get("nifty_asof")
             if (not live_nifty_asof) or (not cached_asof) or live_nifty_asof <= cached_asof:
                 return cached
@@ -5629,6 +5748,13 @@ def _compute_rs_universe(
     if not market_prices or not market_prices.get("close"):
         raise HTTPException(status_code=503, detail="Could not fetch Nifty50 data for RS benchmark")
 
+    # ── Sector/industry taxonomy (loaded once, cached 30 min)
+    taxonomy = {}
+    try:
+        taxonomy = _load_taxonomy_cached() or {}
+    except Exception:
+        pass
+
     # 2. Universe = all cached NSE symbols (excluding Nifty itself)
     universe = [s for s in _list_india_cache_symbols() if s.upper() != "^NSEI"]
     if max_symbols and len(universe) > max_symbols:
@@ -5636,44 +5762,158 @@ def _compute_rs_universe(
 
     from concurrent.futures import ThreadPoolExecutor
 
+    def _ema(src: list[float], period: int) -> float:
+        """Exponential moving average — standard formula."""
+        k = 2 / (period + 1)
+        e = src[0]
+        for v in src[1:]:
+            e = v * k + e * (1 - k)
+        return e
+
     def _score_one(sym: str) -> Optional[dict]:
         rows = _read_ohlcv(sym, days=260, market="india")
-        if not rows or len(rows) < min_bars:
+        if not rows:
             return None
+
+        n_bars = len(rows)
         last_close = rows[-1]["close"]
         if last_close < min_price:
             return None
-        stock_prices = {
-            "close": [r["close"] for r in rows],
-            "dates": [r["date"]  for r in rows],
-        }
+
+        # ── IPO detection: <126 trading days ≈ listed within ~6 months
+        is_ipo = n_bars < 126
+
+        # For non-IPO: respect min_bars; for IPO: need at least 15 bars
+        if is_ipo:
+            if n_bars < 15:
+                return None
+        else:
+            if n_bars < min_bars:
+                return None
+
+        closes = [r["close"] for r in rows]
+        highs  = [r["high"]  for r in rows]
+        lows   = [r["low"]   for r in rows]
+        vols   = [r.get("volume", 0) or 0 for r in rows]
+        dates  = [r["date"]  for r in rows]
+
+        stock_prices = {"close": closes, "dates": dates}
+
+        # ── RS Score — IPO gets shorter periods (1M/2M/3M), normal gets standard
         try:
-            rs = _wpe.compute_rs_score(stock_prices, market_prices)
+            if is_ipo:
+                rs = _wpe.compute_rs_score(
+                    stock_prices, market_prices,
+                    periods=[21, 42, 63],
+                    weights=[0.50, 0.30, 0.20],
+                )
+            else:
+                rs = _wpe.compute_rs_score(stock_prices, market_prices)
         except Exception:
             return None
+
         score = rs.get("rs_score")
         if score is None:
             return None
-        # Quick trend filter: price above its 50-day SMA (IBD "Stage-2" lite)
-        closes = stock_prices["close"]
-        sma50 = sum(closes[-50:]) / 50 if len(closes) >= 50 else 0
+
+        # ── ADR%: Average Daily Range % over last 20 sessions
+        adr_period = min(20, n_bars)
+        recent = rows[-adr_period:]
+        adr_abs = sum(r["high"] - r["low"] for r in recent) / adr_period
+        adr_pct = round(adr_abs / last_close * 100, 2) if last_close else 0
+
+        # ── Volume metrics
+        vol_period = min(20, n_bars)
+        avg_vol_20 = sum(vols[-vol_period:]) / vol_period if vol_period else 0
+        last_vol   = vols[-1] if vols else 0
+        vol_ratio  = round(last_vol / avg_vol_20, 2) if avg_vol_20 else 1.0
+        # 5-day avg volume (recent footprint)
+        avg_vol_5 = sum(vols[-5:]) / min(5, n_bars) if n_bars >= 5 else avg_vol_20
+        vol_surge_5d = round(avg_vol_5 / avg_vol_20, 2) if avg_vol_20 else 1.0
+
+        # ── Liquidity filter: skip illiquid stocks early
+        if min_avg_vol and avg_vol_20 < min_avg_vol:
+            return None
+        # ── ADR filter: skip low-volatility stocks
+        if min_adr and adr_pct < min_adr:
+            return None
+
+        # ── Trend: EMA10, EMA21, SMA50
+        ema10  = round(_ema(closes, 10), 2)  if n_bars >= 10  else last_close
+        ema21  = round(_ema(closes, 21), 2)  if n_bars >= 21  else last_close
+        sma50  = round(sum(closes[-50:]) / 50, 2) if n_bars >= 50  else 0
+
+        above_ema21 = last_close >= ema21
         above_sma50 = last_close >= sma50 if sma50 else False
-        # 52-week high proximity
-        hi52 = max(r["high"] for r in rows[-252:]) if len(rows) >= 252 else max(r["high"] for r in rows)
-        pct_from_hi = ((last_close - hi52) / hi52 * 100) if hi52 else 0
+        ema10_gap_pct = round((last_close - ema10) / ema10 * 100, 1) if ema10 else 0
+        ema21_gap_pct = round((last_close - ema21) / ema21 * 100, 1) if ema21 else 0
+
+        # ── 52-week high/low proximity
+        lookback = rows[-252:] if n_bars >= 252 else rows
+        hi52  = max(r["high"] for r in lookback)
+        lo52  = min(r["low"]  for r in lookback)
+        pct_from_hi  = round((last_close - hi52) / hi52 * 100, 2) if hi52 else 0
+        pct_from_lo  = round((last_close - lo52) / lo52 * 100, 2) if lo52 else 0
+
+        # ── IPO-specific: % gain from listing price (first close)
+        listing_gain_pct = round((last_close - closes[0]) / closes[0] * 100, 1) if is_ipo and closes[0] else None
+
+        # ── Sector / industry tag from taxonomy
+        tax_entry = taxonomy.get(sym)
+        sector   = tax_entry[0] if tax_entry else "Other"
+        industry = tax_entry[1] if tax_entry else "Other"
+
+        # ── SWING SCORE (0-100)
+        # Designed to surface explosive-move candidates for swing trading:
+        #   RS strength  (40pts): core momentum vs market
+        #   ADR bonus    (20pts): higher ADR → bigger moves per day
+        #   Vol surge    (20pts): 5d avg vol vs 20d avg vol — accumulation signal
+        #   Near 52w hi  (20pts): price discovering highs — momentum confirmation
+        rs_pts   = min(score, 99) / 99 * 40           # 0-40
+        adr_pts  = min(adr_pct / 4.0, 1.0) * 20       # 2%→10, 4%+→20
+        vs_pts   = min((vol_surge_5d - 1.0) / 2.0, 1.0) * 20 if vol_surge_5d > 1 else 0  # 1.5x→5, 3x+→20
+        hi_pts   = max(0, (1 - abs(pct_from_hi) / 20.0)) * 20  # within 5%→15-20
+        swing_score = round(rs_pts + adr_pts + vs_pts + hi_pts, 1)
+
+        # ── IPO bonus: freshly-listed strong RS gets extra weight (recency premium)
+        if is_ipo:
+            swing_score = round(min(swing_score * 1.15, 100), 1)
+
         return {
-            "symbol":       sym,
-            "market":       "india",
-            "rs_score":     score,
-            "rs_label":     rs.get("rs_label"),
-            "rs_color":     rs.get("rs_color"),
-            "excess_pct":   rs.get("weighted_excess_pct"),
-            "period_returns": rs.get("period_returns", {}),
-            "cmp":          round(last_close, 2),
-            "pctFrom52wHigh": round(pct_from_hi, 2),
-            "aboveSma50":   above_sma50,
-            "bars":         len(rows),
-            "lastDate":     rows[-1]["date"],
+            "symbol":           sym,
+            "market":           "india",
+            "is_ipo":           is_ipo,
+            "bars":             n_bars,
+            "lastDate":         rows[-1]["date"],
+            # Sector / industry
+            "sector":           sector,
+            "industry":         industry,
+            # RS
+            "rs_score":         score,
+            "rs_label":         rs.get("rs_label"),
+            "rs_color":         rs.get("rs_color"),
+            "excess_pct":       rs.get("weighted_excess_pct"),
+            "period_returns":   rs.get("period_returns", {}),
+            # Price
+            "cmp":              round(last_close, 2),
+            "pctFrom52wHigh":   pct_from_hi,
+            "pctFrom52wLow":    pct_from_lo,
+            "listingGainPct":   listing_gain_pct,
+            # ADR
+            "adrPct":           adr_pct,
+            # Volume / liquidity
+            "avgVol20":         round(avg_vol_20),
+            "volRatio":         vol_ratio,
+            "volSurge5d":       vol_surge_5d,
+            # Trend
+            "ema10":            ema10,
+            "ema21":            ema21,
+            "ema10GapPct":      ema10_gap_pct,
+            "ema21GapPct":      ema21_gap_pct,
+            "aboveEma21":       above_ema21,
+            "aboveSma50":       above_sma50,
+            # Composite
+            "swingScore":       swing_score,
         }
 
     scored: list[dict] = []
@@ -5709,8 +5949,18 @@ def _compute_rs_universe(
     except Exception as _e:
         print(f"⚠ RS-universe freshness probe error: {_e}", flush=True)
 
-    # 3. Sort by rs_score desc; tiebreak by excess_pct
-    scored.sort(key=lambda x: (x["rs_score"], x.get("excess_pct") or 0), reverse=True)
+    # ── Optional IPO-only filter
+    if ipo_only:
+        scored = [s for s in scored if s.get("is_ipo")]
+
+    # ── Sort by chosen strategy
+    _sort_keys = {
+        "swing":  lambda x: (x.get("swingScore") or 0, x.get("rs_score") or 0),
+        "rs":     lambda x: (x.get("rs_score") or 0, x.get("excess_pct") or 0),
+        "adr":    lambda x: (x.get("adrPct") or 0, x.get("rs_score") or 0),
+        "volume": lambda x: (x.get("volSurge5d") or 0, x.get("rs_score") or 0),
+    }
+    scored.sort(key=_sort_keys.get(sort_by, _sort_keys["swing"]), reverse=True)
     top = scored[:top_n]
     # Add rank
     for i, s in enumerate(top, start=1):
@@ -5724,8 +5974,10 @@ def _compute_rs_universe(
         "total_computed": len(scored),
         "min_price":     min_price,
         "min_bars":      min_bars,
+        "sort_by":       sort_by,
+        "ipo_only":      ipo_only,
         "nifty_asof":    (market_prices.get("dates") or [None])[-1],
-        "_params":       (top_n, min_price, min_bars, max_symbols),
+        "_params":       _cache_key,
     }
     with _rs_scan_lock:
         _rs_scan_cache["data"] = data
@@ -5739,18 +5991,36 @@ def rs_leaders_preview(
     min_price: float = 50.0,
     min_bars: int = 150,
     refresh: bool = False,
+    ipo_only: bool = False,
+    sort_by: str = "swing",     # swing | rs | adr | volume
+    min_adr: float = 0.0,       # minimum ADR% filter (e.g. 2.0)
+    min_avg_vol: int = 0,       # minimum 20d avg volume filter
 ) -> dict:
     """
-    Rank every Indian stock in the cache by IBD-style RS vs Nifty 50 and return
-    the top `top` without inserting anything. Use this to preview before
-    auto-populating the watchlist.
+    Rank every Indian stock by IBD-style RS + swing composite score vs Nifty 50.
+
+    Each result includes: rs_score, swingScore, adrPct, avgVol20, volSurge5d,
+    sector, industry, EMA trend data, and 52-week proximity.
+
+    sort_by options:
+      swing  – composite score (RS 40% + ADR 20% + vol-surge 20% + 52wHigh 20%) [default]
+      rs     – pure IBD-style RS score (3M/6M/9M/12M excess vs Nifty)
+      adr    – highest ADR% first (most volatile / explosive)
+      volume – strongest 5d vs 20d volume surge (accumulation signal)
+
+    ipo_only=true  → only stocks with <126 bars; scored with short 1M/2M/3M RS periods.
+    min_adr=2.0    → filter out stocks with ADR% < 2% (low-volatility names).
+    min_avg_vol=100000 → filter out illiquid micro-caps.
     """
     if top <= 0 or top > 200:
         raise HTTPException(status_code=400, detail="top must be between 1 and 200")
     if refresh:
         with _rs_scan_lock:
             _rs_scan_cache["ts"] = 0
-    return _compute_rs_universe(top_n=top, min_price=min_price, min_bars=min_bars)
+    return _compute_rs_universe(
+        top_n=top, min_price=min_price, min_bars=min_bars,
+        ipo_only=ipo_only, sort_by=sort_by, min_adr=min_adr, min_avg_vol=min_avg_vol,
+    )
 
 
 class RsLeaderAutoAddRequest(BaseModel):
@@ -5759,6 +6029,10 @@ class RsLeaderAutoAddRequest(BaseModel):
     min_bars:  int = 150
     refresh:   bool = False
     replace_existing_auto: bool = True  # wipe prior auto_rs items first
+    ipo_only:  bool = False
+    sort_by:   str = "swing"     # swing | rs | adr | volume
+    min_adr:   float = 0.0
+    min_avg_vol: int = 0
 
 
 @app.post("/api/trade-board/watchlist/rs-leaders/auto-add")
@@ -5783,6 +6057,8 @@ def rs_leaders_auto_add(req: RsLeaderAutoAddRequest | None = None) -> dict:
 
     ranking = _compute_rs_universe(
         top_n=req.top, min_price=req.min_price, min_bars=req.min_bars,
+        ipo_only=req.ipo_only, sort_by=req.sort_by,
+        min_adr=req.min_adr, min_avg_vol=req.min_avg_vol,
     )
     leaders = ranking["top"]
 
@@ -5815,13 +6091,26 @@ def rs_leaders_auto_add(req: RsLeaderAutoAddRequest | None = None) -> dict:
                     continue
                 # It's an auto entry we kept — refresh rank tags / score
                 existing["conviction"] = max(3, min(5, int((row["rs_score"] or 50) / 20)))
-                existing["tags"] = list({*existing.get("tags", []),
-                                         "rs_leader", f"rs{row['rs_score']}", f"rank{row['rank']}"})
-                existing["notes"] = f"Auto RS-Leader rank #{row['rank']}  ·  RS {row['rs_score']} {row.get('rs_label','')}"
+                _tags = {"rs_leader", f"rs{row['rs_score']}", f"rank{row['rank']}"}
+                if row.get("is_ipo"):
+                    _tags.add("ipo")
+                if row.get("sector") and row["sector"] != "Other":
+                    _tags.add(row["sector"].lower().replace(" ", "_"))
+                existing["tags"] = list({*existing.get("tags", []), *_tags})
+                existing["notes"] = (
+                    f"Auto RS-Leader rank #{row['rank']}  ·  RS {row['rs_score']} {row.get('rs_label','')}"
+                    f"  ·  Swing {row.get('swingScore', '')}  ·  ADR {row.get('adrPct', '')}%"
+                    f"  ·  {row.get('sector', '')}"
+                )
                 added.append(existing)
                 continue
             # Fresh insert
             hint = ADR_HINTS.get(sym_u) or {}
+            _tags = ["rs_leader", f"rs{row['rs_score']}", f"rank{row['rank']}"]
+            if row.get("is_ipo"):
+                _tags.append("ipo")
+            if row.get("sector") and row["sector"] != "Other":
+                _tags.append(row["sector"].lower().replace(" ", "_"))
             rec = {
                 "id":          str(uuid.uuid4()),
                 "symbol":      sym_u,
@@ -5830,19 +6119,28 @@ def rs_leaders_auto_add(req: RsLeaderAutoAddRequest | None = None) -> dict:
                 "bucket":      "rs_leaders",
                 "setup":       "",
                 "conviction":  max(3, min(5, int((row["rs_score"] or 50) / 20))),
-                "tags":        ["rs_leader", f"rs{row['rs_score']}", f"rank{row['rank']}"],
+                "tags":        _tags,
                 "add_price":   row.get("cmp"),
                 "add_date":    today,
                 "added_at":    datetime.now().isoformat(timespec="seconds"),
                 "alert_price": None,
                 "pair_symbol": hint.get("adr_symbol"),
                 "pair_market": hint.get("adr_market"),
-                "notes":       f"Auto RS-Leader rank #{row['rank']}  ·  RS {row['rs_score']} {row.get('rs_label','')}",
+                "notes":       (
+                    f"Auto RS-Leader rank #{row['rank']}  ·  RS {row['rs_score']} {row.get('rs_label','')}"
+                    f"  ·  Swing {row.get('swingScore', '')}  ·  ADR {row.get('adrPct', '')}%"
+                    f"  ·  {row.get('sector', '')}"
+                ),
                 "source":      "auto_rs",
                 # extra diagnostic fields (preserved in JSON)
                 "rs_score":    row["rs_score"],
                 "rs_rank":     row["rank"],
                 "rs_excess_pct": row.get("excess_pct"),
+                "swing_score":   row.get("swingScore"),
+                "adr_pct":       row.get("adrPct"),
+                "sector":        row.get("sector"),
+                "industry":      row.get("industry"),
+                "is_ipo":        row.get("is_ipo", False),
             }
             items.append(rec)
             added.append(rec)

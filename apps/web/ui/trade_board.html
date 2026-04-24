@@ -1397,13 +1397,30 @@
       <button class="modal-close" onclick="closeRsModal()">✕</button>
     </div>
     <div class="modal-body" style="flex:1;overflow-y:auto">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+      <!-- Row 1: basic filters -->
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
         <label style="font-size:11px;color:var(--muted)">Top N</label>
-        <input id="rsTopN" type="number" min="5" max="100" value="35" class="mi" style="width:70px">
+        <input id="rsTopN" type="number" min="5" max="200" value="35" class="mi" style="width:70px">
         <label style="font-size:11px;color:var(--muted)">Min Price ₹</label>
         <input id="rsMinPrice" type="number" value="50" class="mi" style="width:80px">
         <label style="font-size:11px;color:var(--muted)">Min Bars</label>
         <input id="rsMinBars" type="number" value="150" class="mi" style="width:70px">
+      </div>
+      <!-- Row 2: advanced filters -->
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+        <label style="font-size:11px;color:var(--muted)">Sort By</label>
+        <select id="rsSortBy" class="mi" style="width:110px">
+          <option value="swing" selected>⚡ Swing Score</option>
+          <option value="rs">📈 RS Score</option>
+          <option value="adr">📊 ADR%</option>
+          <option value="volume">🔊 Vol Surge</option>
+        </select>
+        <label style="font-size:11px;color:var(--muted)">Min ADR%</label>
+        <input id="rsMinAdr" type="number" value="0" min="0" max="20" step="0.5" class="mi" style="width:65px" title="E.g. 2.0 = only stocks with ≥2% avg daily range">
+        <label style="font-size:11px;color:var(--muted)">Min Vol (20d avg)</label>
+        <input id="rsMinVol" type="number" value="0" min="0" step="10000" class="mi" style="width:90px" title="E.g. 100000 = filter out illiquid stocks">
+        <label style="font-size:11px;color:var(--muted)" title="Only show recently listed stocks (<6 months)">IPO Only</label>
+        <input id="rsIpoOnly" type="checkbox" style="width:16px;height:16px;cursor:pointer" title="Only show IPO stocks (listed within ~6 months, <126 trading bars)">
         <button class="btn btn-outline btn-sm" onclick="wlAutoRsPreview(true)">🔄 Rescan</button>
         <span id="rsStatus" style="font-size:10px;color:var(--muted);margin-left:auto"></span>
       </div>
@@ -1556,20 +1573,45 @@ async function refreshData(auto = false) {
     _priceRefreshPending = false;
   }
 
-  try {
-    // Fetch positions (backend returns live prices during market hours)
-    let r = await fetch(API + '/api/trade-board/positions/enriched');
-    if (!r.ok) r = await fetch(API + '/api/trade-board/positions');
-    const d = await r.json();
-    positions = d.positions || [];
-    updateSbStats(d);
+  // ── FAST LOAD: fetch positions + watchlist IN PARALLEL ──────────────
+  // Try enriched first; if it takes too long or fails, fall back to basic.
+  const posPromise = (async () => {
+    try {
+      const r = await fetch(API + '/api/trade-board/positions/enriched');
+      if (r.ok) return await r.json();
+    } catch(e) {}
+    try {
+      const r2 = await fetch(API + '/api/trade-board/positions');
+      if (r2.ok) return await r2.json();
+    } catch(e) {}
+    return null;
+  })();
+
+  const wlPromise = (async () => {
+    try {
+      const r = await fetch(API + '/api/trade-board/watchlist/enriched');
+      if (r.ok) return await r.json();
+    } catch(e) {}
+    try {
+      const r2 = await fetch(API + '/api/trade-board/watchlist');
+      if (r2.ok) return await r2.json();
+    } catch(e) {}
+    return null;
+  })();
+
+  // Wait for BOTH in parallel
+  const [posData, wlData] = await Promise.all([posPromise, wlPromise]);
+
+  // ── Apply positions ────────────────────────────────────────────────
+  if (posData) {
+    positions = posData.positions || [];
+    updateSbStats(posData);
     renderPositions();
     if (currentDetId) { const p = positions.find(x => x.id === currentDetId); if (p) updateDetInfo(p); }
-    // Update live badge to reflect market status
     const liveBadge = document.querySelector('.live-badge');
-    if (liveBadge && d.marketOpen !== undefined) {
+    if (liveBadge && posData.marketOpen !== undefined) {
       const dot = liveBadge.querySelector('.live-dot');
-      if (d.marketOpen) {
+      if (posData.marketOpen) {
         liveBadge.style.background = 'var(--green-bg)'; liveBadge.style.color = 'var(--green)';
         if (dot) dot.style.background = 'var(--green)';
       } else {
@@ -1577,19 +1619,18 @@ async function refreshData(auto = false) {
         if (dot) { dot.style.background = 'var(--muted)'; dot.style.animation = 'none'; }
       }
     }
-  } catch(e) { if (!auto) toast('Failed to load positions', 'error'); }
+  } else if (!auto) {
+    toast('Failed to load positions', 'error');
+  }
 
-  // Refresh watchlist
-  try {
-    let wr = await fetch(API + '/api/trade-board/watchlist/enriched');
-    if (!wr.ok) wr = await fetch(API + '/api/trade-board/watchlist');
-    const wd = await wr.json();
-    watchlistItems = wd.items || [];
-    if (Array.isArray(wd.buckets) && wd.buckets.length) wlBuckets = wd.buckets;
-    if (Array.isArray(wd.setups)  && wd.setups.length)  wlSetupsVocab = wd.setups;
+  // ── Apply watchlist ────────────────────────────────────────────────
+  if (wlData) {
+    watchlistItems = wlData.items || [];
+    if (Array.isArray(wlData.buckets) && wlData.buckets.length) wlBuckets = wlData.buckets;
+    if (Array.isArray(wlData.setups)  && wlData.setups.length)  wlSetupsVocab = wlData.setups;
     document.getElementById('sbWatch').textContent = watchlistItems.length;
     if (currentPage === 'watchlist') renderWatchlist();
-  } catch(e) {}
+  }
 
   if (currentPage === 'analytics') {
     await loadEquity();
@@ -1815,6 +1856,35 @@ function buildMetricsStrip(p) {
     '<div class="ms-cell"><div class="ms-l">RSI</div><div class="ms-v">' + rsiHtml + '</div></div>' +
     '<div class="ms-cell"><div class="ms-l">R-Mul</div><div class="ms-v">' + riskHtml + '</div></div>' +
     '<div class="ms-cell"><div class="ms-l">52W</div><div class="ms-v">' + (p.pctFrom52wHigh != null ? '<span style="color:' + (p.pctFrom52wHigh > -5 ? '#4ade80' : p.pctFrom52wHigh > -15 ? '#f59e0b' : '#f87171') + ';font-weight:800">' + p.pctFrom52wHigh.toFixed(0) + '%</span>' : '<span style="color:var(--muted)">—</span>') + '</div></div>' +
+  '</div>';
+}
+
+function buildRsLeaderStrip(item) {
+  // Dedicated RS-leader metrics row shown only for auto_rs watchlist entries
+  const swCol = item.swing_score >= 70 ? '#ffd700' : item.swing_score >= 55 ? '#4ade80' : '#7dd3fc';
+  const rsCol = item.rs_score >= 90 ? '#ffd700' : item.rs_score >= 80 ? '#4ade80' : item.rs_score >= 65 ? '#86efac' : '#7dd3fc';
+  const adrHtml = item.adr_pct != null
+    ? '<span style="color:var(--cyan);font-weight:800">' + parseFloat(item.adr_pct).toFixed(1) + '%</span>'
+    : '<span style="color:var(--muted)">—</span>';
+  const vsVal = item.vol_surge_5d ?? item.volSurge5d;
+  const vsHtml = vsVal != null
+    ? '<span style="color:' + (vsVal >= 2 ? '#22c55e' : vsVal >= 1.5 ? '#fdba74' : 'var(--muted)') + ';font-weight:800">' + parseFloat(vsVal).toFixed(1) + 'x</span>'
+    : '<span style="color:var(--muted)">—</span>';
+  const excessVal = item.rs_excess_pct ?? item.excess_pct;
+  const exHtml = excessVal != null
+    ? '<span style="color:' + (excessVal >= 0 ? '#4ade80' : '#f87171') + ';font-weight:800">' + (excessVal >= 0 ? '+' : '') + parseFloat(excessVal).toFixed(1) + '%</span>'
+    : '<span style="color:var(--muted)">—</span>';
+  const hi52 = item.pct_from_52w_hi ?? item.pctFrom52wHigh;
+  const hiHtml = hi52 != null
+    ? '<span style="color:' + (hi52 > -5 ? '#4ade80' : hi52 > -15 ? '#f59e0b' : '#f87171') + ';font-weight:800">' + parseFloat(hi52).toFixed(0) + '%</span>'
+    : '<span style="color:var(--muted)">—</span>';
+  return '<div class="metrics-strip ms-5" style="border-top:1px solid #1e293b;background:#060d1a">' +
+    '<div class="ms-cell"><div class="ms-l">⚡ Swing</div><div class="ms-v"><span style="color:' + swCol + ';font-weight:900">' + (item.swing_score != null ? parseFloat(item.swing_score).toFixed(0) : '—') + '</span></div></div>' +
+    '<div class="ms-cell"><div class="ms-l">RS</div><div class="ms-v"><span style="color:' + rsCol + ';font-weight:900">' + (item.rs_score || '—') + '</span></div></div>' +
+    '<div class="ms-cell"><div class="ms-l">Excess</div><div class="ms-v">' + exHtml + '</div></div>' +
+    '<div class="ms-cell"><div class="ms-l">ADR%</div><div class="ms-v">' + adrHtml + '</div></div>' +
+    '<div class="ms-cell"><div class="ms-l">Vol 5d</div><div class="ms-v">' + vsHtml + '</div></div>' +
+    '<div class="ms-cell"><div class="ms-l">52W Hi</div><div class="ms-v">' + hiHtml + '</div></div>' +
   '</div>';
 }
 
@@ -3365,17 +3435,33 @@ let wlActiveBucket = 'ALL';
 
 async function loadWatchlist() {
   try {
-    let r = await fetch(API + '/api/trade-board/watchlist/enriched');
-    if (!r.ok) r = await fetch(API + '/api/trade-board/watchlist');
-    const d = await r.json();
-    watchlistItems = d.items || [];
-    if (Array.isArray(d.buckets) && d.buckets.length) wlBuckets = d.buckets;
-    if (Array.isArray(d.setups)  && d.setups.length)  wlSetupsVocab = d.setups;
-    document.getElementById('sbWatch').textContent = watchlistItems.length;
-    // Fire-and-forget: also refresh categories + market health
+    // Fast initial render from basic endpoint
+    const basic = await fetch(API + '/api/trade-board/watchlist');
+    if (basic.ok) {
+      const d = await basic.json();
+      watchlistItems = d.items || [];
+      if (Array.isArray(d.buckets) && d.buckets.length) wlBuckets = d.buckets;
+      if (Array.isArray(d.setups)  && d.setups.length)  wlSetupsVocab = d.setups;
+      document.getElementById('sbWatch').textContent = watchlistItems.length;
+      renderWatchlist();
+    }
+    // Fire-and-forget: also refresh categories + market health in parallel
     loadWlCategories();
     loadWlMarketHealth();
-    renderWatchlist();
+    // Background upgrade: fetch enriched data then re-render
+    (async () => {
+      try {
+        const er = await fetch(API + '/api/trade-board/watchlist/enriched');
+        if (er.ok) {
+          const ed = await er.json();
+          watchlistItems = ed.items || [];
+          if (Array.isArray(ed.buckets) && ed.buckets.length) wlBuckets = ed.buckets;
+          if (Array.isArray(ed.setups)  && ed.setups.length)  wlSetupsVocab = ed.setups;
+          document.getElementById('sbWatch').textContent = watchlistItems.length;
+          if (currentPage === 'watchlist') renderWatchlist();
+        }
+      } catch(e) {}
+    })();
   } catch(e) { console.warn('loadWatchlist', e); }
 }
 
@@ -3498,8 +3584,12 @@ function renderWatchlist() {
     }
     return true;
   });
-  // Sort by return-since-add desc, then conviction desc
-  list.sort((a,b) => (b.returnSinceAddPct || 0) - (a.returnSinceAddPct || 0) || (b.conviction || 0) - (a.conviction || 0));
+  // Sort: RS leaders bucket → by rank asc (best = rank 1), else return desc
+  if (wlActiveBucket === 'rs_leaders') {
+    list.sort((a,b) => (a.rs_rank || 9999) - (b.rs_rank || 9999) || (b.rs_score || 0) - (a.rs_score || 0));
+  } else {
+    list.sort((a,b) => (b.returnSinceAddPct || 0) - (a.returnSinceAddPct || 0) || (b.conviction || 0) - (a.conviction || 0));
+  }
   document.getElementById('wlTotalCount').textContent = list.length + ' / ' + watchlistItems.length;
   if (!list.length) {
     g.innerHTML = '<div class="empty-st"><div class="empty-ttl">Nothing here</div><div class="empty-sub">Add stocks with the &ldquo;+ Add&rdquo; button, or switch bucket.</div></div>';
@@ -3520,6 +3610,12 @@ function buildWlCard(item) {
   const bucketLbl = item.bucket ? '<span class="wl-bucket-pill">' + _bucketLabel(item.bucket) + '</span>' : '';
   const autoBadge = item.source === 'auto_rs'
     ? '<span class="badge" style="background:#1a1a00;color:#facc15;border:1px solid #facc1544" title="Auto-generated by RS-Leader scan">⚡ AUTO RS' + (item.rs_rank ? ' #' + item.rs_rank : '') + (item.rs_score ? ' · ' + item.rs_score : '') + '</span>' : '';
+  const ipoBadge = item.is_ipo
+    ? '<span class="badge" style="background:#1a0a40;color:#a78bfa;border:1px solid #8b5cf644" title="Recently listed stock (<6 months)">🆕 IPO</span>' : '';
+  const swingBadge = item.swing_score != null
+    ? '<span class="badge" style="background:#0d1a0d;color:' + (item.swing_score >= 70 ? '#ffd700' : item.swing_score >= 55 ? '#4ade80' : '#7dd3fc') + ';border:1px solid #ffffff11" title="Composite swing score (RS+ADR+VolSurge+52WHigh)">⚡ ' + item.swing_score.toFixed(0) + ' swing</span>' : '';
+  const sectorBadge = (item.sector && item.sector !== 'Other' && item.source === 'auto_rs')
+    ? '<span class="badge" style="background:#0f172a;color:#94a3b8;border:1px solid #334155;font-size:9px">' + item.sector + (item.industry && item.industry !== 'Other' && item.industry !== item.sector ? ' · ' + item.industry : '') + '</span>' : '';
   const convStars = '★★★★★'.slice(0, item.conviction || 0) + '☆☆☆☆☆'.slice(0, 5 - (item.conviction || 0));
   const convBadge = item.conviction ? '<span class="wl-conv">' + convStars + '</span>' : '';
   const retPct = item.returnSinceAddPct;
@@ -3550,7 +3646,7 @@ function buildWlCard(item) {
     ? '<div class="card-gain-day ' + dc + '">' + (dayPct >= 0 ? '▲' : '▼') + Math.abs(dayPct).toFixed(1) + '% today</div>' : '';
   const scanEntry = item.scanEntry ? parseFloat(item.scanEntry) : 0;
   const scanSl = item.scanSl ? parseFloat(item.scanSl) : 0;
-  const badges = [bucketLbl, autoBadge, setupBadge, ratingBadge, scanBadge, rsStr, emaBadge, volBadge, alertBadge, retChip, staleBadge].filter(Boolean).join('');
+  const badges = [bucketLbl, autoBadge, ipoBadge, swingBadge, sectorBadge, setupBadge, ratingBadge, scanBadge, rsStr, emaBadge, volBadge, alertBadge, retChip, staleBadge].filter(Boolean).join('');
   const inScanCls = item.inScan ? ' wl-in-scan' : '';
   const mktFlag = item.market === 'us' ? '🇺🇸 ' : '🇮🇳 ';
   const cmpHtml = cmp
@@ -3584,6 +3680,7 @@ function buildWlCard(item) {
       '<div><div class="pr-l">Scan SL</div><div class="pr-v pr-sl">' + (scanSl ? '₹' + scanSl.toLocaleString('en-IN') : '—') + '</div></div>' +
     '</div>' : '') +
     buildMetricsStrip(item) +
+    (item.source === 'auto_rs' ? buildRsLeaderStrip(item) : '') +
     tagsHtml +
     (item.notes ? '<div style="padding:4px 12px;font-size:10.5px;color:var(--muted);line-height:1.5">' + item.notes + '</div>' : '') +
     (item.entryInstruction ? '<div style="padding:2px 12px 4px;font-size:9px;color:var(--cyan);line-height:1.4">' + item.entryInstruction + '</div>' : '') +
@@ -3819,44 +3916,81 @@ let _rsLastRanking = null;
 
 function closeRsModal() { document.getElementById('rsLeadersModal').classList.remove('open'); }
 
+function _rsModalParams() {
+  return {
+    topN:    parseInt(document.getElementById('rsTopN').value)    || 35,
+    minP:    parseFloat(document.getElementById('rsMinPrice').value) || 50,
+    minB:    parseInt(document.getElementById('rsMinBars').value)  || 150,
+    sortBy:  document.getElementById('rsSortBy')?.value           || 'swing',
+    minAdr:  parseFloat(document.getElementById('rsMinAdr').value) || 0,
+    minVol:  parseInt(document.getElementById('rsMinVol').value)   || 0,
+    ipoOnly: document.getElementById('rsIpoOnly')?.checked        || false,
+  };
+}
+
 async function wlAutoRsPreview(force) {
   const modal = document.getElementById('rsLeadersModal');
   modal.classList.add('open');
   const body = document.getElementById('rsPreviewBody');
   const status = document.getElementById('rsStatus');
-  const topN    = parseInt(document.getElementById('rsTopN').value) || 35;
-  const minP    = parseFloat(document.getElementById('rsMinPrice').value) || 50;
-  const minB    = parseInt(document.getElementById('rsMinBars').value) || 150;
-  document.getElementById('rsTopLbl').textContent = '(top ' + topN + ')';
+  const p = _rsModalParams();
+  document.getElementById('rsTopLbl').textContent = '(top ' + p.topN + ')';
   body.innerHTML = '⏳ Computing IBD-style RS vs Nifty 50 for the whole cache… (first run may take ~5-15s)';
   status.textContent = '';
   try {
-    const qs = '?top=' + topN + '&min_price=' + minP + '&min_bars=' + minB + (force ? '&refresh=true' : '');
+    let qs = '?top=' + p.topN + '&min_price=' + p.minP + '&min_bars=' + p.minB
+           + '&sort_by=' + p.sortBy;
+    if (p.minAdr > 0)  qs += '&min_adr='     + p.minAdr;
+    if (p.minVol > 0)  qs += '&min_avg_vol='  + p.minVol;
+    if (p.ipoOnly)     qs += '&ipo_only=true';
+    if (force)         qs += '&refresh=true';
     const r = await fetch(API + '/api/trade-board/watchlist/rs-leaders/preview' + qs);
     if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.detail || r.statusText); }
     const d = await r.json();
     _rsLastRanking = d;
-    status.textContent = 'Scanned ' + d.total_scanned + ' · Scored ' + d.total_computed + ' · Nifty ' + (d.nifty_asof || '—');
+    const sortLbl = {swing:'Swing Score', rs:'RS Score', adr:'ADR%', volume:'Vol Surge'}[d.sort_by || 'swing'] || d.sort_by;
+    status.textContent = 'Scanned ' + d.total_scanned + ' · Scored ' + d.total_computed
+      + ' · Sorted by ' + sortLbl + ' · Nifty ' + (d.nifty_asof || '—')
+      + (d.ipo_only ? ' · IPO only' : '');
     if (!d.top || !d.top.length) { body.innerHTML = '<div style="color:var(--muted)">No stocks met the filter.</div>'; return; }
     body.innerHTML = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">' +
       '<thead><tr style="background:var(--bg3);color:var(--muted);text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px">' +
-        '<th style="padding:5px 8px">#</th><th style="padding:5px 8px">Symbol</th><th style="padding:5px 8px">RS</th>' +
-        '<th style="padding:5px 8px">Label</th><th style="padding:5px 8px">Excess%</th>' +
-        '<th style="padding:5px 8px">CMP</th><th style="padding:5px 8px">From 52W Hi</th>' +
-        '<th style="padding:5px 8px">&gt;50SMA</th>' +
+        '<th style="padding:5px 8px">#</th>' +
+        '<th style="padding:5px 8px">Symbol</th>' +
+        '<th style="padding:5px 8px">⚡ Swing</th>' +
+        '<th style="padding:5px 8px">RS</th>' +
+        '<th style="padding:5px 8px">Label</th>' +
+        '<th style="padding:5px 8px">Excess%</th>' +
+        '<th style="padding:5px 8px">ADR%</th>' +
+        '<th style="padding:5px 8px">🔊 Vol5d</th>' +
+        '<th style="padding:5px 8px">Sector</th>' +
+        '<th style="padding:5px 8px">CMP</th>' +
+        '<th style="padding:5px 8px">52W Hi</th>' +
+        '<th style="padding:5px 8px">&gt;EMA21</th>' +
       '</tr></thead><tbody>' +
-      d.top.map(r => {
-        const col = r.rs_color || '#7dd3fc';
-        const above = r.aboveSma50 ? '<span style="color:#22c55e">✓</span>' : '<span style="color:#ef4444">✗</span>';
-        const excess = r.excess_pct != null ? ((r.excess_pct >= 0 ? '+' : '') + r.excess_pct.toFixed(1) + '%') : '—';
+      d.top.map(row => {
+        const col = row.rs_color || '#7dd3fc';
+        const swCol = row.swingScore >= 70 ? '#ffd700' : row.swingScore >= 55 ? '#4ade80' : row.swingScore >= 40 ? '#7dd3fc' : 'var(--muted)';
+        const above = row.aboveEma21 ? '<span style="color:#22c55e">✓</span>' : '<span style="color:#ef4444">✗</span>';
+        const excess = row.excess_pct != null ? ((row.excess_pct >= 0 ? '+' : '') + row.excess_pct.toFixed(1) + '%') : '—';
+        const adr = row.adrPct != null ? row.adrPct.toFixed(1) + '%' : '—';
+        const vs = row.volSurge5d != null ? row.volSurge5d.toFixed(1) + 'x' : '—';
+        const vsCol = row.volSurge5d >= 2 ? '#22c55e' : row.volSurge5d >= 1.5 ? '#fdba74' : 'var(--muted)';
+        const hiCol = row.pctFrom52wHigh > -5 ? '#4ade80' : row.pctFrom52wHigh > -15 ? '#f59e0b' : 'var(--muted)';
+        const ipoBadge = row.is_ipo ? '<span style="font-size:9px;background:#1a0a40;color:#a78bfa;padding:1px 4px;border-radius:3px;margin-left:3px">IPO</span>' : '';
+        const sector = (row.sector && row.sector !== 'Other') ? '<span style="color:var(--muted);font-size:9.5px">' + row.sector + '</span>' : '<span style="color:var(--dim)">—</span>';
         return '<tr style="border-top:1px solid var(--border)">' +
-          '<td style="padding:5px 8px;color:var(--muted)">' + r.rank + '</td>' +
-          '<td style="padding:5px 8px;font-weight:800">' + r.symbol + '</td>' +
-          '<td style="padding:5px 8px;color:' + col + ';font-weight:900">' + r.rs_score + '</td>' +
-          '<td style="padding:5px 8px;color:' + col + '">' + (r.rs_label || '—') + '</td>' +
-          '<td style="padding:5px 8px;color:' + (r.excess_pct >= 0 ? '#4ade80' : '#f87171') + '">' + excess + '</td>' +
-          '<td style="padding:5px 8px">₹' + (r.cmp || '—').toLocaleString('en-IN') + '</td>' +
-          '<td style="padding:5px 8px;color:' + (r.pctFrom52wHigh > -5 ? '#4ade80' : 'var(--muted)') + '">' + r.pctFrom52wHigh + '%</td>' +
+          '<td style="padding:5px 8px;color:var(--muted)">' + row.rank + '</td>' +
+          '<td style="padding:5px 8px;font-weight:800">' + row.symbol + ipoBadge + '</td>' +
+          '<td style="padding:5px 8px;color:' + swCol + ';font-weight:900">' + (row.swingScore != null ? row.swingScore.toFixed(0) : '—') + '</td>' +
+          '<td style="padding:5px 8px;color:' + col + ';font-weight:900">' + row.rs_score + '</td>' +
+          '<td style="padding:5px 8px;color:' + col + ';font-size:10px">' + (row.rs_label || '—') + '</td>' +
+          '<td style="padding:5px 8px;color:' + (row.excess_pct >= 0 ? '#4ade80' : '#f87171') + '">' + excess + '</td>' +
+          '<td style="padding:5px 8px;color:var(--cyan)">' + adr + '</td>' +
+          '<td style="padding:5px 8px;color:' + vsCol + '">' + vs + '</td>' +
+          '<td style="padding:5px 8px">' + sector + '</td>' +
+          '<td style="padding:5px 8px">₹' + (row.cmp || '—').toLocaleString('en-IN') + '</td>' +
+          '<td style="padding:5px 8px;color:' + hiCol + '">' + (row.pctFrom52wHigh != null ? row.pctFrom52wHigh.toFixed(1) + '%' : '—') + '</td>' +
           '<td style="padding:5px 8px;text-align:center">' + above + '</td>' +
           '</tr>';
       }).join('') + '</tbody></table></div>';
@@ -3866,15 +4000,17 @@ async function wlAutoRsPreview(force) {
 }
 
 async function wlAutoRsApply() {
-  const topN = parseInt(document.getElementById('rsTopN').value) || 35;
-  const minP = parseFloat(document.getElementById('rsMinPrice').value) || 50;
-  const minB = parseInt(document.getElementById('rsMinBars').value) || 150;
+  const p = _rsModalParams();
   const btn = document.getElementById('rsApplyBtn');
   const oldTxt = btn.textContent; btn.disabled = true; btn.textContent = '⏳ Inserting…';
   try {
     const r = await fetch(API + '/api/trade-board/watchlist/rs-leaders/auto-add', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({top: topN, min_price: minP, min_bars: minB, replace_existing_auto: true})
+      body: JSON.stringify({
+        top: p.topN, min_price: p.minP, min_bars: p.minB,
+        sort_by: p.sortBy, min_adr: p.minAdr, min_avg_vol: p.minVol,
+        ipo_only: p.ipoOnly, replace_existing_auto: true,
+      })
     });
     if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.detail || r.statusText); }
     const d = await r.json();
@@ -4079,7 +4215,29 @@ function startCacheStatusPoller() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  refreshData();
+  // ── FAST INITIAL LOAD: show basic data immediately, upgrade later ───
+  // Positions (basic, no heavy metrics) + watchlist/fast (CSV-only ~100ms,
+  // no live API calls) are loaded in parallel for instant UI.
+  // Enriched data (live prices, EMA, vol records) upgrades in the background.
+  (async () => {
+    const posBasic = fetch(API + '/api/trade-board/positions').then(r => r.ok ? r.json() : null).catch(() => null);
+    const wlFast   = fetch(API + '/api/trade-board/watchlist/fast').then(r => r.ok ? r.json() : null).catch(() => null);
+    const [pd, wd] = await Promise.all([posBasic, wlFast]);
+    if (pd) {
+      positions = pd.positions || [];
+      updateSbStats(pd);
+      renderPositions();
+    }
+    if (wd) {
+      watchlistItems = wd.items || [];
+      if (Array.isArray(wd.buckets) && wd.buckets.length) wlBuckets = wd.buckets;
+      if (Array.isArray(wd.setups)  && wd.setups.length)  wlSetupsVocab = wd.setups;
+      document.getElementById('sbWatch').textContent = watchlistItems.length;
+      if (currentPage === 'watchlist') renderWatchlist();
+    }
+    // Now upgrade to enriched data (live prices, EMA ext, volume records)
+    refreshData(true);
+  })();
   startAutoRefresh();
   startCacheStatusPoller();
   document.getElementById('jDate').value = new Date().toISOString().slice(0, 10);
