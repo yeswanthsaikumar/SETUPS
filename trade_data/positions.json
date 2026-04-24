@@ -580,8 +580,8 @@
       "name": "qpower",
       "entry": 1380.96,
       "quantity": 500,
-      "remaining_quantity": null,
-      "sl": 1355.0,
+      "remaining_quantity": 500,
+      "sl": 1365.0,
       "t1": 0.0,
       "t2": 0.0,
       "t3": 0.0,
@@ -593,7 +593,12 @@
       "exit_price": null,
       "exit_date": null,
       "tags": [],
-      "partial_exits": []
+      "partial_exits": [],
+      "cmp": 1396.4,
+      "lastPriceDate": "2026-04-24",
+      "dayChangePct": 1.64,
+      "dayChangeAmt": 11275.0,
+      "original_sl": 1355.0
     },
     {
       "id": "349d31fa",
@@ -601,8 +606,8 @@
       "name": "omni",
       "entry": 409.7,
       "quantity": 2500,
-      "remaining_quantity": null,
-      "sl": 395.0,
+      "remaining_quantity": 0,
+      "sl": 410.2,
       "t1": 0.0,
       "t2": 0.0,
       "t3": 0.0,
@@ -611,10 +616,16 @@
       "notes": "strongest stock, entered due to strength its showig tight stop loss",
       "entry_date": "2026-04-24",
       "status": "OPEN",
-      "exit_price": null,
-      "exit_date": null,
+      "exit_price": 404.55,
+      "exit_date": "2026-04-24",
       "tags": [],
-      "partial_exits": []
+      "partial_exits": [],
+      "cmp": 404.55,
+      "lastPriceDate": "2026-04-24",
+      "dayChangePct": 0.0,
+      "dayChangeAmt": 0.0,
+      "original_sl": 395.0,
+      "realized_pl": -12875.0
     },
     {
       "id": "02223861",
@@ -622,7 +633,7 @@
       "name": "GROWW",
       "entry": 217.87,
       "quantity": 2000,
-      "remaining_quantity": null,
+      "remaining_quantity": 2000,
       "sl": 213.0,
       "t1": 0.0,
       "t2": 0.0,
@@ -635,7 +646,12 @@
       "exit_price": null,
       "exit_date": null,
       "tags": [],
-      "partial_exits": []
+      "partial_exits": [],
+      "cmp": 217.73,
+      "lastPriceDate": "2026-04-24",
+      "dayChangePct": 0.0,
+      "dayChangeAmt": 0.01,
+      "original_sl": 213.0
     },
     {
       "id": "f6d1d7b6",
@@ -643,8 +659,8 @@
       "name": "adaniensol",
       "entry": 1407.42,
       "quantity": 200,
-      "remaining_quantity": null,
-      "sl": 1335.0,
+      "remaining_quantity": 200,
+      "sl": 1352.58,
       "t1": 0.0,
       "t2": 0.0,
       "t3": 0.0,
@@ -656,9 +672,14 @@
       "exit_price": null,
       "exit_date": null,
       "tags": [],
-      "partial_exits": []
+      "partial_exits": [],
+      "cmp": 1411.95,
+      "lastPriceDate": "2026-04-24",
+      "dayChangePct": 3.72,
+      "dayChangeAmt": 10139.99,
+      "original_sl": 1335.0
     }
   ],
   "created": "2026-04-14T11:55:48.601550",
-  "lastUpdated": "2026-04-24T15:42:54.319555"
+  "lastUpdated": "2026-04-24T17:06:20.504398"
 }

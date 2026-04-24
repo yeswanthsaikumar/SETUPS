@@ -1447,6 +1447,7 @@
     </div>
     <div class="modal-foot">
       <button class="btn btn-outline" onclick="closePeModal()">Cancel</button>
+      <button class="btn btn-outline" onclick="submitPartialExit(true)">Exit All Remaining</button>
       <button class="btn btn-primary" onclick="submitPartialExit()">Book Exit</button>
     </div>
   </div>
@@ -1460,6 +1461,25 @@ let detChart = null, eqChart = null, refreshTimer = 30, _mood = '', drawerOpen =
 let currentPage = 'board', currentDetType = 'position';
 const miniInst = {};
 const wlMiniInst = {};
+
+function _remainingQty(p) {
+  const rq = p.remaining_quantity;
+  // If remaining_quantity is 0 but the position is still an active status,
+  // it's a corrupted/inconsistent state — fall back to full quantity.
+  if (rq === 0 || rq === null || rq === undefined) {
+    const st = p.status || 'OPEN';
+    const activeStatuses = ['OPEN', 'PARTIAL', 'T1_HIT', 'T2_HIT'];
+    if (rq === 0 && !activeStatuses.includes(st)) return 0; // genuinely closed
+    return p.quantity || 1;
+  }
+  return rq;
+}
+
+function _isActivePosition(p) {
+  const st = p.status || 'OPEN';
+  const activeStatuses = ['OPEN', 'PARTIAL', 'T1_HIT', 'T2_HIT'];
+  return activeStatuses.includes(st);
+}
 
 function showPage(n) {
   currentPage = n;
@@ -1571,20 +1591,24 @@ async function refreshData(auto = false) {
     if (currentPage === 'watchlist') renderWatchlist();
   } catch(e) {}
 
+  if (currentPage === 'analytics') {
+    await loadEquity();
+  }
+
 
   refreshTimer = 30;
 }
 
 
 function updateSbStats(d) {
-  const open = (d.positions || []).filter(p => p.status === 'OPEN' || p.status === 'PARTIAL');
+  const open = (d.positions || []).filter(p => _isActivePosition(p));
   document.getElementById('sbOpen').textContent = open.length;
   let dayPl = 0, totalPl = 0, risk = 0;
   for (const p of d.positions || []) {
     const e = p.entry || 0, sl = p.sl || e;
     const realizedPl = p.realized_pl || 0;
-    if (p.status === 'OPEN' || p.status === 'PARTIAL') {
-      const qty = p.remaining_quantity != null ? p.remaining_quantity : (p.quantity || 1);
+    if (_isActivePosition(p)) {
+      const qty = _remainingQty(p);
       const cmp = p.cmp || e;
       dayPl += p.dayChangeAmt || 0;
       totalPl += (cmp - e) * qty + realizedPl;
@@ -1616,7 +1640,7 @@ function renderPositions() {
   const setup = document.getElementById('setupFilter').value;
   const sort = document.getElementById('sortFilter').value;
   let f = positions.filter(p => {
-    const act = p.status === 'OPEN' || p.status === 'PARTIAL' || p.status === 'T1_HIT' || p.status === 'T2_HIT';
+    const act = _isActivePosition(p);
     if (currentTab === 'active' && !act) return false;
     if (currentTab === 'closed' && act) return false;
     if (search && !p.symbol?.toLowerCase().includes(search) && !p.name?.toLowerCase().includes(search)) return false;
@@ -1837,8 +1861,8 @@ function buildHealthBar(p) {
 }
 
 function buildCard(p) {
-  const e = p.entry || 0, totalQty = p.quantity || 1, remaining = p.remaining_quantity != null ? p.remaining_quantity : totalQty;
-  const isOpen = p.status === 'OPEN' || p.status === 'PARTIAL';
+  const e = p.entry || 0, totalQty = p.quantity || 1, remaining = _remainingQty(p);
+  const isOpen = _isActivePosition(p);
   const isClosed = !isOpen;
   // For closed positions, use exit_price as the final price reference
   const cmp = p.cmp || (isClosed ? (p.exit_price || e) : e), sl = p.sl || e;
@@ -1879,6 +1903,7 @@ function buildCard(p) {
     ? '<span class="' + dc + '" style="font-size:10px;font-weight:800">' + (dPct >= 0 ? '▲' : '▼') + Math.abs(dPct).toFixed(1) + '% · ₹' + Math.abs(dAmt).toLocaleString('en-IN',{maximumFractionDigits:0}) + ' today</span>'
     : '';
   const peBtn = isOpen ? '<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();openPeModal(\'' + p.id + '\')" title="Book partial exit">📤</button>' : '';
+  const reopenBtn = !isOpen ? '<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();reopenPosition(\'' + p.id + '\')" title="Undo close — reopen position">↩</button>' : '';
   const cmpLabel = priceIsStale ? 'CMP <span style="color:#f59e0b">⚠</span>' : 'CMP';
 
   // Invested amount
@@ -1901,7 +1926,7 @@ function buildCard(p) {
     buildHealthBar(p) +
     buildRevealPanel(p, {gPct, gAmt, invested, days, remaining, e, sl, cmp}) +
     '<div class="card-foot"><span class="hold-d" style="display:flex;align-items:center;gap:4px"><span class="hb-dot ' + dayDotCls + '" style="width:5px;height:5px"></span>' + days + 'd · ' + remaining + ' qty · ₹' + invested.toLocaleString('en-IN',{maximumFractionDigits:0}) + '</span>' +
-    '<div class="card-acts" onclick="event.stopPropagation()">' + peBtn + '<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();openUpdateModal(\'' + p.id + '\')">Edit</button></div></div>' +
+    '<div class="card-acts" onclick="event.stopPropagation()">' + peBtn + reopenBtn + '<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();openUpdateModal(\'' + p.id + '\')">Edit</button></div></div>' +
     '<div class="card-reveal-hint">hover for more · click to open</div></div>';
 }
 
@@ -2050,8 +2075,10 @@ async function openDetail(id) {
   document.getElementById('dtSym').textContent = p.symbol || '—';
   document.getElementById('dtName').textContent = p.name || '';
   document.getElementById('detOverlay').classList.add('open');
+  const _isClosed = !_isActivePosition(p);
   document.getElementById('dtActions').innerHTML =
-    ((p.status === 'OPEN' || p.status === 'PARTIAL') ? '<button class="btn btn-outline btn-sm" onclick="openPeModal(\'' + p.id + '\')">📤 Partial Exit</button>' : '') +
+    (_isActivePosition(p) ? '<button class="btn btn-outline btn-sm" onclick="openPeModal(\'' + p.id + '\')">📤 Partial Exit</button>' : '') +
+    (_isClosed ? '<button class="btn btn-outline btn-sm" onclick="reopenPosition(\'' + p.id + '\')" title="Undo close — restore position to OPEN">↩ Reopen</button>' : '') +
     '<button class="btn btn-outline btn-sm" onclick="openUpdateFromDetail()">✏ Update</button>' +
     '<button class="btn btn-red btn-sm" onclick="deleteFromDetail()">🗑 Delete</button>';
   const st = (p.status || 'OPEN').replace('_HIT', ' ✓');
@@ -2442,10 +2469,32 @@ function onUpdateStatusChange() {
     if (!document.getElementById('uExitDate').value) {
       document.getElementById('uExitDate').value = new Date().toISOString().split('T')[0];
     }
+  } else {
+    // Reopening a position should not carry stale close metadata.
+    document.getElementById('uExitPrice').value = '';
+    document.getElementById('uExitDate').value = '';
   }
 }
 function closeUpdateModal() { document.getElementById('updateModal').classList.remove('open'); }
 function openUpdateFromDetail() { if (currentDetId) openUpdateModal(currentDetId); }
+
+async function reopenPosition(id) {
+  const p = positions.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm('Reopen ' + (p.symbol || id) + '? This will restore it to OPEN and clear the close price.')) return;
+  try {
+    const r = await fetch(API + '/api/trade-board/positions/' + id, {
+      method: 'PUT', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ status: 'OPEN' })
+    });
+    if (!r.ok) { const err = await r.json(); throw new Error(err.detail || 'Error'); }
+    const d = await r.json();
+    await refreshData();
+    const updated = positions.find(x => x.id === id);
+    if (updated) { if (currentDetId === id) openDetail(id); }
+    toast((p.symbol || id) + ' reopened ✓', 'success');
+  } catch(e) { toast('Reopen failed: ' + e.message, 'error'); }
+}
 
 async function submitUpdate() {
   const id = document.getElementById('uId').value;
@@ -2594,7 +2643,9 @@ function renderClosedTable() {
     }
     // P&L%: based on total capital deployed (entry * qty)
     const pp = e > 0 && qty > 0 ? (pl / (e * qty)) * 100 : 0;
-    const sl = p.sl || p.stop_loss || e, risk = Math.abs(e - sl) || 0;
+    const sl = p.sl || p.stop_loss || e;
+    const baseSl = p.original_sl || p.initial_sl || sl;
+    const risk = Math.abs(e - baseSl) || 0;
     // For partial positions, R:R should use only the exited quantity's risk
     const riskQty = isPartialOpen ? partials.reduce((s, pe) => s + pe.quantity, 0) : qty;
     const totalRiskAmt = risk * riskQty;
@@ -3883,7 +3934,7 @@ function toast(msg, type) {
 
 function openPeModal(id) {
   const p = positions.find(x => x.id === id); if (!p) return;
-  const remaining = p.remaining_quantity != null ? p.remaining_quantity : (p.quantity || 1);
+  const remaining = _remainingQty(p);
   document.getElementById('peId').value = id;
   document.getElementById('peSym').textContent = p.symbol;
   document.getElementById('peEntry').textContent = '₹' + (p.entry || 0).toLocaleString('en-IN');
@@ -3894,6 +3945,7 @@ function openPeModal(id) {
   document.getElementById('pePrice').value = p.cmp || '';
   document.getElementById('peDate').value = new Date().toISOString().slice(0, 10);
   document.getElementById('peReason').value = 'MANUAL';
+  document.getElementById('peModal').dataset.remaining = String(remaining);
   document.getElementById('peTitle').textContent = '📤 Book Partial — ' + p.symbol;
   document.getElementById('peModal').classList.add('open');
   setTimeout(() => document.getElementById('peQty').focus(), 100);
@@ -3901,14 +3953,16 @@ function openPeModal(id) {
 
 function closePeModal() { document.getElementById('peModal').classList.remove('open'); }
 
-async function submitPartialExit() {
+async function submitPartialExit(forceAll = false) {
   const id = document.getElementById('peId').value;
-  const qty = parseInt(document.getElementById('peQty').value);
+  const remaining = parseInt(document.getElementById('peModal').dataset.remaining || '0') || 0;
+  const qty = forceAll ? remaining : parseInt(document.getElementById('peQty').value);
   const price = parseFloat(document.getElementById('pePrice').value);
   if (!qty || qty <= 0) { toast('Enter a valid quantity', 'error'); return; }
   if (!price || price <= 0) { toast('Enter a valid exit price', 'error'); return; }
   const body = {
-    quantity: qty,
+    quantity: forceAll ? null : qty,
+    exit_all: forceAll,
     price: price,
     reason: document.getElementById('peReason').value || 'MANUAL',
     date: document.getElementById('peDate').value || new Date().toISOString().slice(0, 10),

@@ -143,10 +143,13 @@ class TradeBoardPosition(BaseModel):
     exit_date: Optional[str] = None
     tags: list[str] = Field(default_factory=list)
     partial_exits: list[PartialExit] = Field(default_factory=list)
+    # Captures initial stop so closed-trade R uses original risk, not trailed SL.
+    original_sl: Optional[float] = None
 
 
 class PartialExitRequest(BaseModel):
-    quantity: int
+    quantity: Optional[int] = None
+    exit_all: bool = False
     price: float
     reason: str = "MANUAL"
     date: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
@@ -3483,6 +3486,99 @@ def _save_board(data: dict) -> None:
     data["lastUpdated"] = datetime.now().isoformat()
     TRADE_BOARD_JSON.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 
+
+def _recompute_position_realized_pl(p: dict) -> float:
+    """Recompute total realized P&L including partial exits + final close leg."""
+    entry = float(p.get("entry", 0) or 0)
+    qty = int(p.get("quantity", 1) or 1)
+    exits = p.get("partial_exits", []) or []
+    partial_qty = sum(int(e.get("quantity", 0) or 0) for e in exits)
+    partial_realized = sum(
+        (float(e.get("price", 0) or 0) - entry) * int(e.get("quantity", 0) or 0)
+        for e in exits
+    )
+    remaining_for_final = max(0, qty - partial_qty)
+    exit_price = float(p.get("exit_price", entry) or entry)
+    realized = partial_realized + (exit_price - entry) * remaining_for_final
+    p["realized_pl"] = round(realized, 2)
+    return p["realized_pl"]
+
+
+def _compute_trailing_sl_candidate(p: dict, cmp: float) -> float | None:
+    """1R trailing stop: trail to (highest-high since entry - initial risk)."""
+    entry = float(p.get("entry", 0) or 0)
+    sl = float(p.get("sl", 0) or 0)
+    if entry <= 0 or sl <= 0:
+        return None
+
+    if not p.get("original_sl"):
+        p["original_sl"] = sl
+    initial_sl = float(p.get("original_sl", sl) or sl)
+    initial_risk = max(0.0, entry - initial_sl)
+    if initial_risk <= 0:
+        return None
+
+    rows = _read_ohlcv(p.get("symbol", ""), days=0)
+    entry_date = (p.get("entry_date") or "")[:10]
+    highs = [r.get("high", 0) for r in rows if (not entry_date or r.get("date", "") >= entry_date)]
+    peak = max([cmp] + [float(h or 0) for h in highs])
+    candidate = round(peak - initial_risk, 2)
+    if candidate > sl and candidate < cmp:
+        return candidate
+    return None
+
+
+def _apply_trailing_stop_automation(data: dict) -> dict:
+    """Auto-trail SL for open positions and auto-close when SL is breached."""
+    positions = data.get("positions", []) or []
+    changed = False
+    trailed = 0
+    closed = 0
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    for p in positions:
+        status = p.get("status", "OPEN")
+        if status not in ("OPEN", "PARTIAL"):
+            continue
+
+        qty = int(p.get("quantity", 1) or 1)
+        if p.get("remaining_quantity") is None:
+            p["remaining_quantity"] = qty
+            changed = True
+
+        cmp, prev_close, last_date = _get_price_info(p.get("symbol", ""))
+        if not cmp:
+            continue
+
+        p["cmp"] = round(cmp, 2)
+        p["lastPriceDate"] = last_date
+        if prev_close and prev_close > 0:
+            rem = p.get("remaining_quantity") if p.get("remaining_quantity") is not None else qty
+            p["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
+            p["dayChangeAmt"] = round((cmp - prev_close) * rem, 2)
+
+        new_sl = _compute_trailing_sl_candidate(p, cmp)
+        if new_sl is not None:
+            p["sl"] = new_sl
+            trailed += 1
+            changed = True
+
+        remaining = int(p.get("remaining_quantity") or p.get("quantity", 1) or 1)
+        live_sl = float(p.get("sl", 0) or 0)
+        if live_sl > 0 and cmp <= live_sl and remaining > 0:
+            p["status"] = "SL_HIT"
+            p["exit_price"] = round(cmp, 2)
+            p["exit_date"] = today
+            p["remaining_quantity"] = 0
+            _recompute_position_realized_pl(p)
+            closed += 1
+            changed = True
+
+    if changed:
+        data["positions"] = positions
+        _save_board(data)
+    return {"changed": changed, "trailed": trailed, "closed": closed}
+
 # ── Price / Chart helpers ──────────────────────────────────────────────────────
 
 def _read_ohlcv(symbol: str, days: int = 0, market: str = "india") -> list[dict]:
@@ -4140,6 +4236,7 @@ def trade_board_ui() -> FileResponse:
 def trade_board_summary() -> dict:
     with _board_lock:
         data = _load_board()
+        _apply_trailing_stop_automation(data)
         positions = data.get("positions", [])
     # Enrich with CMP and day change for open positions
     for p in positions:
@@ -4170,6 +4267,7 @@ def trade_board_summary() -> dict:
 def trade_board_positions(status: str = "") -> dict:
     with _board_lock:
         data = _load_board()
+        _apply_trailing_stop_automation(data)
         positions = list(data.get("positions", []))
     # Enrich with current price and gain
     for p in positions:
@@ -4209,6 +4307,8 @@ def trade_board_positions(status: str = "") -> dict:
 @app.post("/api/trade-board/positions")
 def trade_board_add_position(position: TradeBoardPosition) -> dict:
     pos_dict = position.model_dump()
+    if (pos_dict.get("sl") or 0) > 0 and not pos_dict.get("original_sl"):
+        pos_dict["original_sl"] = pos_dict["sl"]
     with _board_lock:
         data = _load_board()
         positions = data.get("positions", [])
@@ -4226,29 +4326,48 @@ def trade_board_update_position(position_id: str, update: TradeBoardUpdate) -> d
             if p.get("id") == position_id:
                 upd = update.model_dump(exclude_unset=True)
                 positions[i].update(upd)
+                if "sl" in upd and upd.get("sl") is not None and not positions[i].get("original_sl"):
+                    positions[i]["original_sl"] = upd.get("sl")
                 # If status is a closing status and exit_price is set,
                 # auto-compute realized_pl for the remaining shares
                 new_status = positions[i].get("status", "OPEN")
                 closing_statuses = ("CLOSED", "SL_HIT", "T1_HIT", "T2_HIT", "T3_HIT")
                 if new_status in closing_statuses and positions[i].get("exit_price"):
-                    entry = positions[i].get("entry", 0)
-                    total_qty = positions[i].get("quantity", 1)
-                    exits = positions[i].get("partial_exits", [])
-                    partial_qty = sum(e.get("quantity", 0) for e in exits)
-                    remaining = total_qty - partial_qty
-                    ep = float(positions[i]["exit_price"])
-                    # Realized from partials
-                    partial_realized = sum(
-                        (e["price"] - entry) * e["quantity"] for e in exits
-                    )
-                    # Total realized = partials + final exit on remaining
-                    positions[i]["realized_pl"] = round(
-                        partial_realized + (ep - entry) * remaining, 2
-                    )
+                    _recompute_position_realized_pl(positions[i])
                     positions[i]["remaining_quantity"] = 0
                     # Auto-set exit_date if not provided
                     if not positions[i].get("exit_date"):
                         positions[i]["exit_date"] = datetime.now().strftime("%Y-%m-%d")
+                elif new_status in ("OPEN", "PARTIAL"):
+                    qty = int(positions[i].get("quantity", 1) or 1)
+                    exits = positions[i].get("partial_exits", []) or []
+                    partial_qty = sum(int(e.get("quantity", 0) or 0) for e in exits)
+                    remaining = max(0, qty - partial_qty)
+
+                    if remaining <= 0:
+                        # All shares were exited via partial_exits — full undo: clear them and restore full qty.
+                        positions[i]["partial_exits"] = []
+                        remaining = qty
+
+                    # Restore remaining quantity, clear close metadata.
+                    positions[i]["remaining_quantity"] = remaining
+                    positions[i]["exit_price"] = None
+                    positions[i]["exit_date"] = None
+
+                    # Recompute realized from whatever partial exits remain.
+                    remaining_exits = positions[i].get("partial_exits", []) or []
+                    partial_realized = sum(
+                        (float(e.get("price", 0) or 0) - float(positions[i].get("entry", 0) or 0))
+                        * int(e.get("quantity", 0) or 0)
+                        for e in remaining_exits
+                    )
+                    positions[i]["realized_pl"] = round(partial_realized, 2)
+
+                    # Normalize status: PARTIAL if some shares already booked, else OPEN.
+                    if remaining < qty:
+                        positions[i]["status"] = "PARTIAL"
+                    else:
+                        positions[i]["status"] = "OPEN"
                 data["positions"] = positions
                 _save_board(data)
                 return {"position": positions[i], "ok": True}
@@ -4281,29 +4400,33 @@ def trade_board_partial_exit(position_id: str, req: PartialExitRequest) -> dict:
             remaining = p.get("remaining_quantity")
             if remaining is None:
                 remaining = total_qty
+            if req.price <= 0:
+                raise HTTPException(status_code=400, detail="price must be > 0")
+
+            # Resolve quantity: explicit shares or full remaining via exit_all.
+            exit_qty = remaining if req.exit_all else (req.quantity or 0)
+
             # Validate
-            if req.quantity <= 0:
+            if exit_qty <= 0:
                 raise HTTPException(status_code=400, detail="quantity must be > 0")
-            if req.quantity > remaining:
+            if exit_qty > remaining:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Cannot exit {req.quantity} shares — only {remaining} remaining")
+                    detail=f"Cannot exit {exit_qty} shares — only {remaining} remaining")
             # Record partial exit
             exits = p.get("partial_exits", [])
             exits.append({
                 "date": req.date,
-                "quantity": req.quantity,
+                "quantity": exit_qty,
                 "price": req.price,
                 "reason": req.reason,
             })
-            remaining -= req.quantity
+            remaining -= exit_qty
             positions[i]["partial_exits"] = exits
             positions[i]["remaining_quantity"] = remaining
             # Compute realized P&L from all partial exits
             entry = p.get("entry", 0)
-            realized_pl = sum(
-                (e["price"] - entry) * e["quantity"] for e in exits
-            )
+            realized_pl = sum((e["price"] - entry) * e["quantity"] for e in exits)
             positions[i]["realized_pl"] = round(realized_pl, 2)
             # Auto-update status
             if remaining <= 0:
@@ -4313,6 +4436,7 @@ def trade_board_partial_exit(position_id: str, req: PartialExitRequest) -> dict:
                 if total_exited > 0:
                     wavg = sum(e["price"] * e["quantity"] for e in exits) / total_exited
                     positions[i]["exit_price"] = round(wavg, 2)
+                _recompute_position_realized_pl(positions[i])
                 positions[i]["exit_date"] = req.date
             elif remaining < total_qty:
                 positions[i]["status"] = "PARTIAL"
@@ -4473,6 +4597,7 @@ def trade_board_positions_enriched(status: str = "") -> dict:
     """Return positions enriched with 20EMA extension + volume records."""
     with _board_lock:
         data = _load_board()
+        trail_state = _apply_trailing_stop_automation(data)
         positions = list(data.get("positions", []))
     # Pre-warm live price cache for all open positions
     open_syms = [p.get("symbol", "") for p in positions if p.get("status") in ("OPEN", "PARTIAL")]
@@ -4517,7 +4642,8 @@ def trade_board_positions_enriched(status: str = "") -> dict:
     stats = _compute_board_stats(positions)
     return {"positions": positions, "stats": stats,
             "lastUpdated": data.get("lastUpdated"),
-            "marketOpen": _is_market_open()}
+            "marketOpen": _is_market_open(),
+            "trailing": trail_state}
 
 
 @app.get("/api/trade-board/watchlist/enriched")
@@ -4695,6 +4821,7 @@ def trade_board_equity() -> dict:
     """Compute equity curve from closed+open positions, including partial exits."""
     with _board_lock:
         data = _load_board()
+        _apply_trailing_stop_automation(data)
         positions = data.get("positions", [])
     curve = []
     total = 0.0
@@ -4718,13 +4845,13 @@ def trade_board_equity() -> dict:
                 "type": "partial",
             })
 
-        # Add full close event (only for fully closed, not already counted via partials)
+        # Add full close event for any remaining shares not covered by partial exits.
         if status not in ("OPEN", "PARTIAL"):
             partial_qty = sum(pe["quantity"] for pe in p.get("partial_exits", []))
-            if partial_qty == 0:
-                # Full close without partial exits
+            remaining_at_close = max(0, qty - partial_qty)
+            if remaining_at_close > 0:
                 exit_p = p.get("exit_price") or entry
-                pl = (exit_p - entry) * qty
+                pl = (exit_p - entry) * remaining_at_close
                 events.append({
                     "date": p.get("exit_date") or p.get("entry_date", ""),
                     "symbol": sym,
@@ -4732,7 +4859,6 @@ def trade_board_equity() -> dict:
                     "status": status,
                     "type": "close",
                 })
-            # If partials covered full qty, they're already in events
 
     events.sort(key=lambda e: e.get("date", ""))
 
@@ -5886,6 +6012,7 @@ def refresh_prices_now() -> dict:
     # Collect symbols
     with _board_lock:
         board_data = _load_board()
+        trail_state = _apply_trailing_stop_automation(board_data)
         positions = board_data.get("positions", [])
     open_syms = [
         p["symbol"] for p in positions
@@ -5924,6 +6051,7 @@ def refresh_prices_now() -> dict:
         "ok": True,
         "symbols": all_syms,
         "count": len(all_syms),
+        "trailing": trail_state,
         "marketOpen": _is_market_open(),
         "message": f"Live cache flushed for {len(all_syms)} symbols — prices refresh on next load",
     }
