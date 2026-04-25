@@ -1,0 +1,14 @@
+{
+  "lastUpdated": "NoneType",
+  "stats": {
+    "closed_positions": "int",
+    "day_pl": "float",
+    "locked_profit": "float",
+    "open_positions": "int",
+    "open_risk": "float",
+    "realized_pl": "float",
+    "total_invested": "int",
+    "total_pl": "float",
+    "total_positions": "int"
+  }
+}
