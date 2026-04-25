@@ -3,8 +3,6 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 .kotlin
-.idea/
-*.iml
 
 ### Eclipse ###
 .apt_generated
@@ -29,12 +27,11 @@ bin/
 .vscode/
 
 ### Mac OS ###
-**/.DS_Store
+.DS_Store
 
 ### Python ###
 __pycache__/
 *.pyc
-.pytest_cache/
 
 ### Java build artifacts ###
 *.class
@@ -43,7 +40,6 @@ __pycache__/
 cache/
 output/
 trade_data/
-filtered.csv
 
 ### Python venv ###
 .venv/

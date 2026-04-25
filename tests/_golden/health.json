@@ -1,9 +1,0 @@
-{
-  "cacheRefresh": "str",
-  "growwEnabled": "bool",
-  "javaHome": "str",
-  "ok": "bool",
-  "python": "str",
-  "root": "str",
-  "timestamp": "str"
-}
