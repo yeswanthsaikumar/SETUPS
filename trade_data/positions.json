@@ -595,7 +595,7 @@
       "tags": [],
       "partial_exits": [],
       "cmp": 1396.4,
-      "lastPriceDate": "2026-04-24",
+      "lastPriceDate": "2026-04-25",
       "dayChangePct": 1.64,
       "dayChangeAmt": 11275.0,
       "original_sl": 1355.0
@@ -615,15 +615,15 @@
       "rating": "",
       "notes": "strongest stock, entered due to strength its showig tight stop loss",
       "entry_date": "2026-04-24",
-      "status": "OPEN",
+      "status": "SL_HIT",
       "exit_price": 404.55,
-      "exit_date": "2026-04-24",
+      "exit_date": "2026-04-25",
       "tags": [],
       "partial_exits": [],
       "cmp": 404.55,
-      "lastPriceDate": "2026-04-24",
+      "lastPriceDate": "2026-04-25",
       "dayChangePct": 0.0,
-      "dayChangeAmt": 0.0,
+      "dayChangeAmt": 0.03,
       "original_sl": 395.0,
       "realized_pl": -12875.0
     },
@@ -647,10 +647,10 @@
       "exit_date": null,
       "tags": [],
       "partial_exits": [],
-      "cmp": 217.73,
-      "lastPriceDate": "2026-04-24",
-      "dayChangePct": 0.0,
-      "dayChangeAmt": 0.01,
+      "cmp": 218.02,
+      "lastPriceDate": "2026-04-25",
+      "dayChangePct": 0.13,
+      "dayChangeAmt": 580.01,
       "original_sl": 213.0
     },
     {
@@ -674,12 +674,12 @@
       "tags": [],
       "partial_exits": [],
       "cmp": 1411.95,
-      "lastPriceDate": "2026-04-24",
+      "lastPriceDate": "2026-04-25",
       "dayChangePct": 3.72,
-      "dayChangeAmt": 10139.99,
+      "dayChangeAmt": 10140.0,
       "original_sl": 1335.0
     }
   ],
   "created": "2026-04-14T11:55:48.601550",
-  "lastUpdated": "2026-04-24T17:06:20.504398"
+  "lastUpdated": "2026-04-25T16:33:36.564746"
 }
