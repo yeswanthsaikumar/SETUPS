@@ -61,7 +61,7 @@
     .sb-stat-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
     .sb-stat-v{font-size:1.2em;font-weight:900;line-height:1.2;margin-top:1px}
     /* PAGES */
-    .page{display:none;flex:1;overflow:hidden;flex-direction:column}.page.active{display:flex}
+    .page{display:none;flex:1;overflow:hidden;flex-direction:column}.page.active{display:flex}#page-education{overflow-y:auto}
     /* FILTER BAR */
     .filter-bar{display:flex;align-items:center;gap:7px;padding:7px 16px;border-bottom:1px solid var(--border);background:var(--bg2);flex-wrap:wrap;flex-shrink:0;position:sticky;top:0;z-index:10}
     .tab-pill{padding:3px 12px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--muted);transition:all .15s}
@@ -457,7 +457,7 @@
     .empty-sub{font-size:11.5px;line-height:1.6}
     @media(max-width:768px){.sidebar{display:none}.pos-grid{grid-template-columns:1fr}.wl-grid{grid-template-columns:1fr}}
     /* IFRAME EMBED PAGE */
-    .iframe-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column}
+    .iframe-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative}
     .iframe-bar{display:flex;align-items:center;gap:8px;padding:5px 12px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
     .iframe-bar-title{font-weight:800;font-size:.85em;color:var(--text)}
     .iframe-frame{flex:1;border:none;width:100%;height:100%;background:var(--bg)}
@@ -480,6 +480,7 @@
     <button class="tl" id="tl-playbook" onclick="openEmbed('/playbook','Trading Playbook','playbook')">📖 Playbook</button>
     <button class="tl" id="tl-earnings" onclick="openEmbed('/earnings','Quarterly Earnings','earnings')" title="Quarterly earnings results — avoid volatility during prints, enter after confirmed beats">📊 Earnings</button>
     <button class="tl" id="tl-scan" onclick="openEmbed('/reports/master_report_LATEST.html','Scan Report','scan')">Scan</button>
+    <button class="tl" id="tl-learn" onclick="showPage('education')">📚 Learn</button>
   </div>
   <div class="topbar-right">
     <div class="cache-badge idle" id="cacheBadge" onclick="toggleCacheRefresh()" title="Click to refresh OHLCV cache">
@@ -493,6 +494,21 @@
     <button class="btn btn-outline btn-sm" onclick="toggleDrawer()">📡 Signals</button>
     <button class="btn btn-ghost btn-sm" onclick="exportData()" title="Export all data">⬇ Export</button>
   </div>
+</div>
+
+<!-- WISDOM BANNER (top, dismissable) -->
+<div id="wisdomBanner" style="display:flex;align-items:center;gap:10px;padding:5px 16px;background:linear-gradient(90deg,#0c1a30,#0f2240);border-bottom:1px solid var(--border);font-size:11px;min-height:28px;transition:all .3s;">
+  <span style="color:var(--cyan);font-size:10px;flex-shrink:0;">💡</span>
+  <span id="wisdomText" style="flex:1;color:var(--text);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Loading wisdom…</span>
+  <span id="wisdomAuthor" style="flex-shrink:0;font-size:9px;color:var(--dim);font-weight:700;white-space:nowrap;"></span>
+  <button onclick="loadWisdom()" style="flex-shrink:0;background:transparent;border:1px solid var(--border);color:var(--dim);font-size:9px;padding:1px 6px;border-radius:4px;cursor:pointer;" title="Next quote">↻</button>
+  <button onclick="dismissWisdomBanner()" style="flex-shrink:0;background:transparent;border:none;color:var(--dim);font-size:12px;cursor:pointer;padding:0 2px;line-height:1;" title="Dismiss">✕</button>
+</div>
+<!-- Risk banner (only visible when aggregate loss > 5%) -->
+<div id="wisdomRiskBanner" style="display:none;align-items:center;gap:10px;padding:4px 16px;background:linear-gradient(90deg,#1a0505,#2a0808);border-bottom:1px solid #7f1d1d44;font-size:10px;">
+  <span style="color:var(--red);font-size:10px;flex-shrink:0;">⚠️</span>
+  <span id="wisdomRiskText" style="flex:1;color:#fca5a5;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+  <span id="wisdomRiskAuthor" style="flex-shrink:0;font-size:9px;color:#f87171;font-weight:700;"></span>
 </div>
 
 <!-- LAYOUT -->
@@ -561,7 +577,11 @@
       <svg class="sb-icon" viewBox="0 0 16 16" fill="none"><path d="M2 14V2M2 14h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="4" y="8" width="2" height="4" fill="currentColor"/><rect x="7.5" y="5" width="2" height="7" fill="currentColor"/><rect x="11" y="9" width="2" height="3" fill="currentColor"/></svg>
       Earnings
     </button>
-  </div>
+    <button class="sb-item" id="nav-education" onclick="showPage('education')">
+      <svg class="sb-icon" viewBox="0 0 16 16" fill="none"><path d="M8 2L14 5.5V9C14 12 11 14.5 8 15C5 14.5 2 12 2 9V5.5L8 2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M5.5 8l2 2 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      📚 Learn
+    </button>
+  </div><!-- /sidebar -->
 
   <!-- MAIN CONTENT -->
   <div class="main-content">
@@ -1298,12 +1318,119 @@
     <div class="page" id="page-embed">
       <div class="iframe-wrap">
         <div class="iframe-bar">
-          <button class="btn btn-ghost btn-xs" onclick="showPage('board')">← Board</button>
+          <button class="btn btn-ghost btn-xs" onclick="showPage(_embedPrevPage||'board')">← Back</button>
           <span class="iframe-bar-title" id="embedTitle">Report</span>
-          <button class="btn btn-outline btn-xs" style="margin-left:auto" onclick="document.getElementById('embedFrame').contentWindow.location.reload()">↻ Reload</button>
-          <button class="btn btn-outline btn-xs" onclick="window.open(document.getElementById('embedFrame').src,'_blank')">⎋ Pop Out</button>
+          <button class="btn btn-outline btn-xs" style="margin-left:auto" onclick="embedReload()">↻ Reload</button>
+          <button class="btn btn-outline btn-xs" onclick="window.open(document.getElementById('embedFrame').getAttribute('data-url') || document.getElementById('embedFrame').src,'_blank')">⎋ Pop Out</button>
         </div>
-        <iframe class="iframe-frame" id="embedFrame" src="about:blank"></iframe>
+        <!-- Fallback overlay shown when site blocks embedding -->
+        <div id="embedFallback" style="display:none;position:absolute;inset:0;top:36px;background:var(--bg2);z-index:10;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;text-align:center;">
+          <div style="font-size:36px;">🚫</div>
+          <div style="font-size:15px;font-weight:800;color:var(--text);">This site can't be embedded</div>
+          <div style="font-size:12px;color:var(--muted);max-width:360px;line-height:1.6;">
+            The website has blocked embedding inside iframes (X-Frame-Options / CSP). This is common for news sites, Medium, Substack and most blogs.
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+            <button class="btn btn-primary btn-sm" id="embedFallbackOpen" onclick="">🌐 Open in Browser</button>
+            <button class="btn btn-outline btn-sm" onclick="showPage(_embedPrevPage||'board')">← Go Back</button>
+          </div>
+          <div id="embedFallbackUrl" style="font-size:10px;color:var(--dim);word-break:break-all;max-width:420px;"></div>
+        </div>
+        <iframe class="iframe-frame" id="embedFrame" src="about:blank"
+          onload="embedCheckLoad(this)"
+          onerror="embedShowFallback(this.getAttribute('data-url'))"></iframe>
+      </div>
+    </div>
+
+    <!-- EDUCATION / LEARN PAGE -->
+    <div class="page" id="page-education">
+      <div style="max-width:900px;margin:0 auto;padding:16px 12px 40px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+          <div style="font-size:22px;font-weight:900;color:var(--text);">📚 Swing Trading Guide</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.4;">Your personal reference for market phases, trail rules, position sizing, and swing benchmarks.</div>
+        </div>
+        <!-- Position Sizer Tool -->
+        <div style="background:var(--bg2);border:1px solid var(--border2);border-left:4px solid var(--purple);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+          <div style="font-weight:800;font-size:13px;color:var(--text);margin-bottom:10px;">⚖️ Quick Position Sizer</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;align-items:end;">
+            <div><label style="font-size:10px;color:var(--muted);font-weight:700;">Capital ₹</label><input id="psCapital" type="number" value="1000000" class="mi" style="margin-top:3px;font-size:12px;width:100%;"></div>
+            <div><label style="font-size:10px;color:var(--muted);font-weight:700;">Risk %</label><input id="psRisk" type="number" value="1" step="0.5" class="mi" style="margin-top:3px;font-size:12px;width:100%;"></div>
+            <div><label style="font-size:10px;color:var(--muted);font-weight:700;">Entry ₹</label><input id="psEntry" type="number" value="" placeholder="e.g. 500" class="mi" style="margin-top:3px;font-size:12px;width:100%;"></div>
+            <div><label style="font-size:10px;color:var(--muted);font-weight:700;">Stop Loss ₹</label><input id="psSL" type="number" value="" placeholder="e.g. 475" class="mi" style="margin-top:3px;font-size:12px;width:100%;"></div>
+            <div><button onclick="calcPositionSize()" class="btn btn-primary btn-sm" style="width:100%;margin-top:18px;">Calculate</button></div>
+          </div>
+          <div id="psResult" style="display:none;margin-top:12px;background:var(--bg3);border-radius:7px;padding:10px 14px;gap:20px;flex-wrap:wrap;">
+          </div>
+        </div>
+        <!-- Module accordion cards -->
+        <div id="educationModules" style="display:flex;flex-direction:column;gap:12px;">
+          <div style="color:var(--muted);font-size:12px;padding:20px;text-align:center;">⏳ Loading modules…</div>
+        </div>
+
+        <!-- ── Resource Library: YouTube, Blogs, etc. ── -->
+        <div style="margin-top:28px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div style="font-size:18px;font-weight:900;color:var(--text);">🔗 Resource Library</div>
+            <button class="btn btn-primary btn-sm" onclick="toggleEduAddLink()">+ Add Link</button>
+          </div>
+
+          <!-- Add Link Form (hidden by default) -->
+          <div id="eduAddLinkForm" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">
+            <div id="eduFormTitle" style="font-weight:800;font-size:13px;color:var(--text);margin-bottom:12px;">📎 Add a Resource</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div>
+                <label style="font-size:10px;color:var(--muted);font-weight:700;display:block;margin-bottom:3px;">Title *</label>
+                <input id="eduLinkTitle" class="mi" placeholder="e.g. Mark Minervini – VCP Setup" style="width:100%;font-size:12px;">
+              </div>
+              <div>
+                <label style="font-size:10px;color:var(--muted);font-weight:700;display:block;margin-bottom:3px;">URL *</label>
+                <input id="eduLinkUrl" class="mi" placeholder="https://youtube.com/watch?v=..." style="width:100%;font-size:12px;" oninput="eduPreviewUrl(this.value)">
+              </div>
+              <div>
+                <label style="font-size:10px;color:var(--muted);font-weight:700;display:block;margin-bottom:3px;">Category</label>
+                <select id="eduLinkCat" class="mi" style="width:100%;font-size:12px;">
+                  <option value="youtube">🎥 YouTube</option>
+                  <option value="blog">📝 Blog / Article</option>
+                  <option value="book">📕 Book</option>
+                  <option value="course">🎓 Course</option>
+                  <option value="tool">🔧 Tool</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:10px;color:var(--muted);font-weight:700;display:block;margin-bottom:3px;">Tags <span style="color:var(--dim);">(comma-separated)</span></label>
+                <input id="eduLinkTags" class="mi" placeholder="e.g. swing, breakout, VCP" style="width:100%;font-size:12px;">
+              </div>
+            </div>
+            <div style="margin-top:10px;">
+              <label style="font-size:10px;color:var(--muted);font-weight:700;display:block;margin-bottom:3px;">Summary / Key Takeaway</label>
+              <textarea id="eduLinkSummary" class="mi" rows="3" placeholder="Brief summary or key takeaways from this resource..." style="width:100%;font-size:12px;resize:vertical;font-family:inherit;line-height:1.5;"></textarea>
+            </div>
+            <!-- Live Preview -->
+            <div id="eduLinkPreview" style="display:none;margin-top:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+              <button class="btn btn-outline btn-sm" onclick="toggleEduAddLink()">Cancel</button>
+              <button class="btn btn-primary btn-sm" onclick="saveEduLink()">💾 Save Resource</button>
+            </div>
+          </div>
+
+          <!-- Filter bar -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+            <button class="btn btn-outline btn-xs edu-filter-btn active" onclick="filterEduResources('all',this)" style="font-size:10px;">All</button>
+            <button class="btn btn-outline btn-xs edu-filter-btn" onclick="filterEduResources('youtube',this)" style="font-size:10px;">🎥 YouTube</button>
+            <button class="btn btn-outline btn-xs edu-filter-btn" onclick="filterEduResources('blog',this)" style="font-size:10px;">📝 Blogs</button>
+            <button class="btn btn-outline btn-xs edu-filter-btn" onclick="filterEduResources('book',this)" style="font-size:10px;">📕 Books</button>
+            <button class="btn btn-outline btn-xs edu-filter-btn" onclick="filterEduResources('course',this)" style="font-size:10px;">🎓 Courses</button>
+            <button class="btn btn-outline btn-xs edu-filter-btn" onclick="filterEduResources('tool',this)" style="font-size:10px;">🔧 Tools</button>
+          </div>
+
+          <!-- Resources Grid -->
+          <div id="eduResourcesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;">
+            <div style="color:var(--dim);font-size:11px;padding:16px;text-align:center;grid-column:1/-1;">No resources yet — click "+ Add Link" to build your library.</div>
+          </div>
+        </div>
+        <!-- spacer to make scrolling comfortable -->
+        <div style="height:60px;"></div>
       </div>
     </div>
 
@@ -1594,6 +1721,7 @@ let positions = [], journalEntries = [], watchlistItems = [];
 let currentTab = 'active', currentDetId = null, currentDetDays = 180;
 let detChart = null, eqChart = null, refreshTimer = 30, _mood = '', drawerOpen = false;
 let currentPage = 'board', currentDetType = 'position';
+let _embedPrevPage = 'board';
 const miniInst = {};
 const wlMiniInst = {};
 
@@ -1629,10 +1757,13 @@ function showPage(n) {
   if (n === 'board' || n === 'analytics' || n === 'journal' || n === 'watchlist' || n === 'alerts' || n === 'ibd-backtest') {
     if (tlBoard) tlBoard.classList.add('active');
   }
+  const tlLearn = document.getElementById('tl-learn');
+  if (n === 'education' && tlLearn) tlLearn.classList.add('active');
   if (n === 'analytics') loadEquity();
   if (n === 'journal') loadJournal();
   if (n === 'watchlist') loadWatchlist();
   if (n === 'alerts') boLoadStatus2();
+  if (n === 'education') { loadEducationModules(); loadEduResources(); }
   // ibd-backtest: do NOT auto-run; show stale data until user clicks Run
 }
 
@@ -4541,6 +4672,9 @@ function startCacheStatusPoller() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // ── Wisdom sidebar + education page hooks ─────────────────────────────
+  setTimeout(startWisdomRotation, 1500);
+
   // ── FAST INITIAL LOAD: show basic data immediately, upgrade later ───
   // Positions (basic, no heavy metrics) + watchlist/fast (CSV-only ~100ms,
   // no live API calls) are loaded in parallel for instant UI.
@@ -5800,6 +5934,544 @@ function rsAsofRenderBody() {
   body.innerHTML = tableHtml;
 }
 
+
+// ═══════════════════════════════════════════════════════════════════════
+// ── DAILY WISDOM SIDEBAR PANEL ──────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+
+let _wisdomPanelOpen = false;
+let _wisdomTimer = null;
+
+// toggleWisdomPanel is no longer needed (sidebar panel removed), kept as no-op
+function toggleWisdomPanel() {}
+
+async function loadWisdom(tags) {
+  try {
+    const url = API + '/api/wisdom/random' + (tags ? '?tags=' + tags : '');
+    const r = await fetch(url);
+    if (!r.ok) return;
+    const q = await r.json();
+    document.getElementById('wisdomText').textContent = '"' + q.text + '"';
+    document.getElementById('wisdomAuthor').textContent = '— ' + q.author;
+  } catch(e) { /* silent */ }
+}
+
+async function checkWisdomRiskBanner() {
+  // Show risk reminder if aggregate P&L loss > 5% (open positions only)
+  try {
+    const r = await fetch(API + '/api/trade-board/positions');
+    if (!r.ok) return;
+    const d = await r.json();
+    const openPos = (d.positions || []).filter(p => ['OPEN','PARTIAL'].includes(p.status));
+    if (!openPos.length) return;
+    const totalInvested = openPos.reduce((s, p) => s + (p.entry || 0) * (p.remaining_quantity || p.quantity || 1), 0);
+    const totalGain = openPos.reduce((s, p) => s + (p.gainAmt || 0), 0);
+    const lossPct = totalInvested > 0 ? (totalGain / totalInvested * 100) : 0;
+    const banner = document.getElementById('wisdomRiskBanner');
+    if (lossPct < -5 && totalInvested > 0) {
+      // Show a risk-focused wisdom quote
+      const rr = await fetch(API + '/api/wisdom/for-page?page=board&regime=bear&count=1&tags=risk');
+      if (rr.ok) {
+        const rd = await rr.json();
+        const q = (rd.items || [])[0];
+        if (q) {
+          document.getElementById('wisdomRiskText').textContent = '"' + q.text + '"';
+          document.getElementById('wisdomRiskAuthor').textContent = '— ' + q.author;
+          banner.style.display = 'block';
+        }
+      }
+    } else {
+      banner.style.display = 'none';
+    }
+  } catch(e) { /* silent */ }
+}
+
+function startWisdomRotation() {
+  loadWisdom();
+  checkWisdomRiskBanner();
+  // Rotate quote every 5 minutes
+  _wisdomTimer = setInterval(() => {
+    loadWisdom();
+    checkWisdomRiskBanner();
+  }, 5 * 60 * 1000);
+}
+// startWisdomRotation() is called from the main init block (line ~4600) via setTimeout.
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// ── EDUCATION / LEARN PAGE ──────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+
+let _educationLoaded = false;
+
+async function loadEducationModules() {
+  if (_educationLoaded) return;
+  const container = document.getElementById('educationModules');
+  if (!container) return;
+  try {
+    const r = await fetch(API + '/api/education/modules');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    _educationLoaded = true;
+    container.innerHTML = (d.modules || []).map(m => renderEducationModule(m)).join('');
+  } catch(e) {
+    container.innerHTML = '<div style="color:var(--red);padding:20px;text-align:center;">Failed to load modules: ' + e.message + '</div>';
+  }
+}
+
+function renderEducationModule(m) {
+  const id = 'edu-' + m.id;
+  const sections = (m.sections || []).map(s => renderEduSection(m.id, s)).join('');
+  return `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;"
+           onclick="toggleEduModule('${id}')">
+        <div style="font-size:14px;font-weight:900;color:var(--text);">${m.title}</div>
+        <span id="${id}-chevron" style="color:var(--muted);font-size:12px;">▲</span>
+      </div>
+      <div id="${id}-body" style="padding:0 16px 16px;border-top:1px solid var(--border);">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-top:12px;">
+          ${sections}
+        </div>
+      </div>
+    </div>`;
+}
+
+function toggleEduModule(id) {
+  const body = document.getElementById(id + '-body');
+  const chevron = document.getElementById(id + '-chevron');
+  if (!body) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (chevron) chevron.textContent = isOpen ? '▼' : '▲';
+}
+
+function renderEduSection(moduleId, s) {
+  const color = s.color || 'var(--cyan)';
+  if (moduleId === 'market_phases') {
+    const rules = (s.rules || []).map(r => `<li style="margin-bottom:2px;">${r}</li>`).join('');
+    return `
+      <div style="background:var(--bg3);border:1px solid var(--border);border-left:4px solid ${color};border-radius:8px;padding:12px 14px;">
+        <div style="font-size:11px;font-weight:900;color:${color};margin-bottom:4px;">${s.phase}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px;">
+          <div><div style="font-size:8.5px;color:var(--muted);text-transform:uppercase;font-weight:700;">Expected Gain</div>
+               <div style="font-size:11px;font-weight:800;color:var(--text);">${s.expected_gain}</div></div>
+          <div><div style="font-size:8.5px;color:var(--muted);text-transform:uppercase;font-weight:700;">Position Size</div>
+               <div style="font-size:11px;font-weight:800;color:var(--text);">${s.position_size}</div></div>
+        </div>
+        <div style="font-size:8.5px;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:3px;">Hold Period</div>
+        <div style="font-size:10.5px;color:var(--muted);margin-bottom:6px;">${s.hold_period}</div>
+        <ul style="margin:0;padding-left:14px;font-size:10.5px;color:var(--text);line-height:1.7;">${rules}</ul>
+      </div>`;
+  }
+  if (moduleId === 'trail_methodology') {
+    const rules = (s.rules || []).map(r => `<li style="margin-bottom:2px;">${r}</li>`).join('');
+    return `
+      <div style="background:var(--bg3);border:1px solid var(--border);border-left:4px solid ${color};border-radius:8px;padding:12px 14px;">
+        <div style="font-size:11px;font-weight:900;color:${color};margin-bottom:2px;">${s.method}</div>
+        <div style="font-size:9.5px;color:var(--muted);margin-bottom:6px;font-style:italic;">Best for: ${s.best_for}</div>
+        <ul style="margin:0;padding-left:14px;font-size:10.5px;color:var(--text);line-height:1.7;">${rules}</ul>
+      </div>`;
+  }
+  if (moduleId === 'position_sizing') {
+    const conds = (s.conditions || []).map(c => `<li style="margin-bottom:1px;">${c}</li>`).join('');
+    return `
+      <div style="background:var(--bg3);border:1px solid var(--border);border-left:4px solid ${color};border-radius:8px;padding:12px 14px;">
+        <div style="font-size:11px;font-weight:900;color:${color};margin-bottom:4px;">${s.mode}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px;">
+          <div><div style="font-size:8.5px;color:var(--muted);font-weight:700;">Risk/Trade</div><div style="font-size:11px;font-weight:800;color:var(--text);">${s.risk_per_trade||''}</div></div>
+          <div><div style="font-size:8.5px;color:var(--muted);font-weight:700;">Max Open</div><div style="font-size:11px;font-weight:800;color:var(--text);">${s.max_open_risk||''}</div></div>
+        </div>
+        <div style="font-size:9.5px;font-family:monospace;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:5px 8px;margin-bottom:6px;color:var(--cyan);">${s.formula}</div>
+        ${conds ? `<ul style="margin:0;padding-left:14px;font-size:10px;color:var(--muted);line-height:1.6;">${conds}</ul>` : ''}
+      </div>`;
+  }
+  if (moduleId === 'swing_length') {
+    const signals = (s.early_signals || []).map(c => `<li style="margin-bottom:1px;">${c}</li>`).join('');
+    return `
+      <div style="background:var(--bg3);border:1px solid var(--border);border-left:4px solid var(--cyan);border-radius:8px;padding:12px 14px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+          <span style="font-size:11px;font-weight:900;color:var(--text);">${s.type}</span>
+          <span style="font-size:9px;background:var(--bg);border:1px solid var(--border);padding:2px 6px;border-radius:4px;color:var(--cyan);font-weight:700;">${s.target_gain}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:6px;">
+          <div style="font-size:10px;color:var(--muted);">⏱ <strong>${s.duration}</strong></div>
+          <div style="font-size:10px;color:var(--muted);">🎯 Trail: <strong>${s.trail}</strong></div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);font-style:italic;margin-bottom:4px;">${s.best_for}</div>
+        ${signals ? `<div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:2px;">Early Signals:</div><ul style="margin:0;padding-left:14px;font-size:10px;color:var(--text);line-height:1.6;">${signals}</ul>` : ''}
+      </div>`;
+  }
+  return `<div style="font-size:11px;padding:8px;">${JSON.stringify(s)}</div>`;
+}
+
+function calcPositionSize() {
+  const capital = parseFloat(document.getElementById('psCapital').value) || 0;
+  const riskPct = parseFloat(document.getElementById('psRisk').value) || 1;
+  const entry   = parseFloat(document.getElementById('psEntry').value) || 0;
+  const sl      = parseFloat(document.getElementById('psSL').value) || 0;
+  const res = document.getElementById('psResult');
+  if (!entry || !sl || entry <= sl) {
+    res.style.display = 'flex';
+    res.innerHTML = '<span style="color:var(--red);font-size:11px;">⚠️ Entry must be greater than Stop Loss</span>';
+    return;
+  }
+  const riskAmt = capital * riskPct / 100;
+  const perShareRisk = entry - sl;
+  const shares = Math.floor(riskAmt / perShareRisk);
+  const invested = shares * entry;
+  const investedPct = capital > 0 ? (invested / capital * 100).toFixed(1) : 0;
+  res.style.display = 'flex';
+  res.innerHTML = [
+    {l:'Shares', v: shares.toLocaleString('en-IN')},
+    {l:'Amount Invested', v:'₹' + invested.toLocaleString('en-IN',{maximumFractionDigits:0})},
+    {l:'Capital Used', v: investedPct + '%'},
+    {l:'Risk ₹', v:'₹' + riskAmt.toLocaleString('en-IN',{maximumFractionDigits:0})},
+    {l:'Risk %', v: riskPct + '%'},
+    {l:'R:R at SL', v:'1:1 (exit at SL)'},
+  ].map(x=>`<div style="text-align:center;flex:1;min-width:80px;"><div style="font-size:8.5px;color:var(--muted);text-transform:uppercase;font-weight:700;">${x.l}</div><div style="font-size:13px;font-weight:900;color:var(--cyan);">${x.v}</div></div>`).join('');
+}
+
+// Load education on page show — hooked into showPage via onPage callback
+const _eduPageHook = (name) => { if (name === 'education') { loadEducationModules(); loadEduResources(); } };
+
+// ── Wisdom Banner (top) ─────────────────────────────────────────────────
+function dismissWisdomBanner() {
+  const b = document.getElementById('wisdomBanner');
+  if (b) { b.style.maxHeight = '0'; b.style.minHeight = '0'; b.style.padding = '0 16px'; b.style.borderBottom = 'none'; b.style.overflow = 'hidden'; }
+  try { sessionStorage.setItem('wisdomDismissed','1'); } catch(e) {}
+}
+// Restore dismissed state on load
+try { if (sessionStorage.getItem('wisdomDismissed')) dismissWisdomBanner(); } catch(e) {}
+
+// ── Education: scroll nav ───────────────────────────────────────────────
+function eduScrollTo(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Education: Resources CRUD (localStorage-backed) ─────────────────────
+let _eduResources = [];
+const _EDU_RES_KEY = 'setups_edu_resources';
+
+function _loadEduResourcesFromStorage() {
+  try { _eduResources = JSON.parse(localStorage.getItem(_EDU_RES_KEY) || '[]'); } catch(e) { _eduResources = []; }
+}
+function _saveEduResourcesToStorage() {
+  try { localStorage.setItem(_EDU_RES_KEY, JSON.stringify(_eduResources)); } catch(e) {}
+}
+
+function loadEduResources() {
+  _loadEduResourcesFromStorage();
+  renderEduResources();
+}
+
+function toggleEduAddLink() {
+  const f = document.getElementById('eduAddLinkForm');
+  const isOpen = f.style.display !== 'none';
+  if (isOpen) {
+    f.style.display = 'none';
+    _eduEditId = null;
+    ['eduLinkTitle','eduLinkUrl','eduLinkTags','eduLinkSummary'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('eduLinkCat').value = 'youtube';
+    document.getElementById('eduLinkPreview').style.display = 'none';
+    const btn = document.querySelector('#eduAddLinkForm .btn-primary');
+    if (btn) btn.textContent = '💾 Save Resource';
+    const hdr = document.getElementById('eduFormTitle');
+    if (hdr) hdr.textContent = '📎 Add a Resource';
+  } else {
+    f.style.display = 'block';
+  }
+}
+
+let _eduEditId = null;
+
+function editEduResource(id) {
+  const r = _eduResources.find(x => x.id === id);
+  if (!r) return;
+  _eduEditId = id;
+  document.getElementById('eduLinkTitle').value = r.title || '';
+  document.getElementById('eduLinkUrl').value = r.url || '';
+  document.getElementById('eduLinkCat').value = r.category || 'youtube';
+  document.getElementById('eduLinkTags').value = (r.tags || []).join(', ');
+  document.getElementById('eduLinkSummary').value = r.summary || '';
+  eduPreviewUrl(r.url || '');
+  const hdr = document.getElementById('eduFormTitle');
+  if (hdr) hdr.textContent = '✏️ Edit Resource';
+  const btn = document.querySelector('#eduAddLinkForm .btn-primary');
+  if (btn) btn.textContent = '💾 Update Resource';
+  const form = document.getElementById('eduAddLinkForm');
+  form.style.display = 'block';
+  form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function saveEduLink() {
+  const title = document.getElementById('eduLinkTitle').value.trim();
+  const url = document.getElementById('eduLinkUrl').value.trim();
+  const cat = document.getElementById('eduLinkCat').value;
+  const tags = document.getElementById('eduLinkTags').value.split(',').map(t => t.trim()).filter(Boolean);
+  const summary = document.getElementById('eduLinkSummary').value.trim();
+  if (!title || !url) { toast('Title and URL are required', 'error'); return; }
+
+  if (_eduEditId) {
+    // Update existing
+    const idx = _eduResources.findIndex(r => r.id === _eduEditId);
+    if (idx !== -1) {
+      _eduResources[idx] = { ..._eduResources[idx], title, url, category: cat, tags, summary, thumbnail: _extractThumbnail(url) };
+      _eduEditId = null;
+      toast('Resource updated ✓', 'success');
+    }
+  } else {
+    // Create new
+    const resource = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      title, url, category: cat, tags, summary,
+      addedAt: new Date().toISOString().slice(0, 10),
+      thumbnail: _extractThumbnail(url),
+    };
+    _eduResources.unshift(resource);
+    toast('Resource saved ✓', 'success');
+  }
+  _saveEduResourcesToStorage();
+  renderEduResources();
+  // Reset form
+  ['eduLinkTitle','eduLinkUrl','eduLinkTags','eduLinkSummary'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('eduLinkCat').value = 'youtube';
+  document.getElementById('eduAddLinkForm').style.display = 'none';
+  document.getElementById('eduLinkPreview').style.display = 'none';
+  const hdr = document.getElementById('eduFormTitle');
+  if (hdr) hdr.textContent = '📎 Add a Resource';
+  const btn = document.querySelector('#eduAddLinkForm .btn-primary');
+  if (btn) btn.textContent = '💾 Save Resource';
+}
+
+function deleteEduResource(id) {
+  _eduResources = _eduResources.filter(r => r.id !== id);
+  _saveEduResourcesToStorage();
+  renderEduResources();
+  toast('Removed', 'info');
+}
+
+function _extractThumbnail(url) {
+  // YouTube thumbnail
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (ytMatch) return 'https://img.youtube.com/vi/' + ytMatch[1] + '/mqdefault.jpg';
+  return null;
+}
+
+const _CAT_ICONS = { youtube:'🎥', blog:'📝', book:'📕', course:'🎓', tool:'🔧' };
+const _CAT_COLORS = { youtube:'#ef4444', blog:'#3b82f6', book:'#f59e0b', course:'#8b5cf6', tool:'#06b6d4' };
+
+let _eduFilterCat = 'all';
+
+function filterEduResources(cat, btn) {
+  _eduFilterCat = cat;
+  document.querySelectorAll('.edu-filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderEduResources();
+}
+
+function _getYoutubeId(url) {
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+function eduPreviewUrl(url) {
+  const preview = document.getElementById('eduLinkPreview');
+  if (!preview) return;
+  if (!url || !url.trim()) { preview.style.display = 'none'; return; }
+
+  const ytId = _getYoutubeId(url);
+  if (ytId) {
+    preview.style.display = 'block';
+    preview.innerHTML = `
+      <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;">
+        <iframe src="https://www.youtube.com/embed/${ytId}" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" allowfullscreen></iframe>
+      </div>
+      <div style="padding:8px 10px;font-size:10px;color:var(--muted);">🎥 YouTube video preview</div>`;
+    // Auto-set category to youtube
+    document.getElementById('eduLinkCat').value = 'youtube';
+    return;
+  }
+
+  // For blog / other URLs, show favicon + domain preview
+  try {
+    const u = new URL(url);
+    preview.style.display = 'block';
+    preview.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;">
+        <img src="https://www.google.com/s2/favicons?domain=${u.hostname}&sz=32" style="width:24px;height:24px;border-radius:4px;" onerror="this.style.display='none'">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--text);">${u.hostname}</div>
+          <div style="font-size:9px;color:var(--muted);word-break:break-all;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${url}</div>
+        </div>
+      </div>`;
+    // Auto-set category to blog for non-youtube URLs
+    if (u.hostname.includes('medium.com') || u.hostname.includes('substack') || u.hostname.includes('blog') || u.hostname.includes('wordpress')) {
+      document.getElementById('eduLinkCat').value = 'blog';
+    }
+  } catch(e) {
+    preview.style.display = 'none';
+  }
+}
+
+// ── Embed page helpers ───────────────────────────────────────────────────────
+// Domains known to block iframes — open them directly in a new tab
+const _NON_EMBEDDABLE = [
+  'medium.com','substack.com','twitter.com','x.com','facebook.com',
+  'instagram.com','linkedin.com','reddit.com','tradingview.com',
+  'moneycontrol.com','economictimes.indiatimes.com','livemint.com',
+  'businessstandard.com','thehindu.com','ndtv.com','zeebiz.com',
+  'investing.com','seekingalpha.com','marketwatch.com','wsj.com',
+  'ft.com','bloomberg.com','reuters.com','cnbc.com','forbes.com',
+  'businessinsider.com','techcrunch.com','github.com','notion.so',
+  'docs.google.com','drive.google.com','wikipedia.org'
+];
+
+function _isNonEmbeddable(url) {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    return _NON_EMBEDDABLE.some(d => host === d || host.endsWith('.' + d));
+  } catch(e) { return false; }
+}
+
+function embedShowFallback(url) {
+  const fb = document.getElementById('embedFallback');
+  if (!fb) return;
+  fb.style.display = 'flex';
+  document.getElementById('embedFallbackUrl').textContent = url || '';
+  const btn = document.getElementById('embedFallbackOpen');
+  if (btn) { btn.onclick = () => window.open(url, '_blank'); }
+}
+
+function embedHideFallback() {
+  const fb = document.getElementById('embedFallback');
+  if (fb) fb.style.display = 'none';
+}
+
+function embedCheckLoad(frame) {
+  // about:blank load is fine — don't show fallback
+  if (!frame.src || frame.src === 'about:blank') return;
+  // Try accessing contentDocument — if blocked, it throws or is null with blank content
+  try {
+    const doc = frame.contentDocument || frame.contentWindow?.document;
+    // Loaded but page is blank/empty — likely blocked
+    if (doc && doc.body && doc.body.innerHTML === '' && frame.getAttribute('data-url')) {
+      embedShowFallback(frame.getAttribute('data-url'));
+    }
+  } catch(e) {
+    // Cross-origin access denied (expected for external sites) — can't detect from JS
+    // The fallback is triggered via the pre-check in openEduResource instead
+  }
+}
+
+function embedReload() {
+  embedHideFallback();
+  const frame = document.getElementById('embedFrame');
+  if (!frame) return;
+  const url = frame.getAttribute('data-url') || frame.src;
+  if (url && url !== 'about:blank') {
+    frame.src = '';
+    setTimeout(() => { frame.src = url; }, 50);
+  }
+}
+
+function openEduResource(url, title) {
+  // Convert YouTube watch URLs to embed URLs for iframe compatibility
+  const ytId = _getYoutubeId(url);
+  if (ytId) {
+    openEmbed('https://www.youtube.com/embed/' + ytId + '?autoplay=1&rel=0', title || 'Video');
+    embedHideFallback();
+    return;
+  }
+  // Check if site is known to block iframes — open in new tab directly
+  if (_isNonEmbeddable(url)) {
+    // Show the embed page with fallback overlay so user sees a nice message + button
+    _embedPrevPage = currentPage || 'education';
+    currentPage = 'embed';
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.topbar-links .tl').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-embed').classList.add('active');
+    document.getElementById('embedTitle').textContent = title || 'Resource';
+    // Set frame to blank so it doesn't try to load
+    const frame = document.getElementById('embedFrame');
+    frame.src = 'about:blank';
+    frame.setAttribute('data-url', url);
+    embedShowFallback(url);
+    return;
+  }
+  // For other external URLs — try to embed, will fallback automatically if blocked
+  openEmbed(url, title || 'Resource');
+  embedHideFallback();
+}
+
+function renderEduResources() {
+  const el = document.getElementById('eduResourcesList');
+  if (!el) return;
+  const filtered = _eduFilterCat === 'all' ? _eduResources : _eduResources.filter(r => r.category === _eduFilterCat);
+  if (!filtered.length) {
+    el.innerHTML = '<div style="color:var(--dim);font-size:11px;padding:16px;text-align:center;grid-column:1/-1;">' + (_eduResources.length ? 'No resources in this category.' : 'No resources yet — click "+ Add Link" to build your library.') + '</div>';
+    return;
+  }
+  el.innerHTML = filtered.map(r => {
+    const icon = _CAT_ICONS[r.category] || '🔗';
+    const accentColor = _CAT_COLORS[r.category] || 'var(--cyan)';
+    const ytId = _getYoutubeId(r.url);
+    const safeUrl = r.url.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    const safeTitle = (r.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+    // YouTube: show thumbnail with play overlay — clicking opens in embed page
+    let thumbHtml = '';
+    if (ytId) {
+      thumbHtml = `<div style="position:relative;cursor:pointer;" onclick="event.stopPropagation();openEduResource('${safeUrl}','${safeTitle}')">
+        <img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg" style="width:100%;height:150px;object-fit:cover;border-radius:6px 6px 0 0;display:block;" onerror="this.style.display='none'">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;background:rgba(255,0,0,.85);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+          <div style="width:0;height:0;border-left:16px solid #fff;border-top:10px solid transparent;border-bottom:10px solid transparent;margin-left:3px;"></div>
+        </div>
+      </div>`;
+    } else if (r.thumbnail) {
+      thumbHtml = '<img src="' + r.thumbnail + '" style="width:100%;height:120px;object-fit:cover;border-radius:6px 6px 0 0;display:block;cursor:pointer;" onclick="event.stopPropagation();openEduResource(\'' + safeUrl + '\',\'' + safeTitle + '\')" onerror="this.style.display=\'none\'">';
+    } else {
+      // Blog/other: show favicon + domain bar
+      try {
+        const u = new URL(r.url);
+        thumbHtml = `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg3);border-bottom:1px solid var(--border);cursor:pointer;" onclick="event.stopPropagation();openEduResource('${safeUrl}','${safeTitle}')">
+          <img src="https://www.google.com/s2/favicons?domain=${u.hostname}&sz=32" style="width:20px;height:20px;border-radius:3px;" onerror="this.style.display='none'">
+          <span style="font-size:10px;color:var(--muted);font-weight:600;">${u.hostname}</span>
+          <span style="margin-left:auto;font-size:9px;color:var(--cyan);font-weight:600;">Open ↗</span>
+        </div>`;
+      } catch(e) { /* no preview */ }
+    }
+
+    const tagsHtml = (r.tags && r.tags.length)
+      ? '<div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:6px;">' + r.tags.map(t => '<span style="font-size:8px;background:var(--bg);border:1px solid var(--border);padding:1px 5px;border-radius:3px;color:var(--muted);">#' + t + '</span>').join('') + '</div>'
+      : '';
+    const summaryHtml = r.summary
+      ? '<div style="font-size:10px;color:var(--muted);line-height:1.5;margin-top:6px;max-height:80px;overflow-y:auto;padding-right:4px;">' + r.summary + '</div>'
+      : '';
+
+    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;position:relative;transition:transform .15s,box-shadow .15s;" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(0,0,0,.2)'" onmouseleave="this.style.transform='';this.style.boxShadow=''">`
+      + thumbHtml
+      + '<div style="padding:10px 12px 8px;">'
+      + '<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;">'
+      + '<span style="font-size:13px;">' + icon + '</span>'
+      + '<span style="font-size:8px;font-weight:800;text-transform:uppercase;color:' + accentColor + ';letter-spacing:.3px;">' + (r.category || 'link') + '</span>'
+      + '<span style="margin-left:auto;font-size:8px;color:var(--dim);">' + (r.addedAt || '') + '</span>'
+      + '</div>'
+      + '<div style="font-size:12px;font-weight:800;color:var(--text);line-height:1.3;cursor:pointer;" onclick="openEduResource(\'' + safeUrl + '\',\'' + safeTitle + '\')">' + r.title + '</div>'
+      + summaryHtml
+      + tagsHtml
+      + '</div>'
+      + '<div style="display:flex;gap:4px;padding:6px 10px;border-top:1px solid var(--border);background:var(--bg3);">'
+      + '<button onclick="event.stopPropagation();openEduResource(\'' + safeUrl + '\',\'' + safeTitle + '\')" style="flex:1;background:transparent;border:1px solid var(--border);color:var(--cyan);cursor:pointer;font-size:10px;padding:3px 8px;border-radius:5px;font-weight:600;" title="Open in embed">▶ Open</button>'
+      + '<button onclick="event.stopPropagation();editEduResource(\'' + r.id + '\')" style="flex:1;background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-size:10px;padding:3px 8px;border-radius:5px;font-weight:600;" title="Edit">✏ Edit</button>'
+      + '<button onclick="event.stopPropagation();if(confirm(\'Remove this resource?\'))deleteEduResource(\'' + r.id + '\')" style="background:transparent;border:1px solid #ef444444;color:#f87171;cursor:pointer;font-size:10px;padding:3px 8px;border-radius:5px;font-weight:600;" title="Delete">🗑</button>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
 
 </script>
 <!-- Always-on wisdom/reminder layer: QOTD banner + page-contextual nudges -->

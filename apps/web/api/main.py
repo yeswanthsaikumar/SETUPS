@@ -7166,6 +7166,97 @@ def wisdom_stats():
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# ── EDUCATION / SWING TRADING GUIDE ────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/api/education/modules")
+def education_modules():
+    """Static educational content for the Learn page — swing trading fundamentals."""
+    modules = [
+        {
+            "id": "market_phases",
+            "title": "📈 Gain Expectations by Market Phase",
+            "icon": "📈",
+            "sections": [
+                {"phase": "Stage 1 — Accumulation / Base Building", "regime": "sideways", "color": "#f59e0b",
+                 "expected_gain": "0–5% (no trend — WAIT)", "position_size": "0% — CASH",
+                 "hold_period": "N/A — wait for Stage 2 pivot",
+                 "rules": ["DO NOT enter Stage 1.", "Build watchlist, study charts.", "Long Stage 1 base → explosive Stage 2 breakout."]},
+                {"phase": "Stage 2 — Uptrend (The Money Stage)", "regime": "bull", "color": "#22c55e",
+                 "expected_gain": "20%–200%+ per swing leader",
+                 "position_size": "Full size (1–2% risk per trade, up to 6 positions)",
+                 "hold_period": "Weeks to months — trail with EMA until Stage 3",
+                 "rules": ["Go aggressive. Press winners. Add on follow-through.", "Trail 21-EMA normal / 10-EMA fast movers.", "Target 3R min. Let leaders run to 5R–10R.", "FII net buyers + breadth > 60% above 50-DMA."]},
+                {"phase": "Stage 3 — Distribution / Top", "regime": "topping", "color": "#ef4444",
+                 "expected_gain": "Negative — EXIT ALL LONGS",
+                 "position_size": "0–25% — reduce aggressively",
+                 "hold_period": "Exit on first crack of key support",
+                 "rules": ["4+ distribution days in 4 weeks = market TOPPED.", "Sell weakest first, then trim strongest.", "Climax run (25%+ in 1–2 weeks from extended base) = SELL.", "FII selling + rupee falling = follow them out."]},
+                {"phase": "Stage 4 — Downtrend", "regime": "bear", "color": "#475569",
+                 "expected_gain": "Negative for longs — CASH stage",
+                 "position_size": "0% longs — max cash",
+                 "hold_period": "Wait for confirmed Follow-Through Day",
+                 "rules": ["Zero longs in Stage 4.", "Use downtime to journal, study, update WL.", "Follow-Through Day (Day 4+, up 1.25%+ on volume) = first buy signal."]},
+            ]
+        },
+        {
+            "id": "trail_methodology",
+            "title": "🎯 Trail Methodology",
+            "icon": "🎯",
+            "sections": [
+                {"method": "10-EMA Trail", "best_for": "Fast movers, momentum stocks, IPO breakouts", "color": "#22c55e",
+                 "rules": ["Stop = 10-EMA each day.", "Exit on daily close below 10-EMA on volume > 1.5× avg.", "Grace one low-volume test.", "ADR ≥ 4% required."]},
+                {"method": "21-EMA Trail", "best_for": "Standard swings, 2–6 week holds", "color": "#06b6d4",
+                 "rules": ["Stop = 21-EMA (weekly close basis).", "Two consecutive weekly closes below = EXIT.", "Average up only while price > 21-EMA."]},
+                {"method": "50-EMA Trail", "best_for": "Leaders, 1–3 month trend trades", "color": "#8b5cf6",
+                 "rules": ["Stop = 50-EMA. Allow 15–20% pullbacks.", "Exit on 50-EMA breach high volume OR climax run.", "Weekly chart check every Sunday for Stage 2 integrity."]},
+                {"method": "Key-Level / Structure Stop", "best_for": "VCPs, Bull Flags, tight setups", "color": "#f59e0b",
+                 "rules": ["After breakout: stop = below breakout candle low.", "Update stop each time a new base forms.", "Never move structure stop more than 0.5×ATR above entry in first week."]},
+            ]
+        },
+        {
+            "id": "position_sizing",
+            "title": "⚖️ Position Sizing",
+            "icon": "⚖️",
+            "sections": [
+                {"mode": "AGGRESSIVE — Strong Bull", "color": "#22c55e",
+                 "risk_per_trade": "1.5–2% per trade", "max_open_risk": "8–10% total", "max_positions": "5–6",
+                 "formula": "Shares = (Capital × 2%) ÷ (Entry − SL)",
+                 "conditions": ["Nifty above 50-EMA+200-EMA", "A/D > 1.5 for 10+ days", "FII net buyers 5+ sessions", "70%+ above 50-DMA"]},
+                {"mode": "STANDARD — Neutral / Mixed", "color": "#06b6d4",
+                 "risk_per_trade": "1% per trade", "max_open_risk": "5–6% total", "max_positions": "4–5",
+                 "formula": "Shares = (Capital × 1%) ÷ (Entry − SL)",
+                 "conditions": ["Nifty above 200-EMA, choppy", "A/D 0.8–1.5", "FII mixed"]},
+                {"mode": "DEFENSIVE — Bear / Correction", "color": "#ef4444",
+                 "risk_per_trade": "0.5% per trade", "max_open_risk": "2–3% total", "max_positions": "1–2 (RS leaders only)",
+                 "formula": "Shares = (Capital × 0.5%) ÷ (Entry − SL)",
+                 "conditions": ["Nifty below 200-EMA", "A/D < 0.8", "FII net sellers 5+ sessions", "<30% above 50-DMA"]},
+            ]
+        },
+        {
+            "id": "swing_length",
+            "title": "⏱️ Swing Length Benchmarks",
+            "icon": "⏱️",
+            "sections": [
+                {"type": "Micro Swing", "duration": "2–5 days", "target_gain": "3–8%", "trail": "10-EMA / 2-day low",
+                 "best_for": "Range expansions, episodic pivots, news gaps",
+                 "early_signals": ["First 45-min tight range then expansion", "Volume surge > 3× on trigger candle"]},
+                {"type": "Standard Swing", "duration": "1–3 weeks", "target_gain": "8–20%", "trail": "21-EMA",
+                 "best_for": "Bull flags, VCPs, breakouts from tight bases",
+                 "early_signals": ["Volume dry-up 3+ sessions before breakout", "RS line new high before price"]},
+                {"type": "Trend Ride", "duration": "1–3 months", "target_gain": "25–80%", "trail": "50-EMA",
+                 "best_for": "Stage 2 leaders, sector themes, FII momentum plays",
+                 "early_signals": ["Pocket pivot — up day on vol > any down-vol in prior 10 sessions", "Weekly marubozu from base"]},
+                {"type": "Super-Performance", "duration": "3–18 months", "target_gain": "100–500%+", "trail": "Weekly 50-EMA",
+                 "best_for": "IPO momentum, turnaround, new sector leaders (Pradeep Bonde style)",
+                 "early_signals": ["EPS acceleration 3+ quarters", "RS line at all-time high", "First stage-2 breakout post-IPO"]},
+            ]
+        }
+    ]
+    return {"modules": modules, "count": len(modules)}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # ── IBD BACKTESTER ─────────────────────────────────────────────────────────────
 # ═══════════════════════════════════════════════════════════════════════════════
 
