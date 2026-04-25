@@ -15,6 +15,7 @@ public class ScanResult {
     private double rsPercentile;          // RS rank within universe (0-100)
     private String sector;                // Stock's sector
     private String industry;              // Stock's industry group
+    private String basicIndustry;         // Finest NSE classification (~200 groups)
     private double sectorBonus;           // Score adjustment from sector strength
     private String marketRegime;          // TAILWIND / NEUTRAL / HEADWIND
 
@@ -37,6 +38,7 @@ public class ScanResult {
         this.rsPercentile = 0.0;
         this.sector = null;
         this.industry = null;
+        this.basicIndustry = null;
         this.sectorBonus = 0.0;
         this.marketRegime = "NEUTRAL";
     }
@@ -123,9 +125,19 @@ public class ScanResult {
         return industry;
     }
 
+    public String getBasicIndustry() {
+        return basicIndustry;
+    }
+
     public void setSectorInfo(String sector, String industry) {
         this.sector = sector;
         this.industry = industry;
+    }
+
+    public void setSectorInfo(String sector, String industry, String basicIndustry) {
+        this.sector = sector;
+        this.industry = industry;
+        this.basicIndustry = basicIndustry;
     }
 
     public double getSectorBonus() {

@@ -170,6 +170,7 @@ public final class ResultExporter {
             sb.append("    \"rsPercentile\": ").append(format(r.getRsPercentile())).append(",\n");
             sb.append("    \"sector\": \"").append(escape(r.getSector() != null ? r.getSector() : "")).append("\",\n");
             sb.append("    \"industry\": \"").append(escape(r.getIndustry() != null ? r.getIndustry() : "")).append("\",\n");
+            sb.append("    \"basicIndustry\": \"").append(escape(r.getBasicIndustry() != null ? r.getBasicIndustry() : "")).append("\",\n");
             sb.append("    \"marketRegime\": \"").append(escape(r.getMarketRegime() != null ? r.getMarketRegime() : "NEUTRAL")).append("\",\n");
             sb.append("    \"sectorBonus\": ").append(format(r.getSectorBonus())).append(",\n");
             sb.append("    \"volumeDryUpRatio\": ").append(format(r.getSetup().getVolumeDryUpRatio())).append(",\n");
@@ -383,6 +384,7 @@ public final class ResultExporter {
             sb.append("    \"rsPercentile\": ").append(format(r.getRsPercentile())).append(",\n");
             sb.append("    \"sector\": \"").append(escape(r.getSector() != null ? r.getSector() : "")).append("\",\n");
             sb.append("    \"industry\": \"").append(escape(r.getIndustry() != null ? r.getIndustry() : "")).append("\",\n");
+            sb.append("    \"basicIndustry\": \"").append(escape(r.getBasicIndustry() != null ? r.getBasicIndustry() : "")).append("\",\n");
             sb.append("    \"marketRegime\": \"").append(escape(r.getMarketRegime() != null ? r.getMarketRegime() : "NEUTRAL")).append("\",\n");
             sb.append("    \"sectorBonus\": ").append(format(r.getSectorBonus())).append(",\n");
             sb.append("    \"volumeDryUpRatio\": ").append(format(r.getSetup().getVolumeDryUpRatio())).append(",\n");

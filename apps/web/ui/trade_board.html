@@ -3893,7 +3893,7 @@ function renderWatchlist() {
     if (sectorF && (it.sector || '') !== sectorF) return false;
     if (prioF && (it.priority || 'P3') !== prioF) return false;
     if (q) {
-      const hay = [it.symbol, it.name, (it.tags||[]).join(' '), it.notes, it.setup, it.bucket, it.sector, it.industry, it.priority].join(' ').toLowerCase();
+      const hay = [it.symbol, it.name, (it.tags||[]).join(' '), it.notes, it.setup, it.bucket, it.sector, it.industry, it.basicIndustry, it.priority].join(' ').toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;
@@ -3949,7 +3949,7 @@ function buildWlCard(item) {
   const swingBadge = item.swing_score != null
     ? '<span class="badge" style="background:#0d1a0d;color:' + (item.swing_score >= 70 ? '#ffd700' : item.swing_score >= 55 ? '#4ade80' : '#7dd3fc') + ';border:1px solid #ffffff11" title="Composite swing score (RS+ADR+VolSurge+52WHigh)">⚡ ' + item.swing_score.toFixed(0) + ' swing</span>' : '';
   const sectorBadge = (item.sector && item.sector !== 'Other' && item.source === 'auto_rs')
-    ? '<span class="badge" style="background:#0f172a;color:#94a3b8;border:1px solid #334155;font-size:9px">' + item.sector + (item.industry && item.industry !== 'Other' && item.industry !== item.sector ? ' · ' + item.industry : '') + '</span>' : '';
+    ? '<span class="badge" style="background:#0f172a;color:#94a3b8;border:1px solid #334155;font-size:9px">' + item.sector + ((item.basicIndustry || item.industry) && (item.basicIndustry || item.industry) !== 'Other' && (item.basicIndustry || item.industry) !== item.sector ? ' · ' + (item.basicIndustry || item.industry) : '') + '</span>' : '';
   const convStars = '★★★★★'.slice(0, item.conviction || 0) + '☆☆☆☆☆'.slice(0, 5 - (item.conviction || 0));
   const convBadge = item.conviction ? '<span class="wl-conv">' + convStars + '</span>' : '';
   const retPct = item.returnSinceAddPct;

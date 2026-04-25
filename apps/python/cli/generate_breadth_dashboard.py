@@ -85,7 +85,7 @@ _CSV_SEC: dict[str, str] = {}
 try:
     import nse_taxonomy as _taxo  # type: ignore
     _CSV_SEC = dict(_taxo._SECTOR_MAP)
-    _CSV_IND = dict(_taxo._INDUSTRY_MAP)
+    _CSV_IND = dict(_taxo._BASIC_INDUSTRY_MAP)  # use finest NSE level for industry grouping
 except Exception:
     _CSV_PATH = ROOT / "data" / "nse_stock_taxonomy.csv"
     if _CSV_PATH.exists():
@@ -94,7 +94,8 @@ except Exception:
                 for row in csv.DictReader(f):
                     t = row.get("nse_ticker","").strip().upper()
                     s = row.get("sector","").strip()
-                    i = row.get("industry","").strip()
+                    # Prefer basic_industry (finest NSE level) over industry
+                    i = row.get("basic_industry","").strip() or row.get("industry","").strip()
                     if t and s: _CSV_SEC[t] = s
                     if t and i: _CSV_IND[t] = i
         except Exception:

@@ -112,6 +112,45 @@
         .tab-content.active{display:flex}
 
         .heat-cell{font-variant-numeric:tabular-nums}
+
+        /* ── SECTOR MAP ─────────────────────────────────────────────────────── */
+        .sector-map-wrap{flex:1;overflow-y:auto;padding:16px 20px}
+        .sector-map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:16px}
+        .sector-tile{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+        .sector-tile:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.3)}
+        .sector-tile.active{border-color:var(--cyan)!important;box-shadow:0 0 0 1px var(--cyan)}
+        .sector-tile::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0;transition:background .3s}
+        .sector-tile .tile-icon{font-size:22px;margin-bottom:6px;line-height:1}
+        .sector-tile .tile-name{font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+        .sector-tile .tile-sub{font-size:10px;color:var(--muted);margin-bottom:8px}
+        .sector-tile .tile-metrics{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+        .tile-ret{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
+        .tile-rs{font-size:10.5px;color:var(--muted);font-weight:600}
+        .tile-breadth-bar{height:3px;border-radius:2px;background:var(--bg3);flex:1;overflow:hidden;min-width:30px}
+        .tile-breadth-fill{height:100%;border-radius:2px;transition:width .4s}
+        .tile-count{font-size:9.5px;background:var(--bg3);color:var(--muted);padding:1px 6px;border-radius:99px;font-weight:700}
+        .tile-trend{font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:2px}
+        .tile-trend.up{background:rgba(34,197,94,.12);color:var(--green)}
+        .tile-trend.down{background:rgba(239,68,68,.12);color:var(--red)}
+        .tile-trend.flat{background:var(--bg3);color:var(--muted)}
+
+        /* Sub-industry drill-down panel */
+        .drill-panel{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:0;overflow:hidden;margin-bottom:12px;transition:all .2s}
+        .drill-header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border)}
+        .drill-back{background:none;border:1px solid var(--border2);color:var(--muted);padding:3px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;transition:all .15s}
+        .drill-back:hover{border-color:var(--cyan);color:var(--cyan)}
+        .drill-title{font-size:13px;font-weight:800;color:var(--cyan)}
+        .drill-table-wrap{overflow-x:auto;max-height:400px;overflow-y:auto}
+
+        /* Sector breadcrumb in table */
+        .sector-crumb{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;background:var(--bg3);color:var(--muted);padding:1px 7px;border-radius:5px;font-weight:600}
+        .macro-badge{font-size:9px;font-weight:700;padding:1px 7px;border-radius:99px;border:1px solid}
+
+        /* Summary row cards */
+        .sector-summary-bar{display:flex;gap:8px;flex-wrap:wrap;padding:10px 20px;flex-shrink:0;background:var(--bg);border-bottom:1px solid var(--border)}
+        .summary-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid;transition:all .15s}
+        .summary-chip:hover{opacity:.85}
+        .summary-chip.selected{box-shadow:0 0 0 2px var(--cyan)}
     </style>
 </head>
 <body>
@@ -125,9 +164,81 @@
 </div>
 
 <div class="tab-bar">
+    <button class="tab-btn" data-tab="sectormap" onclick="showTab('sectormap')">🗺 Sector Map</button>
     <button class="tab-btn active" data-tab="groups" onclick="showTab('groups')">Industry Groups</button>
     <button class="tab-btn" data-tab="custom" onclick="showTab('custom')">Custom Groups</button>
     <button class="tab-btn" data-tab="rotation" onclick="showTab('rotation')">Rotation Matrix</button>
+</div>
+
+<!-- SECTOR MAP TAB -->
+<div class="tab-content" id="tab-sectormap">
+    <div class="controls">
+        <select class="ctrl-select" id="sm-sort" onchange="renderSectorMap()">
+            <option value="rsScore">Sort: RS Score</option>
+            <option value="avgRet5d">Sort: 5D Return</option>
+            <option value="avgRet20d">Sort: 20D Return</option>
+            <option value="breadthScore">Sort: Breadth</option>
+            <option value="stockCount">Sort: Stock Count</option>
+        </select>
+        <select class="ctrl-select" id="sm-view" onchange="loadSectorMap()">
+            <option value="macro">Macro Sectors (20)</option>
+            <option value="sector">Sectors (55)</option>
+        </select>
+        <div class="ctrl-spacer"></div>
+        <span id="sm-update" style="font-size:11px;color:var(--muted)"></span>
+        <button class="ctrl-btn ctrl-btn-primary" onclick="loadSectorMap()">🔄 Refresh</button>
+    </div>
+    <div id="sm-loading" class="loading"><div class="spinner"></div> Loading sectors...</div>
+    <div id="sm-content" style="display:none;flex:1;overflow:hidden;flex-direction:column">
+        <!-- drill-down panel (hidden by default) -->
+        <div class="drill-panel" id="drill-panel" style="display:none;margin:10px 20px 0">
+            <div class="drill-header">
+                <button class="drill-back" onclick="closeDrillDown()">← Back</button>
+                <span class="drill-title" id="drill-title"></span>
+                <span id="drill-meta" style="font-size:11px;color:var(--muted);margin-left:auto"></span>
+            </div>
+            <div class="drill-table-wrap">
+                <table style="width:100%;font-size:12px;border-collapse:separate;border-spacing:0">
+                    <thead>
+                        <tr>
+                            <th style="background:var(--bg2);color:var(--muted);padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;cursor:pointer" onclick="sortDrill('group')">Industry</th>
+                            <th style="background:var(--bg2);color:var(--muted);padding:7px 8px;text-align:center;border-bottom:1px solid var(--border);white-space:nowrap;font-size:10.5px;text-transform:uppercase;font-weight:700" onclick="sortDrill('stockCount')">Stocks</th>
+                            <th style="background:var(--bg2);color:var(--muted);padding:7px 8px;border-bottom:1px solid var(--border);white-space:nowrap;font-size:10.5px;text-transform:uppercase;font-weight:700" onclick="sortDrill('rsScore')">RS</th>
+                            <th style="background:var(--bg2);color:var(--muted);padding:7px 8px;border-bottom:1px solid var(--border);white-space:nowrap;font-size:10.5px;text-transform:uppercase;font-weight:700" onclick="sortDrill('breadthScore')">Breadth</th>
+                            <th style="background:var(--bg2);color:var(--muted);padding:7px 8px;border-bottom:1px solid var(--border);white-space:nowrap;font-size:10.5px;text-transform:uppercase;font-weight:700" onclick="sortDrill('avgRet5d')">5D%</th>
+                            <th style="background:var(--bg2);color:var(--muted);padding:7px 8px;border-bottom:1px solid var(--border);white-space:nowrap;font-size:10.5px;text-transform:uppercase;font-weight:700" onclick="sortDrill('avgRet20d')">20D%</th>
+                            <th style="background:var(--bg2);color:var(--muted);padding:7px 8px;border-bottom:1px solid var(--border);white-space:nowrap;font-size:10.5px;text-transform:uppercase;font-weight:700">Pattern</th>
+                        </tr>
+                    </thead>
+                    <tbody id="drill-body"></tbody>
+                </table>
+            </div>
+        </div>
+        <!-- sector tiles grid -->
+        <div class="sector-map-wrap" id="sector-tiles-wrap">
+            <div id="sm-legend" style="display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+                <span style="font-size:10px;color:var(--muted);font-weight:600">PERFORMANCE:</span>
+                <div style="display:flex;gap:2px;align-items:center">
+                    <div style="width:8px;height:8px;border-radius:2px;background:#7f1d1d"></div><span style="font-size:9px;color:var(--muted)">Weak</span>
+                </div>
+                <div style="display:flex;gap:2px;align-items:center">
+                    <div style="width:8px;height:8px;border-radius:2px;background:#ef4444"></div><span style="font-size:9px;color:var(--muted)">Bearish</span>
+                </div>
+                <div style="display:flex;gap:2px;align-items:center">
+                    <div style="width:8px;height:8px;border-radius:2px;background:#64748b"></div><span style="font-size:9px;color:var(--muted)">Neutral</span>
+                </div>
+                <div style="display:flex;gap:2px;align-items:center">
+                    <div style="width:8px;height:8px;border-radius:2px;background:#16a34a"></div><span style="font-size:9px;color:var(--muted)">Bullish</span>
+                </div>
+                <div style="display:flex;gap:2px;align-items:center">
+                    <div style="width:8px;height:8px;border-radius:2px;background:#22c55e"></div><span style="font-size:9px;color:var(--muted)">Leading</span>
+                </div>
+                <div class="ctrl-spacer" style="flex:1"></div>
+                <span style="font-size:10px;color:var(--muted)">Click any tile to drill into sub-industries →</span>
+            </div>
+            <div class="sector-map-grid" id="sector-map-grid"></div>
+        </div>
+    </div>
 </div>
 
 <!-- GROUPS TAB -->
@@ -135,11 +246,11 @@
     <div class="controls">
         <input type="text" class="ctrl-input" id="search" placeholder="🔍 Filter groups..." oninput="filterGroups()">
         <select class="ctrl-select" id="level-filter" onchange="changeLevel()" title="Classification level (from nse_stock_enriched.csv)">
-            <option value="industry">Industry (default)</option>
-            <option value="macro">Macro Sector</option>
-            <option value="sector">Sector</option>
-            <option value="basic_industry">Basic Industry</option>
-            <option value="theme">Theme</option>
+            <option value="basic_industry">Sub-Industry (finest)</option>
+            <option value="industry" selected>Industry (default)</option>
+            <option value="sector">Sector (~55)</option>
+            <option value="macro">Macro Sector (~20)</option>
+            <option value="theme">Theme (curated)</option>
         </select>
         <select class="ctrl-select" id="sector-filter" onchange="filterGroups()">
             <option value="">All Sectors</option>
@@ -169,6 +280,7 @@
                     <th onclick="sortBy('rsRank')" style="width:36px">#</th>
                     <th onclick="sortBy('group')">Group</th>
                     <th onclick="sortBy('sector')">Sector</th>
+                    <th onclick="sortBy('parent')" id="th-parent" style="display:none">Parent</th>
                     <th onclick="sortBy('stockCount')" style="text-align:center">Stk</th>
                     <th onclick="sortBy('rsScore')">RS</th>
                     <th onclick="sortBy('breadthScore')">Breadth</th>
@@ -180,6 +292,7 @@
                     <th onclick="sortBy('avgRet60d')">60D%</th>
                     <th onclick="sortBy('avgVolRatio')">VolR</th>
                     <th>Pattern</th>
+                    <th onclick="sortBy('rotationScore')" title="Rotation Score: positive = accelerating momentum">Rot↺</th>
                 </tr>
             </thead>
             <tbody id="groups-body"></tbody>
@@ -223,15 +336,237 @@
 </div>
 
 <script>
+// ── Sector Map colour / icon definitions ──────────────────────────────────
+const SECTOR_META = {
+    // Macro/sector key → {icon, color, accent}
+    'Financial Services':        {icon:'🏦', color:'#1e3a5f', accent:'#3b82f6'},
+    'Financials':                {icon:'🏦', color:'#1e3a5f', accent:'#3b82f6'},
+    'Banking':                   {icon:'🏛️', color:'#1e3a5f', accent:'#60a5fa'},
+    'Information Technology':    {icon:'💻', color:'#0c2a40', accent:'#06b6d4'},
+    'IT':                        {icon:'💻', color:'#0c2a40', accent:'#06b6d4'},
+    'Healthcare':                {icon:'💊', color:'#14302a', accent:'#4ade80'},
+    'Pharma':                    {icon:'💊', color:'#14302a', accent:'#4ade80'},
+    'Automobile and Auto Components':{icon:'🚗', color:'#2a1a0e', accent:'#fb923c'},
+    'Automobiles':               {icon:'🚗', color:'#2a1a0e', accent:'#fb923c'},
+    'Consumer Discretionary':    {icon:'🛍️', color:'#2a1b3e', accent:'#a78bfa'},
+    'CONSUMER':                  {icon:'🛍️', color:'#2a1b3e', accent:'#a78bfa'},
+    'Fast Moving Consumer Goods':{icon:'🧴', color:'#1e2d1e', accent:'#86efac'},
+    'Consumer Staples':          {icon:'🧴', color:'#1e2d1e', accent:'#86efac'},
+    'Chemicals':                 {icon:'⚗️', color:'#1e2a1a', accent:'#84cc16'},
+    'Commodities':               {icon:'⛏️', color:'#2a230e', accent:'#fbbf24'},
+    'COMMODITIES':               {icon:'⛏️', color:'#2a230e', accent:'#fbbf24'},
+    'Metals & Mining':           {icon:'🔩', color:'#2a1e0e', accent:'#fb923c'},
+    'Industrials':               {icon:'🏭', color:'#1a2030', accent:'#7dd3fc'},
+    'MANUFACTURING':             {icon:'🏭', color:'#1a2030', accent:'#7dd3fc'},
+    'Capital Goods':             {icon:'⚙️', color:'#1a2030', accent:'#7dd3fc'},
+    'Energy':                    {icon:'⚡', color:'#2a1e06', accent:'#facc15'},
+    'ENERGY':                    {icon:'⚡', color:'#2a1e06', accent:'#facc15'},
+    'Oil Gas & Consumable Fuels':{icon:'🛢️', color:'#2a1206', accent:'#f97316'},
+    'Construction':              {icon:'🏗️', color:'#201810', accent:'#d97706'},
+    'CONSTRUCTION':              {icon:'🏗️', color:'#201810', accent:'#d97706'},
+    'Realty':                    {icon:'🏘️', color:'#201810', accent:'#f59e0b'},
+    'Textiles':                  {icon:'🧵', color:'#2a1a20', accent:'#f472b6'},
+    'TEXTILES':                  {icon:'🧵', color:'#2a1a20', accent:'#f472b6'},
+    'Media Entertainment & Publication':{icon:'📺', color:'#1a1a2a', accent:'#c084fc'},
+    'Telecommunication':         {icon:'📡', color:'#0e1a2a', accent:'#38bdf8'},
+    'Services':                  {icon:'🔧', color:'#1a1a1a', accent:'#94a3b8'},
+    'SERVICES':                  {icon:'🔧', color:'#1a1a1a', accent:'#94a3b8'},
+    'Utilities':                 {icon:'💡', color:'#181a0a', accent:'#a3e635'},
+    'Power':                     {icon:'🔋', color:'#181a0a', accent:'#a3e635'},
+    'Forest Materials':          {icon:'🌲', color:'#0e2010', accent:'#4ade80'},
+    'Diversified':               {icon:'📦', color:'#1a1a1a', accent:'#94a3b8'},
+};
+
+function _sectorMeta(name) {
+    if (!name) return {icon:'📊', color:'#1a2030', accent:'#94a3b8'};
+    // Try exact key
+    if (SECTOR_META[name]) return SECTOR_META[name];
+    // Partial match
+    for (const [k, v] of Object.entries(SECTOR_META)) {
+        if (name.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(name.toLowerCase()))
+            return v;
+    }
+    return {icon:'📊', color:'#162030', accent:'#64748b'};
+}
+
+function _perfColor(rs, ret20) {
+    // Primary color based on RS Score, muted by breadth if available
+    if (rs > 8)  return '#22c55e';
+    if (rs > 3)  return '#16a34a';
+    if (rs > 0)  return '#15803d';
+    if (rs > -3) return '#475569';
+    if (rs > -8) return '#dc2626';
+    return '#7f1d1d';
+}
+
+function _borderColor(rs) {
+    if (rs > 5)  return '#22c55e44';
+    if (rs > 0)  return '#16a34a33';
+    if (rs > -5) return '#47556944';
+    return '#dc262644';
+}
+
+function _trendArrow(rot) {
+    if (rot > 2)  return {cls:'up',   lbl:'▲ Accelerating'};
+    if (rot > 0)  return {cls:'up',   lbl:'↗ Rising'};
+    if (rot < -2) return {cls:'down', lbl:'▼ Decelerating'};
+    if (rot < 0)  return {cls:'down', lbl:'↘ Cooling'};
+    return {cls:'flat', lbl:'→ Neutral'};
+}
+
+// ── Sector Map state ──────────────────────────────────────────────────────
+let _smGroups  = [];  // macro or sector level groups
+let _subGroups = [];  // basic_industry / industry level groups for drill-down
+let _activeSector = null;
+let _drillSort = {field:'rsScore', desc:true};
+
+async function loadSectorMap() {
+    document.getElementById('sm-loading').style.display = 'flex';
+    document.getElementById('sm-content').style.display = 'none';
+    const level = document.getElementById('sm-view')?.value || 'macro';
+    try {
+        const [smResp, subResp] = await Promise.all([
+            fetch(`/api/groups?level=${level}&min_stocks=2`),
+            fetch('/api/groups?level=basic_industry&min_stocks=2'),
+        ]);
+        const smData  = await smResp.json();
+        const subData = await subResp.json();
+        _smGroups  = _adaptGroupsPayload(smData.groups  || [], level);
+        _subGroups = _adaptGroupsPayload(subData.groups || [], 'basic_industry');
+        const ts = smData.cachedAt ? new Date(smData.cachedAt * 1000).toLocaleTimeString() : '?';
+        const sm_upd = document.getElementById('sm-update');
+        if (sm_upd) sm_upd.textContent = '✅ ' + ts;
+        document.getElementById('sm-loading').style.display = 'none';
+        document.getElementById('sm-content').style.display = 'flex';
+        renderSectorMap();
+    } catch(e) {
+        document.getElementById('sm-loading').innerHTML = `<span style="color:var(--red)">Error: ${e.message}</span>`;
+    }
+}
+
+function renderSectorMap() {
+    if (!_smGroups.length) return;
+    const sortKey = document.getElementById('sm-sort')?.value || 'rsScore';
+    const sorted = [..._smGroups].sort((a,b) => (b[sortKey]||0) - (a[sortKey]||0));
+    const grid = document.getElementById('sector-map-grid');
+    if (!grid) return;
+    grid.innerHTML = sorted.map(g => {
+        const m = _sectorMeta(g.group);
+        const rs = g.rsScore || 0;
+        const ret5 = g.avgRet5d || 0;
+        const ret20 = g.avgRet20d || 0;
+        const breadth = g.breadthScore || 0;
+        const bw = Math.max(2, Math.min(100, breadth));
+        const rotObj = _trendArrow(g.rotationScore || 0);
+        const colorTop = _perfColor(rs, ret20);
+        const retCls   = ret20 > 0.2 ? 'pos' : ret20 < -0.2 ? 'neg' : '';
+        const active   = _activeSector === g.group ? ' active' : '';
+        return `<div class="sector-tile${active}" onclick="drillInto('${g.group.replace(/'/g,"\\'")}')"
+                     style="background:${m.color}30;border-color:${_borderColor(rs)}">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0;background:${colorTop}"></div>
+            <div class="tile-icon">${m.icon}</div>
+            <div class="tile-name" title="${g.group}">${g.group}</div>
+            <div style="display:flex;gap:5px;align-items:center;margin-bottom:6px">
+                <span class="tile-count">${g.stockCount} stocks</span>
+                <span class="tile-trend ${rotObj.cls}">${rotObj.lbl}</span>
+            </div>
+            <div class="tile-metrics">
+                <span class="tile-ret ${retCls}" style="color:${colorTop}">${ret20 >= 0 ? '+' : ''}${ret20.toFixed(1)}%<span style="font-size:9px;color:var(--muted);font-weight:400"> 20D</span></span>
+                <span class="tile-rs">RS ${rs >= 0 ? '+' : ''}${rs.toFixed(1)}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+                <div class="tile-breadth-bar">
+                    <div class="tile-breadth-fill" style="width:${bw}%;background:${colorTop}"></div>
+                </div>
+                <span style="font-size:9.5px;color:${colorTop};font-weight:700">${breadth.toFixed(0)}%</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function drillInto(sectorName) {
+    _activeSector = sectorName;
+    // Highlight active tile
+    renderSectorMap();
+    // Filter sub-groups by matching sector/parent name
+    let children = _subGroups.filter(g =>
+        (g.sector || '').toLowerCase() === sectorName.toLowerCase() ||
+        (g.parent || '').toLowerCase() === sectorName.toLowerCase() ||
+        (g.sector || '').toLowerCase().includes(sectorName.toLowerCase().slice(0,8)) ||
+        sectorName.toLowerCase().includes((g.sector || '').toLowerCase().slice(0,8))
+    );
+    // Fallback: if no children found search across industry-level groups
+    if (!children.length) {
+        children = _subGroups;
+    }
+    // Sort by RS score desc
+    children = [...children].sort((a,b) => (b.rsScore||0)-(a.rsScore||0));
+    _activeDrillChildren = children;
+    _drillSort = {field:'rsScore', desc:true};
+
+    const panel = document.getElementById('drill-panel');
+    const sm = _smGroups.find(g => g.group === sectorName);
+    document.getElementById('drill-title').textContent = sectorName + (sm ? ` — RS ${(sm.rsScore||0).toFixed(1)}` : '');
+    document.getElementById('drill-meta').textContent = `${children.length} sub-industries`;
+    renderDrillTable(children);
+    panel.style.display = '';
+    // Scroll to top of tiles area
+    document.getElementById('sector-tiles-wrap').scrollTop = 0;
+}
+
+let _activeDrillChildren = [];
+
+function sortDrill(field) {
+    if (_drillSort.field === field) _drillSort.desc = !_drillSort.desc;
+    else { _drillSort.field = field; _drillSort.desc = true; }
+    const sorted = [..._activeDrillChildren].sort((a,b) => {
+        let va = a[field], vb = b[field];
+        if (typeof va === 'string') return _drillSort.desc ? vb.localeCompare(va) : va.localeCompare(vb);
+        return _drillSort.desc ? (vb||0)-(va||0) : (va||0)-(vb||0);
+    });
+    renderDrillTable(sorted);
+}
+
+function renderDrillTable(rows) {
+    const bc = v => v >= 70 ? 'var(--green)' : v >= 50 ? '#4ade80' : v >= 30 ? 'var(--yellow)' : 'var(--red)';
+    document.getElementById('drill-body').innerHTML = rows.map(g => {
+        const rs = g.rsScore || 0;
+        const br = g.breadthScore || 0;
+        const ret5 = g.avgRet5d || 0;
+        const ret20 = g.avgRet20d || 0;
+        const pat = g.volPattern === 'ACCUMULATION' ? '<span class="badge-pill badge-acc">● ACC</span>' :
+                    g.volPattern === 'DISTRIBUTION' ? '<span class="badge-pill badge-dist">● DIST</span>' :
+                    g.volPattern === 'DRY'          ? '<span class="badge-pill badge-dry">● DRY</span>' :
+                    '<span class="badge-pill badge-neutral">—</span>';
+        return `<tr style="border-bottom:1px solid #111827" onmouseenter="this.style.background='var(--bg2)'" onmouseleave="this.style.background=''">
+            <td style="padding:7px 10px"><a class="group-link" onclick="showDetail('${g.group.replace(/'/g,"\\'")}',true)">${g.group}</a></td>
+            <td style="padding:7px 8px;text-align:center;color:var(--muted)">${g.stockCount}</td>
+            <td style="padding:7px 8px;font-weight:700;color:${rs>0?'var(--green)':'var(--red)'}">${rs.toFixed(1)}</td>
+            <td style="padding:7px 8px">
+                <div style="display:flex;align-items:center;gap:4px">
+                    <div style="width:36px;height:5px;border-radius:3px;background:var(--bg3);overflow:hidden"><div style="width:${Math.min(100,br)}%;height:100%;border-radius:3px;background:${bc(br)}"></div></div>
+                    <span style="font-size:11px;color:${bc(br)};font-weight:600">${br.toFixed(0)}</span>
+                </div>
+            </td>
+            <td style="padding:7px 8px;color:${ret5>0?'var(--green)':ret5<0?'var(--red)':'var(--muted)'}; font-weight:600">${ret5>=0?'+':''}${ret5.toFixed(1)}%</td>
+            <td style="padding:7px 8px;color:${ret20>0?'var(--green)':ret20<0?'var(--red)':'var(--muted)'};font-weight:600">${ret20>=0?'+':''}${ret20.toFixed(1)}%</td>
+            <td style="padding:7px 8px">${pat}</td>
+        </tr>`;
+    }).join('');
+}
+
+function closeDrillDown() {
+    _activeSector = null;
+    document.getElementById('drill-panel').style.display = 'none';
+    renderSectorMap();
+}
+
+// ── Industry Groups (existing) ────────────────────────────────────────────
 let allGroups = [];
 let filteredGroups = [];
 let currentSort = {field: 'rsScore', desc: true};
 let currentLevel = 'industry';
 
-// Adapts the multi-level /api/groups payload to match the field shape the
-// existing render code expects (g.group + g.sector + stockCount). For the
-// legacy /api/industry-groups endpoint each row already has `group` and
-// `sector`, so this function is a no-op in that path.
 function _adaptGroupsPayload(rows, level) {
     return (rows || []).map(g => {
         const name = g.group || g.name || g.themeName || '';
@@ -239,7 +574,6 @@ function _adaptGroupsPayload(rows, level) {
         return Object.assign({}, g, {
             group: name,
             sector: parent || (level === 'theme' ? 'Theme' : 'Other'),
-            // Preserve extra multi-level fields so future UI additions can use them
             _level: g.level || level,
             _themeName: g.themeName,
             _themeDescription: g.themeDescription,
@@ -285,8 +619,6 @@ async function fetchGroups() {
         const data = await _fetchGroupsForCurrentLevel();
         allGroups = data.groups || [];
 
-        // Cold start: server returned empty + bgRefreshing=true. Show a helpful
-        // message and poll every 3s until the first build lands (~5-15s).
         if (allGroups.length === 0 && data.bgRefreshing) {
             const loadingEl = document.getElementById('groups-loading');
             loadingEl.innerHTML =
@@ -296,10 +628,14 @@ async function fetchGroups() {
             return;
         }
 
+        // Show/hide parent col
+        const showParent = ['basic_industry','macro'].includes(currentLevel);
+        const thParent = document.getElementById('th-parent');
+        if (thParent) thParent.style.display = showParent ? '' : 'none';
+
         populateSectorFilter();
         filterGroups();
         renderStats();
-        // Show staleness warning if cache is old OR a background refresh is in flight
         const ageSec = data.cacheAgeSec;
         const bg = data.bgRefreshing;
         const staleEl = document.getElementById('stale-warning');
@@ -328,9 +664,6 @@ async function fetchGroups() {
 }
 
 // ── Auto-refresh loop ─────────────────────────────────────────────────────
-// Silently re-fetch every 5 min while the tab is visible so prices stay live.
-// But — while an OHLCV refresh is running (pulling today's closes), poll every
-// 10s so the user sees the fresh numbers as soon as they land.
 let _fastPollTimer = null;
 async function silentRefresh() {
     if (document.hidden) return;
@@ -338,7 +671,7 @@ async function silentRefresh() {
         const data = await _fetchGroupsForCurrentLevel();
         allGroups = data.groups || [];
         populateSectorFilter();
-        filterGroups();  // re-applies current filter + sort + renderTable
+        filterGroups();
         renderStats();
         const staleEl = document.getElementById('stale-warning');
         if (staleEl) {
@@ -363,8 +696,6 @@ async function silentRefresh() {
             staleEl.innerHTML = msg;
             staleEl.style.display = '';
         }
-
-        // Fast-poll while OHLCV refresh is in flight.
         if (data.ohlcvRefreshing || data.bgRefreshing) {
             if (_fastPollTimer) clearTimeout(_fastPollTimer);
             _fastPollTimer = setTimeout(silentRefresh, 10 * 1000);
@@ -372,10 +703,9 @@ async function silentRefresh() {
             clearTimeout(_fastPollTimer);
             _fastPollTimer = null;
         }
-    } catch(_) { /* swallow — next tick will retry */ }
+    } catch(_) {}
 }
 setInterval(silentRefresh, 5 * 60 * 1000);
-// Also refresh when the tab becomes visible after being hidden for a while.
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden) silentRefresh();
 });
@@ -427,12 +757,12 @@ function renderStats() {
     const topGroup = allGroups[0];
     document.getElementById('stats-bar').innerHTML = `
         <div class="stat-card"><div class="stat-label">Total Groups</div><div class="stat-value blue">${total}</div></div>
-        <div class="stat-card"><div class="stat-label">Bullish (&gt;60)</div><div class="stat-value pos">${bullish}</div></div>
-        <div class="stat-card"><div class="stat-label">Bearish (&lt;30)</div><div class="stat-value neg">${bearish}</div></div>
+        <div class="stat-card"><div class="stat-label">Bullish (&gt;60%)</div><div class="stat-value pos">${bullish}</div></div>
+        <div class="stat-card"><div class="stat-label">Bearish (&lt;30%)</div><div class="stat-value neg">${bearish}</div></div>
         <div class="stat-card"><div class="stat-label">Accumulating</div><div class="stat-value" style="color:var(--green)">${accumulating}</div></div>
         <div class="stat-card"><div class="stat-label">Distributing</div><div class="stat-value neg">${distributing}</div></div>
         <div class="stat-card"><div class="stat-label">Avg RS</div><div class="stat-value ${avgRS > 0 ? 'pos' : 'neg'}">${avgRS}</div></div>
-        ${topGroup ? `<div class="stat-card"><div class="stat-label">🏆 Top Group</div><div class="stat-value" style="font-size:.85rem;color:var(--cyan)">${topGroup.group.substring(0,18)}</div></div>` : ''}
+        ${topGroup ? `<div class="stat-card"><div class="stat-label">🏆 Top Group</div><div class="stat-value" style="font-size:.85rem;color:var(--cyan)">${topGroup.group.substring(0,20)}</div></div>` : ''}
     `;
 }
 
@@ -445,8 +775,17 @@ function _breadthColor(v) {
 
 function _retClass(v) { return v > 0.05 ? 'pos' : v < -0.05 ? 'neg' : ''; }
 
+function _rotColor(rot) {
+    if (rot > 2)  return 'var(--green)';
+    if (rot > 0)  return '#4ade80';
+    if (rot < -2) return 'var(--red)';
+    if (rot < 0)  return '#f87171';
+    return 'var(--muted)';
+}
+
 function renderTable() {
     const total = allGroups.length;
+    const showParent = ['basic_industry','macro'].includes(currentLevel);
     document.getElementById('group-count').textContent = `${filteredGroups.length} of ${total} groups`;
     const tbody = document.getElementById('groups-body');
     tbody.innerHTML = filteredGroups.map((g, i) => {
@@ -460,10 +799,23 @@ function renderTable() {
             '<span class="badge-pill badge-neutral">—</span>';
         const bc = _breadthColor(g.breadthScore||0);
         const bw = Math.max(2, Math.min(100, g.breadthScore||0));
+        const rot = g.rotationScore || g._rotationScore || 0;
+        const rotDisp = rot !== 0 ? (rot>0?'+':'')+rot.toFixed(1) : '—';
+        const meta = _sectorMeta(g.sector);
+        const parentCell = showParent
+            ? `<td style="display:${showParent?'':'none'};color:var(--muted);font-size:11px">${g.parent || g.sector || ''}</td>`
+            : '';
         return `<tr class="${rowCls}">
             <td><span class="rank-badge ${rankCls}">${rank}</span></td>
-            <td><a class="group-link" onclick="showDetail('${g.group.replace(/'/g,"\\'")}')">${g.group}</a></td>
-            <td style="color:var(--muted)">${g.sector}</td>
+            <td>
+                <a class="group-link" onclick="showDetail('${g.group.replace(/'/g,"\\'")}')">${g.group}</a>
+                ${g._themeDescription ? `<div style="font-size:9.5px;color:var(--muted);margin-top:2px">${g._themeDescription.substring(0,55)}${g._themeDescription.length>55?'…':''}</div>` : ''}
+            </td>
+            <td>
+                <span style="font-size:10px" title="${g.sector}">${meta.icon} </span>
+                <span style="color:var(--muted);font-size:11.5px">${g.sector}</span>
+            </td>
+            ${parentCell}
             <td style="text-align:center">${g.stockCount}</td>
             <td class="heat-cell ${g.rsScore > 0 ? 'pos' : 'neg'}" style="font-weight:700">${(g.rsScore||0).toFixed(1)}</td>
             <td><div class="breadth-bar"><div class="breadth-fill"><div class="breadth-fill-inner" style="width:${bw}%;background:${bc}"></div></div><span style="font-size:11px;font-weight:600;color:${bc}">${(g.breadthScore||0).toFixed(0)}</span></div></td>
@@ -475,18 +827,13 @@ function renderTable() {
             <td class="heat-cell ${_retClass(g.avgRet60d)}">${(g.avgRet60d||0).toFixed(1)}%</td>
             <td style="font-variant-numeric:tabular-nums">${(g.avgVolRatio||1).toFixed(2)}</td>
             <td>${patternBadge}</td>
+            <td style="font-size:11px;font-weight:700;color:${_rotColor(rot)}">${rotDisp}</td>
         </tr>`;
     }).join('');
 }
 
-async function showDetail(groupName) {
-    // Drill-down endpoint only supports industry-level groups. For other
-    // levels (macro / sector / basic_industry / theme) we just skip the
-    // modal — the user can switch back to the industry view to drill in.
-    if (currentLevel !== 'industry') {
-        alert('Drill-down is available only on the Industry level.\nSwitch the level selector to "Industry (default)" to open group details.');
-        return;
-    }
+async function showDetail(groupName, forceBasicIndustry) {
+    const useLevel = forceBasicIndustry ? 'basic_industry' : currentLevel;
     const modal = document.getElementById('detail-modal');
     modal.classList.add('active');
     document.getElementById('modal-title').textContent = groupName;
@@ -494,9 +841,10 @@ async function showDetail(groupName) {
     document.getElementById('modal-members').innerHTML = '';
 
     try {
+        const enc = encodeURIComponent(groupName);
         const [detailResp, rsResp] = await Promise.all([
-            fetch(`/api/industry-groups/${encodeURIComponent(groupName)}?fresh=true`),
-            fetch(`/api/industry-groups/${encodeURIComponent(groupName)}/rs-history?days=120`)
+            fetch(`/api/industry-groups/${enc}?fresh=true&level=${useLevel}`),
+            fetch(`/api/industry-groups/${enc}/rs-history?days=120&level=${useLevel}`)
         ]);
         const detail = await detailResp.json();
         const rsData = await rsResp.json();
@@ -534,8 +882,6 @@ function drawRSChart(rsLine) {
     const canvas = document.getElementById('rs-chart-canvas');
     if (!canvas || !rsLine.length) return;
     const ctx = canvas.getContext('2d');
-
-    // HiDPI support for crisp rendering
     const dpr = window.devicePixelRatio || 1;
     const W = canvas.parentElement.clientWidth;
     const H = 252;
@@ -543,11 +889,9 @@ function drawRSChart(rsLine) {
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, W, H);
-
     const pad = {t: 28, b: 32, l: 44, r: 16};
     const cW = W - pad.l - pad.r;
     const cH = H - pad.t - pad.b;
-
     const values = rsLine.map(r => r.rs);
     const dates = rsLine.map(r => r.date || '');
     const dataMin = Math.min(...values);
@@ -558,57 +902,30 @@ function drawRSChart(rsLine) {
     const xStep = cW / Math.max(1, values.length - 1);
     const toX = i => pad.l + i * xStep;
     const toY = v => pad.t + cH - ((v - min) / (max - min)) * cH;
-
-    // Background
-    ctx.fillStyle = '#080e1a';
-    ctx.fillRect(0, 0, W, H);
-
-    // Y-axis grid + labels
+    ctx.fillStyle = '#080e1a'; ctx.fillRect(0, 0, W, H);
     const yTicks = 5;
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     for (let i = 0; i <= yTicks; i++) {
         const v = min + (max - min) * (i / yTicks);
         const y = toY(v);
-        ctx.strokeStyle = '#111b2e';
-        ctx.lineWidth = 0.5;
+        ctx.strokeStyle = '#111b2e'; ctx.lineWidth = 0.5;
         ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
-        ctx.fillStyle = '#4a5568';
-        ctx.font = '10px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.fillStyle = '#4a5568'; ctx.font = '10px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.fillText(v.toFixed(1), pad.l - 6, y);
     }
-
-    // Reference line at 100 (baseline)
     const y100 = toY(100);
     if (y100 > pad.t && y100 < H - pad.b) {
-        ctx.save();
-        ctx.strokeStyle = '#475569';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 4]);
+        ctx.save(); ctx.strokeStyle = '#475569'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
         ctx.beginPath(); ctx.moveTo(pad.l, y100); ctx.lineTo(W - pad.r, y100); ctx.stroke();
-        ctx.restore();
-        ctx.fillStyle = '#64748b';
-        ctx.textAlign = 'left';
-        ctx.font = 'bold 9px -apple-system, sans-serif';
+        ctx.restore(); ctx.fillStyle = '#64748b'; ctx.textAlign = 'left'; ctx.font = 'bold 9px -apple-system, sans-serif';
         ctx.fillText('Nifty = 100', W - pad.r - 62, y100 - 6);
     }
-
-    // X-axis date labels
-    ctx.fillStyle = '#4a5568';
-    ctx.font = '9px -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#4a5568'; ctx.font = '9px -apple-system, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     const labelInterval = Math.max(1, Math.floor(values.length / 6));
     for (let i = 0; i < values.length; i += labelInterval) {
-        const d = dates[i];
-        if (d) ctx.fillText(d.slice(5), toX(i), H - pad.b + 6);
+        const d = dates[i]; if (d) ctx.fillText(d.slice(5), toX(i), H - pad.b + 6);
     }
-    if (dates.length > 1) {
-        ctx.textAlign = 'right';
-        ctx.fillText(dates[dates.length - 1].slice(5), toX(values.length - 1), H - pad.b + 6);
-    }
-
-    // Gradient fill under RS line
+    if (dates.length > 1) { ctx.textAlign = 'right'; ctx.fillText(dates[dates.length - 1].slice(5), toX(values.length - 1), H - pad.b + 6); }
     const lastVal = values[values.length - 1];
     const isUp = lastVal >= 100;
     const baseColor = isUp ? [34, 197, 94] : [239, 68, 68];
@@ -621,78 +938,42 @@ function drawRSChart(rsLine) {
         const x = toX(i), y = toY(values[i]);
         if (i === 0) { ctx.moveTo(x, y); continue; }
         const px = toX(i - 1), py = toY(values[i - 1]);
-        const cpx = (px + x) / 2;
-        ctx.bezierCurveTo(cpx, py, cpx, y, x, y);
+        ctx.bezierCurveTo((px+x)/2, py, (px+x)/2, y, x, y);
     }
-    ctx.lineTo(toX(values.length - 1), H - pad.b);
-    ctx.lineTo(pad.l, H - pad.b);
-    ctx.closePath();
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    // Glow effect
+    ctx.lineTo(toX(values.length - 1), H - pad.b); ctx.lineTo(pad.l, H - pad.b); ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
     const lineColor = isUp ? '#22c55e' : '#ef4444';
-    ctx.save();
-    ctx.strokeStyle = isUp ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.25)';
-    ctx.lineWidth = 6;
-    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    ctx.filter = 'blur(4px)';
-    ctx.beginPath();
+    ctx.save(); ctx.strokeStyle = isUp ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.25)'; ctx.lineWidth = 6;
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.filter = 'blur(4px)'; ctx.beginPath();
     for (let i = 0; i < values.length; i++) {
         const x = toX(i), y = toY(values[i]);
         if (i === 0) { ctx.moveTo(x, y); continue; }
-        const px = toX(i - 1), py = toY(values[i - 1]);
-        ctx.bezierCurveTo((px + x) / 2, py, (px + x) / 2, y, x, y);
+        ctx.bezierCurveTo((toX(i-1)+x)/2, toY(values[i-1]), (toX(i-1)+x)/2, y, x, y);
     }
-    ctx.stroke();
-    ctx.restore();
-
-    // RS Line (main) — smooth bezier
-    ctx.strokeStyle = lineColor;
-    ctx.lineWidth = 2.5;
-    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    ctx.beginPath();
+    ctx.stroke(); ctx.restore();
+    ctx.strokeStyle = lineColor; ctx.lineWidth = 2.5; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.beginPath();
     for (let i = 0; i < values.length; i++) {
         const x = toX(i), y = toY(values[i]);
         if (i === 0) { ctx.moveTo(x, y); continue; }
-        const px = toX(i - 1), py = toY(values[i - 1]);
-        ctx.bezierCurveTo((px + x) / 2, py, (px + x) / 2, y, x, y);
+        ctx.bezierCurveTo((toX(i-1)+x)/2, toY(values[i-1]), (toX(i-1)+x)/2, y, x, y);
     }
     ctx.stroke();
-
-    // End dot with ring
-    const lastX = toX(values.length - 1);
-    const lastY = toY(lastVal);
+    const lastX = toX(values.length - 1), lastY = toY(lastVal);
     ctx.beginPath(); ctx.arc(lastX, lastY, 6, 0, Math.PI * 2);
     ctx.fillStyle = isUp ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'; ctx.fill();
     ctx.beginPath(); ctx.arc(lastX, lastY, 3.5, 0, Math.PI * 2);
-    ctx.fillStyle = lineColor; ctx.fill();
-    ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.5; ctx.stroke();
-
-    // Value label at end
-    ctx.fillStyle = lineColor;
-    ctx.font = 'bold 12px -apple-system, sans-serif';
-    ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+    ctx.fillStyle = lineColor; ctx.fill(); ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = lineColor; ctx.font = 'bold 12px -apple-system, sans-serif'; ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
     ctx.fillText(lastVal.toFixed(1), lastX - 10, lastY - 10);
-
-    // Title
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '11px -apple-system, sans-serif';
-    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillStyle = '#94a3b8'; ctx.font = '11px -apple-system, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
     ctx.fillText('RS vs Nifty (120d)', pad.l + 2, 6);
-
-    // Change badge
     const firstVal = values[0] || 100;
     const changePct = ((lastVal / firstVal - 1) * 100).toFixed(1);
     const changeStr = (parseFloat(changePct) >= 0 ? '+' : '') + changePct + '%';
-    ctx.font = 'bold 11px -apple-system, sans-serif';
-    ctx.textAlign = 'right';
+    ctx.font = 'bold 11px -apple-system, sans-serif'; ctx.textAlign = 'right';
     ctx.fillStyle = parseFloat(changePct) >= 0 ? '#22c55e' : '#ef4444';
     ctx.fillText(changeStr, W - pad.r - 2, 6);
-
-    // Tooltip on hover
-    canvas._rsLine = rsLine;
-    canvas._chartP = { pad, cW, values };
+    canvas._rsLine = rsLine; canvas._chartP = { pad, cW, values };
     if (!canvas._hasListener) {
         canvas._hasListener = true;
         canvas.addEventListener('mousemove', function(e) {
@@ -720,6 +1001,7 @@ function showTab(tab) {
     document.getElementById('tab-' + tab).classList.add('active');
     if (tab === 'custom') loadCustomGroups();
     if (tab === 'rotation') drawRotationMatrix();
+    if (tab === 'sectormap' && !_smGroups.length) loadSectorMap();
 }
 
 async function loadCustomGroups() {
@@ -801,83 +1083,55 @@ function drawRotationMatrix() {
     canvas.style.width = '750px'; canvas.style.height = '520px';
     ctx.scale(dpr, dpr);
     const W = 750, H = 520;
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#0f1623';
-    ctx.fillRect(0, 0, W, H);
-
+    ctx.clearRect(0, 0, W, H); ctx.fillStyle = '#0f1623'; ctx.fillRect(0, 0, W, H);
     if (!allGroups.length) { ctx.fillStyle='#64748b'; ctx.font='13px sans-serif'; ctx.fillText('Loading...', W/2-30, H/2); return; }
-
     const pad = 55;
-
-    // Axes
     ctx.strokeStyle = '#1a2840'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, H-pad); ctx.lineTo(W-pad, H-pad); ctx.stroke();
-
-    // Quadrant dividers
-    const midX = (pad + W - pad) / 2;
-    const midY = (pad + H - pad) / 2;
-    ctx.strokeStyle = '#1a2840';
-    ctx.setLineDash([4,4]);
+    const midX = (pad + W - pad) / 2, midY = (pad + H - pad) / 2;
+    ctx.strokeStyle = '#1a2840'; ctx.setLineDash([4,4]);
     ctx.beginPath(); ctx.moveTo(midX, pad); ctx.lineTo(midX, H-pad); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(pad, midY); ctx.lineTo(W-pad, midY); ctx.stroke();
     ctx.setLineDash([]);
-
-    // Quadrant fills
     ctx.globalAlpha = 0.04;
     ctx.fillStyle = '#22c55e'; ctx.fillRect(midX, pad, W-pad-midX, midY-pad);
     ctx.fillStyle = '#f59e0b'; ctx.fillRect(pad, pad, midX-pad, midY-pad);
     ctx.fillStyle = '#ef4444'; ctx.fillRect(pad, midY, midX-pad, H-pad-midY);
     ctx.fillStyle = '#64748b'; ctx.fillRect(midX, midY, W-pad-midX, H-pad-midY);
     ctx.globalAlpha = 1;
-
-    // Quadrant labels
     ctx.font = 'bold 11px -apple-system, sans-serif';
     ctx.fillStyle = '#22c55e'; ctx.fillText('LEADING ↗', W-pad-70, pad+16);
     ctx.fillStyle = '#f59e0b'; ctx.fillText('IMPROVING ↑', pad+6, pad+16);
     ctx.fillStyle = '#ef4444'; ctx.fillText('LAGGING ↙', pad+6, H-pad-8);
     ctx.fillStyle = '#64748b'; ctx.fillText('WEAKENING ↓', W-pad-80, H-pad-8);
-
-    // Axis labels
     ctx.fillStyle = '#475569'; ctx.font = '11px -apple-system, sans-serif';
     ctx.fillText('RS Score →', W/2-30, H-12);
     ctx.save(); ctx.translate(14, H/2+25); ctx.rotate(-Math.PI/2); ctx.fillText('Breadth Score →', 0, 0); ctx.restore();
-
-    // Data
     const rss = allGroups.map(g => g.rsScore || 0);
     const brs = allGroups.map(g => g.breadthScore || 0);
     const rsMin = Math.min(...rss)-3, rsMax = Math.max(...rss)+3;
     const brMin = Math.min(...brs)-3, brMax = Math.max(...brs)+3;
-
     allGroups.forEach(g => {
         const x = pad + ((g.rsScore||0) - rsMin) / (rsMax - rsMin) * (W - 2*pad);
         const y = (H - pad) - ((g.breadthScore||0) - brMin) / (brMax - brMin) * (H - 2*pad);
         const r = Math.max(4, Math.min(12, (g.stockCount||2) / 2));
-
         ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+        const meta = _sectorMeta(g.sector);
         let col;
         if (g.rsScore > 0 && g.breadthScore > 50) col = '#22c55e';
         else if (g.rsScore < 0 && g.breadthScore < 50) col = '#ef4444';
         else if (g.rsScore > 0) col = '#64748b';
         else col = '#f59e0b';
-        ctx.globalAlpha = 0.7;
-        ctx.fillStyle = col;
-        ctx.fill();
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = col;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
+        ctx.globalAlpha = 0.7; ctx.fillStyle = col; ctx.fill();
+        ctx.globalAlpha = 1; ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.stroke();
         if (g.rsRank <= 5 || g.rsRank >= allGroups.length - 3) {
-            ctx.fillStyle = '#c9d1d9';
-            ctx.font = '9px -apple-system, sans-serif';
+            ctx.fillStyle = '#c9d1d9'; ctx.font = '9px -apple-system, sans-serif';
             ctx.fillText(g.group.substring(0, 14), x + r + 3, y - 3);
         }
     });
 }
 
 function refreshData() {
-    // Force a server-side recompute, then re-fetch so the user sees prices
-    // refreshed from the latest CSV cache immediately.
     const staleEl = document.getElementById('stale-warning');
     if (staleEl) {
         staleEl.innerHTML = '⏳ Forcing OHLCV refresh (pulling today\'s closes) — can take 30-120s on first run after market close…';
@@ -886,23 +1140,16 @@ function refreshData() {
         staleEl.style.color = 'var(--yellow)';
     }
     fetch('/api/industry-groups/refresh', {method: 'POST'})
-        .catch(() => {})  // non-fatal — we still re-fetch below
+        .catch(() => {})
         .finally(() => {
-            // Poll for up to ~3 minutes: the OHLCV refresh can take 30-180s
-            // for all NSE symbols, and the industry-groups recompute kicks in
-            // only AFTER that completes. Poll every 5s; stop once bgRefreshing
-            // flips false AND we've seen at least one fresh snapshot.
             const started = Date.now();
             const MAX_MS = 3 * 60 * 1000;
             let sawRunning = false;
             const poll = () => {
                 if (Date.now() - started > MAX_MS) return;
                 silentRefresh().then(() => {
-                    // Re-read the banner text we just set in silentRefresh;
-                    // if an OHLCV refresh started, keep polling longer.
                     const bgNow = document.getElementById('stale-warning')?.innerHTML || '';
                     if (bgNow.includes('Updating')) sawRunning = true;
-                    // Stop early once we've seen a run complete
                     if (sawRunning && !bgNow.includes('Updating')) return;
                     setTimeout(poll, 5000);
                 });
@@ -912,7 +1159,8 @@ function refreshData() {
         });
 }
 
-// Init
+// Init — start on Sector Map
+showTab('sectormap');
 fetchGroups();
 document.getElementById('detail-modal').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal();

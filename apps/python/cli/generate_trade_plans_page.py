@@ -527,6 +527,21 @@ SETUP_META = {
     "BULL_FLAG":         ("tag-bf",    "Bull Flag",          "Sharp pole + tight flag channel. Enter on breakout above flag high. Targets = flagpole measured move."),
 }
 
+# ── Merge taxonomy basic_industry into INDUSTRY_MAP ───────────────────────────
+# The hardcoded INDUSTRY_MAP above covers ~600 manually curated tickers.
+# For the remaining ~2000 NSE tickers, pull basic_industry from the taxonomy
+# module so every stock has a fine-grained classification (~200 groups).
+try:
+    import nse_taxonomy as _taxo
+    for _t, _bi in _taxo._BASIC_INDUSTRY_MAP.items():
+        if _t not in INDUSTRY_MAP and _bi:
+            INDUSTRY_MAP[_t] = _bi
+    for _t, _s in _taxo._SECTOR_MAP.items():
+        if _t not in SECTOR_MAP and _s:
+            SECTOR_MAP[_t] = _s
+except Exception:
+    pass
+
 def _f(v, d=0.0):
     try:
         if v in (None, "", "N/A"):

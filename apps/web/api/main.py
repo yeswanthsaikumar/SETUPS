@@ -1964,7 +1964,9 @@ def _do_compute_industry_groups_inner(t0: float) -> list[dict]:
 
     industry_tickers: dict[str, list[str]] = {}
     industry_sectors: dict[str, str] = {}
-    for ticker, (sector, industry) in taxonomy.items():
+    for ticker, tax_vals in taxonomy.items():
+        sector = tax_vals[0] if tax_vals else "Other"
+        industry = tax_vals[1] if len(tax_vals) > 1 else "Other"
         # Skip unclassified rows: any ticker that NSE couldn't bucket into
         # a concrete industry is noise for RS/breadth aggregation.
         if not industry or industry == "Other":
@@ -2281,7 +2283,7 @@ def api_groups_levels() -> dict:
 
 
 @app.get("/api/groups")
-def api_groups(level: str = "industry", min_stocks: int = 2,
+def api_groups(level: str = "basic_industry", min_stocks: int = 2,
                sort_by: str = "rsScore") -> dict:
     """Unified multi-level groups endpoint for relative-strength & rotation.
 
@@ -2451,32 +2453,65 @@ def refresh_industry_groups(force: bool = False, prices: bool = True) -> dict:
 
 
 @app.get("/api/industry-groups/{group_name}")
-def get_industry_group_detail(group_name: str, fresh: bool = True) -> dict:
-    """Return metrics + member list for an industry group.
+def get_industry_group_detail(group_name: str, fresh: bool = True,
+                               level: str = "basic_industry") -> dict:
+    """Return metrics + member list for a group at any classification level.
 
-    By default (`fresh=True`) recomputes the group from the latest CSV data so
-    member close / dayChange / 52WH percentages are always current — this is
-    the only way to guarantee the drilldown isn't showing a snapshot from the
-    last full industry-groups rebuild (which may be up to 10 min old).
-
+    `level` can be one of: macro, sector, industry, basic_industry, theme.
+    By default (`fresh=True`) recomputes the group from the latest CSV data.
     Pass `fresh=false` to return the possibly-cached snapshot instead.
     """
     import urllib.parse
     decoded = urllib.parse.unquote(group_name)
 
-    # Resolve tickers + sector for this group from the taxonomy — cheap.
+    # Ensure taxonomy is reloaded/fresh — this populates _BASIC_INDUSTRY_MAP
+    # with custom sub-classification overrides before we call group_tickers_by.
     taxonomy = _load_taxonomy_cached()
 
+    # Use group_tickers_by(level) for a direct, level-aware lookup — handles
+    # macro, sector, industry, basic_industry and theme uniformly.
     tickers: list[str] = []
     sector = ""
-    for t, (sec, ind) in taxonomy.items():
-        if ind == decoded:
-            tickers.append(t)
-            if not sector:
-                sector = sec
+    try:
+        tax_mod = _taxonomy_module()
+        lvl = level if level in ("macro", "sector", "industry", "basic_industry", "theme") else "basic_industry"
+        groups_map = tax_mod.group_tickers_by(lvl)
+        tickers = list(groups_map.get(decoded, []))
+        # Determine display sector from the first member
+        if tickers:
+            for t in tickers[:5]:
+                tv = taxonomy.get(t)
+                if tv and tv[0]:
+                    sector = tv[0]
+                    break
+    except Exception as e:
+        print(f"⚠ group_tickers_by failed: {e}", flush=True)
+
+    # Legacy fallback: search taxonomy tuples directly
+    if not tickers:
+        taxonomy = _load_taxonomy_cached()
+        for t, tax_vals in taxonomy.items():
+            sec = tax_vals[0] if tax_vals else "Other"
+            bi  = tax_vals[2] if len(tax_vals) > 2 else ""
+            ind = tax_vals[1] if len(tax_vals) > 1 else "Other"
+            match_val = bi if bi else ind
+            if match_val == decoded:
+                tickers.append(t)
+                if not sector:
+                    sector = sec
 
     if not tickers:
-        # Fall back to any cached entry so stale-but-known groups still respond
+        # Also try matching by sector (index 0)
+        taxonomy = _load_taxonomy_cached()
+        for t, tax_vals in taxonomy.items():
+            sec = tax_vals[0] if tax_vals else "Other"
+            if sec == decoded:
+                tickers.append(t)
+                if not sector:
+                    sector = sec
+
+    if not tickers:
+        # Final fallback: pre-computed industry-level cache
         groups = _compute_all_industry_groups()
         for g in groups:
             if g.get("group") == decoded:
@@ -2550,26 +2585,51 @@ def get_industry_group_detail(group_name: str, fresh: bool = True) -> dict:
 
 
 @app.get("/api/industry-groups/{group_name}/rs-history")
-def get_industry_group_rs_history(group_name: str, days: int = 120) -> dict:
+def get_industry_group_rs_history(group_name: str, days: int = 120,
+                                   level: str = "basic_industry") -> dict:
     import urllib.parse
     decoded = urllib.parse.unquote(group_name)
-    groups = _compute_all_industry_groups()
-    target = None
-    for g in groups:
-        if g.get("group") == decoded:
-            target = g
-            break
-    if not target:
-        raise HTTPException(status_code=404, detail=f"Group '{decoded}' not found")
 
-    members = [m["symbol"] for m in target.get("members", [])]
-    # If loaded from disk cache (no members), look up tickers from taxonomy
+    # Ensure taxonomy is fresh (loads custom sub-classification overrides)
+    taxonomy = _load_taxonomy_cached()
+
+    # Use group_tickers_by(level) for level-aware lookup
+    members: list[str] = []
+    try:
+        tax_mod = _taxonomy_module()
+        lvl = level if level in ("macro", "sector", "industry", "basic_industry", "theme") else "basic_industry"
+        groups_map = tax_mod.group_tickers_by(lvl)
+        members = list(groups_map.get(decoded, []))
+    except Exception:
+        pass
+
+    # Legacy fallback: search taxonomy tuples
     if not members:
         try:
-            taxonomy = _load_taxonomy_cached()
-            members = [t for t, (sec, ind) in taxonomy.items() if ind == decoded]
+            # Search basic_industry (tv[2]) first, then industry (tv[1])
+            members = [
+                t for t, tv in taxonomy.items()
+                if (tv[2] if len(tv) > 2 else tv[1] if len(tv) > 1 else "") == decoded
+            ]
+            if not members:
+                members = [t for t, tv in taxonomy.items() if len(tv) > 1 and tv[1] == decoded]
+            if not members:
+                members = [t for t, tv in taxonomy.items() if tv[0] == decoded]
         except Exception:
             pass
+
+    # Legacy fallback: search pre-computed industry-level cache
+    if not members:
+        groups = _compute_all_industry_groups()
+        target = None
+        for g in groups:
+            if g.get("group") == decoded:
+                target = g
+                break
+        if not target:
+            raise HTTPException(status_code=404, detail=f"Group '{decoded}' not found")
+        members = [m["symbol"] for m in target.get("members", [])]
+
     if not members:
         return {"group": decoded, "rsLine": []}
 
@@ -5977,8 +6037,9 @@ def _compute_rs_universe(
 
         # ── Sector / industry tag from taxonomy
         tax_entry = taxonomy.get(sym)
-        sector   = tax_entry[0] if tax_entry else "Other"
-        industry = tax_entry[1] if tax_entry else "Other"
+        sector         = tax_entry[0] if tax_entry else "Other"
+        industry       = tax_entry[1] if tax_entry else "Other"
+        basic_industry = tax_entry[2] if tax_entry and len(tax_entry) > 2 else industry
 
         # ── SWING SCORE (0-100)
         # Designed to surface explosive-move candidates for swing trading:
@@ -6005,6 +6066,7 @@ def _compute_rs_universe(
             # Sector / industry
             "sector":           sector,
             "industry":         industry,
+            "basicIndustry":    basic_industry,
             # RS
             "rs_score":         score,
             "rs_label":         rs.get("rs_label"),
@@ -7817,10 +7879,12 @@ def ibd_backtest_run(
         # Sector info from taxonomy
         sector = "Other"
         industry = "Other"
+        basic_industry = "Other"
         tax_entry = taxonomy.get(base)
         if tax_entry:
             sector = tax_entry[0] or "Other"
             industry = tax_entry[1] or "Other"
+            basic_industry = tax_entry[2] if len(tax_entry) > 2 else industry
 
         # Apply sector filter
         if sector_filter and sector.upper() != sector_filter.upper():
@@ -7871,6 +7935,7 @@ def ibd_backtest_run(
             "displaySymbol": base,
             "sector": sector,
             "industry": industry,
+            "basicIndustry": basic_industry,
             "appearances": len(sd["appearances"]),
             "scanDates": sd["appearances"],
             "firstScanDate": sd["firstScanDate"],
@@ -8281,8 +8346,9 @@ def rs_scan_asof(
         listing_gain_pct = round((last_close - closes[0]) / closes[0] * 100, 1) if is_ipo and closes[0] else None
 
         tax_entry = taxonomy.get(sym)
-        sector   = tax_entry[0] if tax_entry else "Other"
-        industry = tax_entry[1] if tax_entry else "Other"
+        sector         = tax_entry[0] if tax_entry else "Other"
+        industry       = tax_entry[1] if tax_entry else "Other"
+        basic_industry = tax_entry[2] if tax_entry and len(tax_entry) > 2 else industry
 
         # ── Forward return: scan_date close → end_date close (or latest)
         if end_date_str:
@@ -8312,6 +8378,7 @@ def rs_scan_asof(
             "symbol":           sym,
             "sector":           sector,
             "industry":         industry,
+            "basicIndustry":    basic_industry,
             "is_ipo":           is_ipo,
             "bars":             n_bars,
             "rs_score":         score,
