@@ -5575,10 +5575,12 @@ async function rsAsofRun() {
   const minPrice = document.getElementById('rsAsofMinPrice').value;
   const minAdr = document.getElementById('rsAsofMinAdr').value;
 
-  const params = new URLSearchParams({
-    scan_date: scanDate, top_n: topN, sort_by: sortBy,
-    min_price: minPrice, min_adr: minAdr,
-  });
+  const params = new URLSearchParams({ scan_date: scanDate });
+  if(topN)    params.set('top_n',     topN);
+  if(sortBy)  params.set('sort_by',   sortBy);
+  // Only send numeric params if they have a valid value (avoids 422 on empty fields)
+  const mp = parseFloat(minPrice); if(!isNaN(mp)) params.set('min_price', mp);
+  const ma = parseFloat(minAdr);   if(!isNaN(ma)) params.set('min_adr',   ma);
   if(endDate) params.set('end_date', endDate);
 
   const endLbl = endDate ? endDate : 'latest';
@@ -5590,7 +5592,14 @@ async function rsAsofRun() {
 
   try {
     const r = await fetch(API + '/api/rs-scan-asof?' + params.toString());
-    if(!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.detail || `HTTP ${r.status}`); }
+    if(!r.ok) {
+      const e = await r.json().catch(()=>({}));
+      // FastAPI validation errors return detail as a list of objects; stringify them.
+      let msg = e.detail;
+      if(Array.isArray(msg)) msg = msg.map(d => d.msg || d.message || JSON.stringify(d)).join('; ');
+      else if(typeof msg === 'object' && msg !== null) msg = JSON.stringify(msg);
+      throw new Error(msg || `HTTP ${r.status}`);
+    }
     rsAsofData = await r.json();
     rsAsofLeaders = rsAsofData.leaders || [];
     rsAsofSectorFilter = '';
