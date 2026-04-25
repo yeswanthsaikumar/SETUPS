@@ -581,7 +581,7 @@
       "entry": 1380.96,
       "quantity": 500,
       "remaining_quantity": 500,
-      "sl": 1365.0,
+      "sl": 1380.96,
       "t1": 0.0,
       "t2": 0.0,
       "t3": 0.0,
@@ -606,8 +606,8 @@
       "name": "omni",
       "entry": 409.7,
       "quantity": 2500,
-      "remaining_quantity": 0,
-      "sl": 410.2,
+      "remaining_quantity": 2500,
+      "sl": 409.7,
       "t1": 0.0,
       "t2": 0.0,
       "t3": 0.0,
@@ -615,17 +615,17 @@
       "rating": "",
       "notes": "strongest stock, entered due to strength its showig tight stop loss",
       "entry_date": "2026-04-24",
-      "status": "SL_HIT",
-      "exit_price": 404.55,
-      "exit_date": "2026-04-25",
+      "status": "OPEN",
+      "exit_price": null,
+      "exit_date": null,
       "tags": [],
       "partial_exits": [],
-      "cmp": 404.55,
+      "cmp": 420.75,
       "lastPriceDate": "2026-04-25",
-      "dayChangePct": 0.0,
-      "dayChangeAmt": 0.03,
+      "dayChangePct": 4.0,
+      "dayChangeAmt": 40500.03,
       "original_sl": 395.0,
-      "realized_pl": -12875.0
+      "realized_pl": 0
     },
     {
       "id": "02223861",
@@ -634,7 +634,7 @@
       "entry": 217.87,
       "quantity": 2000,
       "remaining_quantity": 2000,
-      "sl": 213.0,
+      "sl": 217.87,
       "t1": 0.0,
       "t2": 0.0,
       "t3": 0.0,
@@ -650,7 +650,7 @@
       "cmp": 218.02,
       "lastPriceDate": "2026-04-25",
       "dayChangePct": 0.13,
-      "dayChangeAmt": 580.01,
+      "dayChangeAmt": 580.0,
       "original_sl": 213.0
     },
     {
@@ -681,5 +681,5 @@
     }
   ],
   "created": "2026-04-14T11:55:48.601550",
-  "lastUpdated": "2026-04-25T16:33:36.564746"
+  "lastUpdated": "2026-04-25T16:43:06.205175"
 }
