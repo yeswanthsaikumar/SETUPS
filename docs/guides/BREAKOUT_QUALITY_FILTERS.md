@@ -402,5 +402,23 @@ A: Collectively important. But if forced to rank:
 
 ---
 
-*Version 1.0 | Four-Dimensional Quality Analysis | Production Ready*
+## Quick Reference
 
+| Dimension | Max Pts | Best | Worst |
+|-----------|---------|------|-------|
+| Volume Percentile | 10 | 80%+ = 10 | <30% = 1 |
+| Pivot Freshness | 10 | 1 test = 10 | 10+ tests = 1 |
+| Distance from Pivot | 10 | 0.5% = 10 | 3.5%+ = 1 |
+| Tightness Quality | 10 | Tight cluster = 10 | Loose = 1 |
+
+| Score | Rating | Action |
+|-------|--------|--------|
+| 32-40 | EXCELLENT | Full size ✅ |
+| 26-31 | STRONG | Normal size ✓ |
+| 20-25 | GOOD | Tradeable ✓ |
+| 14-19 | FAIR | Reduce size ⚠️ |
+| <14 | WEAK | Skip or minimal ❌ |
+
+---
+
+*Version 1.0 | Four-Dimensional Quality Analysis | Production Ready*
