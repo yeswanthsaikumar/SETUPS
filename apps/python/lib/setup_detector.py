@@ -36,6 +36,9 @@ _SETUP_TYPE_MR   = "MEAN_REVERSION"
 _SETUP_TYPE_BO   = "BREAKOUT"
 _SETUP_TYPE_ABFP = "BREAKOUT_PULLBACK"
 _SETUP_TYPE_BF   = "BULL_FLAG"
+_SETUP_TYPE_EMA_PB = "EMA_PULLBACK"
+_SETUP_TYPE_BASE_BO = "BASE_BREAKOUT"
+_SETUP_TYPE_FTD  = "FOLLOW_THROUGH"
 _DEFAULT_RSI_PERIOD = 14
 _DEFAULT_BB_PERIOD = 20
 _DEFAULT_BB_STD = 2.0
@@ -138,6 +141,21 @@ def _ema(values: list[float], period: int) -> float:
     for v in values[period:]:
         ema = v * k + ema * (1 - k)
     return ema
+
+
+def _ema_series(values: list[float], period: int) -> list[float]:
+    """Return the full EMA series (same length as input, 0.0 for insufficient data)."""
+    result: list[float] = []
+    if len(values) < period:
+        return [0.0] * len(values)
+    k = 2.0 / (period + 1)
+    ema_val = sum(values[:period]) / period
+    result.extend([0.0] * (period - 1))
+    result.append(ema_val)
+    for v in values[period:]:
+        ema_val = v * k + ema_val * (1 - k)
+        result.append(ema_val)
+    return result
 
 
 def _rsi(closes: list[float], period: int = 14) -> float:
@@ -1127,6 +1145,683 @@ def detect_bull_flag(
     return sig
 
 
+# ── EMA Pullback detector ────────────────────────────────────────────────────
+
+def detect_ema_pullback(
+    symbol: str,
+    bars: list[dict],
+    timeframe: str,
+    params: dict,
+    account_size: float,
+    base_risk_pct: float,
+    min_price_floor: float,
+    time_window: int = 5,
+) -> Optional[TradeSignal]:
+    """
+    Detects pullback-to-EMA setups across EMA 5/10/20/50.
+
+    Triggers when price pulls back to within 1 ATR of a rising EMA in an uptrend,
+    then shows a bounce (close above the EMA or bullish bar).
+
+    Subtypes: EMA5_BOUNCE, EMA10_BOUNCE, EMA20_BOUNCE, EMA50_BOUNCE
+    Priority: shorter EMA bounces (EMA5) require tighter trend; longer (EMA50) = deeper pullback.
+    """
+    ipo = _is_ipo_stock(bars, timeframe)
+    ipo_params = _timeframe_params(timeframe, ipo_mode=True) if ipo else params
+    if len(bars) < int(ipo_params["min_bars"]):
+        return None
+
+    closes  = [float(b["close"]) for b in bars]
+    highs   = [float(b["high"])  for b in bars]
+    lows    = [float(b["low"])   for b in bars]
+    volumes = [float(b.get("volume", 0.0)) for b in bars]
+
+    sma50  = _sma(closes, int(params["sma_med"]))
+    sma200 = _sma(closes, int(params["sma_long"]))
+    trend_ma = _ipo_trend_ma(closes, params) if ipo else sma200
+    atr_val = _atr(bars[-(int(params["atr_period"]) + 20):], int(params["atr_period"]))
+    current_close = closes[-1]
+
+    if current_close < min_price_floor or trend_ma <= 0 or current_close < trend_ma * 0.92:
+        return None
+    if atr_val <= 0:
+        return None
+
+    avg_vol_20 = _sma(volumes[-21:-1], 20) if len(volumes) >= 21 else _sma(volumes, len(volumes))
+    if avg_vol_20 <= 0:
+        return None
+
+    # Compute EMA series for 5, 10, 20, 50
+    ema_periods = [5, 10, 20, 50]
+    ema_map: dict[int, list[float]] = {}
+    for p in ema_periods:
+        ema_map[p] = _ema_series(closes, p)
+
+    # Check each EMA for a pullback bounce within the time_window
+    search_range = min(time_window, len(bars) - 1)
+    best_subtype = None
+    best_ema_period = 0
+    best_ema_val = 0.0
+    best_score = 0.0
+
+    for ema_p in ema_periods:
+        ema_s = ema_map[ema_p]
+        if len(ema_s) < 2 or ema_s[-1] <= 0:
+            continue
+        ema_now = ema_s[-1]
+        ema_prev = ema_s[-2] if len(ema_s) >= 2 else ema_now
+
+        # EMA must be rising (bullish trend context for this EMA)
+        if ema_now < ema_prev * 0.999:
+            continue
+
+        # EMA stack check: shorter EMAs should be >= longer EMAs for strong trend
+        # Relaxed for EMA50 (deeper pullback allowed)
+        if ema_p <= 20:
+            ema20_val = ema_map[20][-1] if len(ema_map[20]) > 0 and ema_map[20][-1] > 0 else 0
+            if ema20_val > 0 and current_close < ema20_val * 0.95:
+                continue
+
+        # Search within time_window for a touch-and-bounce
+        touched = False
+        bounced = False
+        touch_low = 0.0
+
+        for offset in range(search_range, 0, -1):
+            idx = len(bars) - offset
+            if idx < 1 or idx >= len(ema_s):
+                continue
+            bar_low = lows[idx]
+            bar_close = closes[idx]
+            ema_at_bar = ema_s[idx]
+            if ema_at_bar <= 0:
+                continue
+
+            # Touch: bar low came within 1 ATR of the EMA (or dipped below it)
+            dist_to_ema = bar_low - ema_at_bar
+            if dist_to_ema <= atr_val * 1.0 and dist_to_ema >= -atr_val * 0.5:
+                touched = True
+                touch_low = bar_low
+
+        # Bounce: current close is above the EMA and above the touch low
+        if touched and current_close > ema_now and current_close > touch_low:
+            bounced = True
+
+        if not (touched and bounced):
+            continue
+
+        # Score this EMA pullback
+        score = 40.0
+
+        # Trend context
+        if current_close > sma200: score += 12.0
+        elif current_close > sma200 * 0.97: score += 5.0
+        if current_close > sma50: score += 8.0
+
+        # EMA stack quality (all shorter EMAs above longer ones = strong trend)
+        ema5_v  = ema_map[5][-1]  if ema_map[5][-1]  > 0 else 0
+        ema10_v = ema_map[10][-1] if ema_map[10][-1] > 0 else 0
+        ema20_v = ema_map[20][-1] if ema_map[20][-1] > 0 else 0
+        ema50_v = ema_map[50][-1] if ema_map[50][-1] > 0 else 0
+        if ema5_v > ema10_v > ema20_v > ema50_v > 0:
+            score += 15.0  # perfect bullish stack
+        elif ema10_v > ema20_v > ema50_v > 0:
+            score += 10.0
+        elif ema20_v > ema50_v > 0:
+            score += 5.0
+
+        # Bounce quality
+        if current_close > closes[-2]:
+            score += 5.0
+        if bars[-1]["close"] > bars[-1]["open"]:  # green candle
+            score += 3.0
+
+        # Volume on bounce
+        vol_ratio_val = volumes[-1] / avg_vol_20 if avg_vol_20 > 0 else 1.0
+        if vol_ratio_val >= 1.3: score += 8.0
+        elif vol_ratio_val >= 1.0: score += 4.0
+
+        # RSI not overbought
+        rsi_val = _rsi(closes[-(max(_DEFAULT_RSI_PERIOD + 50, 60)):], _DEFAULT_RSI_PERIOD)
+        if 35 <= rsi_val <= 60: score += 5.0
+        elif rsi_val > 70: score -= 5.0
+
+        # Prefer shorter-EMA bounces (tighter trends)
+        if ema_p == 5:  score += 5.0
+        elif ema_p == 10: score += 3.0
+
+        if score > best_score:
+            best_score = score
+            best_ema_period = ema_p
+            best_ema_val = ema_now
+            best_subtype = f"EMA{ema_p}_BOUNCE"
+
+    if best_subtype is None:
+        return None
+
+    # Trade plan
+    rsi_val = _rsi(closes[-(max(_DEFAULT_RSI_PERIOD + 50, 60)):], _DEFAULT_RSI_PERIOD)
+    entry = current_close + 0.10 * atr_val
+    sl = best_ema_val - 1.0 * atr_val
+    if sl <= 0 or sl >= entry:
+        sl = entry - 2.0 * atr_val
+    if sl >= entry or entry <= 0 or sl <= 0:
+        return None
+
+    risk = entry - sl
+    shares = max(1, int(math.floor((account_size * base_risk_pct) / risk)))
+
+    # Targets based on recent swing highs
+    recent_high = max(highs[-20:])
+    t1 = max(recent_high, entry + risk)
+    t2 = entry + 2.0 * risk
+    t3 = entry + 3.0 * risk
+
+    vol_ratio_val = volumes[-1] / avg_vol_20 if avg_vol_20 > 0 else 1.0
+    dollar_vols = [c * v for c, v in zip(closes, volumes)]
+    avg_dollar_vol_20 = _sma(dollar_vols[-21:-1], 20) if len(dollar_vols) >= 21 else _sma(dollar_vols, len(dollar_vols))
+    current_range_pct, current_vol_pct, current_rexp = _current_bar_expansion_metrics(bars)
+
+    dist_pct = round(((current_close - best_ema_val) / best_ema_val * 100.0) if best_ema_val > 0 else 0.0, 2)
+    days_above = sum(1 for x in closes[-20:] if x >= best_ema_val)
+
+    sma20 = _sma(closes, int(params["sma_short"]))
+
+    sig = TradeSignal(
+        symbol=symbol,
+        subtype=best_subtype,
+        setup=_SETUP_TYPE_EMA_PB,
+        window=timeframe.upper(),
+        rating=_rating_from_score(best_score),
+        score=round(best_score, 2),
+        close=round(current_close, 4),
+        entry=round(entry, 4),
+        sl=round(sl, 4),
+        pivot=round(best_ema_val, 4),
+        T1=round(t1, 4),
+        T2=round(t2, 4),
+        T3=round(t3, 4),
+        shares=shares,
+        rsi=round(rsi_val, 2),
+        sma20=round(sma20, 4),
+        sma50=round(sma50, 4),
+        sma200=round(sma200, 4),
+        atr=round(atr_val, 4),
+        vol_ratio=round(vol_ratio_val, 3),
+        avg_vol_20=round(avg_vol_20, 2),
+        last_volume=round(volumes[-1], 2),
+        avg_dollar_vol_20=round(avg_dollar_vol_20, 2),
+        last_dollar_vol=round(dollar_vols[-1], 2),
+        days_above_pivot=days_above,
+        distance_from_pivot=dist_pct,
+        height_pct=round(best_ema_period, 2),  # store which EMA
+        depth_pct=dist_pct,
+        range_pct=current_range_pct,
+        vol_pct=current_vol_pct,
+        rexp=current_rexp,
+    )
+    sig.emaPeriod = best_ema_period
+    sig.emaValue = round(best_ema_val, 4)
+    return sig
+
+
+# ── Base Breakout detector ───────────────────────────────────────────────────
+
+def detect_base_breakout(
+    symbol: str,
+    bars: list[dict],
+    timeframe: str,
+    params: dict,
+    account_size: float,
+    base_risk_pct: float,
+    min_price_floor: float,
+    time_window: int = 5,
+) -> Optional[TradeSignal]:
+    """
+    Detects flat base / cup-with-handle breakout setups.
+
+    A proper base breakout differs from a simple 20-bar high break:
+    1. Find a consolidation lasting 25–150 bars with depth 10–35%
+    2. Verify volume dry-up during the base (avg volume < 80% of pre-base avg)
+    3. Confirm price breaking above the base ceiling with volume expansion
+    4. The breakout bar (within time_window) clears the base high on above-avg volume
+
+    Subtypes: FLAT_BASE_BO, CUP_BASE_BO
+    """
+    ipo = _is_ipo_stock(bars, timeframe)
+    ipo_params = _timeframe_params(timeframe, ipo_mode=True) if ipo else params
+    if len(bars) < int(ipo_params["min_bars"]):
+        return None
+
+    closes  = [float(b["close"]) for b in bars]
+    highs   = [float(b["high"])  for b in bars]
+    lows    = [float(b["low"])   for b in bars]
+    volumes = [float(b.get("volume", 0.0)) for b in bars]
+
+    sma50  = _sma(closes, int(params["sma_med"]))
+    sma200 = _sma(closes, int(params["sma_long"]))
+    trend_ma = _ipo_trend_ma(closes, params) if ipo else sma200
+    atr_val = _atr(bars[-(int(params["atr_period"]) + 20):], int(params["atr_period"]))
+    current_close = closes[-1]
+
+    if current_close < min_price_floor or trend_ma <= 0 or current_close < trend_ma * 0.85:
+        return None
+    if atr_val <= 0:
+        return None
+
+    avg_vol_20 = _sma(volumes[-21:-1], 20) if len(volumes) >= 21 else _sma(volumes, len(volumes))
+    if avg_vol_20 <= 0:
+        return None
+
+    n = len(bars)
+
+    # Configuration (daily defaults; weekly uses shorter)
+    is_weekly = (timeframe or "daily").strip().lower() == "weekly"
+    BASE_MIN_BARS = 5 if is_weekly else 25
+    BASE_MAX_BARS = 40 if is_weekly else 150
+    BASE_MIN_DEPTH = 0.08   # 8% minimum depth
+    BASE_MAX_DEPTH = 0.38   # 38% maximum depth
+
+    # Search for a base pattern ending within time_window of the current bar
+    best_base = None
+
+    for bo_offset in range(1, min(time_window + 1, n - BASE_MIN_BARS)):
+        bo_idx = n - bo_offset  # candidate breakout bar index
+
+        # Try various base lengths
+        for base_len in range(BASE_MIN_BARS, min(BASE_MAX_BARS + 1, bo_idx)):
+            base_start = bo_idx - base_len
+            if base_start < 1:
+                continue
+
+            base_highs = highs[base_start:bo_idx]
+            base_lows  = lows[base_start:bo_idx]
+            base_vols  = volumes[base_start:bo_idx]
+
+            base_ceiling = max(base_highs)
+            base_floor   = min(base_lows)
+
+            if base_ceiling <= 0 or base_floor <= 0:
+                continue
+
+            depth = (base_ceiling - base_floor) / base_ceiling
+            if depth < BASE_MIN_DEPTH or depth > BASE_MAX_DEPTH:
+                continue
+
+            # Verify volume dry-up during base
+            pre_base_vols = volumes[max(0, base_start - 20):base_start]
+            pre_base_avg = statistics.mean(pre_base_vols) if pre_base_vols else avg_vol_20
+            base_vol_avg = statistics.mean(base_vols) if base_vols else avg_vol_20
+            base_vol_ratio = base_vol_avg / pre_base_avg if pre_base_avg > 0 else 1.0
+
+            # Breakout confirmation: close or high above ceiling
+            bo_close = closes[bo_idx] if bo_idx < n else current_close
+            bo_high  = highs[bo_idx] if bo_idx < n else current_close
+            bo_vol   = volumes[bo_idx] if bo_idx < n else volumes[-1]
+
+            if bo_close < base_ceiling * 0.995 and bo_high < base_ceiling:
+                continue  # no breakout
+
+            # Volume expansion on breakout
+            bo_vol_ratio = bo_vol / avg_vol_20 if avg_vol_20 > 0 else 1.0
+
+            # Current price still holding above base ceiling
+            if current_close < base_ceiling * 0.97:
+                continue
+
+            # Determine subtype
+            # Cup pattern: base has a U-shape (mid-point lows are lower than start/end)
+            mid_point = len(base_lows) // 2
+            first_half_low = min(base_lows[:mid_point]) if mid_point > 0 else base_floor
+            second_half_low = min(base_lows[mid_point:]) if mid_point < len(base_lows) else base_floor
+            is_cup = (first_half_low < base_ceiling * 0.95 and
+                      second_half_low < base_ceiling * 0.95 and
+                      abs(base_lows[0] - base_lows[-1]) / base_ceiling < 0.05)
+            subtype = "CUP_BASE_BO" if is_cup else "FLAT_BASE_BO"
+
+            best_base = {
+                "base_start": base_start, "base_len": base_len,
+                "ceiling": base_ceiling, "floor": base_floor,
+                "depth": depth, "base_vol_ratio": base_vol_ratio,
+                "bo_vol_ratio": bo_vol_ratio, "bo_idx": bo_idx,
+                "subtype": subtype,
+            }
+            break  # found a valid base for this breakout bar
+
+        if best_base is not None:
+            break
+
+    if best_base is None:
+        return None
+
+    # Scoring
+    score = 45.0
+    depth = best_base["depth"]
+    base_vol_ratio = best_base["base_vol_ratio"]
+    bo_vol_ratio = best_base["bo_vol_ratio"]
+    base_ceiling = best_base["ceiling"]
+
+    # Trend
+    if current_close > sma200: score += 10.0
+    if current_close > sma50:  score += 7.0
+
+    # Base quality: volume dry-up
+    if base_vol_ratio < 0.60: score += 15.0
+    elif base_vol_ratio < 0.75: score += 10.0
+    elif base_vol_ratio < 0.85: score += 5.0
+
+    # Breakout volume expansion
+    if bo_vol_ratio >= 2.0: score += 15.0
+    elif bo_vol_ratio >= 1.5: score += 10.0
+    elif bo_vol_ratio >= 1.2: score += 5.0
+
+    # Depth quality (10-20% ideal depth)
+    if 0.10 <= depth <= 0.20: score += 8.0
+    elif 0.08 <= depth <= 0.25: score += 4.0
+
+    # Base length (longer = more significant)
+    if best_base["base_len"] >= 60: score += 5.0
+    elif best_base["base_len"] >= 35: score += 3.0
+
+    # Price clearing the ceiling cleanly
+    clearance = (current_close - base_ceiling) / base_ceiling if base_ceiling > 0 else 0
+    if clearance > 0.03: score += 5.0
+    elif clearance > 0.01: score += 2.0
+
+    # Trade plan
+    entry = max(current_close, base_ceiling * 1.002) + 0.10 * atr_val
+    sl = best_base["floor"] - 0.5 * atr_val
+    if sl <= 0 or sl >= entry:
+        sl = entry - 2.5 * atr_val
+    if sl >= entry or entry <= 0 or sl <= 0:
+        return None
+
+    risk = entry - sl
+    shares = max(1, int(math.floor((account_size * base_risk_pct) / risk)))
+    base_height = base_ceiling - best_base["floor"]
+    t1 = entry + base_height * 0.50
+    t2 = entry + base_height * 0.75
+    t3 = entry + base_height
+
+    rsi_val = _rsi(closes[-(max(_DEFAULT_RSI_PERIOD + 50, 60)):], _DEFAULT_RSI_PERIOD)
+    dollar_vols = [c * v for c, v in zip(closes, volumes)]
+    avg_dollar_vol_20 = _sma(dollar_vols[-21:-1], 20) if len(dollar_vols) >= 21 else _sma(dollar_vols, len(dollar_vols))
+    current_range_pct, current_vol_pct, current_rexp = _current_bar_expansion_metrics(bars)
+    vol_ratio_val = volumes[-1] / avg_vol_20 if avg_vol_20 > 0 else 1.0
+    sma20 = _sma(closes, int(params["sma_short"]))
+
+    sig = TradeSignal(
+        symbol=symbol,
+        subtype=best_base["subtype"],
+        setup=_SETUP_TYPE_BASE_BO,
+        window=timeframe.upper(),
+        rating=_rating_from_score(score),
+        score=round(score, 2),
+        close=round(current_close, 4),
+        entry=round(entry, 4),
+        sl=round(sl, 4),
+        pivot=round(base_ceiling, 4),
+        T1=round(t1, 4),
+        T2=round(t2, 4),
+        T3=round(t3, 4),
+        shares=shares,
+        rsi=round(rsi_val, 2),
+        sma20=round(sma20, 4),
+        sma50=round(sma50, 4),
+        sma200=round(sma200, 4),
+        atr=round(atr_val, 4),
+        vol_ratio=round(vol_ratio_val, 3),
+        pullback_vol_ratio=round(base_vol_ratio, 3),
+        height_pct=round(depth * 100.0, 2),
+        depth_pct=round(depth * 100.0, 2),
+        length=best_base["base_len"],
+        avg_vol_20=round(avg_vol_20, 2),
+        last_volume=round(volumes[-1], 2),
+        avg_dollar_vol_20=round(avg_dollar_vol_20, 2),
+        last_dollar_vol=round(dollar_vols[-1], 2),
+        max_after_breakout=round(base_ceiling, 4),
+        min_after_breakout=round(best_base["floor"], 4),
+        days_above_pivot=sum(1 for x in closes[-20:] if x >= base_ceiling),
+        distance_from_pivot=round(clearance * 100.0, 2),
+        range_pct=current_range_pct,
+        vol_pct=current_vol_pct,
+        rexp=current_rexp,
+    )
+    sig.baseBars = best_base["base_len"]
+    sig.baseDepthPct = round(depth * 100.0, 2)
+    sig.baseVolDryUp = round(base_vol_ratio, 3)
+    sig.boVolExpansion = round(bo_vol_ratio, 3)
+    return sig
+
+
+# ── Follow-Through Day detector ──────────────────────────────────────────────
+
+def detect_follow_through(
+    symbol: str,
+    bars: list[dict],
+    timeframe: str,
+    params: dict,
+    account_size: float,
+    base_risk_pct: float,
+    min_price_floor: float,
+    time_window: int = 10,
+) -> Optional[TradeSignal]:
+    """
+    Detects Follow-Through Day (FTD) setups.
+
+    An FTD occurs when after a correction (≥5% decline), the stock makes a strong
+    up-day (≥1.5% gain with above-average volume) 4–10 days after a rally attempt
+    (first day the stock closes up after the correction low).
+
+    This confirms the correction is likely over and a new uptrend is starting.
+
+    Subtypes: FTD_CONFIRMED, FTD_EARLY (rally attempt started but not yet 4+ days)
+    """
+    ipo = _is_ipo_stock(bars, timeframe)
+    ipo_params = _timeframe_params(timeframe, ipo_mode=True) if ipo else params
+    if len(bars) < int(ipo_params["min_bars"]):
+        return None
+
+    closes  = [float(b["close"]) for b in bars]
+    highs   = [float(b["high"])  for b in bars]
+    lows    = [float(b["low"])   for b in bars]
+    volumes = [float(b.get("volume", 0.0)) for b in bars]
+
+    sma50  = _sma(closes, int(params["sma_med"]))
+    sma200 = _sma(closes, int(params["sma_long"]))
+    atr_val = _atr(bars[-(int(params["atr_period"]) + 20):], int(params["atr_period"]))
+    current_close = closes[-1]
+
+    if current_close < min_price_floor or atr_val <= 0:
+        return None
+
+    avg_vol_20 = _sma(volumes[-21:-1], 20) if len(volumes) >= 21 else _sma(volumes, len(volumes))
+    if avg_vol_20 <= 0:
+        return None
+
+    n = len(bars)
+
+    # Step 1: Find a recent correction (peak → trough, ≥5% decline)
+    # Look back up to 60 bars for the correction trough
+    CORRECTION_MIN_PCT = 0.05
+    CORRECTION_LOOKBACK = 60
+
+    correction_low_idx = None
+    correction_low = None
+    pre_correction_high = None
+
+    for trough_offset in range(time_window, min(CORRECTION_LOOKBACK, n - 20)):
+        trough_idx = n - 1 - trough_offset
+        if trough_idx < 20:
+            break
+        trough_val = lows[trough_idx]
+
+        # Find the peak before this trough
+        peak_range = highs[max(0, trough_idx - 40):trough_idx]
+        if not peak_range:
+            continue
+        peak_val = max(peak_range)
+
+        decline_pct = (peak_val - trough_val) / peak_val if peak_val > 0 else 0
+        if decline_pct >= CORRECTION_MIN_PCT:
+            # Verify this is actually a local low (lower than neighbors)
+            neighbor_lows = lows[max(0, trough_idx - 2):min(n, trough_idx + 3)]
+            if trough_val <= min(neighbor_lows) * 1.005:
+                correction_low_idx = trough_idx
+                correction_low = trough_val
+                pre_correction_high = peak_val
+                break
+
+    if correction_low_idx is None:
+        return None
+
+    # Step 2: Find the rally attempt day (first close-up day after correction low)
+    rally_attempt_idx = None
+    for i in range(correction_low_idx + 1, min(n, correction_low_idx + 15)):
+        if closes[i] > closes[i - 1]:
+            rally_attempt_idx = i
+            break
+
+    if rally_attempt_idx is None:
+        return None
+
+    # Step 3: Check for FTD within 4–10 days after rally attempt
+    days_since_rally = (n - 1) - rally_attempt_idx
+    last_bar_idx = n - 1
+
+    # FTD criteria: ≥1.5% gain on above-average volume, 4–10 days after rally attempt
+    ftd_idx = None
+    subtype = "FTD_EARLY"
+
+    for check_offset in range(min(time_window, days_since_rally + 1)):
+        check_idx = last_bar_idx - check_offset
+        if check_idx <= rally_attempt_idx:
+            break
+
+        days_from_rally = check_idx - rally_attempt_idx
+        bar_gain_pct = (closes[check_idx] - closes[check_idx - 1]) / closes[check_idx - 1] if closes[check_idx - 1] > 0 else 0
+        bar_vol = volumes[check_idx]
+        vol_ratio_ftd = bar_vol / avg_vol_20 if avg_vol_20 > 0 else 1.0
+
+        if bar_gain_pct >= 0.015 and vol_ratio_ftd >= 1.0:
+            if days_from_rally >= 4:
+                ftd_idx = check_idx
+                subtype = "FTD_CONFIRMED"
+                break
+            elif days_from_rally >= 2:
+                ftd_idx = check_idx
+                subtype = "FTD_EARLY"
+                # Don't break, keep looking for a confirmed one
+
+    if ftd_idx is None:
+        return None
+
+    # Step 4: Scoring
+    score = 40.0
+
+    decline_pct = (pre_correction_high - correction_low) / pre_correction_high if pre_correction_high > 0 else 0
+    ftd_gain = (closes[ftd_idx] - closes[ftd_idx - 1]) / closes[ftd_idx - 1] if closes[ftd_idx - 1] > 0 else 0
+    ftd_vol_ratio = volumes[ftd_idx] / avg_vol_20 if avg_vol_20 > 0 else 1.0
+
+    # FTD quality
+    if ftd_gain >= 0.03: score += 15.0
+    elif ftd_gain >= 0.02: score += 10.0
+    else: score += 5.0
+
+    if ftd_vol_ratio >= 2.0: score += 12.0
+    elif ftd_vol_ratio >= 1.5: score += 8.0
+    elif ftd_vol_ratio >= 1.2: score += 4.0
+
+    # Confirmed vs early
+    if subtype == "FTD_CONFIRMED": score += 10.0
+    else: score += 3.0
+
+    # Correction quality (moderate correction = better setup)
+    if 0.08 <= decline_pct <= 0.20: score += 8.0
+    elif 0.05 <= decline_pct <= 0.30: score += 4.0
+
+    # Price reclaiming key MAs
+    if current_close > sma50: score += 5.0
+    if current_close > sma200: score += 5.0
+
+    # Recovery from correction low
+    recovery_pct = (current_close - correction_low) / correction_low if correction_low > 0 else 0
+    if recovery_pct > 0.10: score += 5.0
+    elif recovery_pct > 0.05: score += 2.0
+
+    # Trade plan
+    entry = current_close + 0.10 * atr_val
+    sl = correction_low - 0.5 * atr_val
+    if sl <= 0 or sl >= entry:
+        sl = entry - 2.5 * atr_val
+    if sl >= entry or entry <= 0 or sl <= 0:
+        return None
+
+    risk = entry - sl
+    shares = max(1, int(math.floor((account_size * base_risk_pct) / risk)))
+    correction_depth = pre_correction_high - correction_low
+    t1 = entry + correction_depth * 0.50
+    t2 = entry + correction_depth * 0.75
+    t3 = max(pre_correction_high, entry + correction_depth)
+
+    rsi_val = _rsi(closes[-(max(_DEFAULT_RSI_PERIOD + 50, 60)):], _DEFAULT_RSI_PERIOD)
+    dollar_vols = [c * v for c, v in zip(closes, volumes)]
+    avg_dollar_vol_20 = _sma(dollar_vols[-21:-1], 20) if len(dollar_vols) >= 21 else _sma(dollar_vols, len(dollar_vols))
+    current_range_pct, current_vol_pct, current_rexp = _current_bar_expansion_metrics(bars)
+    vol_ratio_val = volumes[-1] / avg_vol_20 if avg_vol_20 > 0 else 1.0
+    sma20 = _sma(closes, int(params["sma_short"]))
+    days_since = (n - 1) - rally_attempt_idx
+
+    sig = TradeSignal(
+        symbol=symbol,
+        subtype=subtype,
+        setup=_SETUP_TYPE_FTD,
+        window=timeframe.upper(),
+        rating=_rating_from_score(score),
+        score=round(score, 2),
+        close=round(current_close, 4),
+        entry=round(entry, 4),
+        sl=round(sl, 4),
+        pivot=round(pre_correction_high, 4),
+        T1=round(t1, 4),
+        T2=round(t2, 4),
+        T3=round(t3, 4),
+        shares=shares,
+        rsi=round(rsi_val, 2),
+        sma20=round(sma20, 4),
+        sma50=round(sma50, 4),
+        sma200=round(sma200, 4),
+        atr=round(atr_val, 4),
+        vol_ratio=round(vol_ratio_val, 3),
+        height_pct=round(decline_pct * 100.0, 2),  # correction depth
+        depth_pct=round(recovery_pct * 100.0, 2),   # recovery so far
+        length=days_since,
+        avg_vol_20=round(avg_vol_20, 2),
+        last_volume=round(volumes[-1], 2),
+        avg_dollar_vol_20=round(avg_dollar_vol_20, 2),
+        last_dollar_vol=round(dollar_vols[-1], 2),
+        max_after_breakout=round(pre_correction_high, 4),
+        min_after_breakout=round(correction_low, 4),
+        days_above_pivot=sum(1 for x in closes[-20:] if x >= pre_correction_high),
+        distance_from_pivot=round(((current_close - pre_correction_high) / pre_correction_high * 100.0)
+                                   if pre_correction_high > 0 else 0.0, 2),
+        range_pct=current_range_pct,
+        vol_pct=current_vol_pct,
+        rexp=current_rexp,
+    )
+    sig.ftdGainPct = round(ftd_gain * 100.0, 2)
+    sig.ftdVolRatio = round(ftd_vol_ratio, 3)
+    sig.correctionPct = round(decline_pct * 100.0, 2)
+    sig.daysSinceRally = days_since
+    try:
+        sig.correctionLowDate = bars[correction_low_idx]["date"]
+        sig.rallyAttemptDate = bars[rally_attempt_idx]["date"]
+        sig.ftdDate = bars[ftd_idx]["date"]
+    except Exception:
+        pass
+    return sig
+
+
 # ── Batch scanner ─────────────────────────────────────────────────────────────
 
 def scan_symbols(
@@ -1139,13 +1834,19 @@ def scan_symbols(
     min_price_floor: float = 5.0,
     min_score: float = 35.0,
     setup_types: list[str] | None = None,
+    time_window: int = 5,
 ) -> list[dict]:
     """
     Scan a list of symbols for specified setup types using cached CSV bars.
     Returns a list of dicts compatible with the main pipeline CSV_FIELDS schema.
+
+    time_window: how many recent bars to search for a setup trigger (default 5).
     """
     if setup_types is None:
-        setup_types = [_SETUP_TYPE_MR, _SETUP_TYPE_BO, _SETUP_TYPE_ABFP, _SETUP_TYPE_BF]
+        setup_types = [
+            _SETUP_TYPE_MR, _SETUP_TYPE_BO, _SETUP_TYPE_ABFP, _SETUP_TYPE_BF,
+            _SETUP_TYPE_EMA_PB, _SETUP_TYPE_BASE_BO, _SETUP_TYPE_FTD,
+        ]
 
     cache = Path(cache_dir)
     results: list[dict] = []
@@ -1173,11 +1874,98 @@ def scan_symbols(
             sig = detect_bull_flag(symbol, bars, timeframe, params, account_size, base_risk_pct, min_price_floor)
             if sig: signals.append(sig)
 
+        if _SETUP_TYPE_EMA_PB in setup_types:
+            sig = detect_ema_pullback(symbol, bars, timeframe, params, account_size, base_risk_pct, min_price_floor, time_window=time_window)
+            if sig: signals.append(sig)
+
+        if _SETUP_TYPE_BASE_BO in setup_types:
+            sig = detect_base_breakout(symbol, bars, timeframe, params, account_size, base_risk_pct, min_price_floor, time_window=time_window)
+            if sig: signals.append(sig)
+
+        if _SETUP_TYPE_FTD in setup_types:
+            sig = detect_follow_through(symbol, bars, timeframe, params, account_size, base_risk_pct, min_price_floor, time_window=time_window)
+            if sig: signals.append(sig)
+
         for sig in signals:
             if sig.score >= min_score:
                 results.append(_signal_to_dict(sig))
 
     return results
+
+
+def scan_symbols_multi_timeframe(
+    symbols: list[str],
+    cache_dir: str,
+    lookback: int,
+    account_size: float = 100_000.0,
+    base_risk_pct: float = 0.01,
+    min_price_floor: float = 5.0,
+    min_score: float = 35.0,
+    setup_types: list[str] | None = None,
+    time_window: int = 5,
+) -> list[dict]:
+    """
+    Scan across both DAILY and WEEKLY timeframes, merge results by symbol,
+    and attach timeframe_alignment metadata.
+
+    When both daily and weekly fire for the same symbol+setup, the daily result
+    gets a score bonus (+15) and a 'BOTH_ALIGNED' tag.
+    """
+    daily_results = scan_symbols(
+        symbols=symbols, cache_dir=cache_dir, lookback=lookback,
+        timeframe="daily", account_size=account_size, base_risk_pct=base_risk_pct,
+        min_price_floor=min_price_floor, min_score=min_score,
+        setup_types=setup_types, time_window=time_window,
+    )
+    weekly_results = scan_symbols(
+        symbols=symbols, cache_dir=cache_dir, lookback=lookback,
+        timeframe="weekly", account_size=account_size, base_risk_pct=base_risk_pct,
+        min_price_floor=min_price_floor, min_score=max(25.0, min_score - 10),
+        setup_types=setup_types, time_window=max(2, time_window // 3),
+    )
+
+    # Build weekly index: symbol → set of setup types
+    weekly_index: dict[str, set[str]] = {}
+    weekly_by_key: dict[str, dict] = {}
+    for r in weekly_results:
+        sym = r.get("symbol", "")
+        setup = r.get("setup", "")
+        weekly_index.setdefault(sym, set()).add(setup)
+        weekly_by_key[f"{sym}:{setup}"] = r
+
+    merged: list[dict] = []
+    seen_keys: set[str] = set()
+
+    for r in daily_results:
+        sym = r.get("symbol", "")
+        setup = r.get("setup", "")
+        key = f"{sym}:{setup}"
+
+        if setup in weekly_index.get(sym, set()):
+            r["timeframe_alignment"] = "BOTH_ALIGNED"
+            # Score bonus for multi-timeframe confirmation
+            try:
+                old_score = float(r.get("score", 0))
+                r["score"] = str(round(old_score + 15.0, 2))
+                r["rating"] = _rating_from_score(old_score + 15.0)
+            except (ValueError, TypeError):
+                pass
+        else:
+            r["timeframe_alignment"] = "DAILY_ONLY"
+
+        merged.append(r)
+        seen_keys.add(key)
+
+    # Add weekly-only results
+    for r in weekly_results:
+        sym = r.get("symbol", "")
+        setup = r.get("setup", "")
+        key = f"{sym}:{setup}"
+        if key not in seen_keys:
+            r["timeframe_alignment"] = "WEEKLY_ONLY"
+            merged.append(r)
+
+    return merged
 
 
 def _load_bars(symbol: str, lookback: int, timeframe: str, cache: Path) -> list[dict]:
@@ -1309,6 +2097,35 @@ def _signal_to_dict(sig: TradeSignal) -> dict:
             "bfFlagLow":         str(sig.min_after_breakout or ""),
             "bfPoleStartDate":   str(getattr(sig, "bfPoleStartDate",  "") or ""),
             "bfPoleTopDate":     str(getattr(sig, "bfPoleTopDate",    "") or ""),
+        })
+    # Add EMA Pullback-specific fields
+    if sig.setup == _SETUP_TYPE_EMA_PB:
+        data.update({
+            "emaPeriod":    str(getattr(sig, "emaPeriod", "") or ""),
+            "emaValue":     str(getattr(sig, "emaValue", "") or ""),
+            "emaRsi":       str(sig.rsi),
+            "emaVolRatio":  str(sig.vol_ratio),
+        })
+    # Add Base Breakout-specific fields
+    if sig.setup == _SETUP_TYPE_BASE_BO:
+        data.update({
+            "baseBars":       str(getattr(sig, "baseBars", "") or ""),
+            "baseDepthPct":   str(getattr(sig, "baseDepthPct", "") or ""),
+            "baseVolDryUp":   str(getattr(sig, "baseVolDryUp", "") or ""),
+            "boVolExpansion": str(getattr(sig, "boVolExpansion", "") or ""),
+            "baseCeiling":    str(sig.max_after_breakout or ""),
+            "baseFloor":      str(sig.min_after_breakout or ""),
+        })
+    # Add Follow-Through Day-specific fields
+    if sig.setup == _SETUP_TYPE_FTD:
+        data.update({
+            "ftdGainPct":         str(getattr(sig, "ftdGainPct", "") or ""),
+            "ftdVolRatio":        str(getattr(sig, "ftdVolRatio", "") or ""),
+            "correctionPct":      str(getattr(sig, "correctionPct", "") or ""),
+            "daysSinceRally":     str(getattr(sig, "daysSinceRally", "") or ""),
+            "correctionLowDate":  str(getattr(sig, "correctionLowDate", "") or ""),
+            "rallyAttemptDate":   str(getattr(sig, "rallyAttemptDate", "") or ""),
+            "ftdDate":            str(getattr(sig, "ftdDate", "") or ""),
         })
     # Add liquidity / pivot enrichment fields
     data.update({

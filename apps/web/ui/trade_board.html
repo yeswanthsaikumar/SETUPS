@@ -366,6 +366,21 @@
     .wl-bucket-tab.active .wb-count{background:#0891b255;color:var(--cyan)}
     /* Card additions */
     .wl-bucket-pill{display:inline-flex;align-items:center;gap:3px;font-size:9.5px;font-weight:700;background:#1e293b;color:#cbd5e1;border:1px solid #334155;padding:1px 6px;border-radius:5px}
+    .rs-view-btn{font-size:10px!important;padding:2px 8px!important;transition:all .2s}
+    .rs-view-btn.active{background:#1e3a5f!important;color:#60a5fa!important;border-color:#3b82f6!important}
+    .rs-sector-hdr{cursor:pointer;background:#0f1729;border:1px solid #1e293b;border-radius:6px;padding:8px 12px;margin:6px 0 2px;display:flex;align-items:center;gap:8px;transition:background .2s}
+    .rs-sector-hdr:hover{background:#162033}
+    .rs-sector-hdr .rs-sec-icon{font-size:14px}
+    .rs-sector-hdr .rs-sec-name{font-weight:800;font-size:12px;color:var(--text)}
+    .rs-sector-hdr .rs-sec-count{font-size:10px;color:var(--muted);background:#1e293b;padding:1px 6px;border-radius:8px}
+    .rs-sector-hdr .rs-sec-stats{margin-left:auto;font-size:10px;display:flex;gap:10px}
+    .rs-sector-hdr .rs-sec-stats span{display:flex;gap:3px;align-items:center}
+    .rs-sector-body{overflow:hidden;transition:max-height .3s ease}
+    .rs-sector-body.collapsed{max-height:0!important;overflow:hidden}
+    .rs-summary-bar{display:flex;gap:3px;margin-bottom:8px;flex-wrap:wrap}
+    .rs-summary-chip{font-size:9px;padding:2px 6px;border-radius:4px;cursor:pointer;border:1px solid #1e293b;transition:all .2s;white-space:nowrap}
+    .rs-summary-chip:hover{border-color:#3b82f6;background:#0f1729}
+    .rs-summary-chip.active{border-color:#3b82f6;background:#1e3a5f;color:#60a5fa}
     .wl-ret-chip{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:5px}
     .wl-ret-pos{background:#052e16;color:#4ade80;border:1px solid #16a34a44}
     .wl-ret-neg{background:#2a0d0d;color:#f87171;border:1px solid #ef444444}
@@ -463,6 +478,7 @@
     <button class="tl" id="tl-sector" onclick="openEmbed('/reports/sector_macro_analysis.html','Sector Macro','sector')">Sector</button>
     <button class="tl" id="tl-groups" onclick="openEmbed('/groups','Industry Groups','groups')">Groups</button>
     <button class="tl" id="tl-playbook" onclick="openEmbed('/playbook','Trading Playbook','playbook')">📖 Playbook</button>
+    <button class="tl" id="tl-earnings" onclick="openEmbed('/earnings','Quarterly Earnings','earnings')" title="Quarterly earnings results — avoid volatility during prints, enter after confirmed beats">📊 Earnings</button>
     <button class="tl" id="tl-scan" onclick="openEmbed('/reports/master_report_LATEST.html','Scan Report','scan')">Scan</button>
   </div>
   <div class="topbar-right">
@@ -505,6 +521,10 @@
       <svg class="sb-icon" viewBox="0 0 16 16" fill="none"><path d="M8 1C5.2 1 3 3.5 3 6.5V10L1.5 12H14.5L13 10V6.5C13 3.5 10.8 1 8 1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 12C6 13.1 6.9 14 8 14S10 13.1 10 12" stroke="currentColor" stroke-width="1.4"/></svg>
       Alerts
     </button>
+    <button class="sb-item" id="nav-ibd-backtest" onclick="showPage('ibd-backtest')">
+       <svg class="sb-icon" viewBox="0 0 16 16" fill="none"><path d="M2 14L5 8L8 10L11 4L14 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="14" cy="7" r="1.5" fill="currentColor"/><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.2"/></svg>
+       RS Scan As-Of
+     </button>
     </div>
     <div class="sb-div"></div>
     <div class="sb-sect">P&L Summary</div>
@@ -536,6 +556,10 @@
     <button class="sb-item" onclick="openEmbed('/playbook?doc=evidence','Playbook — Evidence','playbook')" title="Statistical evidence & audited track records">
       <svg class="sb-icon" viewBox="0 0 16 16" fill="none"><path d="M2 13V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v9" stroke="currentColor" stroke-width="1.4"/><path d="M4 13h8M5 6h4M5 8.5h6M5 11h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
       Evidence
+    </button>
+    <button class="sb-item" onclick="openEmbed('/earnings','Quarterly Earnings','earnings')" title="Quarterly earnings dashboard — avoid prints, enter post-beat">
+      <svg class="sb-icon" viewBox="0 0 16 16" fill="none"><path d="M2 14V2M2 14h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="4" y="8" width="2" height="4" fill="currentColor"/><rect x="7.5" y="5" width="2" height="7" fill="currentColor"/><rect x="11" y="9" width="2" height="3" fill="currentColor"/></svg>
+      Earnings
     </button>
   </div>
 
@@ -1012,6 +1036,15 @@
             <span class="wl-count" id="wlTotalCount">0</span>
           </div>
           <div style="flex:1"></div>
+          <select class="f-sel" id="wlPriorityFilter" onchange="renderWatchlist()" style="min-width:80px">
+            <option value="">All ⚡</option>
+            <option value="P1">🔥 P1</option>
+            <option value="P2">👀 P2</option>
+            <option value="P3">📋 P3</option>
+          </select>
+          <select class="f-sel" id="wlSectorFilter" onchange="renderWatchlist()" style="min-width:120px">
+            <option value="">All sectors</option>
+          </select>
           <select class="f-sel" id="wlSetupFilter" onchange="renderWatchlist()" style="min-width:140px">
             <option value="">All setups</option>
           </select>
@@ -1048,6 +1081,7 @@
         <!-- Tab bar -->
         <div id="alertTabs" style="display:flex;gap:2px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0;">
           <button class="alert-tab active" onclick="switchAlertTab('breakout',this)">🚀 Breakout Signals</button>
+          <button class="alert-tab" onclick="switchAlertTab('entry',this)">🎯 Entry Triggers</button>
           <button class="alert-tab" onclick="switchAlertTab('ema5',this)">📉 Position 5 EMA</button>
           <button class="alert-tab" onclick="switchAlertTab('custom',this)">🎛 Custom Rules</button>
           <button class="alert-tab" onclick="switchAlertTab('history',this)">📋 History</button>
@@ -1106,6 +1140,16 @@
             <span style="font-size:11px;color:var(--muted);margin-left:4px;">Detects breakout candles with volume surge + resistance level break on your watchlist.</span>
           </div>
           <div id="boResults2"></div>
+        </div>
+
+        <!-- TAB: Entry Triggers -->
+        <div class="alert-tab-content" id="alertTab-entry" style="display:none;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" onclick="entryCheckNow()" style="font-weight:700;">🎯 Check Entry Proximity</button>
+            <button class="btn btn-outline btn-sm" onclick="entryScanSend()" style="border-color:#0ea5e944;color:#0ea5e9;">📲 Check & Alert</button>
+            <span style="font-size:11px;color:var(--muted);margin-left:4px;">Watchlist stocks near their scan entry price — ready-to-enter setup triggers.</span>
+          </div>
+          <div id="entryResults"></div>
         </div>
 
         <!-- TAB: Position 5 EMA -->
@@ -1180,6 +1224,75 @@
 
       </div>
     </div>
+
+    <!-- RS SCAN AS-OF PAGE -->
+    <div class="page" id="page-ibd-backtest">
+      <div style="padding:16px 20px;max-width:1600px;overflow-y:auto;height:100%;">
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <span style="font-size:18px;font-weight:800;letter-spacing:-.3px;">🔬 RS Leaders — Scan As-Of Date</span>
+            <span style="font-size:11px;color:var(--muted);margin-left:8px;" id="rsAsofInfo"></span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+            <span style="font-size:10px;background:#052e16;color:#4ade80;border:1px solid #166534;border-radius:4px;padding:2px 7px;font-weight:700;" title="EMA21, SMA50, ADR%, Vol Surge, RS Score and Swing Score are ALL computed using only OHLCV data up to (and including) the selected Scan Date — no future data leaks into any indicator.">✅ All indicators as-of scan date</span>
+            <span style="font-size:10px;background:#1e1b4b;color:#a5b4fc;border:1px solid #3730a3;border-radius:4px;padding:2px 7px;font-weight:700;" title="CMP, Return%, MaxGain, MaxDD show post-scan performance — intentionally forward-looking to measure outcome.">📈 Return cols = post-scan fwd performance</span>
+          </div>
+        </div>
+        <!-- Controls -->
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;">
+          <span style="font-size:11px;color:var(--muted);font-weight:700;">SCAN DATE:</span>
+          <input type="date" class="f-input" id="rsAsofDate" style="width:140px;font-size:11px;" value="2025-10-01">
+          <span style="color:var(--border2);margin:0 4px;">|</span>
+          <span style="font-size:11px;color:var(--muted);font-weight:700;">END DATE:</span>
+          <input type="date" class="f-input" id="rsAsofEndDate" style="width:140px;font-size:11px;" value="" placeholder="latest">
+          <span style="color:var(--border2);margin:0 4px;">|</span>
+          <span style="font-size:10px;color:var(--muted);font-weight:700;">TOP-N</span>
+          <input type="number" class="f-input" id="rsAsofTopN" value="50" min="10" max="200" step="10" style="width:60px;font-size:11px;">
+          <span style="font-size:10px;color:var(--muted);font-weight:700;">SORT</span>
+          <select class="f-sel" id="rsAsofSort" style="font-size:11px;">
+            <option value="swing">Swing Score</option>
+            <option value="rs">RS Score</option>
+            <option value="adr">ADR%</option>
+            <option value="volume">Volume Surge</option>
+          </select>
+          <span style="font-size:10px;color:var(--muted);font-weight:700;">MIN PRICE</span>
+          <input type="number" class="f-input" id="rsAsofMinPrice" value="50" min="1" style="width:60px;font-size:11px;">
+          <span style="font-size:10px;color:var(--muted);font-weight:700;">MIN ADR%</span>
+          <input type="number" class="f-input" id="rsAsofMinAdr" value="0" min="0" step="0.5" style="width:55px;font-size:11px;">
+          <button class="btn btn-primary btn-sm" onclick="rsAsofRun()" style="margin-left:auto;" id="rsAsofRunBtn">🔬 Run Scan</button>
+        </div>
+        <!-- Quick presets + view modes -->
+        <div style="display:flex;gap:4px;align-items:center;margin-bottom:4px;flex-wrap:wrap">
+          <span style="font-size:10px;color:var(--muted);margin-right:4px">Quick:</span>
+          <button class="btn btn-outline btn-xs" onclick="rsAsofQuick('1w')">1W ago</button>
+          <button class="btn btn-outline btn-xs" onclick="rsAsofQuick('2w')">2W ago</button>
+          <button class="btn btn-outline btn-xs" onclick="rsAsofQuick('1m')">1M ago</button>
+          <button class="btn btn-outline btn-xs" onclick="rsAsofQuick('3m')">3M ago</button>
+          <button class="btn btn-outline btn-xs" onclick="rsAsofQuick('6m')">6M ago</button>
+          <button class="btn btn-outline btn-xs" onclick="rsAsofQuick('1y')">1Y ago</button>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+          <span style="font-size:10px;color:var(--muted);margin-right:2px">View:</span>
+          <button class="btn btn-outline btn-xs rsAsofViewBtn active" data-view="flat" onclick="rsAsofSetView('flat')">📋 Flat</button>
+          <button class="btn btn-outline btn-xs rsAsofViewBtn" data-view="sector" onclick="rsAsofSetView('sector')">🏭 Sector</button>
+          <button class="btn btn-outline btn-xs rsAsofViewBtn" data-view="rs" onclick="rsAsofSetView('rs')">💪 RS Tier</button>
+          <button class="btn btn-outline btn-xs rsAsofViewBtn" data-view="return" onclick="rsAsofSetView('return')">📈 By Return</button>
+          <span style="flex:1"></span>
+          <input type="text" class="f-input" id="rsAsofSearch" placeholder="🔍 Search…" oninput="rsAsofFilter()" style="width:140px;font-size:11px;">
+          <span style="font-size:11px;color:var(--muted);" id="rsAsofCount"></span>
+        </div>
+        <!-- Summary cards -->
+        <div id="rsAsofSummary" style="display:none;margin-bottom:12px;"></div>
+        <!-- Sector chips -->
+        <div id="rsAsofSectors" style="margin-bottom:8px;"></div>
+        <!-- Main body -->
+        <div id="rsAsofBody" style="font-size:11px;">
+          <div style="color:var(--muted);padding:40px;text-align:center;">Pick a past date and click <strong>🔬 Run Scan</strong> to see which stocks would have been RS leaders on that date and how they performed since.</div>
+        </div>
+      </div>
+    </div>
+
 
     <!-- IFRAME EMBED PAGE (for reports that stay inside the app shell) -->
     <div class="page" id="page-embed">
@@ -1386,21 +1499,48 @@
 
 <!-- AUTO RS-LEADERS PREVIEW MODAL -->
 <div class="modal-ov" id="rsLeadersModal" onclick="if(event.target===this)closeRsModal()">
-  <div class="modal-box" style="max-width:720px;max-height:86vh;display:flex;flex-direction:column">
+  <div class="modal-box" style="max-width:920px;max-height:90vh;display:flex;flex-direction:column">
     <div class="modal-hdr">
       <span class="modal-title">⚡ Auto RS-Leaders <span id="rsTopLbl" style="color:var(--muted);font-weight:500">(top 35)</span></span>
       <button class="modal-close" onclick="closeRsModal()">✕</button>
     </div>
     <div class="modal-body" style="flex:1;overflow-y:auto">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+      <!-- Row 1: basic filters -->
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
         <label style="font-size:11px;color:var(--muted)">Top N</label>
-        <input id="rsTopN" type="number" min="5" max="100" value="35" class="mi" style="width:70px">
+        <input id="rsTopN" type="number" min="5" max="500" value="35" class="mi" style="width:70px">
         <label style="font-size:11px;color:var(--muted)">Min Price ₹</label>
         <input id="rsMinPrice" type="number" value="50" class="mi" style="width:80px">
         <label style="font-size:11px;color:var(--muted)">Min Bars</label>
         <input id="rsMinBars" type="number" value="150" class="mi" style="width:70px">
+      </div>
+      <!-- Row 2: advanced filters -->
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+        <label style="font-size:11px;color:var(--muted)">Sort By</label>
+        <select id="rsSortBy" class="mi" style="width:110px">
+          <option value="swing" selected>⚡ Swing Score</option>
+          <option value="rs">📈 RS Score</option>
+          <option value="adr">📊 ADR%</option>
+          <option value="volume">🔊 Vol Surge</option>
+        </select>
+        <label style="font-size:11px;color:var(--muted)">Min ADR%</label>
+        <input id="rsMinAdr" type="number" value="0" min="0" max="20" step="0.5" class="mi" style="width:65px" title="E.g. 2.0 = only stocks with ≥2% avg daily range">
+        <label style="font-size:11px;color:var(--muted)">Min Vol (20d avg)</label>
+        <input id="rsMinVol" type="number" value="0" min="0" step="10000" class="mi" style="width:90px" title="E.g. 100000 = filter out illiquid stocks">
+        <label style="font-size:11px;color:var(--muted)" title="Only show recently listed stocks (<6 months)">IPO Only</label>
+        <input id="rsIpoOnly" type="checkbox" style="width:16px;height:16px;cursor:pointer" title="Only show IPO stocks (listed within ~6 months, <126 trading bars)">
         <button class="btn btn-outline btn-sm" onclick="wlAutoRsPreview(true)">🔄 Rescan</button>
         <span id="rsStatus" style="font-size:10px;color:var(--muted);margin-left:auto"></span>
+      </div>
+      <!-- View mode toggle bar -->
+      <div style="display:flex;gap:4px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+        <span style="font-size:10px;color:var(--muted);margin-right:4px">View:</span>
+        <button class="btn btn-outline btn-xs rs-view-btn active" data-view="flat" onclick="setRsView('flat')">📋 Flat</button>
+        <button class="btn btn-outline btn-xs rs-view-btn" data-view="sector" onclick="setRsView('sector')">🏭 By Sector</button>
+        <button class="btn btn-outline btn-xs rs-view-btn" data-view="adr" onclick="setRsView('adr')">📈 By ADR</button>
+        <button class="btn btn-outline btn-xs rs-view-btn" data-view="rs" onclick="setRsView('rs')">💪 By RS Tier</button>
+        <span style="flex:1"></span>
+        <span id="rsSectorSummary" style="font-size:9px;color:var(--muted)"></span>
       </div>
       <div id="rsPreviewBody" style="font-size:11px">⏳ Computing RS vs Nifty 50…</div>
     </div>
@@ -1442,6 +1582,7 @@
     </div>
     <div class="modal-foot">
       <button class="btn btn-outline" onclick="closePeModal()">Cancel</button>
+      <button class="btn btn-outline" onclick="submitPartialExit(true)">Exit All Remaining</button>
       <button class="btn btn-primary" onclick="submitPartialExit()">Book Exit</button>
     </div>
   </div>
@@ -1456,6 +1597,25 @@ let currentPage = 'board', currentDetType = 'position';
 const miniInst = {};
 const wlMiniInst = {};
 
+function _remainingQty(p) {
+  const rq = p.remaining_quantity;
+  // If remaining_quantity is 0 but the position is still an active status,
+  // it's a corrupted/inconsistent state — fall back to full quantity.
+  if (rq === 0 || rq === null || rq === undefined) {
+    const st = p.status || 'OPEN';
+    const activeStatuses = ['OPEN', 'PARTIAL', 'T1_HIT', 'T2_HIT'];
+    if (rq === 0 && !activeStatuses.includes(st)) return 0; // genuinely closed
+    return p.quantity || 1;
+  }
+  return rq;
+}
+
+function _isActivePosition(p) {
+  const st = p.status || 'OPEN';
+  const activeStatuses = ['OPEN', 'PARTIAL', 'T1_HIT', 'T2_HIT'];
+  return activeStatuses.includes(st);
+}
+
 function showPage(n) {
   currentPage = n;
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1466,13 +1626,14 @@ function showPage(n) {
   if (nav) nav.classList.add('active');
   // Highlight topbar link
   const tlBoard = document.getElementById('tl-board');
-  if (n === 'board' || n === 'analytics' || n === 'journal' || n === 'watchlist' || n === 'alerts') {
+  if (n === 'board' || n === 'analytics' || n === 'journal' || n === 'watchlist' || n === 'alerts' || n === 'ibd-backtest') {
     if (tlBoard) tlBoard.classList.add('active');
   }
   if (n === 'analytics') loadEquity();
   if (n === 'journal') loadJournal();
   if (n === 'watchlist') loadWatchlist();
   if (n === 'alerts') boLoadStatus2();
+  // ibd-backtest: do NOT auto-run; show stale data until user clicks Run
 }
 
 function openEmbed(url, title, tlId) {
@@ -1531,20 +1692,45 @@ async function refreshData(auto = false) {
     _priceRefreshPending = false;
   }
 
-  try {
-    // Fetch positions (backend returns live prices during market hours)
-    let r = await fetch(API + '/api/trade-board/positions/enriched');
-    if (!r.ok) r = await fetch(API + '/api/trade-board/positions');
-    const d = await r.json();
-    positions = d.positions || [];
-    updateSbStats(d);
+  // ── FAST LOAD: fetch positions + watchlist IN PARALLEL ──────────────
+  // Try enriched first; if it takes too long or fails, fall back to basic.
+  const posPromise = (async () => {
+    try {
+      const r = await fetch(API + '/api/trade-board/positions/enriched');
+      if (r.ok) return await r.json();
+    } catch(e) {}
+    try {
+      const r2 = await fetch(API + '/api/trade-board/positions');
+      if (r2.ok) return await r2.json();
+    } catch(e) {}
+    return null;
+  })();
+
+  const wlPromise = (async () => {
+    try {
+      const r = await fetch(API + '/api/trade-board/watchlist/enriched');
+      if (r.ok) return await r.json();
+    } catch(e) {}
+    try {
+      const r2 = await fetch(API + '/api/trade-board/watchlist');
+      if (r2.ok) return await r2.json();
+    } catch(e) {}
+    return null;
+  })();
+
+  // Wait for BOTH in parallel
+  const [posData, wlData] = await Promise.all([posPromise, wlPromise]);
+
+  // ── Apply positions ────────────────────────────────────────────────
+  if (posData) {
+    positions = posData.positions || [];
+    updateSbStats(posData);
     renderPositions();
     if (currentDetId) { const p = positions.find(x => x.id === currentDetId); if (p) updateDetInfo(p); }
-    // Update live badge to reflect market status
     const liveBadge = document.querySelector('.live-badge');
-    if (liveBadge && d.marketOpen !== undefined) {
+    if (liveBadge && posData.marketOpen !== undefined) {
       const dot = liveBadge.querySelector('.live-dot');
-      if (d.marketOpen) {
+      if (posData.marketOpen) {
         liveBadge.style.background = 'var(--green-bg)'; liveBadge.style.color = 'var(--green)';
         if (dot) dot.style.background = 'var(--green)';
       } else {
@@ -1552,19 +1738,22 @@ async function refreshData(auto = false) {
         if (dot) { dot.style.background = 'var(--muted)'; dot.style.animation = 'none'; }
       }
     }
-  } catch(e) { if (!auto) toast('Failed to load positions', 'error'); }
+  } else if (!auto) {
+    toast('Failed to load positions', 'error');
+  }
 
-  // Refresh watchlist
-  try {
-    let wr = await fetch(API + '/api/trade-board/watchlist/enriched');
-    if (!wr.ok) wr = await fetch(API + '/api/trade-board/watchlist');
-    const wd = await wr.json();
-    watchlistItems = wd.items || [];
-    if (Array.isArray(wd.buckets) && wd.buckets.length) wlBuckets = wd.buckets;
-    if (Array.isArray(wd.setups)  && wd.setups.length)  wlSetupsVocab = wd.setups;
+  // ── Apply watchlist ────────────────────────────────────────────────
+  if (wlData) {
+    watchlistItems = wlData.items || [];
+    if (Array.isArray(wlData.buckets) && wlData.buckets.length) wlBuckets = wlData.buckets;
+    if (Array.isArray(wlData.setups)  && wlData.setups.length)  wlSetupsVocab = wlData.setups;
     document.getElementById('sbWatch').textContent = watchlistItems.length;
     if (currentPage === 'watchlist') renderWatchlist();
-  } catch(e) {}
+  }
+
+  if (currentPage === 'analytics') {
+    await loadEquity();
+  }
 
 
   refreshTimer = 30;
@@ -1572,14 +1761,14 @@ async function refreshData(auto = false) {
 
 
 function updateSbStats(d) {
-  const open = (d.positions || []).filter(p => p.status === 'OPEN' || p.status === 'PARTIAL');
+  const open = (d.positions || []).filter(p => _isActivePosition(p));
   document.getElementById('sbOpen').textContent = open.length;
   let dayPl = 0, totalPl = 0, risk = 0;
   for (const p of d.positions || []) {
     const e = p.entry || 0, sl = p.sl || e;
     const realizedPl = p.realized_pl || 0;
-    if (p.status === 'OPEN' || p.status === 'PARTIAL') {
-      const qty = p.remaining_quantity != null ? p.remaining_quantity : (p.quantity || 1);
+    if (_isActivePosition(p)) {
+      const qty = _remainingQty(p);
       const cmp = p.cmp || e;
       dayPl += p.dayChangeAmt || 0;
       totalPl += (cmp - e) * qty + realizedPl;
@@ -1611,7 +1800,7 @@ function renderPositions() {
   const setup = document.getElementById('setupFilter').value;
   const sort = document.getElementById('sortFilter').value;
   let f = positions.filter(p => {
-    const act = p.status === 'OPEN' || p.status === 'PARTIAL' || p.status === 'T1_HIT' || p.status === 'T2_HIT';
+    const act = _isActivePosition(p);
     if (currentTab === 'active' && !act) return false;
     if (currentTab === 'closed' && act) return false;
     if (search && !p.symbol?.toLowerCase().includes(search) && !p.name?.toLowerCase().includes(search)) return false;
@@ -1789,6 +1978,41 @@ function buildMetricsStrip(p) {
   '</div>';
 }
 
+function buildRsLeaderStrip(item) {
+  // Dedicated RS-leader metrics row shown only for auto_rs watchlist entries
+  const swCol = item.swing_score >= 70 ? '#ffd700' : item.swing_score >= 55 ? '#4ade80' : '#7dd3fc';
+  const rsCol = item.rs_score >= 90 ? '#ffd700' : item.rs_score >= 80 ? '#4ade80' : item.rs_score >= 65 ? '#86efac' : '#7dd3fc';
+  const adrVal = item.adr_pct != null ? parseFloat(item.adr_pct) : 0;
+  const adrCol = adrVal >= 6 ? '#f97316' : adrVal >= 4 ? '#22c55e' : adrVal >= 2 ? 'var(--cyan)' : 'var(--muted)';
+  const adrTier = adrVal >= 6 ? '🔥' : adrVal >= 4 ? '✓' : adrVal >= 2 ? '·' : '↓';
+  const adrHtml = item.adr_pct != null
+    ? '<span style="color:'+adrCol+';font-weight:800">' + adrTier + ' ' + adrVal.toFixed(1) + '%</span>'
+    : '<span style="color:var(--muted)">—</span>';
+  const vsVal = item.vol_surge_5d ?? item.volSurge5d;
+  const vsHtml = vsVal != null
+    ? '<span style="color:' + (vsVal >= 2 ? '#22c55e' : vsVal >= 1.5 ? '#fdba74' : 'var(--muted)') + ';font-weight:800">' + parseFloat(vsVal).toFixed(1) + 'x</span>'
+    : '<span style="color:var(--muted)">—</span>';
+  const excessVal = item.rs_excess_pct ?? item.excess_pct;
+  const exHtml = excessVal != null
+    ? '<span style="color:' + (excessVal >= 0 ? '#4ade80' : '#f87171') + ';font-weight:800">' + (excessVal >= 0 ? '+' : '') + parseFloat(excessVal).toFixed(1) + '%</span>'
+    : '<span style="color:var(--muted)">—</span>';
+  const hi52 = item.pct_from_52w_hi ?? item.pctFrom52wHigh;
+  const hiHtml = hi52 != null
+    ? '<span style="color:' + (hi52 > -5 ? '#4ade80' : hi52 > -15 ? '#f59e0b' : '#f87171') + ';font-weight:800">' + parseFloat(hi52).toFixed(0) + '%</span>'
+    : '<span style="color:var(--muted)">—</span>';
+  // Sector color bar
+  const _SC = {'Capital Goods':'#3b82f6','Financial Services':'#f59e0b','Healthcare':'#22c55e','Automobile and Auto Components':'#ef4444','Metals & Mining':'#8b5cf6','Fast Moving Consumer Goods':'#14b8a6','Power':'#f97316','Chemicals':'#06b6d4','Information Technology':'#a855f7','Services':'#64748b','Consumer Durables':'#ec4899','Oil Gas & Consumable Fuels':'#84cc16','Realty':'#78716c','Textiles':'#6366f1','Telecommunication':'#d946ef'};
+  const secCol = _SC[item.sector] || '#334155';
+  return '<div class="metrics-strip ms-5" style="border-top:2px solid '+secCol+';background:#060d1a">' +
+    '<div class="ms-cell"><div class="ms-l">⚡ Swing</div><div class="ms-v"><span style="color:' + swCol + ';font-weight:900">' + (item.swing_score != null ? parseFloat(item.swing_score).toFixed(0) : '—') + '</span></div></div>' +
+    '<div class="ms-cell"><div class="ms-l">RS</div><div class="ms-v"><span style="color:' + rsCol + ';font-weight:900">' + (item.rs_score || '—') + '</span></div></div>' +
+    '<div class="ms-cell"><div class="ms-l">Excess</div><div class="ms-v">' + exHtml + '</div></div>' +
+    '<div class="ms-cell"><div class="ms-l">ADR%</div><div class="ms-v">' + adrHtml + '</div></div>' +
+    '<div class="ms-cell"><div class="ms-l">Vol 5d</div><div class="ms-v">' + vsHtml + '</div></div>' +
+    '<div class="ms-cell"><div class="ms-l">52W Hi</div><div class="ms-v">' + hiHtml + '</div></div>' +
+  '</div>';
+}
+
 function buildHealthBar(p) {
   const isOpen = p.status === 'OPEN' || p.status === 'PARTIAL';
   if (!isOpen) return '';
@@ -1832,8 +2056,8 @@ function buildHealthBar(p) {
 }
 
 function buildCard(p) {
-  const e = p.entry || 0, totalQty = p.quantity || 1, remaining = p.remaining_quantity != null ? p.remaining_quantity : totalQty;
-  const isOpen = p.status === 'OPEN' || p.status === 'PARTIAL';
+  const e = p.entry || 0, totalQty = p.quantity || 1, remaining = _remainingQty(p);
+  const isOpen = _isActivePosition(p);
   const isClosed = !isOpen;
   // For closed positions, use exit_price as the final price reference
   const cmp = p.cmp || (isClosed ? (p.exit_price || e) : e), sl = p.sl || e;
@@ -1874,6 +2098,7 @@ function buildCard(p) {
     ? '<span class="' + dc + '" style="font-size:10px;font-weight:800">' + (dPct >= 0 ? '▲' : '▼') + Math.abs(dPct).toFixed(1) + '% · ₹' + Math.abs(dAmt).toLocaleString('en-IN',{maximumFractionDigits:0}) + ' today</span>'
     : '';
   const peBtn = isOpen ? '<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();openPeModal(\'' + p.id + '\')" title="Book partial exit">📤</button>' : '';
+  const reopenBtn = !isOpen ? '<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();reopenPosition(\'' + p.id + '\')" title="Undo close — reopen position">↩</button>' : '';
   const cmpLabel = priceIsStale ? 'CMP <span style="color:#f59e0b">⚠</span>' : 'CMP';
 
   // Invested amount
@@ -1896,7 +2121,7 @@ function buildCard(p) {
     buildHealthBar(p) +
     buildRevealPanel(p, {gPct, gAmt, invested, days, remaining, e, sl, cmp}) +
     '<div class="card-foot"><span class="hold-d" style="display:flex;align-items:center;gap:4px"><span class="hb-dot ' + dayDotCls + '" style="width:5px;height:5px"></span>' + days + 'd · ' + remaining + ' qty · ₹' + invested.toLocaleString('en-IN',{maximumFractionDigits:0}) + '</span>' +
-    '<div class="card-acts" onclick="event.stopPropagation()">' + peBtn + '<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();openUpdateModal(\'' + p.id + '\')">Edit</button></div></div>' +
+    '<div class="card-acts" onclick="event.stopPropagation()">' + peBtn + reopenBtn + '<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();openUpdateModal(\'' + p.id + '\')">Edit</button></div></div>' +
     '<div class="card-reveal-hint">hover for more · click to open</div></div>';
 }
 
@@ -2045,8 +2270,10 @@ async function openDetail(id) {
   document.getElementById('dtSym').textContent = p.symbol || '—';
   document.getElementById('dtName').textContent = p.name || '';
   document.getElementById('detOverlay').classList.add('open');
+  const _isClosed = !_isActivePosition(p);
   document.getElementById('dtActions').innerHTML =
-    ((p.status === 'OPEN' || p.status === 'PARTIAL') ? '<button class="btn btn-outline btn-sm" onclick="openPeModal(\'' + p.id + '\')">📤 Partial Exit</button>' : '') +
+    (_isActivePosition(p) ? '<button class="btn btn-outline btn-sm" onclick="openPeModal(\'' + p.id + '\')">📤 Partial Exit</button>' : '') +
+    (_isClosed ? '<button class="btn btn-outline btn-sm" onclick="reopenPosition(\'' + p.id + '\')" title="Undo close — restore position to OPEN">↩ Reopen</button>' : '') +
     '<button class="btn btn-outline btn-sm" onclick="openUpdateFromDetail()">✏ Update</button>' +
     '<button class="btn btn-red btn-sm" onclick="deleteFromDetail()">🗑 Delete</button>';
   const st = (p.status || 'OPEN').replace('_HIT', ' ✓');
@@ -2437,10 +2664,76 @@ function onUpdateStatusChange() {
     if (!document.getElementById('uExitDate').value) {
       document.getElementById('uExitDate').value = new Date().toISOString().split('T')[0];
     }
+  } else {
+    // Reopening a position should not carry stale close metadata.
+    document.getElementById('uExitPrice').value = '';
+    document.getElementById('uExitDate').value = '';
+    // Warn if SL would immediately trigger auto-close.
+    const id = document.getElementById('uId').value;
+    const p = positions.find(x => x.id === id);
+    const slEl = document.getElementById('uSl');
+    if (p && slEl) {
+      const cmp = p.cmp || 0;
+      const sl  = parseFloat(slEl.value) || 0;
+      if (sl > 0 && cmp > 0 && cmp <= sl) {
+        slEl.style.outline = '2px solid var(--red)';
+        slEl.title = '⚠️ SL (' + sl + ') ≥ CMP (' + cmp + ') — position will auto-close immediately. Lower the SL.';
+        toast('⚠️ SL (' + sl + ') is ≥ CMP (' + cmp + '). Lower the SL below current price or it will auto-close again.', 'error');
+      } else if (slEl) {
+        slEl.style.outline = '';
+        slEl.title = '';
+      }
+    }
   }
 }
 function closeUpdateModal() { document.getElementById('updateModal').classList.remove('open'); }
 function openUpdateFromDetail() { if (currentDetId) openUpdateModal(currentDetId); }
+
+async function reopenPosition(id) {
+  const p = positions.find(x => x.id === id);
+  if (!p) return;
+
+  // Detect if existing SL would immediately trigger auto-close again
+  const cmp = p.cmp || 0;
+  const sl  = p.sl  || 0;
+  let newSl = sl;
+
+  if (sl > 0 && cmp > 0 && cmp <= sl) {
+    const input = prompt(
+      '⚠️ Reopen ' + (p.symbol || id) + '?\n\n' +
+      'Current SL (' + sl + ') is ≥ CMP (' + cmp + ').\n' +
+      'If you reopen with this SL the position will auto-close immediately.\n\n' +
+      'Enter a new Stop Loss below the current price, or leave blank to clear SL (set to 0):',
+      ''
+    );
+    if (input === null) return; // user cancelled
+    const parsed = parseFloat(input);
+    if (!isNaN(parsed) && parsed > 0) {
+      if (parsed >= cmp) {
+        toast('New SL (' + parsed + ') must be below CMP (' + cmp + '). Reopen cancelled.', 'error');
+        return;
+      }
+      newSl = parsed;
+    } else {
+      newSl = 0; // clear SL so automation doesn't fire
+    }
+  } else {
+    if (!confirm('Reopen ' + (p.symbol || id) + '? This will restore it to OPEN and clear the close price.')) return;
+  }
+
+  try {
+    const body = { status: 'OPEN', sl: newSl };
+    const r = await fetch(API + '/api/trade-board/positions/' + id, {
+      method: 'PUT', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) { const err = await r.json(); throw new Error(err.detail || 'Error'); }
+    await refreshData();
+    const updated = positions.find(x => x.id === id);
+    if (updated) { if (currentDetId === id) openDetail(id); }
+    toast((p.symbol || id) + ' reopened ✓' + (newSl !== sl ? ' (SL updated to ' + newSl + ')' : ''), 'success');
+  } catch(e) { toast('Reopen failed: ' + e.message, 'error'); }
+}
 
 async function submitUpdate() {
   const id = document.getElementById('uId').value;
@@ -2589,7 +2882,9 @@ function renderClosedTable() {
     }
     // P&L%: based on total capital deployed (entry * qty)
     const pp = e > 0 && qty > 0 ? (pl / (e * qty)) * 100 : 0;
-    const sl = p.sl || p.stop_loss || e, risk = Math.abs(e - sl) || 0;
+    const sl = p.sl || p.stop_loss || e;
+    const baseSl = p.original_sl || p.initial_sl || sl;
+    const risk = Math.abs(e - baseSl) || 0;
     // For partial positions, R:R should use only the exited quantity's risk
     const riskQty = isPartialOpen ? partials.reduce((s, pe) => s + pe.quantity, 0) : qty;
     const totalRiskAmt = risk * riskQty;
@@ -3309,17 +3604,33 @@ let wlActiveBucket = 'ALL';
 
 async function loadWatchlist() {
   try {
-    let r = await fetch(API + '/api/trade-board/watchlist/enriched');
-    if (!r.ok) r = await fetch(API + '/api/trade-board/watchlist');
-    const d = await r.json();
-    watchlistItems = d.items || [];
-    if (Array.isArray(d.buckets) && d.buckets.length) wlBuckets = d.buckets;
-    if (Array.isArray(d.setups)  && d.setups.length)  wlSetupsVocab = d.setups;
-    document.getElementById('sbWatch').textContent = watchlistItems.length;
-    // Fire-and-forget: also refresh categories + market health
+    // Fast initial render from basic endpoint
+    const basic = await fetch(API + '/api/trade-board/watchlist');
+    if (basic.ok) {
+      const d = await basic.json();
+      watchlistItems = d.items || [];
+      if (Array.isArray(d.buckets) && d.buckets.length) wlBuckets = d.buckets;
+      if (Array.isArray(d.setups)  && d.setups.length)  wlSetupsVocab = d.setups;
+      document.getElementById('sbWatch').textContent = watchlistItems.length;
+      renderWatchlist();
+    }
+    // Fire-and-forget: also refresh categories + market health in parallel
     loadWlCategories();
     loadWlMarketHealth();
-    renderWatchlist();
+    // Background upgrade: fetch enriched data then re-render
+    (async () => {
+      try {
+        const er = await fetch(API + '/api/trade-board/watchlist/enriched');
+        if (er.ok) {
+          const ed = await er.json();
+          watchlistItems = ed.items || [];
+          if (Array.isArray(ed.buckets) && ed.buckets.length) wlBuckets = ed.buckets;
+          if (Array.isArray(ed.setups)  && ed.setups.length)  wlSetupsVocab = ed.setups;
+          document.getElementById('sbWatch').textContent = watchlistItems.length;
+          if (currentPage === 'watchlist') renderWatchlist();
+        }
+      } catch(e) {}
+    })();
   } catch(e) { console.warn('loadWatchlist', e); }
 }
 
@@ -3424,6 +3735,16 @@ function renderWatchlist() {
   if (setupSel && setupSel.options.length <= 1 && wlSetupsVocab.length) {
     setupSel.innerHTML = '<option value="">All setups</option>' + wlSetupsVocab.map(s=>'<option>'+s+'</option>').join('');
   }
+  // Populate sector filter dynamically from watchlist data
+  const sectorSel = document.getElementById('wlSectorFilter');
+  if (sectorSel) {
+    const sectors = [...new Set(watchlistItems.map(i => i.sector).filter(Boolean).filter(s => s !== 'Other'))].sort();
+    const curVal = sectorSel.value;
+    if (sectors.length && sectorSel.options.length <= 1) {
+      sectorSel.innerHTML = '<option value="">All sectors</option>' + sectors.map(s => '<option value="'+s+'">'+s+'</option>').join('');
+      if (curVal) sectorSel.value = curVal;
+    }
+  }
   // Counts per bucket
   const counts = {};
   watchlistItems.forEach(it => { const b = it.bucket || 'watching'; counts[b] = (counts[b] || 0) + 1; });
@@ -3433,17 +3754,35 @@ function renderWatchlist() {
   // Filter
   const q = (document.getElementById('wlSearch')?.value || '').trim().toLowerCase();
   const setupF = document.getElementById('wlSetupFilter')?.value || '';
+  const sectorF = document.getElementById('wlSectorFilter')?.value || '';
+  const prioF = document.getElementById('wlPriorityFilter')?.value || '';
   let list = watchlistItems.filter(it => {
     if (wlActiveBucket !== 'ALL' && (it.bucket || 'watching') !== wlActiveBucket) return false;
-    if (setupF && (it.setup || '').toLowerCase() !== setupF.toLowerCase()) return false;
+    if (setupF && (it.setup || '').toLowerCase() !== setupF.toLowerCase() && (it.scanSetup || '').toLowerCase() !== setupF.toLowerCase()) return false;
+    if (sectorF && (it.sector || '') !== sectorF) return false;
+    if (prioF && (it.priority || 'P3') !== prioF) return false;
     if (q) {
-      const hay = [it.symbol, it.name, (it.tags||[]).join(' '), it.notes, it.setup, it.bucket].join(' ').toLowerCase();
+      const hay = [it.symbol, it.name, (it.tags||[]).join(' '), it.notes, it.setup, it.bucket, it.sector, it.industry, it.priority].join(' ').toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;
   });
-  // Sort by return-since-add desc, then conviction desc
-  list.sort((a,b) => (b.returnSinceAddPct || 0) - (a.returnSinceAddPct || 0) || (b.conviction || 0) - (a.conviction || 0));
+  // Sort: priority first (P1→P2→P3), then by context
+  const _priOrd = {'P1': 0, 'P2': 1, 'P3': 2};
+  if (wlActiveBucket === 'rs_leaders') {
+    // Group by sector first if sector filter not active, then by priority + rank
+    if (!sectorF) {
+      list.sort((a,b) => {
+        const sa = (a.sector || 'ZZZ'), sb = (b.sector || 'ZZZ');
+        if (sa !== sb) return sa.localeCompare(sb);
+        return (_priOrd[a.priority||'P3']||2) - (_priOrd[b.priority||'P3']||2) || (a.rs_rank || 9999) - (b.rs_rank || 9999);
+      });
+    } else {
+      list.sort((a,b) => (_priOrd[a.priority||'P3']||2) - (_priOrd[b.priority||'P3']||2) || (a.rs_rank || 9999) - (b.rs_rank || 9999) || (b.rs_score || 0) - (a.rs_score || 0));
+    }
+  } else {
+    list.sort((a,b) => (_priOrd[a.priority||'P3']||2) - (_priOrd[b.priority||'P3']||2) || (b.returnSinceAddPct || 0) - (a.returnSinceAddPct || 0) || (b.conviction || 0) - (a.conviction || 0));
+  }
   document.getElementById('wlTotalCount').textContent = list.length + ' / ' + watchlistItems.length;
   if (!list.length) {
     g.innerHTML = '<div class="empty-st"><div class="empty-ttl">Nothing here</div><div class="empty-sub">Add stocks with the &ldquo;+ Add&rdquo; button, or switch bucket.</div></div>';
@@ -3462,8 +3801,24 @@ function buildWlCard(item) {
 
   // v2 specific badges
   const bucketLbl = item.bucket ? '<span class="wl-bucket-pill">' + _bucketLabel(item.bucket) + '</span>' : '';
+  // Priority badge
+  const _prio = item.priority || 'P3';
+  const _prioBg = _prio === 'P1' ? '#2a1a00' : _prio === 'P2' ? '#0a1a30' : '#1a1a1a';
+  const _prioClr = _prio === 'P1' ? '#ffd700' : _prio === 'P2' ? '#60a5fa' : '#64748b';
+  const _prioIcon = _prio === 'P1' ? '🔥' : _prio === 'P2' ? '👀' : '📋';
+  const prioBadge = '<span class="badge" style="background:'+_prioBg+';color:'+_prioClr+';border:1px solid '+_prioClr+'33;font-weight:800" title="Priority tier">'+_prioIcon+' '+_prio+'</span>';
+  // Near-entry badge
+  const nearEntryBadge = item.nearEntry
+    ? '<span class="badge" style="background:#1a2400;color:#a3e635;border:1px solid #a3e63544;font-weight:800;animation:blink 1.5s infinite" title="CMP within 2% of scan entry price (₹'+(item.scanEntry||'?')+')">🎯 NEAR ENTRY ' + (item.entryDistPct != null ? (item.entryDistPct >= 0 ? '+' : '') + item.entryDistPct.toFixed(1) + '%' : '') + '</span>'
+    : '';
   const autoBadge = item.source === 'auto_rs'
     ? '<span class="badge" style="background:#1a1a00;color:#facc15;border:1px solid #facc1544" title="Auto-generated by RS-Leader scan">⚡ AUTO RS' + (item.rs_rank ? ' #' + item.rs_rank : '') + (item.rs_score ? ' · ' + item.rs_score : '') + '</span>' : '';
+  const ipoBadge = item.is_ipo
+    ? '<span class="badge" style="background:#1a0a40;color:#a78bfa;border:1px solid #8b5cf644" title="Recently listed stock (<6 months)">🆕 IPO</span>' : '';
+  const swingBadge = item.swing_score != null
+    ? '<span class="badge" style="background:#0d1a0d;color:' + (item.swing_score >= 70 ? '#ffd700' : item.swing_score >= 55 ? '#4ade80' : '#7dd3fc') + ';border:1px solid #ffffff11" title="Composite swing score (RS+ADR+VolSurge+52WHigh)">⚡ ' + item.swing_score.toFixed(0) + ' swing</span>' : '';
+  const sectorBadge = (item.sector && item.sector !== 'Other' && item.source === 'auto_rs')
+    ? '<span class="badge" style="background:#0f172a;color:#94a3b8;border:1px solid #334155;font-size:9px">' + item.sector + (item.industry && item.industry !== 'Other' && item.industry !== item.sector ? ' · ' + item.industry : '') + '</span>' : '';
   const convStars = '★★★★★'.slice(0, item.conviction || 0) + '☆☆☆☆☆'.slice(0, 5 - (item.conviction || 0));
   const convBadge = item.conviction ? '<span class="wl-conv">' + convStars + '</span>' : '';
   const retPct = item.returnSinceAddPct;
@@ -3494,7 +3849,7 @@ function buildWlCard(item) {
     ? '<div class="card-gain-day ' + dc + '">' + (dayPct >= 0 ? '▲' : '▼') + Math.abs(dayPct).toFixed(1) + '% today</div>' : '';
   const scanEntry = item.scanEntry ? parseFloat(item.scanEntry) : 0;
   const scanSl = item.scanSl ? parseFloat(item.scanSl) : 0;
-  const badges = [bucketLbl, autoBadge, setupBadge, ratingBadge, scanBadge, rsStr, emaBadge, volBadge, alertBadge, retChip, staleBadge].filter(Boolean).join('');
+  const badges = [prioBadge, nearEntryBadge, bucketLbl, autoBadge, ipoBadge, swingBadge, sectorBadge, setupBadge, ratingBadge, scanBadge, rsStr, emaBadge, volBadge, alertBadge, retChip, staleBadge].filter(Boolean).join('');
   const inScanCls = item.inScan ? ' wl-in-scan' : '';
   const mktFlag = item.market === 'us' ? '🇺🇸 ' : '🇮🇳 ';
   const cmpHtml = cmp
@@ -3528,6 +3883,7 @@ function buildWlCard(item) {
       '<div><div class="pr-l">Scan SL</div><div class="pr-v pr-sl">' + (scanSl ? '₹' + scanSl.toLocaleString('en-IN') : '—') + '</div></div>' +
     '</div>' : '') +
     buildMetricsStrip(item) +
+    (item.source === 'auto_rs' ? buildRsLeaderStrip(item) : '') +
     tagsHtml +
     (item.notes ? '<div style="padding:4px 12px;font-size:10.5px;color:var(--muted);line-height:1.5">' + item.notes + '</div>' : '') +
     (item.entryInstruction ? '<div style="padding:2px 12px 4px;font-size:9px;color:var(--cyan);line-height:1.4">' + item.entryInstruction + '</div>' : '') +
@@ -3760,65 +4116,227 @@ async function rmWL(id) {
 
 // ── Auto RS-Leaders ─────────────────────────────────────────────────
 let _rsLastRanking = null;
+let _rsViewMode = 'flat';         // flat | sector | adr | rs
+let _rsSectorFilter = '';         // '' = all
 
 function closeRsModal() { document.getElementById('rsLeadersModal').classList.remove('open'); }
+
+function setRsView(mode) {
+  _rsViewMode = mode;
+  document.querySelectorAll('.rs-view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === mode));
+  if (_rsLastRanking) _renderRsPreview(_rsLastRanking);
+}
+
+function _rsModalParams() {
+  return {
+    topN:    parseInt(document.getElementById('rsTopN').value)    || 35,
+    minP:    parseFloat(document.getElementById('rsMinPrice').value) || 50,
+    minB:    parseInt(document.getElementById('rsMinBars').value)  || 150,
+    sortBy:  document.getElementById('rsSortBy')?.value           || 'swing',
+    minAdr:  parseFloat(document.getElementById('rsMinAdr').value) || 0,
+    minVol:  parseInt(document.getElementById('rsMinVol').value)   || 0,
+    ipoOnly: document.getElementById('rsIpoOnly')?.checked        || false,
+  };
+}
 
 async function wlAutoRsPreview(force) {
   const modal = document.getElementById('rsLeadersModal');
   modal.classList.add('open');
   const body = document.getElementById('rsPreviewBody');
   const status = document.getElementById('rsStatus');
-  const topN    = parseInt(document.getElementById('rsTopN').value) || 35;
-  const minP    = parseFloat(document.getElementById('rsMinPrice').value) || 50;
-  const minB    = parseInt(document.getElementById('rsMinBars').value) || 150;
-  document.getElementById('rsTopLbl').textContent = '(top ' + topN + ')';
+  const p = _rsModalParams();
+  document.getElementById('rsTopLbl').textContent = '(top ' + p.topN + ')';
   body.innerHTML = '⏳ Computing IBD-style RS vs Nifty 50 for the whole cache… (first run may take ~5-15s)';
   status.textContent = '';
   try {
-    const qs = '?top=' + topN + '&min_price=' + minP + '&min_bars=' + minB + (force ? '&refresh=true' : '');
+    let qs = '?top=' + p.topN + '&min_price=' + p.minP + '&min_bars=' + p.minB
+           + '&sort_by=' + p.sortBy;
+    if (p.minAdr > 0)  qs += '&min_adr='     + p.minAdr;
+    if (p.minVol > 0)  qs += '&min_avg_vol='  + p.minVol;
+    if (p.ipoOnly)     qs += '&ipo_only=true';
+    if (force)         qs += '&refresh=true';
     const r = await fetch(API + '/api/trade-board/watchlist/rs-leaders/preview' + qs);
     if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.detail || r.statusText); }
     const d = await r.json();
     _rsLastRanking = d;
-    status.textContent = 'Scanned ' + d.total_scanned + ' · Scored ' + d.total_computed + ' · Nifty ' + (d.nifty_asof || '—');
+    const sortLbl = {swing:'Swing Score', rs:'RS Score', adr:'ADR%', volume:'Vol Surge'}[d.sort_by || 'swing'] || d.sort_by;
+    status.textContent = 'Scanned ' + d.total_scanned + ' · Scored ' + d.total_computed
+      + ' · Sorted by ' + sortLbl + ' · Nifty ' + (d.nifty_asof || '—')
+      + (d.ipo_only ? ' · IPO only' : '');
     if (!d.top || !d.top.length) { body.innerHTML = '<div style="color:var(--muted)">No stocks met the filter.</div>'; return; }
-    body.innerHTML = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">' +
-      '<thead><tr style="background:var(--bg3);color:var(--muted);text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px">' +
-        '<th style="padding:5px 8px">#</th><th style="padding:5px 8px">Symbol</th><th style="padding:5px 8px">RS</th>' +
-        '<th style="padding:5px 8px">Label</th><th style="padding:5px 8px">Excess%</th>' +
-        '<th style="padding:5px 8px">CMP</th><th style="padding:5px 8px">From 52W Hi</th>' +
-        '<th style="padding:5px 8px">&gt;50SMA</th>' +
-      '</tr></thead><tbody>' +
-      d.top.map(r => {
-        const col = r.rs_color || '#7dd3fc';
-        const above = r.aboveSma50 ? '<span style="color:#22c55e">✓</span>' : '<span style="color:#ef4444">✗</span>';
-        const excess = r.excess_pct != null ? ((r.excess_pct >= 0 ? '+' : '') + r.excess_pct.toFixed(1) + '%') : '—';
-        return '<tr style="border-top:1px solid var(--border)">' +
-          '<td style="padding:5px 8px;color:var(--muted)">' + r.rank + '</td>' +
-          '<td style="padding:5px 8px;font-weight:800">' + r.symbol + '</td>' +
-          '<td style="padding:5px 8px;color:' + col + ';font-weight:900">' + r.rs_score + '</td>' +
-          '<td style="padding:5px 8px;color:' + col + '">' + (r.rs_label || '—') + '</td>' +
-          '<td style="padding:5px 8px;color:' + (r.excess_pct >= 0 ? '#4ade80' : '#f87171') + '">' + excess + '</td>' +
-          '<td style="padding:5px 8px">₹' + (r.cmp || '—').toLocaleString('en-IN') + '</td>' +
-          '<td style="padding:5px 8px;color:' + (r.pctFrom52wHigh > -5 ? '#4ade80' : 'var(--muted)') + '">' + r.pctFrom52wHigh + '%</td>' +
-          '<td style="padding:5px 8px;text-align:center">' + above + '</td>' +
-          '</tr>';
-      }).join('') + '</tbody></table></div>';
+    _renderRsPreview(d);
   } catch(e) {
     body.innerHTML = '<div style="color:var(--red)">❌ ' + (e.message || 'Failed') + '</div>';
   }
 }
 
+function _renderRsPreview(d) {
+  const body = document.getElementById('rsPreviewBody');
+  const rows = d.top;
+  if (!rows || !rows.length) { body.innerHTML = '<div style="color:var(--muted)">No data.</div>'; return; }
+
+  // ── Sector summary bar (always visible) ──
+  const secCounts = {};
+  const secRs = {};
+  const secAdr = {};
+  rows.forEach(r => {
+    const s = (r.sector && r.sector !== 'Other') ? r.sector : 'Other';
+    secCounts[s] = (secCounts[s] || 0) + 1;
+    secRs[s] = (secRs[s] || []);
+    secRs[s].push(r.rs_score || 0);
+    secAdr[s] = (secAdr[s] || []);
+    secAdr[s].push(r.adrPct || 0);
+  });
+  const secSorted = Object.keys(secCounts).sort((a,b) => secCounts[b] - secCounts[a]);
+  const _SECTOR_COLORS = {
+    'Capital Goods':'#3b82f6','Financial Services':'#f59e0b','Healthcare':'#22c55e','Automobile and Auto Components':'#ef4444',
+    'Metals & Mining':'#8b5cf6','Fast Moving Consumer Goods':'#14b8a6','Power':'#f97316','Chemicals':'#06b6d4',
+    'Information Technology':'#a855f7','Services':'#64748b','Consumer Durables':'#ec4899','Oil Gas & Consumable Fuels':'#84cc16',
+    'Realty':'#78716c','Consumer Services':'#fb923c','Textiles':'#6366f1','Telecommunication':'#d946ef',
+    'Construction':'#a8a29e','Media Entertainment & Publication':'#fbbf24','Other':'#475569',
+  };
+
+  let summaryHtml = '<div class="rs-summary-bar">';
+  secSorted.forEach(s => {
+    const cnt = secCounts[s];
+    const avgRs = Math.round(secRs[s].reduce((a,b)=>a+b,0) / secRs[s].length);
+    const col = _SECTOR_COLORS[s] || '#64748b';
+    const active = _rsSectorFilter === s ? ' active' : '';
+    summaryHtml += '<span class="rs-summary-chip' + active + '" style="color:' + col + ';border-color:' + col + '33" onclick="_rsSectorFilter=(_rsSectorFilter===\'' + s + '\'?\'\':\''+s+'\');_renderRsPreview(_rsLastRanking)" title="'+s+': '+cnt+' stocks, avg RS '+avgRs+'">'
+      + '<span style="font-weight:800">' + cnt + '</span> ' + (s.length > 18 ? s.slice(0,16)+'…' : s)
+      + ' <span style="opacity:.6">RS'+avgRs+'</span></span>';
+  });
+  summaryHtml += '</div>';
+  document.getElementById('rsSectorSummary').innerHTML = secSorted.length + ' sectors';
+
+  // ── Filter by sector click ──
+  let filteredRows = _rsSectorFilter ? rows.filter(r => ((r.sector && r.sector !== 'Other') ? r.sector : 'Other') === _rsSectorFilter) : rows;
+
+  // ── Build table function ──
+  function _rsTable(items, showSectorCol) {
+    return '<table style="width:100%;border-collapse:collapse;font-size:11px">' +
+      '<thead><tr style="background:var(--bg3);color:var(--muted);text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px">' +
+        '<th style="padding:4px 6px">#</th>' +
+        '<th style="padding:4px 6px">Symbol</th>' +
+        '<th style="padding:4px 6px">⚡Swing</th>' +
+        '<th style="padding:4px 6px">RS</th>' +
+        '<th style="padding:4px 6px">Label</th>' +
+        '<th style="padding:4px 6px">Excess%</th>' +
+        '<th style="padding:4px 6px">ADR%</th>' +
+        '<th style="padding:4px 6px">Vol5d</th>' +
+        (showSectorCol ? '<th style="padding:4px 6px">Sector</th>' : '') +
+        '<th style="padding:4px 6px">CMP</th>' +
+        '<th style="padding:4px 6px">52wH</th>' +
+        '<th style="padding:4px 6px">EMA21</th>' +
+        '<th style="padding:4px 6px">SMA50</th>' +
+      '</tr></thead><tbody>' +
+      items.map(row => _rsRow(row, showSectorCol)).join('') +
+      '</tbody></table>';
+  }
+
+  function _rsRow(row, showSector) {
+    const col = row.rs_color || '#7dd3fc';
+    const swCol = row.swingScore >= 70 ? '#ffd700' : row.swingScore >= 55 ? '#4ade80' : row.swingScore >= 40 ? '#7dd3fc' : 'var(--muted)';
+    const above = row.aboveEma21 ? '<span style="color:#22c55e">✓</span>' : '<span style="color:#ef4444">✗</span>';
+    const above50 = row.aboveSma50 ? '<span style="color:#22c55e">✓</span>' : '<span style="color:#ef4444">✗</span>';
+    const excess = row.excess_pct != null ? ((row.excess_pct >= 0 ? '+' : '') + row.excess_pct.toFixed(1) + '%') : '—';
+    const adr = row.adrPct != null ? row.adrPct.toFixed(1) + '%' : '—';
+    const adrCol = row.adrPct >= 6 ? '#f97316' : row.adrPct >= 4 ? '#22c55e' : row.adrPct >= 2 ? 'var(--cyan)' : 'var(--muted)';
+    const vs = row.volSurge5d != null ? row.volSurge5d.toFixed(1) + 'x' : '—';
+    const vsCol = row.volSurge5d >= 2 ? '#22c55e' : row.volSurge5d >= 1.5 ? '#fdba74' : 'var(--muted)';
+    const hiCol = row.pctFrom52wHigh > -5 ? '#4ade80' : row.pctFrom52wHigh > -15 ? '#f59e0b' : 'var(--muted)';
+    const ipoBadge = row.is_ipo ? '<span style="font-size:9px;background:#1a0a40;color:#a78bfa;padding:1px 4px;border-radius:3px;margin-left:3px">IPO</span>' : '';
+    const secCol = _SECTOR_COLORS[(row.sector && row.sector !== 'Other') ? row.sector : 'Other'] || '#64748b';
+    const sector = (row.sector && row.sector !== 'Other') ? '<span style="color:'+secCol+';font-size:9.5px;font-weight:600">' + row.sector + '</span>' : '<span style="color:var(--dim)">—</span>';
+    return '<tr style="border-top:1px solid var(--border)">' +
+      '<td style="padding:4px 6px;color:var(--muted)">' + row.rank + '</td>' +
+      '<td style="padding:4px 6px;font-weight:800">' + row.symbol + ipoBadge + '</td>' +
+      '<td style="padding:4px 6px;color:' + swCol + ';font-weight:900">' + (row.swingScore != null ? row.swingScore.toFixed(0) : '—') + '</td>' +
+      '<td style="padding:4px 6px;color:' + col + ';font-weight:900">' + row.rs_score + '</td>' +
+      '<td style="padding:4px 6px;color:' + col + ';font-size:10px">' + (row.rs_label || '—') + '</td>' +
+      '<td style="padding:4px 6px;color:' + (row.excess_pct >= 0 ? '#4ade80' : '#f87171') + '">' + excess + '</td>' +
+      '<td style="padding:4px 6px;color:' + adrCol + ';font-weight:700">' + adr + '</td>' +
+      '<td style="padding:4px 6px;color:' + vsCol + '">' + vs + '</td>' +
+      (showSector ? '<td style="padding:4px 6px">' + sector + '</td>' : '') +
+      '<td style="padding:4px 6px">₹' + (row.cmp || '—').toLocaleString('en-IN') + '</td>' +
+      '<td style="padding:4px 6px;color:' + hiCol + '">' + (row.pctFrom52wHigh != null ? row.pctFrom52wHigh.toFixed(1) + '%' : '—') + '</td>' +
+      '<td style="padding:4px 6px;text-align:center">' + above + '</td>' +
+      '<td style="padding:4px 6px;text-align:center">' + above50 + '</td>' +
+      '</tr>';
+  }
+
+  // ── Group helper ──
+  function _groupedView(items, groupFn, groupOrder, groupLabel, groupColor) {
+    const groups = {};
+    items.forEach(r => { const g = groupFn(r); (groups[g] = groups[g] || []).push(r); });
+    let html = '';
+    (groupOrder || Object.keys(groups).sort((a,b) => groups[b].length - groups[a].length)).forEach(g => {
+      if (!groups[g] || !groups[g].length) return;
+      const gItems = groups[g];
+      const avgRs = Math.round(gItems.reduce((s,r)=>s+(r.rs_score||0),0)/gItems.length);
+      const avgAdr = (gItems.reduce((s,r)=>s+(r.adrPct||0),0)/gItems.length).toFixed(1);
+      const avgSwing = Math.round(gItems.reduce((s,r)=>s+(r.swingScore||0),0)/gItems.length);
+      const ipoCount = gItems.filter(r=>r.is_ipo).length;
+      const gCol = (groupColor && groupColor(g)) || '#64748b';
+      const gLbl = (groupLabel && groupLabel(g)) || g;
+      const gId = 'rsg_' + g.replace(/[^a-zA-Z0-9]/g,'_');
+      html += '<div class="rs-sector-hdr" onclick="document.getElementById(\''+gId+'\').classList.toggle(\'collapsed\')" style="border-left:3px solid '+gCol+'">';
+      html += '<span class="rs-sec-name" style="color:'+gCol+'">' + gLbl + '</span>';
+      html += '<span class="rs-sec-count">' + gItems.length + ' stocks</span>';
+      if (ipoCount) html += '<span style="font-size:9px;color:#a78bfa">🆕' + ipoCount + '</span>';
+      html += '<span class="rs-sec-stats">';
+      html += '<span><span style="color:var(--muted)">RS</span> <span style="color:#60a5fa;font-weight:800">' + avgRs + '</span></span>';
+      html += '<span><span style="color:var(--muted)">ADR</span> <span style="color:var(--cyan);font-weight:800">' + avgAdr + '%</span></span>';
+      html += '<span><span style="color:var(--muted)">Swing</span> <span style="color:#ffd700;font-weight:800">' + avgSwing + '</span></span>';
+      html += '</span></div>';
+      html += '<div class="rs-sector-body" id="' + gId + '"><div style="overflow-x:auto">' + _rsTable(gItems, false) + '</div></div>';
+    });
+    return html;
+  }
+
+  // ── Render based on mode ──
+  let tableHtml = '';
+  if (_rsViewMode === 'sector') {
+    tableHtml = _groupedView(filteredRows,
+      r => (r.sector && r.sector !== 'Other') ? r.sector : 'Other',
+      secSorted.filter(s => !_rsSectorFilter || s === _rsSectorFilter),
+      null,
+      g => _SECTOR_COLORS[g] || '#64748b'
+    );
+  } else if (_rsViewMode === 'adr') {
+    tableHtml = _groupedView(filteredRows,
+      r => r.adrPct >= 6 ? 'ADR ≥6% (Explosive)' : r.adrPct >= 4 ? 'ADR 4-6% (Sweet Spot)' : r.adrPct >= 2 ? 'ADR 2-4% (Moderate)' : 'ADR <2% (Low Vol)',
+      ['ADR ≥6% (Explosive)', 'ADR 4-6% (Sweet Spot)', 'ADR 2-4% (Moderate)', 'ADR <2% (Low Vol)'],
+      null,
+      g => g.includes('Explosive') ? '#f97316' : g.includes('Sweet') ? '#22c55e' : g.includes('Moderate') ? '#3b82f6' : '#64748b'
+    );
+  } else if (_rsViewMode === 'rs') {
+    tableHtml = _groupedView(filteredRows,
+      r => r.rs_score >= 95 ? 'RS ≥95 Ultra Elite' : r.rs_score >= 90 ? 'RS 90-94 Elite' : r.rs_score >= 80 ? 'RS 80-89 Strong' : r.rs_score >= 65 ? 'RS 65-79 Above Avg' : 'RS <65',
+      ['RS ≥95 Ultra Elite', 'RS 90-94 Elite', 'RS 80-89 Strong', 'RS 65-79 Above Avg', 'RS <65'],
+      null,
+      g => g.includes('Ultra') ? '#ffd700' : g.includes('Elite') ? '#f59e0b' : g.includes('Strong') ? '#4ade80' : g.includes('Above') ? '#60a5fa' : '#64748b'
+    );
+  } else {
+    // Flat view
+    tableHtml = '<div style="overflow-x:auto">' + _rsTable(filteredRows, true) + '</div>';
+  }
+
+  body.innerHTML = summaryHtml + tableHtml;
+}
+
 async function wlAutoRsApply() {
-  const topN = parseInt(document.getElementById('rsTopN').value) || 35;
-  const minP = parseFloat(document.getElementById('rsMinPrice').value) || 50;
-  const minB = parseInt(document.getElementById('rsMinBars').value) || 150;
+  const p = _rsModalParams();
   const btn = document.getElementById('rsApplyBtn');
   const oldTxt = btn.textContent; btn.disabled = true; btn.textContent = '⏳ Inserting…';
   try {
     const r = await fetch(API + '/api/trade-board/watchlist/rs-leaders/auto-add', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({top: topN, min_price: minP, min_bars: minB, replace_existing_auto: true})
+      body: JSON.stringify({
+        top: p.topN, min_price: p.minP, min_bars: p.minB,
+        sort_by: p.sortBy, min_adr: p.minAdr, min_avg_vol: p.minVol,
+        ipo_only: p.ipoOnly, replace_existing_auto: true,
+      })
     });
     if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.detail || r.statusText); }
     const d = await r.json();
@@ -3878,7 +4396,7 @@ function toast(msg, type) {
 
 function openPeModal(id) {
   const p = positions.find(x => x.id === id); if (!p) return;
-  const remaining = p.remaining_quantity != null ? p.remaining_quantity : (p.quantity || 1);
+  const remaining = _remainingQty(p);
   document.getElementById('peId').value = id;
   document.getElementById('peSym').textContent = p.symbol;
   document.getElementById('peEntry').textContent = '₹' + (p.entry || 0).toLocaleString('en-IN');
@@ -3889,6 +4407,7 @@ function openPeModal(id) {
   document.getElementById('pePrice').value = p.cmp || '';
   document.getElementById('peDate').value = new Date().toISOString().slice(0, 10);
   document.getElementById('peReason').value = 'MANUAL';
+  document.getElementById('peModal').dataset.remaining = String(remaining);
   document.getElementById('peTitle').textContent = '📤 Book Partial — ' + p.symbol;
   document.getElementById('peModal').classList.add('open');
   setTimeout(() => document.getElementById('peQty').focus(), 100);
@@ -3896,14 +4415,16 @@ function openPeModal(id) {
 
 function closePeModal() { document.getElementById('peModal').classList.remove('open'); }
 
-async function submitPartialExit() {
+async function submitPartialExit(forceAll = false) {
   const id = document.getElementById('peId').value;
-  const qty = parseInt(document.getElementById('peQty').value);
+  const remaining = parseInt(document.getElementById('peModal').dataset.remaining || '0') || 0;
+  const qty = forceAll ? remaining : parseInt(document.getElementById('peQty').value);
   const price = parseFloat(document.getElementById('pePrice').value);
   if (!qty || qty <= 0) { toast('Enter a valid quantity', 'error'); return; }
   if (!price || price <= 0) { toast('Enter a valid exit price', 'error'); return; }
   const body = {
-    quantity: qty,
+    quantity: forceAll ? null : qty,
+    exit_all: forceAll,
     price: price,
     reason: document.getElementById('peReason').value || 'MANUAL',
     date: document.getElementById('peDate').value || new Date().toISOString().slice(0, 10),
@@ -4020,7 +4541,29 @@ function startCacheStatusPoller() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  refreshData();
+  // ── FAST INITIAL LOAD: show basic data immediately, upgrade later ───
+  // Positions (basic, no heavy metrics) + watchlist/fast (CSV-only ~100ms,
+  // no live API calls) are loaded in parallel for instant UI.
+  // Enriched data (live prices, EMA, vol records) upgrades in the background.
+  (async () => {
+    const posBasic = fetch(API + '/api/trade-board/positions').then(r => r.ok ? r.json() : null).catch(() => null);
+    const wlFast   = fetch(API + '/api/trade-board/watchlist/fast').then(r => r.ok ? r.json() : null).catch(() => null);
+    const [pd, wd] = await Promise.all([posBasic, wlFast]);
+    if (pd) {
+      positions = pd.positions || [];
+      updateSbStats(pd);
+      renderPositions();
+    }
+    if (wd) {
+      watchlistItems = wd.items || [];
+      if (Array.isArray(wd.buckets) && wd.buckets.length) wlBuckets = wd.buckets;
+      if (Array.isArray(wd.setups)  && wd.setups.length)  wlSetupsVocab = wd.setups;
+      document.getElementById('sbWatch').textContent = watchlistItems.length;
+      if (currentPage === 'watchlist') renderWatchlist();
+    }
+    // Now upgrade to enriched data (live prices, EMA ext, volume records)
+    refreshData(true);
+  })();
   startAutoRefresh();
   startCacheStatusPoller();
   document.getElementById('jDate').value = new Date().toISOString().slice(0, 10);
@@ -4051,6 +4594,98 @@ function switchAlertTab(tab, btn) {
   if (tab === 'custom') {
     crLoad();
   }
+  if (tab === 'entry') {
+    const el = document.getElementById('entryResults');
+    if (el && !el.innerHTML.trim()) entryCheckNow();
+  }
+}
+
+// ── Entry Proximity Alerts ───────────────────────────────────────────────────
+
+async function entryCheckNow() {
+  const el = document.getElementById('entryResults');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--muted);animation:blink 1.2s infinite;padding:20px 0;text-align:center;">🎯 Checking entry proximity…</div>';
+  try {
+    const res = await fetch(API + '/api/alerts/entry-proximity/check');
+    const data = await res.json();
+    if (!data.alerts || !data.alerts.length) {
+      el.innerHTML = '<div style="text-align:center;padding:30px 0;"><div style="font-size:28px;margin-bottom:8px;">🔍</div><div style="color:var(--muted);font-size:13px;">No watchlist items near their entry price</div><div style="color:var(--dim);font-size:11px;margin-top:4px;">Threshold: ±' + (data.threshold||2) + '% · Checked ' + data.totalWatchlist + ' items</div></div>';
+      return;
+    }
+    el.innerHTML = '<div style="font-size:11px;color:var(--cyan);margin-bottom:10px;">' + data.count + ' item(s) near entry · ' + data.checkedAt + '</div>' + renderEntryCards(data.alerts);
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--red);padding:16px;">Error: ' + e.message + '</div>';
+  }
+}
+
+async function entryScanSend() {
+  const el = document.getElementById('entryResults');
+  if (!el) return;
+  el.innerHTML = '<div style="color:var(--muted);animation:blink 1.2s infinite;padding:20px 0;text-align:center;">📲 Scanning & sending alerts…</div>';
+  try {
+    const res = await fetch(API + '/api/alerts/entry-proximity/scan-send', {method:'POST'});
+    const data = await res.json();
+    const sentMsg = data.telegramSent > 0
+      ? '<div style="color:var(--green);font-size:11px;margin-bottom:8px;">📲 Sent ' + data.telegramSent + ' Telegram alert(s) (' + data.newAlerts + ' new)</div>'
+      : (data.newAlerts === 0 ? '<div style="color:var(--muted);font-size:11px;margin-bottom:8px;">No new alerts (already sent today)</div>' : '');
+    if (!data.alerts || !data.alerts.length) {
+      el.innerHTML = sentMsg + '<div style="text-align:center;padding:20px 0;color:var(--muted);">No items near entry price</div>';
+      return;
+    }
+    el.innerHTML = sentMsg + '<div style="font-size:11px;color:var(--cyan);margin-bottom:10px;">' + data.alerts.length + ' item(s) near entry · ' + data.checkedAt + '</div>' + renderEntryCards(data.alerts);
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--red);padding:16px;">Error: ' + e.message + '</div>';
+  }
+}
+
+function renderEntryCards(alerts) {
+  let h = '<div style="display:grid;gap:10px;">';
+  for (const a of alerts) {
+    const isAt = a.tier === 'AT_ENTRY';
+    const isNear = a.tier === 'NEAR_ENTRY';
+    const tierBg = isAt ? '#1a2400' : isNear ? '#0a1a30' : '#1a1a1a';
+    const tierClr = isAt ? '#a3e635' : isNear ? '#60a5fa' : '#94a3b8';
+    const tierBorder = isAt ? '#a3e63533' : isNear ? '#60a5fa33' : '#33415533';
+    const tierIcon = isAt ? '🎯' : isNear ? '📍' : '📊';
+    const tierLabel = a.tier.replace(/_/g, ' ');
+    const pClr = a.priority === 'P1' ? '#ffd700' : a.priority === 'P2' ? '#60a5fa' : '#64748b';
+    const pIcon = a.priority === 'P1' ? '🔥' : a.priority === 'P2' ? '👀' : '📋';
+    const distClr = a.distPct <= 0 ? '#a3e635' : a.distPct <= 1 ? '#fde68a' : '#94a3b8';
+
+    h += '<div style="background:var(--bg2);border:1px solid ' + tierBorder + ';border-left:3px solid ' + tierClr + ';border-radius:8px;padding:12px 14px;">';
+    // Header
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
+    h += '<span style="font-size:15px;font-weight:900;color:var(--text)">' + a.symbol + '</span>';
+    h += '<span style="background:' + tierBg + ';color:' + tierClr + ';padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;border:1px solid ' + tierBorder + '">' + tierIcon + ' ' + tierLabel + '</span>';
+    h += '<span style="color:' + pClr + ';font-size:10px;font-weight:700">' + pIcon + ' ' + a.priority + '</span>';
+    if (a.setup) h += '<span style="background:#162030;color:#93c5fd;padding:1px 6px;border-radius:3px;font-size:10px">' + a.setup + '</span>';
+    if (a.rating) h += '<span style="background:' + (a.rating === 'A+' ? '#052e16' : a.rating === 'A' ? '#0a1a2e' : '#1a1a1a') + ';color:' + (a.rating === 'A+' ? '#4ade80' : a.rating === 'A' ? '#60a5fa' : '#94a3b8') + ';padding:1px 5px;border-radius:3px;font-size:10px;font-weight:700">' + a.rating + '</span>';
+    h += '</div>';
+    // Price grid
+    h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:11px;">';
+    h += '<div><div style="color:var(--muted);font-size:9px;text-transform:uppercase">CMP</div><div style="font-weight:800;color:var(--text)">₹' + a.cmp.toLocaleString('en-IN') + '</div></div>';
+    h += '<div><div style="color:var(--muted);font-size:9px;text-transform:uppercase">Entry</div><div style="font-weight:800;color:#a3e635">₹' + a.scanEntry.toLocaleString('en-IN') + '</div></div>';
+    h += '<div><div style="color:var(--muted);font-size:9px;text-transform:uppercase">Distance</div><div style="font-weight:800;color:' + distClr + '">' + (a.distPct >= 0 ? '+' : '') + a.distPct.toFixed(1) + '%</div></div>';
+    h += '<div><div style="color:var(--muted);font-size:9px;text-transform:uppercase">SL</div><div style="font-weight:800;color:#f87171">₹' + (a.scanSl ? a.scanSl.toLocaleString('en-IN') : '—') + '</div></div>';
+    h += '</div>';
+    // Risk row
+    if (a.riskPerShare > 0) {
+      h += '<div style="margin-top:6px;display:flex;gap:12px;font-size:10px;color:var(--muted)">';
+      h += '<span>Risk/sh: ₹' + a.riskPerShare + '</span>';
+      if (a.rr) h += '<span>R:R ' + a.rr + 'x</span>';
+      if (a.sector) h += '<span style="margin-left:auto">' + a.sector + '</span>';
+      h += '</div>';
+    }
+    // Import button
+    h += '<div style="margin-top:8px;display:flex;gap:6px">';
+    h += '<button class="btn btn-green btn-xs" onclick="event.stopPropagation();importFromWL(\'' + a.id + '\')">→ Trade</button>';
+    h += '<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();showPage(\'watchlist\');document.getElementById(\'wlSearch\').value=\'' + a.symbol + '\';renderWatchlist()">📋 View</button>';
+    h += '</div>';
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
 }
 
 async function boScanNow2(intraday=true) {
@@ -4897,6 +5532,265 @@ function renderVpnHealth(d) {
 // Initial status + periodic refresh
 refreshVpnStatus();
 setInterval(refreshVpnStatus, 60000);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RS SCAN AS-OF DATE — Run RS leaders scan on a past date, show forward returns
+// ═══════════════════════════════════════════════════════════════════════════════
+let rsAsofData = null;
+let rsAsofLeaders = [];
+let rsAsofSectorFilter = '';
+let rsAsofViewMode = 'flat';
+
+const _ASOF_SEC_COLORS = {
+  'Capital Goods':'#3b82f6','Financial Services':'#f59e0b','Healthcare':'#22c55e','Automobile and Auto Components':'#ef4444',
+  'Metals & Mining':'#8b5cf6','Fast Moving Consumer Goods':'#14b8a6','Power':'#f97316','Chemicals':'#06b6d4',
+  'Information Technology':'#a855f7','Services':'#64748b','Consumer Durables':'#ec4899','Oil Gas & Consumable Fuels':'#84cc16',
+  'Realty':'#78716c','Consumer Services':'#fb923c','Textiles':'#6366f1','Telecommunication':'#d946ef',
+  'Construction':'#a8a29e','Media Entertainment & Publication':'#fbbf24','Other':'#475569',
+};
+
+function rsAsofQuick(preset) {
+  const d = new Date();
+  if(preset==='1w') d.setDate(d.getDate()-7);
+  else if(preset==='2w') d.setDate(d.getDate()-14);
+  else if(preset==='1m') d.setMonth(d.getMonth()-1);
+  else if(preset==='3m') d.setMonth(d.getMonth()-3);
+  else if(preset==='6m') d.setMonth(d.getMonth()-6);
+  else if(preset==='1y') d.setFullYear(d.getFullYear()-1);
+  document.getElementById('rsAsofDate').value = d.toISOString().slice(0,10);
+}
+
+function rsAsofSetView(mode) {
+  rsAsofViewMode = mode;
+  document.querySelectorAll('.rsAsofViewBtn').forEach(b=>b.classList.toggle('active', b.dataset.view===mode));
+  rsAsofRenderBody();
+}
+
+async function rsAsofRun() {
+  const scanDate = document.getElementById('rsAsofDate').value;
+  if(!scanDate) { alert('Please select a scan date'); return; }
+  const endDate = document.getElementById('rsAsofEndDate').value || '';
+  const topN = document.getElementById('rsAsofTopN').value;
+  const sortBy = document.getElementById('rsAsofSort').value;
+  const minPrice = document.getElementById('rsAsofMinPrice').value;
+  const minAdr = document.getElementById('rsAsofMinAdr').value;
+
+  const params = new URLSearchParams({
+    scan_date: scanDate, top_n: topN, sort_by: sortBy,
+    min_price: minPrice, min_adr: minAdr,
+  });
+  if(endDate) params.set('end_date', endDate);
+
+  const endLbl = endDate ? endDate : 'latest';
+  document.getElementById('rsAsofBody').innerHTML = '<div style="color:var(--muted);padding:40px;text-align:center;">⏳ Running RS scan as of <strong>'+scanDate+'</strong> → <strong>'+endLbl+'</strong>… This may take 1-2 minutes for ~2000 stocks.</div>';
+  document.getElementById('rsAsofSummary').style.display = 'none';
+  document.getElementById('rsAsofSectors').innerHTML = '';
+  document.getElementById('rsAsofRunBtn').disabled = true;
+  document.getElementById('rsAsofRunBtn').textContent = '⏳ Running…';
+
+  try {
+    const r = await fetch(API + '/api/rs-scan-asof?' + params.toString());
+    if(!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.detail || `HTTP ${r.status}`); }
+    rsAsofData = await r.json();
+    rsAsofLeaders = rsAsofData.leaders || [];
+    rsAsofSectorFilter = '';
+
+    const s = rsAsofData.summary || {};
+    const sortLbl = {swing:'Swing Score', rs:'RS Score', adr:'ADR%', volume:'Vol Surge'}[rsAsofData.sortBy || 'swing'] || rsAsofData.sortBy;
+    const endDt = rsAsofData.endDate || 'latest';
+    document.getElementById('rsAsofInfo').textContent =
+      `Scan: ${scanDate} → ${endDt}  ·  Top-${rsAsofData.topN}  ·  ${rsAsofLeaders.length} leaders  ·  ${rsAsofData.totalScanned} scanned  ·  Sorted by ${sortLbl}`;
+
+    rsAsofRenderSummary();
+    rsAsofRenderSectors();
+    rsAsofRenderBody();
+  } catch(e) {
+    document.getElementById('rsAsofBody').innerHTML = `<div style="color:var(--red);padding:40px;text-align:center;">❌ ${e.message}</div>`;
+  } finally {
+    document.getElementById('rsAsofRunBtn').disabled = false;
+    document.getElementById('rsAsofRunBtn').textContent = '🔬 Run Scan';
+  }
+}
+
+function rsAsofRenderSummary() {
+  const s = rsAsofData.summary || {};
+  const nifRet = rsAsofData.niftyReturnPct || 0;
+  const alpha = (s.avgReturn||0) - nifRet;
+  const cards = [
+    {l:'Win Rate', v:(s.winRate||0)+'%', c:(s.winRate||0)>=50?'pos-color':'neg-color'},
+    {l:'Avg Return', v:((s.avgReturn||0)>=0?'+':'')+(s.avgReturn||0)+'%', c:(s.avgReturn||0)>=0?'pos-color':'neg-color'},
+    {l:'Median Return', v:((s.medianReturn||0)>=0?'+':'')+(s.medianReturn||0)+'%', c:(s.medianReturn||0)>=0?'pos-color':'neg-color'},
+    {l:'Nifty Return', v:(nifRet>=0?'+':'')+nifRet.toFixed(1)+'%', c:nifRet>=0?'pos-color':'neg-color'},
+    {l:'Alpha vs Nifty', v:(alpha>=0?'+':'')+alpha.toFixed(1)+'%', c:alpha>=0?'pos-color':'neg-color'},
+    {l:'Avg Winner', v:'+'+(s.avgWinner||0)+'%', c:'pos-color'},
+    {l:'Avg Loser', v:(s.avgLoser||0)+'%', c:'neg-color'},
+    {l:'Winners', v:(s.winners||0)+' / '+(s.total||0), c:'pos-color'},
+    {l:'Losers', v:(s.losers||0)+' / '+(s.total||0), c:'neg-color'},
+    {l:'Avg Max Gain', v:'+'+(s.avgMaxGain||0)+'%', c:'pos-color'},
+    {l:'Avg Max DD', v:(s.avgMaxDD||0)+'%', c:'neg-color'},
+  ];
+  const el = document.getElementById('rsAsofSummary');
+  el.style.display = 'grid';
+  el.style.gridTemplateColumns = 'repeat(auto-fill,minmax(135px,1fr))';
+  el.style.gap = '8px';
+  el.innerHTML = cards.map(c=>`
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 10px;">
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.4px;">${c.l}</div>
+      <div style="font-size:1.3em;font-weight:900;margin-top:2px;" class="${c.c}">${c.v}</div>
+    </div>`).join('');
+}
+
+function rsAsofRenderSectors() {
+  const el = document.getElementById('rsAsofSectors');
+  if(!el) return;
+  const secCounts = {};
+  const secRs = {};
+  rsAsofLeaders.forEach(r => {
+    const s = r.sector || 'Other';
+    secCounts[s] = (secCounts[s]||0) + 1;
+    secRs[s] = secRs[s] || [];
+    secRs[s].push(r.rs_score||0);
+  });
+  const sorted = Object.keys(secCounts).sort((a,b)=>secCounts[b]-secCounts[a]);
+  let h = '';
+  sorted.forEach(s => {
+    const cnt = secCounts[s];
+    const avgRs = Math.round(secRs[s].reduce((a,b)=>a+b,0)/secRs[s].length);
+    const col = _ASOF_SEC_COLORS[s] || '#64748b';
+    const active = rsAsofSectorFilter === s ? ' background:'+col+'22;border-color:'+col+';font-weight:800;' : '';
+    h += '<span style="display:inline-flex;gap:4px;align-items:center;padding:2px 8px;border-radius:12px;border:1px solid '+col+'33;margin:2px;font-size:10px;cursor:pointer;color:'+col+';'+active+'" onclick="rsAsofSectorFilter=(rsAsofSectorFilter===\''+s.replace(/'/g,"\\'")+'\'?\'\':\'' +s.replace(/'/g,"\\'")+'\');rsAsofRenderSectors();rsAsofRenderBody()" title="'+s+': '+cnt+' stocks, avg RS '+avgRs+'">'
+      + '<span style="font-weight:800">'+cnt+'</span> '+(s.length>18?s.slice(0,16)+'…':s)+' <span style="opacity:.6">RS'+avgRs+'</span></span>';
+  });
+  el.innerHTML = h;
+}
+
+function rsAsofGetFiltered() {
+  let items = [...rsAsofLeaders];
+  const search = (document.getElementById('rsAsofSearch').value||'').toUpperCase();
+  if(search) items = items.filter(r=>(r.symbol||'').toUpperCase().includes(search)||(r.sector||'').toUpperCase().includes(search));
+  if(rsAsofSectorFilter) items = items.filter(r=>(r.sector||'Other')===rsAsofSectorFilter);
+  return items;
+}
+
+function rsAsofFilter() { rsAsofRenderBody(); }
+
+// ── Table builder (matches RS leaders modal style) ──
+function _rsAsofTable(items, showSector) {
+  let h = '<table style="width:100%;border-collapse:collapse;font-size:11px">';
+  h += '<thead><tr style="background:var(--bg3);color:var(--muted);text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px">';
+  h += '<th style="padding:4px 6px">#</th>';
+  h += '<th style="padding:4px 6px">Symbol</th>';
+  h += '<th style="padding:4px 6px">⚡Swing</th>';
+  h += '<th style="padding:4px 6px">RS</th>';
+  h += '<th style="padding:4px 6px">Label</th>';
+  h += '<th style="padding:4px 6px">Excess%</th>';
+  h += '<th style="padding:4px 6px;cursor:help" title="Average Daily Range% over last 20 bars — as-of scan date">ADR%</th>';
+  h += '<th style="padding:4px 6px;cursor:help" title="5-day avg volume ÷ 20-day avg volume — as-of scan date">Vol5d</th>';
+  if(showSector) h += '<th style="padding:4px 6px">Sector</th>';
+  const endDtLbl = (rsAsofData && rsAsofData.endDate) ? rsAsofData.endDate : 'CMP';
+  h += '<th style="padding:4px 6px;text-align:right">Scan ₹</th>';
+  h += '<th style="padding:4px 6px;text-align:right" title="Close price on end date (or latest)">' + endDtLbl + ' ₹</th>';
+  h += '<th style="padding:4px 6px;text-align:right" title="Return from scan date to end date">Return</th>';
+  h += '<th style="padding:4px 6px;text-align:right" title="Max gain from scan date to end date">MaxGain</th>';
+  h += '<th style="padding:4px 6px;text-align:right" title="Max drawdown from scan date to end date">MaxDD</th>';
+  h += '<th style="padding:4px 6px;text-align:center;cursor:help" title="Exponential Moving Average (21 periods) — calculated using data UP TO scan date only">EMA21 📌</th>';
+  h += '<th style="padding:4px 6px;text-align:center;cursor:help" title="Simple Moving Average (50 periods) — calculated using data UP TO scan date only">SMA50 📌</th>';
+  h += '</tr></thead><tbody>';
+
+  items.forEach((r,i) => {
+    const ret = r.fwdReturnPct||0;
+    const retC = ret>=0?'#4ade80':'#f87171';
+    const rsCol = r.rs_score>=95?'#ffd700':r.rs_score>=90?'#f59e0b':r.rs_score>=80?'#4ade80':r.rs_score>=65?'#7dd3fc':'var(--muted)';
+    const swCol = (r.swingScore||0)>=70?'#ffd700':(r.swingScore||0)>=55?'#4ade80':(r.swingScore||0)>=40?'#7dd3fc':'var(--muted)';
+    const secC = _ASOF_SEC_COLORS[r.sector]||'#64748b';
+    const excess = r.excess_pct!=null?((r.excess_pct>=0?'+':'')+r.excess_pct.toFixed(1)+'%'):'—';
+    const exCol = (r.excess_pct||0)>=0?'#4ade80':'#f87171';
+    const adrCol = (r.adrPct||0)>=6?'#f97316':(r.adrPct||0)>=4?'#22c55e':(r.adrPct||0)>=2?'var(--cyan)':'var(--muted)';
+    const vsCol = (r.volSurge5d||0)>=2?'#22c55e':(r.volSurge5d||0)>=1.5?'#fdba74':'var(--muted)';
+    const mgC = (r.maxGainPct||0)>0?'#4ade80':'var(--muted)';
+    const mdC = (r.maxDrawdownPct||0)<0?'#f87171':'var(--muted)';
+    const ipoBadge = r.is_ipo ? '<span style="font-size:9px;background:#1a0a40;color:#a78bfa;padding:1px 4px;border-radius:3px;margin-left:3px">IPO</span>' : '';
+
+    h += '<tr style="border-top:1px solid var(--border)" onmouseover="this.style.background=\'var(--bg3)\'" onmouseout="this.style.background=\'\'">'
+      + '<td style="padding:4px 6px;color:var(--muted)">'+(r.rank||i+1)+'</td>'
+      + '<td style="padding:4px 6px;font-weight:800">'+r.symbol+'</td>'
+      + '<td style="padding:4px 6px;color:'+swCol+';font-weight:900">'+(r.swingScore!=null?r.swingScore.toFixed(0):'—')+'</td>'
+      + '<td style="padding:4px 6px;color:'+rsCol+';font-weight:900">'+(r.rs_score||0)+'</td>'
+      + '<td style="padding:4px 6px;color:'+rsCol+';font-size:10px">'+(r.rs_label||'—')+'</td>'
+      + '<td style="padding:4px 6px;color:'+exCol+'">'+excess+'</td>'
+      + '<td style="padding:4px 6px;color:'+adrCol+';font-weight:700">'+(r.adrPct!=null?r.adrPct.toFixed(1)+'%':'—')+'</td>'
+      + '<td style="padding:4px 6px;color:'+vsCol+'">'+(r.volSurge5d!=null?r.volSurge5d.toFixed(1)+'x':'—')+'</td>'
+      + (showSector?'<td style="padding:4px 6px;color:'+secC+';font-size:9.5px;font-weight:600">'+(r.sector||'—')+'</td>':'')
+      + '<td style="padding:4px 6px;text-align:right">₹'+(r.scanClose||0).toLocaleString('en-IN',{maximumFractionDigits:0})+'</td>'
+      + '<td style="padding:4px 6px;text-align:right;font-weight:600">₹'+(r.currentClose||0).toLocaleString('en-IN',{maximumFractionDigits:0})+'</td>'
+      + '<td style="padding:4px 6px;text-align:right;color:'+retC+';font-weight:800">'+(ret>=0?'+':'')+ret.toFixed(1)+'%</td>'
+      + '<td style="padding:4px 6px;text-align:right;color:'+mgC+';font-size:10px">+'+(r.maxGainPct||0).toFixed(1)+'%</td>'
+      + '<td style="padding:4px 6px;text-align:right;color:'+mdC+';font-size:10px">'+(r.maxDrawdownPct||0).toFixed(1)+'%</td>'
+      + '<td style="padding:4px 6px;text-align:center">'+(r.aboveEma21?'<span style="color:#22c55e">✓</span>':'<span style="color:#ef4444">✗</span>')+'</td>'
+      + '<td style="padding:4px 6px;text-align:center">'+(r.aboveSma50?'<span style="color:#22c55e">✓</span>':'<span style="color:#ef4444">✗</span>')+'</td>'
+      + '</tr>';
+  });
+  h += '</tbody></table>';
+  return h;
+}
+
+// ── Grouped view helper (matches RS leaders modal) ──
+function _rsAsofGrouped(items, groupFn, groupOrder, groupColor) {
+  const groups = {};
+  items.forEach(r => { const g = groupFn(r); (groups[g] = groups[g]||[]).push(r); });
+  const order = groupOrder || Object.keys(groups).sort((a,b)=>groups[b].length-groups[a].length);
+  let html = '';
+  order.forEach(g => {
+    if(!groups[g]||!groups[g].length) return;
+    const gi = groups[g];
+    const avgRs = Math.round(gi.reduce((s,r)=>s+(r.rs_score||0),0)/gi.length);
+    const avgRet = (gi.reduce((s,r)=>s+(r.fwdReturnPct||0),0)/gi.length).toFixed(1);
+    const avgSwing = Math.round(gi.reduce((s,r)=>s+(r.swingScore||0),0)/gi.length);
+    const winners = gi.filter(r=>(r.fwdReturnPct||0)>0).length;
+    const gCol = groupColor(g);
+    const gId = 'rsAG_'+g.replace(/[^a-zA-Z0-9]/g,'_');
+    html += '<div class="rs-sector-hdr" onclick="document.getElementById(\''+gId+'\').classList.toggle(\'collapsed\')" style="border-left:3px solid '+gCol+'">'
+      + '<span class="rs-sec-name" style="color:'+gCol+'">'+g+'</span>'
+      + '<span class="rs-sec-count">'+gi.length+' stocks</span>'
+      + '<span class="rs-sec-stats">'
+      + '<span><span style="color:var(--muted)">RS</span> <span style="color:#60a5fa;font-weight:800">'+avgRs+'</span></span>'
+      + '<span><span style="color:var(--muted)">Swing</span> <span style="color:#ffd700;font-weight:800">'+avgSwing+'</span></span>'
+      + '<span><span style="color:var(--muted)">Avg Ret</span> <span style="color:'+(parseFloat(avgRet)>=0?'#4ade80':'#f87171')+';font-weight:800">'+(parseFloat(avgRet)>=0?'+':'')+avgRet+'%</span></span>'
+      + '<span><span style="color:var(--muted)">W/L</span> <span style="color:#4ade80">'+winners+'</span>/<span style="color:#f87171">'+(gi.length-winners)+'</span></span>'
+      + '</span></div>'
+      + '<div class="rs-sector-body" id="'+gId+'"><div style="overflow-x:auto">'+_rsAsofTable(gi, false)+'</div></div>';
+  });
+  return html;
+}
+
+function rsAsofRenderBody() {
+  const items = rsAsofGetFiltered();
+  document.getElementById('rsAsofCount').textContent = items.length + ' stocks';
+  const body = document.getElementById('rsAsofBody');
+  if(!items.length) { body.innerHTML = '<div style="color:var(--muted);padding:40px;text-align:center;">No stocks found.</div>'; return; }
+
+  let tableHtml = '';
+  if(rsAsofViewMode === 'sector') {
+    tableHtml = _rsAsofGrouped(items,
+      r => r.sector || 'Other', null,
+      g => _ASOF_SEC_COLORS[g] || '#64748b');
+  } else if(rsAsofViewMode === 'rs') {
+    tableHtml = _rsAsofGrouped(items,
+      r => r.rs_score>=95?'RS ≥95 Ultra Elite':r.rs_score>=90?'RS 90-94 Elite':r.rs_score>=80?'RS 80-89 Strong':r.rs_score>=65?'RS 65-79 Above Avg':'RS <65',
+      ['RS ≥95 Ultra Elite','RS 90-94 Elite','RS 80-89 Strong','RS 65-79 Above Avg','RS <65'],
+      g => g.includes('Ultra')?'#ffd700':g.includes('Elite')?'#f59e0b':g.includes('Strong')?'#4ade80':g.includes('Above')?'#60a5fa':'#64748b');
+  } else if(rsAsofViewMode === 'return') {
+    tableHtml = _rsAsofGrouped(items,
+      r => r.fwdReturnPct>=20?'🚀 +20% & above':r.fwdReturnPct>=10?'📈 +10% to +20%':r.fwdReturnPct>=0?'✅ 0% to +10%':r.fwdReturnPct>=-10?'⚠️ -10% to 0%':'❌ Below -10%',
+      ['🚀 +20% & above','📈 +10% to +20%','✅ 0% to +10%','⚠️ -10% to 0%','❌ Below -10%'],
+      g => g.includes('🚀')?'#22c55e':g.includes('📈')?'#4ade80':g.includes('✅')?'#86efac':g.includes('⚠️')?'#f59e0b':'#ef4444');
+  } else {
+    // Flat view
+    tableHtml = '<div style="overflow-x:auto">' + _rsAsofTable(items, true) + '</div>';
+  }
+  body.innerHTML = tableHtml;
+}
+
 
 </script>
 <!-- Always-on wisdom/reminder layer: QOTD banner + page-contextual nudges -->

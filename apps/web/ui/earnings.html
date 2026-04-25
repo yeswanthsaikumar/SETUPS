@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Quarterly Earnings Dashboard — SETUPS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<style>
+  :root{
+    --bg:#0b0e13; --panel:#11161e; --line:#1f2733; --ink:#e6edf3; --mute:#8b949e;
+    --accent:#58a6ff; --warn:#f0b66d; --bad:#f87171; --good:#4ade80; --dim:#6b7280;
+    --beat-bg:#0e2a1a; --beat-bd:#1e6b3d;
+    --miss-bg:#2a1414; --miss-bd:#7a2a2a;
+    --up-bg:#2a220e; --up-bd:#8a6500;
+    --inline-bg:#161b22; --inline-bd:#2a333f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  header{padding:18px 24px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    background:linear-gradient(180deg,#0d1219,#0b0e13)}
+  h1{margin:0;font-size:18px;font-weight:600;letter-spacing:-.2px}
+  .dek{color:var(--mute);font-size:12px;margin-top:3px;max-width:720px}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  select, button{
+    background:var(--panel);color:var(--ink);border:1px solid var(--line);
+    padding:6px 10px;border-radius:6px;font-size:12px;cursor:pointer
+  }
+  button:hover, select:hover{border-color:#2f3a4a}
+  button.primary{background:#1f3d6a;border-color:#264f86;color:#dbe9ff}
+  button.primary:hover{background:#275090}
+  main{padding:20px 24px;display:flex;flex-direction:column;gap:20px;max-width:1600px;margin:0 auto}
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  .metric{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+  .metric .n{font-size:22px;font-weight:700}
+  .metric .k{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+  .metric.up{border-color:var(--up-bd);background:var(--up-bg)}
+  .metric.up .n{color:var(--warn)}
+  .metric.beat{border-color:var(--beat-bd);background:var(--beat-bg)}
+  .metric.beat .n{color:var(--good)}
+  .metric.miss{border-color:var(--miss-bd);background:var(--miss-bg)}
+  .metric.miss .n{color:var(--bad)}
+  section.bucket{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  section.bucket h2{margin:0;padding:12px 16px;border-bottom:1px solid var(--line);
+    font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px;background:#0e1319}
+  section.bucket h2 .count{color:var(--mute);font-weight:500;font-size:12px}
+  section.bucket .hint{padding:8px 16px;font-size:12px;color:var(--mute);border-bottom:1px solid var(--line);background:#0c1117}
+  section.bucket.beat h2{color:var(--good)}
+  section.bucket.miss h2{color:var(--bad)}
+  section.bucket.up h2{color:var(--warn)}
+  section.bucket.inline h2{color:var(--mute)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{position:sticky;top:0;background:#0e1319;color:var(--mute);
+    font-weight:600;text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);
+    font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  tbody td{padding:9px 12px;border-bottom:1px solid #1a212b;vertical-align:middle}
+  tbody tr:hover{background:#141a22}
+  .sym{font-weight:600;font-family:"SF Mono",Menlo,monospace}
+  .name{color:var(--mute);font-size:12px}
+  .pos{color:var(--good)}
+  .neg{color:var(--bad)}
+  .tag{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+  .tag.upcoming{background:var(--up-bg);color:var(--warn);border:1px solid var(--up-bd)}
+  .tag.beat{background:var(--beat-bg);color:var(--good);border:1px solid var(--beat-bd)}
+  .tag.miss{background:var(--miss-bg);color:var(--bad);border:1px solid var(--miss-bd)}
+  .tag.inline{background:var(--inline-bg);color:var(--mute);border:1px solid var(--inline-bd)}
+  .tag.soon{background:#3a1a1a;color:#ff9b9b;border:1px solid #7a2a2a;margin-left:6px}
+  .empty{padding:30px 16px;text-align:center;color:var(--mute);font-size:13px}
+  .loading{padding:40px;text-align:center;color:var(--mute)}
+  .ylink{color:#58a6ff;font-size:11px}
+  .refresh-info{font-size:11px;color:var(--mute);margin-left:8px}
+  kbd{background:#0c1117;border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-family:"SF Mono",monospace;font-size:11px;color:var(--mute)}
+  .legend{padding:10px 16px;font-size:11px;color:var(--mute);background:#0c1117;border-bottom:1px solid var(--line);line-height:1.7}
+  .legend b{color:#d1d5db}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>📊 Quarterly Earnings Results Dashboard</h1>
+    <div class="dek">Stay out of results. Enter <b>after</b> confirmed beats.
+      Based on yfinance EPS estimates vs. actual, gap %, and volume reaction.
+      <kbd>Power Earnings Gap</kbd> setup (§5.6 of playbook).</div>
+  </div>
+  <div class="controls">
+    <label style="font-size:12px;color:var(--mute)">Scope
+      <select id="scope" onchange="load()">
+        <option value="all">All (positions + watchlist)</option>
+        <option value="positions">Positions only</option>
+        <option value="watchlist">Watchlist only</option>
+      </select>
+    </label>
+    <label style="font-size:12px;color:var(--mute)">Days ahead
+      <select id="days_ahead" onchange="load()">
+        <option>7</option><option selected>14</option><option>21</option><option>30</option>
+      </select>
+    </label>
+    <label style="font-size:12px;color:var(--mute)">Days back
+      <select id="days_back" onchange="load()">
+        <option>14</option><option>30</option><option selected>45</option>
+        <option>90</option><option>180</option><option>365</option>
+        <option value="99999">All history</option>
+      </select>
+    </label>
+    <button class="primary" onclick="load(true)">🔄 Refresh</button>
+    <span class="refresh-info" id="rinfo"></span>
+  </div>
+</header>
+
+<main>
+  <div class="metrics" id="metrics"></div>
+
+  <section class="bucket up">
+    <h2>⚠️ UPCOMING — Avoid / Reduce Size <span class="count" id="c-up"></span></h2>
+    <div class="hint">Earnings scheduled within the window. <b>Playbook rule:</b>
+      don't hold through the print unless thesis is earnings-specific. Close or
+      hedge positions reporting in ≤5 trading days.</div>
+    <div id="t-up"></div>
+  </section>
+
+  <section class="bucket beat">
+    <h2>✅ BEATS — Entry Candidates (Power Earnings Gap) <span class="count" id="c-beat"></span></h2>
+    <div class="hint">Reported <b>EPS surprise ≥ +5%</b> or gap ≥ +4% on volume.
+      Minervini PEG / Kullamägi Episodic Pivot plays live here. Buy break of
+      gap-day high, or pullback to 10-EMA. Stop below gap-day low.</div>
+    <div id="t-beat"></div>
+  </section>
+
+  <section class="bucket miss">
+    <h2>❌ MISSES — Avoid / Exit on Bounce <span class="count" id="c-miss"></span></h2>
+    <div class="hint">Reported <b>surprise ≤ −5%</b> or gap ≤ −4%. Post-earnings
+      drift is real — weak prints keep drifting lower for 6–12 weeks. Exit
+      existing longs, avoid dip-buying, consider shorts on failed rallies.</div>
+    <div id="t-miss"></div>
+  </section>
+
+  <section class="bucket inline">
+    <h2>➖ INLINE — Neutral <span class="count" id="c-inline"></span></h2>
+    <div class="hint">Results near consensus (±5%). No edge. Trade the pattern,
+      not the print. Useful to confirm a name isn't blocked by fresh numbers.</div>
+    <div id="t-inline"></div>
+  </section>
+
+  <section class="bucket inline" id="sec-stale" style="display:none">
+    <h2>🕰️ Stale Coverage — Outside Window <span class="count" id="c-stale"></span></h2>
+    <div class="hint">These symbols <b>do</b> have data cached, but Yahoo's
+      latest known earnings event is outside the currently selected window.
+      Widen <kbd>Days back</kbd> to surface them, or verify the next print
+      on NSE manually. Common for Indian mid/small-caps without US ADRs
+      (e.g., ANANDRATHI — Yahoo lags fresh filings by 1–2 quarters).</div>
+    <div id="t-stale"></div>
+  </section>
+
+  <section class="bucket inline" id="sec-noco" style="display:none">
+    <h2>❓ No Yahoo Coverage <span class="count" id="c-noco"></span></h2>
+    <div class="hint">Yahoo returned no earnings events for these tickers
+      (typically micro-caps, recent IPOs, or symbols listed only on BSE).
+      Check <a target="_blank" href="https://www.nseindia.com/companies-listing/corporate-filings-financial-results">NSE corporate filings</a>
+      directly for upcoming dates.</div>
+    <div id="t-noco"></div>
+  </section>
+</main>
+
+<script>
+const fmtPct = v => (v==null || isNaN(v)) ? '—'
+  : (v>=0?'+':'') + v.toFixed(1) + '%';
+const fmtNum = (v, d=2) => (v==null || isNaN(v)) ? '—' : Number(v).toFixed(d);
+const cls = v => v==null ? '' : (v>=0 ? 'pos' : 'neg');
+
+function tradingViewLink(sym){
+  const isIndia = /\.NS$|\.BO$/.test(sym);
+  const base = isIndia ? `NSE:${sym.replace(/\.(NS|BO)$/,'')}` : sym;
+  return `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(base)}`;
+}
+function yahooLink(sym){
+  const q = /\.NS$|\.BO$/.test(sym) ? sym : sym.includes('.') ? sym : sym + '.NS';
+  return `https://finance.yahoo.com/quote/${encodeURIComponent(q)}`;
+}
+
+function rowsHtml(events, type){
+  if(!events || !events.length){
+    return `<div class="empty">No ${type} events in the current window.</div>`;
+  }
+  const cols = type === 'upcoming'
+    ? ['Symbol','Date','In','EPS Est','Actions']
+    : ['Symbol','Date','Reported','Estimate','Surprise','Gap %','Close %','Vol ×','Actions'];
+
+  const rows = events.map(e => {
+    const soon = type === 'upcoming' && e.days_until>=0 && e.days_until<=5
+      ? '<span class="tag soon">⚠ in '+e.days_until+'d</span>' : '';
+    const sym = `<span class="sym">${e.symbol}</span>
+                  ${soon}<br/><span class="name">${(e.name||'').replace(/</g,'&lt;')}</span>`;
+    const actions = `<a class="ylink" target="_blank" href="${tradingViewLink(e.symbol)}">TV</a>
+      &nbsp;·&nbsp;
+      <a class="ylink" target="_blank" href="${yahooLink(e.symbol)}">Yahoo</a>`;
+
+    if (type === 'upcoming') {
+      const rel = e.days_until===0 ? 'Today'
+                : e.days_until===1 ? 'Tomorrow'
+                : 'in '+e.days_until+'d';
+      return `<tr>
+        <td>${sym}</td>
+        <td>${e.date}</td>
+        <td>${rel}</td>
+        <td>${fmtNum(e.eps_estimate)}</td>
+        <td>${actions}</td>
+      </tr>`;
+    }
+    const daysAgo = e.days_until<=0 ? (Math.abs(e.days_until)+'d ago') : '';
+    return `<tr>
+      <td>${sym}</td>
+      <td>${e.date}<br/><span class="name">${daysAgo}</span></td>
+      <td>${fmtNum(e.eps_reported)}</td>
+      <td>${fmtNum(e.eps_estimate)}</td>
+      <td class="${cls(e.surprise_pct)}">${fmtPct(e.surprise_pct)}</td>
+      <td class="${cls(e.gap_pct)}">${fmtPct(e.gap_pct)}</td>
+      <td class="${cls(e.close_after_pct)}">${fmtPct(e.close_after_pct)}</td>
+      <td>${e.volume_ratio==null?'—':e.volume_ratio.toFixed(1)+'×'}</td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join('');
+
+  const th = cols.map(c => `<th>${c}</th>`).join('');
+  return `<div style="overflow:auto;max-height:420px">
+    <table><thead><tr>${th}</tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function metricsHtml(d){
+  const t = d.totals || {};
+  return `
+    <div class="metric"><div class="n">${d.symbols||0}</div><div class="k">Symbols tracked</div></div>
+    <div class="metric up"><div class="n">${t.upcoming||0}</div><div class="k">⚠ Upcoming</div></div>
+    <div class="metric beat"><div class="n">${t.beats||0}</div><div class="k">✅ Beats</div></div>
+    <div class="metric miss"><div class="n">${t.misses||0}</div><div class="k">❌ Misses</div></div>
+    <div class="metric"><div class="n">${t.inline||0}</div><div class="k">➖ Inline</div></div>`;
+}
+
+function renderStale(items){
+  const sec = document.getElementById('sec-stale');
+  const body = document.getElementById('t-stale');
+  const cnt = document.getElementById('c-stale');
+  if(!items.length){ sec.style.display='none'; return; }
+  sec.style.display='';
+  cnt.textContent = items.length + ' symbols';
+  const rows = items.map(it => `
+    <tr>
+      <td><span class="sym">${it.symbol}</span><br/>
+          <span class="name">${(it.name||'').replace(/</g,'&lt;')}</span></td>
+      <td>${it.latest_known_date}</td>
+      <td>${it.days_since ? it.days_since+' d ago' : 'in '+it.days_until+' d'}</td>
+      <td>
+        <a class="ylink" target="_blank" href="${tradingViewLink(it.symbol)}">TV</a>
+        &nbsp;·&nbsp;
+        <a class="ylink" target="_blank" href="${yahooLink(it.symbol)}">Yahoo</a>
+      </td>
+    </tr>`).join('');
+  body.innerHTML = `<div style="overflow:auto;max-height:280px">
+    <table><thead><tr><th>Symbol</th><th>Latest Known Event</th><th>Age</th><th>Actions</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+function renderNoCoverage(list){
+  const sec = document.getElementById('sec-noco');
+  const body = document.getElementById('t-noco');
+  const cnt = document.getElementById('c-noco');
+  if(!list.length){ sec.style.display='none'; return; }
+  sec.style.display='';
+  cnt.textContent = list.length + ' symbols';
+  body.innerHTML = `<div style="padding:14px 16px;font-size:12px;line-height:1.9;color:var(--mute)">
+    ${list.map(s => `<a class="sym ylink" target="_blank"
+      href="${yahooLink(s)}"
+      style="color:var(--ink);margin-right:10px;text-decoration:none">${s}</a>`).join('')}
+  </div>`;
+}
+
+async function load(force=false){
+  const scope = document.getElementById('scope').value;
+  const da = document.getElementById('days_ahead').value;
+  const db = document.getElementById('days_back').value;
+  const info = document.getElementById('rinfo');
+
+  document.getElementById('metrics').innerHTML =
+    '<div class="metric"><div class="n">…</div><div class="k">Loading</div></div>';
+  ['up','beat','miss','inline'].forEach(b => {
+    document.getElementById('t-'+b).innerHTML =
+      '<div class="loading">Fetching earnings data from Yahoo Finance…</div>';
+  });
+  info.textContent = force ? 'Refreshing (bypassing cache)…' : 'Loading…';
+
+  const url = force
+    ? `/api/earnings/refresh?scope=${scope}`
+    : `/api/earnings/quarterly?scope=${scope}&days_ahead=${da}&days_back=${db}`;
+
+  try{
+    const t0 = Date.now();
+    const method = force ? 'POST' : 'GET';
+    const r = await fetch(url, {method});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    const dt = ((Date.now()-t0)/1000).toFixed(1);
+
+    document.getElementById('metrics').innerHTML = metricsHtml(d);
+    const b = d.buckets || {};
+    document.getElementById('t-up').innerHTML = rowsHtml(b.upcoming, 'upcoming');
+    document.getElementById('t-beat').innerHTML = rowsHtml(b.beats, 'beats');
+    document.getElementById('t-miss').innerHTML = rowsHtml(b.misses, 'misses');
+    document.getElementById('t-inline').innerHTML = rowsHtml(b.inline, 'inline');
+
+    document.getElementById('c-up').textContent = (b.upcoming||[]).length+' events';
+    document.getElementById('c-beat').textContent = (b.beats||[]).length+' events';
+    document.getElementById('c-miss').textContent = (b.misses||[]).length+' events';
+    document.getElementById('c-inline').textContent = (b.inline||[]).length+' events';
+
+    // Stale coverage — symbols with data cached but all events outside window.
+    renderStale(d.stale_coverage || []);
+    renderNoCoverage(d.no_coverage || []);
+
+    const genAt = d.generated_at ? new Date(d.generated_at).toLocaleString() : '';
+    info.textContent = `${d.symbols||0} symbols · ${dt}s · ${genAt}${d.note?' · '+d.note:''}`;
+  } catch(err){
+    info.textContent = 'Error: '+err.message;
+    ['up','beat','miss','inline'].forEach(k => {
+      document.getElementById('t-'+k).innerHTML =
+        `<div class="empty">Error loading: ${err.message}</div>`;
+    });
+  }
+}
+
+load();
+</script>
+</body>
+</html>
+

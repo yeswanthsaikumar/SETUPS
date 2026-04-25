@@ -143,10 +143,13 @@ class TradeBoardPosition(BaseModel):
     exit_date: Optional[str] = None
     tags: list[str] = Field(default_factory=list)
     partial_exits: list[PartialExit] = Field(default_factory=list)
+    # Captures initial stop so closed-trade R uses original risk, not trailed SL.
+    original_sl: Optional[float] = None
 
 
 class PartialExitRequest(BaseModel):
-    quantity: int
+    quantity: Optional[int] = None
+    exit_all: bool = False
     price: float
     reason: str = "MANUAL"
     date: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
@@ -861,6 +864,18 @@ async def lifespan(app: FastAPI):
     else:
         _postclose_refresher.start()
 
+    # ── EARNINGS CACHE PRE-WARM ──
+    # Disabled by default — fetching earnings for all watchlist symbols on every
+    # startup is noisy and slow (many delisted symbols produce warnings).
+    # Set SETUPS_ENABLE_EARNINGS_PREWARM=true to opt back in.
+    if os.environ.get("SETUPS_ENABLE_EARNINGS_PREWARM", "").lower() in ("true", "1", "yes"):
+        try:
+            _prewarm_earnings_cache()
+        except Exception as _e:
+            print(f"⚠ earnings prewarm skipped: {_e}", flush=True)
+    else:
+        print("⏭  Earnings prewarm skipped (set SETUPS_ENABLE_EARNINGS_PREWARM=true to enable)", flush=True)
+
     # ── AUTO-START BREAKOUT ALERT SCANNER ──
     # Wire up dependencies and start the background scanner so alerts
     # are sent automatically (Telegram + Gmail) without manual trigger.
@@ -1342,6 +1357,226 @@ def playbook_download(doc: str = "playbook") -> Response:
             "Cache-Control": "no-store",
         },
     )
+
+
+# ── Quarterly Earnings Results Dashboard ─────────────────────────────────────
+# Aggregates historical + upcoming earnings for positions / watchlist / custom
+# symbol sets into three actionable buckets:
+#   • UPCOMING within N days  → AVOID (volatility risk)
+#   • BEAT (surprise ≥ +5% or gap ≥ +4%) → PEG / post-earnings-drift candidates
+#   • MISS (surprise ≤ −5% or gap ≤ −4%) → AVOID / EXIT
+# The idea: stay out of results, enter after they print strong.
+_EARNINGS_UI_PATH = ROOT / "apps" / "web" / "ui" / "earnings.html"
+_EARNINGS_CACHE_PATH = TRADE_DATA_DIR / "earnings_cache.json"
+_NSE_EARNINGS_CACHE_PATH = TRADE_DATA_DIR / "nse_events_cache.json"
+_earnings_provider = None  # lazy — avoid import cost at module load
+
+
+def _get_earnings_provider():
+    global _earnings_provider
+    if _earnings_provider is None:
+        from earnings_provider import EarningsProvider
+        _earnings_provider = EarningsProvider(
+            cache_path=_EARNINGS_CACHE_PATH,
+            ttl_hours=24.0,
+            max_workers=3,
+            revalidate_after_hours=6.0,
+            # NSE India merge — authoritative source for Indian tickers.
+            nse_cache_path=_NSE_EARNINGS_CACHE_PATH,
+            # Let NSE-only events be classified via our local OHLCV cache —
+            # no extra Yahoo round-trip needed.
+            ohlcv_reader=_read_ohlcv,
+        )
+    return _earnings_provider
+
+
+def _prewarm_earnings_cache() -> None:
+    """Kick off a background fetch of every symbol in positions + watchlist
+    on server boot. Non-blocking — uses the provider's internal daemon thread.
+    """
+    try:
+        raw = _collect_scope_symbols("all")
+        if not raw:
+            return
+        names: dict[str, str] = {}
+        for bare, name in raw:
+            yf_sym = _normalise_symbol_for_yf(bare)
+            names[yf_sym] = name or bare
+        _get_earnings_provider().prewarm(list(names), names=names)
+        print(f"📊 earnings prewarm: scheduled {len(names)} symbols", flush=True)
+    except Exception as e:  # pragma: no cover
+        print(f"⚠ earnings prewarm failed: {e}", flush=True)
+
+
+def _collect_scope_symbols(scope: str) -> list[tuple[str, str]]:
+    """Return ``[(symbol, display_name), …]`` for the requested scope.
+
+    ``scope`` ∈ {"positions", "watchlist", "all"}. Unknown → "all".
+    """
+    pairs: dict[str, str] = {}  # symbol → name (last-wins)
+
+    if scope in {"positions", "all"}:
+        try:
+            data = json.loads(TRADE_BOARD_JSON.read_text(encoding="utf-8"))
+            for p in data.get("positions", []) or []:
+                sym = (p.get("symbol") or "").strip()
+                if not sym:
+                    continue
+                pairs[sym] = p.get("name") or sym
+        except Exception:
+            pass
+
+    if scope in {"watchlist", "all"}:
+        try:
+            items = json.loads(TRADE_WATCHLIST_JSON.read_text(encoding="utf-8"))
+            if isinstance(items, list):
+                for w in items:
+                    sym = (w.get("symbol") or "").strip()
+                    if not sym:
+                        continue
+                    pairs[sym] = w.get("name") or sym
+        except Exception:
+            pass
+
+    return [(s, n) for s, n in pairs.items()]
+
+
+def _normalise_symbol_for_yf(symbol: str, market_hint: str | None = None) -> str:
+    """Append ``.NS`` for Indian tickers missing a suffix.
+
+    Positions store bare ``MTARTECH``; yfinance expects ``MTARTECH.NS``. US
+    tickers already lack a suffix and Yahoo accepts them as-is.
+    """
+    s = symbol.strip().upper()
+    if "." in s or "-" in s:
+        return s
+    # Heuristic: alphabetic-only tickers of length ≤5 and confirmed US market
+    # stay unsuffixed; anything else (likely India) gets .NS.
+    if market_hint and market_hint.lower() == "us":
+        return s
+    return s + ".NS"
+
+
+@app.get("/earnings")
+def earnings_page() -> FileResponse:
+    """Serve the quarterly results dashboard UI."""
+    if not _EARNINGS_UI_PATH.exists():
+        raise HTTPException(status_code=404, detail="Earnings dashboard UI not found")
+    return FileResponse(_EARNINGS_UI_PATH, media_type="text/html")
+
+
+@app.get("/api/earnings/quarterly")
+def earnings_quarterly(
+    scope: str = "all",
+    days_ahead: int = 14,
+    days_back: int = 45,
+    force: bool = False,
+) -> dict:
+    """Return classified earnings events for the requested scope.
+
+    Parameters
+    ----------
+    scope : {"positions", "watchlist", "all"}
+    days_ahead : events scheduled within this many days → ``UPCOMING``
+    days_back  : events reported within this many days → ``BEAT|MISS|INLINE``
+    force      : bypass the 12h cache and refetch from Yahoo
+    """
+    from earnings_provider import summarize
+    scope = (scope or "all").lower()
+    if scope not in {"positions", "watchlist", "all"}:
+        scope = "all"
+
+    raw = _collect_scope_symbols(scope)
+    if not raw:
+        return {
+            "scope": scope, "symbols": 0, "totals": {},
+            "buckets": {"upcoming": [], "beats": [], "misses": [], "inline": []},
+            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "note": "No symbols in scope — add positions or watchlist entries.",
+        }
+
+    # Map bare → yfinance-suffixed; keep display name off the bare symbol.
+    yf_map: dict[str, str] = {}  # yf_sym → display
+    display_by_bare: dict[str, str] = {}  # bare → name
+    for bare, name in raw:
+        yf_sym = _normalise_symbol_for_yf(bare)
+        yf_map[yf_sym] = name or bare
+        display_by_bare[bare] = name or bare
+
+    provider = _get_earnings_provider()
+    events = provider.fetch_many(list(yf_map), names=yf_map, force=force)
+
+    # Restrict to the caller's window
+    today = datetime.utcnow().date()
+    kept = []
+    # Track the newest known event per symbol so we can report coverage gaps.
+    latest_by_sym: dict[str, tuple[str, int]] = {}  # bare → (date, days_until)
+    for e in events:
+        try:
+            d = datetime.fromisoformat(e.date).date()
+        except Exception:
+            continue
+        delta = (d - today).days
+        bare = e.symbol.replace(".NS", "")
+        # Record latest known event for coverage reporting
+        prev = latest_by_sym.get(bare)
+        if prev is None or d.isoformat() > prev[0]:
+            latest_by_sym[bare] = (d.isoformat(), delta)
+        if delta > days_ahead or delta < -days_back:
+            continue
+        # Re-expose a bare-symbol-friendly alias for the UI
+        e.symbol = bare  # type: ignore[misc]
+        if not e.name and bare in display_by_bare:
+            e.name = display_by_bare[bare]
+        kept.append(e)
+
+    summary = summarize(kept)
+
+    # Build a "stale coverage" list: symbols that exist in scope + have
+    # some cached data, but whose latest event is outside the days_back
+    # window. Lets the user see WHY a name (e.g. ANANDRATHI) is missing.
+    stale: list[dict] = []
+    for bare, display in display_by_bare.items():
+        latest = latest_by_sym.get(bare)
+        if not latest:
+            # No events ever fetched — covered by a separate "no_coverage"
+            # list below, not stale.
+            continue
+        latest_date, latest_delta = latest
+        # If latest event is within window (upcoming or recent), it's already
+        # in the buckets → skip.
+        if -days_back <= latest_delta <= days_ahead:
+            continue
+        stale.append({
+            "symbol": bare,
+            "name": display,
+            "latest_known_date": latest_date,
+            "days_since": -latest_delta if latest_delta < 0 else 0,
+            "days_until": latest_delta if latest_delta > 0 else 0,
+        })
+    stale.sort(key=lambda x: x["days_since"])
+
+    # Symbols Yahoo has never returned any data for (delisted / uncovered)
+    no_coverage = sorted(
+        bare for bare in display_by_bare
+        if bare not in latest_by_sym
+    )
+
+    return {
+        "scope": scope,
+        "symbols": len(yf_map),
+        "days_ahead": days_ahead,
+        "days_back": days_back,
+        "stale_coverage": stale,
+        "no_coverage": no_coverage,
+        **summary,
+    }
+
+
+@app.post("/api/earnings/refresh")
+def earnings_refresh(scope: str = "all") -> dict:
+    """Force-refresh the earnings cache for the given scope."""
+    return earnings_quarterly(scope=scope, days_ahead=30, days_back=60, force=True)
 
 
 # ── Industry Groups API ──────────────────────────────────────────────────────
@@ -3254,6 +3489,109 @@ def _save_board(data: dict) -> None:
     data["lastUpdated"] = datetime.now().isoformat()
     TRADE_BOARD_JSON.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 
+
+def _recompute_position_realized_pl(p: dict) -> float:
+    """Recompute total realized P&L including partial exits + final close leg."""
+    entry = float(p.get("entry", 0) or 0)
+    qty = int(p.get("quantity", 1) or 1)
+    exits = p.get("partial_exits", []) or []
+    partial_qty = sum(int(e.get("quantity", 0) or 0) for e in exits)
+    partial_realized = sum(
+        (float(e.get("price", 0) or 0) - entry) * int(e.get("quantity", 0) or 0)
+        for e in exits
+    )
+    remaining_for_final = max(0, qty - partial_qty)
+    exit_price = float(p.get("exit_price", entry) or entry)
+    realized = partial_realized + (exit_price - entry) * remaining_for_final
+    p["realized_pl"] = round(realized, 2)
+    return p["realized_pl"]
+
+
+def _compute_trailing_sl_candidate(p: dict, cmp: float) -> float | None:
+    """1R trailing stop: trail to (highest-high since entry - initial risk)."""
+    entry = float(p.get("entry", 0) or 0)
+    sl = float(p.get("sl", 0) or 0)
+    if entry <= 0 or sl <= 0:
+        return None
+
+    if not p.get("original_sl"):
+        p["original_sl"] = sl
+    initial_sl = float(p.get("original_sl", sl) or sl)
+    initial_risk = max(0.0, entry - initial_sl)
+    if initial_risk <= 0:
+        return None
+
+    rows = _read_ohlcv(p.get("symbol", ""), days=0)
+    entry_date = (p.get("entry_date") or "")[:10]
+    highs = [r.get("high", 0) for r in rows if (not entry_date or r.get("date", "") >= entry_date)]
+    peak = max([cmp] + [float(h or 0) for h in highs])
+    candidate = round(peak - initial_risk, 2)
+    # Never trail SL above entry price — automation only trails to break-even max.
+    # Moving SL above entry is a manual decision; auto-trailing beyond that would
+    # close the position on normal pullbacks while still in profit.
+    candidate = min(candidate, entry)
+    if candidate > sl and candidate < cmp:
+        return candidate
+    return None
+
+
+def _apply_trailing_stop_automation(data: dict) -> dict:
+    """Auto-trail SL for open positions and auto-close when SL is breached."""
+    positions = data.get("positions", []) or []
+    changed = False
+    trailed = 0
+    closed = 0
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    for p in positions:
+        status = p.get("status", "OPEN")
+        if status not in ("OPEN", "PARTIAL"):
+            continue
+
+        qty = int(p.get("quantity", 1) or 1)
+        if p.get("remaining_quantity") is None:
+            p["remaining_quantity"] = qty
+            changed = True
+
+        cmp, prev_close, last_date = _get_price_info(p.get("symbol", ""))
+        if not cmp:
+            continue
+
+        p["cmp"] = round(cmp, 2)
+        p["lastPriceDate"] = last_date
+        if prev_close and prev_close > 0:
+            rem = p.get("remaining_quantity") if p.get("remaining_quantity") is not None else qty
+            p["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
+            p["dayChangeAmt"] = round((cmp - prev_close) * rem, 2)
+
+        new_sl = _compute_trailing_sl_candidate(p, cmp)
+        if new_sl is not None:
+            p["sl"] = new_sl
+            trailed += 1
+            changed = True
+
+        remaining = int(p.get("remaining_quantity") or p.get("quantity", 1) or 1)
+        live_sl = float(p.get("sl", 0) or 0)
+        entry_price = float(p.get("entry", 0) or 0)
+        # Only auto-close when:
+        #  1. SL is set and CMP has breached it, AND
+        #  2. The SL is at or below entry price (normal protective stop).
+        # If SL has been trailed above entry (profit-lock zone), skip auto-close —
+        # that is a manual decision; automation must not close profitable positions.
+        if live_sl > 0 and cmp <= live_sl and remaining > 0 and (entry_price <= 0 or live_sl <= entry_price):
+            p["status"] = "SL_HIT"
+            p["exit_price"] = round(cmp, 2)
+            p["exit_date"] = today
+            p["remaining_quantity"] = 0
+            _recompute_position_realized_pl(p)
+            closed += 1
+            changed = True
+
+    if changed:
+        data["positions"] = positions
+        _save_board(data)
+    return {"changed": changed, "trailed": trailed, "closed": closed}
+
 # ── Price / Chart helpers ──────────────────────────────────────────────────────
 
 def _read_ohlcv(symbol: str, days: int = 0, market: str = "india") -> list[dict]:
@@ -3909,9 +4247,17 @@ def trade_board_ui() -> FileResponse:
 
 @app.get("/api/trade-board/summary")
 def trade_board_summary() -> dict:
+    from concurrent.futures import ThreadPoolExecutor
     with _board_lock:
         data = _load_board()
+        _apply_trailing_stop_automation(data)
         positions = data.get("positions", [])
+    # Parallel live price pre-warm
+    open_syms = list({p.get("symbol", "") for p in positions
+                      if p.get("status") in ("OPEN", "PARTIAL") and p.get("symbol")})
+    if open_syms:
+        with ThreadPoolExecutor(max_workers=min(8, len(open_syms))) as pool:
+            list(pool.map(_get_live_price, open_syms))
     # Enrich with CMP and day change for open positions
     for p in positions:
         entry = p.get("entry", 0) or 0
@@ -3937,11 +4283,104 @@ def trade_board_summary() -> dict:
     stats = _compute_board_stats(positions)
     return {"stats": stats, "lastUpdated": data.get("lastUpdated")}
 
-@app.get("/api/trade-board/positions")
-def trade_board_positions(status: str = "") -> dict:
+
+@app.get("/api/trade-board/positions/fast")
+def trade_board_positions_fast(status: str = "") -> dict:
+    """Ultra-fast positions endpoint: returns raw data from disk with CSV-cached
+    prices only (no live API calls). ~50ms. Use for initial UI render."""
     with _board_lock:
         data = _load_board()
+        _apply_trailing_stop_automation(data)
         positions = list(data.get("positions", []))
+    for p in positions:
+        entry = p.get("entry", 0) or 0
+        qty   = p.get("quantity", 1) or 1
+        remaining = p.get("remaining_quantity") or qty
+        if p.get("status") in ("OPEN", "PARTIAL"):
+            # CSV-only price (no live API calls)
+            rows = _read_ohlcv(p.get("symbol", ""), days=5)
+            cmp = rows[-1]["close"] if rows else None
+            prev_close = rows[-2]["close"] if len(rows) >= 2 else None
+            last_date = rows[-1]["date"] if rows else None
+            if cmp:
+                p["cmp"] = round(cmp, 2)
+                p["gainPct"] = round((cmp - entry) / entry * 100, 2) if entry else 0
+                p["gainAmt"] = round((cmp - entry) * remaining, 2) if entry else 0
+                p["lastPriceDate"] = last_date
+            if cmp and prev_close and prev_close > 0:
+                p["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
+                p["dayChangeAmt"] = round((cmp - prev_close) * remaining, 2)
+        elif p.get("exit_price") and entry:
+            ep = float(p["exit_price"])
+            p["gainPct"] = round((ep - entry) / entry * 100, 2)
+            pos_realized = p.get("realized_pl", 0) or 0
+            partial_qty_exited = sum(e.get("quantity", 0) for e in p.get("partial_exits", []))
+            exit_qty = qty - partial_qty_exited
+            p["gainAmt"] = round(pos_realized + (ep - entry) * exit_qty, 2)
+    if status:
+        positions = [p for p in positions if p.get("status") == status]
+    positions.sort(key=lambda p: (
+        0 if p.get("status") in ("OPEN", "PARTIAL") else 1,
+        -float(p.get("gainPct", 0) or 0)))
+    stats = _compute_board_stats(positions)
+    return {"positions": positions, "stats": stats, "lastUpdated": data.get("lastUpdated")}
+
+
+@app.get("/api/trade-board/watchlist/fast")
+def get_watchlist_fast() -> dict:
+    """Ultra-fast watchlist endpoint: returns raw data from disk with CSV-cached
+    prices only (no live API calls). ~100ms. Use for initial UI render."""
+    with _watchlist_lock:
+        items = _load_watchlist()
+    sig_index = _load_scan_signals_index()
+    for item in items:
+        sym = item.get("symbol", "")
+        mkt = item.get("market") or "india"
+        # CSV-only price (no live API calls)
+        rows = _read_ohlcv(sym, days=5, market=mkt)
+        cmp = rows[-1]["close"] if rows else None
+        prev_close = rows[-2]["close"] if len(rows) >= 2 else None
+        last_date = rows[-1]["date"] if rows else None
+        if cmp:
+            item["cmp"] = round(cmp, 2)
+            item["lastPriceDate"] = last_date
+        if cmp and prev_close and prev_close > 0:
+            item["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
+        ap = item.get("add_price")
+        if cmp and ap and ap > 0:
+            item["returnSinceAddPct"] = round((cmp - ap) / ap * 100, 2)
+            item["returnSinceAddAbs"] = round(cmp - ap, 2)
+        # Scan signal enrichment (no network calls)
+        sig = sig_index.get(sym) or sig_index.get(sym + ".NS") or sig_index.get(sym.replace(".NS", ""))
+        if sig:
+            item["scanSetup"] = sig.get("setup", "")
+            item["scanRating"] = sig.get("rating", "")
+            item["scanScore"] = sig.get("rankingScore") or sig.get("score")
+            item["scanEntry"] = sig.get("entry")
+            item["scanSl"] = sig.get("sl")
+            item["rsScore"] = sig.get("rsScore")
+            item["inScan"] = True
+        else:
+            item["inScan"] = False
+    return {
+        "items": items, "total": len(items),
+        "buckets": WATCHLIST_BUCKETS, "setups": WATCHLIST_SETUPS,
+    }
+
+
+@app.get("/api/trade-board/positions")
+def trade_board_positions(status: str = "") -> dict:
+    from concurrent.futures import ThreadPoolExecutor
+    with _board_lock:
+        data = _load_board()
+        _apply_trailing_stop_automation(data)
+        positions = list(data.get("positions", []))
+    # Parallel live price pre-warm for open positions
+    open_syms = list({p.get("symbol", "") for p in positions
+                      if p.get("status") in ("OPEN", "PARTIAL") and p.get("symbol")})
+    if open_syms:
+        with ThreadPoolExecutor(max_workers=min(8, len(open_syms))) as pool:
+            list(pool.map(_get_live_price, open_syms))
     # Enrich with current price and gain
     for p in positions:
         entry = p.get("entry", 0) or 0
@@ -3980,6 +4419,8 @@ def trade_board_positions(status: str = "") -> dict:
 @app.post("/api/trade-board/positions")
 def trade_board_add_position(position: TradeBoardPosition) -> dict:
     pos_dict = position.model_dump()
+    if (pos_dict.get("sl") or 0) > 0 and not pos_dict.get("original_sl"):
+        pos_dict["original_sl"] = pos_dict["sl"]
     with _board_lock:
         data = _load_board()
         positions = data.get("positions", [])
@@ -3997,29 +4438,48 @@ def trade_board_update_position(position_id: str, update: TradeBoardUpdate) -> d
             if p.get("id") == position_id:
                 upd = update.model_dump(exclude_unset=True)
                 positions[i].update(upd)
+                if "sl" in upd and upd.get("sl") is not None and not positions[i].get("original_sl"):
+                    positions[i]["original_sl"] = upd.get("sl")
                 # If status is a closing status and exit_price is set,
                 # auto-compute realized_pl for the remaining shares
                 new_status = positions[i].get("status", "OPEN")
                 closing_statuses = ("CLOSED", "SL_HIT", "T1_HIT", "T2_HIT", "T3_HIT")
                 if new_status in closing_statuses and positions[i].get("exit_price"):
-                    entry = positions[i].get("entry", 0)
-                    total_qty = positions[i].get("quantity", 1)
-                    exits = positions[i].get("partial_exits", [])
-                    partial_qty = sum(e.get("quantity", 0) for e in exits)
-                    remaining = total_qty - partial_qty
-                    ep = float(positions[i]["exit_price"])
-                    # Realized from partials
-                    partial_realized = sum(
-                        (e["price"] - entry) * e["quantity"] for e in exits
-                    )
-                    # Total realized = partials + final exit on remaining
-                    positions[i]["realized_pl"] = round(
-                        partial_realized + (ep - entry) * remaining, 2
-                    )
+                    _recompute_position_realized_pl(positions[i])
                     positions[i]["remaining_quantity"] = 0
                     # Auto-set exit_date if not provided
                     if not positions[i].get("exit_date"):
                         positions[i]["exit_date"] = datetime.now().strftime("%Y-%m-%d")
+                elif new_status in ("OPEN", "PARTIAL"):
+                    qty = int(positions[i].get("quantity", 1) or 1)
+                    exits = positions[i].get("partial_exits", []) or []
+                    partial_qty = sum(int(e.get("quantity", 0) or 0) for e in exits)
+                    remaining = max(0, qty - partial_qty)
+
+                    if remaining <= 0:
+                        # All shares were exited via partial_exits — full undo: clear them and restore full qty.
+                        positions[i]["partial_exits"] = []
+                        remaining = qty
+
+                    # Restore remaining quantity, clear close metadata.
+                    positions[i]["remaining_quantity"] = remaining
+                    positions[i]["exit_price"] = None
+                    positions[i]["exit_date"] = None
+
+                    # Recompute realized from whatever partial exits remain.
+                    remaining_exits = positions[i].get("partial_exits", []) or []
+                    partial_realized = sum(
+                        (float(e.get("price", 0) or 0) - float(positions[i].get("entry", 0) or 0))
+                        * int(e.get("quantity", 0) or 0)
+                        for e in remaining_exits
+                    )
+                    positions[i]["realized_pl"] = round(partial_realized, 2)
+
+                    # Normalize status: PARTIAL if some shares already booked, else OPEN.
+                    if remaining < qty:
+                        positions[i]["status"] = "PARTIAL"
+                    else:
+                        positions[i]["status"] = "OPEN"
                 data["positions"] = positions
                 _save_board(data)
                 return {"position": positions[i], "ok": True}
@@ -4052,29 +4512,33 @@ def trade_board_partial_exit(position_id: str, req: PartialExitRequest) -> dict:
             remaining = p.get("remaining_quantity")
             if remaining is None:
                 remaining = total_qty
+            if req.price <= 0:
+                raise HTTPException(status_code=400, detail="price must be > 0")
+
+            # Resolve quantity: explicit shares or full remaining via exit_all.
+            exit_qty = remaining if req.exit_all else (req.quantity or 0)
+
             # Validate
-            if req.quantity <= 0:
+            if exit_qty <= 0:
                 raise HTTPException(status_code=400, detail="quantity must be > 0")
-            if req.quantity > remaining:
+            if exit_qty > remaining:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Cannot exit {req.quantity} shares — only {remaining} remaining")
+                    detail=f"Cannot exit {exit_qty} shares — only {remaining} remaining")
             # Record partial exit
             exits = p.get("partial_exits", [])
             exits.append({
                 "date": req.date,
-                "quantity": req.quantity,
+                "quantity": exit_qty,
                 "price": req.price,
                 "reason": req.reason,
             })
-            remaining -= req.quantity
+            remaining -= exit_qty
             positions[i]["partial_exits"] = exits
             positions[i]["remaining_quantity"] = remaining
             # Compute realized P&L from all partial exits
             entry = p.get("entry", 0)
-            realized_pl = sum(
-                (e["price"] - entry) * e["quantity"] for e in exits
-            )
+            realized_pl = sum((e["price"] - entry) * e["quantity"] for e in exits)
             positions[i]["realized_pl"] = round(realized_pl, 2)
             # Auto-update status
             if remaining <= 0:
@@ -4084,6 +4548,7 @@ def trade_board_partial_exit(position_id: str, req: PartialExitRequest) -> dict:
                 if total_exited > 0:
                     wavg = sum(e["price"] * e["quantity"] for e in exits) / total_exited
                     positions[i]["exit_price"] = round(wavg, 2)
+                _recompute_position_realized_pl(positions[i])
                 positions[i]["exit_date"] = req.date
             elif remaining < total_qty:
                 positions[i]["status"] = "PARTIAL"
@@ -4241,16 +4706,23 @@ def _enrich_position_metrics(p: dict) -> dict:
 
 @app.get("/api/trade-board/positions/enriched")
 def trade_board_positions_enriched(status: str = "") -> dict:
-    """Return positions enriched with 20EMA extension + volume records."""
+    """Return positions enriched with 20EMA extension + volume records.
+    Live prices are fetched in parallel (ThreadPoolExecutor) for speed."""
+    from concurrent.futures import ThreadPoolExecutor
     with _board_lock:
         data = _load_board()
+        trail_state = _apply_trailing_stop_automation(data)
         positions = list(data.get("positions", []))
-    # Pre-warm live price cache for all open positions
-    open_syms = [p.get("symbol", "") for p in positions if p.get("status") in ("OPEN", "PARTIAL")]
-    for sym in open_syms:
-        if sym:
-            _get_live_price(sym)
-    for p in positions:
+
+    # ── PARALLEL live price pre-warm for all open positions ──────────────
+    open_positions = [p for p in positions if p.get("status") in ("OPEN", "PARTIAL")]
+    open_syms = list({p.get("symbol", "") for p in open_positions if p.get("symbol")})
+    if open_syms:
+        with ThreadPoolExecutor(max_workers=min(8, len(open_syms))) as pool:
+            list(pool.map(_get_live_price, open_syms))
+
+    # ── Enrichment helper (called per position in parallel) ─────────────
+    def _enrich_one(p):
         entry = p.get("entry", 0) or 0
         qty = p.get("quantity", 1) or 1
         remaining = p.get("remaining_quantity") if p.get("remaining_quantity") is not None else qty
@@ -4260,7 +4732,6 @@ def trade_board_positions_enriched(status: str = "") -> dict:
             if cmp:
                 p["cmp"] = round(cmp, 2)
                 p["gainPct"] = round((cmp - entry) / entry * 100, 2) if entry else 0
-                # Unrealized on remaining + realized from partials
                 unrealized = (cmp - entry) * remaining
                 pos_realized = p.get("realized_pl", 0) or 0
                 p["gainAmt"] = round(unrealized + pos_realized, 2) if entry else 0
@@ -4268,10 +4739,8 @@ def trade_board_positions_enriched(status: str = "") -> dict:
             if cmp and prev_close and prev_close > 0:
                 p["dayChangePct"] = round((cmp - prev_close) / prev_close * 100, 2)
                 p["dayChangeAmt"] = round((cmp - prev_close) * remaining, 2)
-            # Enrich with 20EMA extension + volume records + ADR
             _enrich_position_metrics(p)
         elif entry:
-            # Closed position: use realized_pl if available, else compute from exit_price
             pos_realized = p.get("realized_pl", 0) or 0
             ep = float(p.get("exit_price") or entry)
             if pos_realized:
@@ -4280,6 +4749,11 @@ def trade_board_positions_enriched(status: str = "") -> dict:
             elif ep:
                 p["gainPct"] = round((ep - entry) / entry * 100, 2)
                 p["gainAmt"] = round((ep - entry) * qty, 2)
+
+    # Run enrichment in parallel threads (mostly I/O bound — CSV reads + cached price lookups)
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(_enrich_one, positions))
+
     if status:
         positions = [p for p in positions if p.get("status") == status]
     positions.sort(key=lambda p: (
@@ -4288,7 +4762,8 @@ def trade_board_positions_enriched(status: str = "") -> dict:
     stats = _compute_board_stats(positions)
     return {"positions": positions, "stats": stats,
             "lastUpdated": data.get("lastUpdated"),
-            "marketOpen": _is_market_open()}
+            "marketOpen": _is_market_open(),
+            "trailing": trail_state}
 
 
 @app.get("/api/trade-board/watchlist/enriched")
@@ -4300,13 +4775,12 @@ def trade_board_watchlist_enriched() -> dict:
         items = _load_watchlist()
     sig_index = _load_scan_signals_index()
 
-    # Pre-warm live price cache sequentially — avoids NSE rate-limiting
-    # when ThreadPoolExecutor fires 8 concurrent requests.
-    for item in items:
-        sym = item.get("symbol", "")
-        mkt = item.get("market") or "india"
-        if sym and mkt != "us":
-            _get_live_price(sym)
+    # ── PARALLEL live price pre-warm (batch up to 10 concurrent) ─────────
+    india_syms = list({item.get("symbol", "") for item in items
+                       if item.get("symbol") and (item.get("market") or "india") != "us"})
+    if india_syms:
+        with ThreadPoolExecutor(max_workers=min(10, len(india_syms))) as pool:
+            list(pool.map(_get_live_price, india_syms))
 
     def _enrich_wl(item):
         _enrich_watchlist_item_lite(item, sig_index)
@@ -4466,6 +4940,7 @@ def trade_board_equity() -> dict:
     """Compute equity curve from closed+open positions, including partial exits."""
     with _board_lock:
         data = _load_board()
+        _apply_trailing_stop_automation(data)
         positions = data.get("positions", [])
     curve = []
     total = 0.0
@@ -4489,13 +4964,13 @@ def trade_board_equity() -> dict:
                 "type": "partial",
             })
 
-        # Add full close event (only for fully closed, not already counted via partials)
+        # Add full close event for any remaining shares not covered by partial exits.
         if status not in ("OPEN", "PARTIAL"):
             partial_qty = sum(pe["quantity"] for pe in p.get("partial_exits", []))
-            if partial_qty == 0:
-                # Full close without partial exits
+            remaining_at_close = max(0, qty - partial_qty)
+            if remaining_at_close > 0:
                 exit_p = p.get("exit_price") or entry
-                pl = (exit_p - entry) * qty
+                pl = (exit_p - entry) * remaining_at_close
                 events.append({
                     "date": p.get("exit_date") or p.get("entry_date", ""),
                     "symbol": sym,
@@ -4503,7 +4978,6 @@ def trade_board_equity() -> dict:
                     "status": status,
                     "type": "close",
                 })
-            # If partials covered full qty, they're already in events
 
     events.sort(key=lambda e: e.get("date", ""))
 
@@ -4924,6 +5398,9 @@ WATCHLIST_BUCKETS: list[dict] = [
     {"slug": "setup_range_exp", "label": "Setup · Range Exp.", "icon": "📐", "hint": "Range expansion / trend day"},
     {"slug": "setup_mean_rev",  "label": "Setup · Mean Rev.",  "icon": "↩️", "hint": "Oversold bounce"},
     {"slug": "setup_bull_flag", "label": "Setup · Bull Flag",  "icon": "🏁", "hint": "Flag / pennant"},
+    {"slug": "setup_ema_pb",    "label": "Setup · EMA Pullback", "icon": "📉", "hint": "Pullback to rising EMA (5/10/20/50)"},
+    {"slug": "setup_base_bo",   "label": "Setup · Base Breakout", "icon": "📦", "hint": "Flat base / cup breakout on volume"},
+    {"slug": "setup_ftd",       "label": "Setup · Follow-Through", "icon": "📈", "hint": "Follow-through day after correction"},
     {"slug": "setup_earnings",  "label": "Setup · Earnings",   "icon": "💼", "hint": "Pre / post earnings swing"},
     {"slug": "setup_ipo_base",  "label": "Setup · IPO Base",   "icon": "🆕", "hint": "First base after listing"},
     {"slug": "watching",        "label": "Just Watching",      "icon": "👀", "hint": "No setup yet, monitoring"},
@@ -4931,7 +5408,8 @@ WATCHLIST_BUCKETS: list[dict] = [
 
 WATCHLIST_SETUPS: list[str] = [
     "VCP", "Pullback", "Breakout", "Range Expansion", "Mean Reversion",
-    "Bull Flag", "Base Building", "Earnings Swing", "IPO Base",
+    "Bull Flag", "EMA Pullback", "Base Breakout", "Follow-Through Day",
+    "Base Building", "Earnings Swing", "IPO Base",
     "Cup & Handle", "Darvas Box", "Gap-n-Go", "Watching",
 ]
 
@@ -4955,7 +5433,7 @@ ADR_HINTS: dict[str, dict] = {
 
 
 def _migrate_watchlist_item(raw: dict) -> dict:
-    """Upgrade a v1 watchlist entry to v2 schema (idempotent)."""
+    """Upgrade a v1 watchlist entry to v2+ schema (idempotent)."""
     raw.setdefault("bucket",      "watching")
     raw.setdefault("market",      "india")
     raw.setdefault("setup",       raw.get("setup", ""))
@@ -4966,6 +5444,7 @@ def _migrate_watchlist_item(raw: dict) -> dict:
     raw.setdefault("pair_symbol", None)
     raw.setdefault("pair_market", None)
     raw.setdefault("source",      "manual")   # "manual" | "auto_rs"
+    raw.setdefault("priority",    None)        # P1 / P2 / P3 (auto-computed)
     return raw
 
 
@@ -5001,6 +5480,7 @@ class WatchlistItem(BaseModel):
     pair_symbol: Optional[str] = None       # cross-market pair (e.g. ADR)
     pair_market: Optional[Literal["india", "us"]] = None
     source: Literal["manual", "auto_rs"] = "manual"  # provenance flag
+    priority: Optional[str] = None          # P1 / P2 / P3 (auto-computed)
 
 
 class WatchlistItemUpdate(BaseModel):
@@ -5015,10 +5495,91 @@ class WatchlistItemUpdate(BaseModel):
     add_date: Optional[str] = None
     pair_symbol: Optional[str] = None
     pair_market: Optional[Literal["india", "us"]] = None
+    priority: Optional[str] = None
+
+
+# ── Smart categorization helpers ─────────────────────────────────────────────
+
+# Maps scan setup types → best-fit watchlist bucket slug
+_SETUP_TO_BUCKET: dict[str, str] = {
+    "VCP":                "setup_vcp",
+    "BREAKOUT":           "setup_breakout",
+    "BREAKOUT_PULLBACK":  "setup_pullback",
+    "RANGE_EXPANSION":    "setup_range_exp",
+    "MEAN_REVERSION":     "setup_mean_rev",
+    "BULL_FLAG":          "setup_bull_flag",
+    "EMA_PULLBACK":       "setup_ema_pb",
+    "BASE_BREAKOUT":      "setup_base_bo",
+    "FOLLOW_THROUGH":     "setup_ftd",
+    "EARNINGS":           "setup_earnings",
+    "IPO_BASE":           "setup_ipo_base",
+    "GAP_AND_GO":         "setup_breakout",
+    "CUP_HANDLE":         "setup_base_bo",
+    "DARVAS":             "setup_breakout",
+}
+
+
+def _resolve_best_bucket(scan_setup: str | None, is_ipo: bool = False,
+                          rs_score: int = 0) -> str:
+    """Pick the best bucket for an auto RS-leader based on scan signal data.
+
+    Priority order:
+    1. If the stock has a scan setup → use its matching setup_* bucket
+    2. If it's an IPO with no scan setup → setup_ipo_base
+    3. Otherwise → rs_leaders (catch-all for strong RS without a specific pattern)
+    """
+    if scan_setup:
+        bucket = _SETUP_TO_BUCKET.get(scan_setup.upper().replace(" ", "_"))
+        if bucket:
+            return bucket
+    if is_ipo:
+        return "setup_ipo_base"
+    return "rs_leaders"
+
+
+def _compute_priority(
+    conviction: int = 3,
+    rs_score: float | None = None,
+    scan_rating: str = "",
+    swing_score: float | None = None,
+    in_scan: bool = False,
+) -> str:
+    """Compute P1 / P2 / P3 priority tier for a watchlist item.
+
+    P1 (🔥 Actionable NOW) — high conviction + strong ranking + scan-confirmed
+    P2 (👀 Watch Closely)  — decent conviction + solid fundamentals
+    P3 (📋 On Radar)       — tracking, not yet ready
+    """
+    _rs = rs_score or 0
+    _sw = swing_score or 0
+    _rating_strong = scan_rating in ("A+", "A")
+
+    # P1: conviction ≥ 4 AND (elite RS ≥ 85 OR A+/A scan rating) AND in scan
+    if conviction >= 4 and (_rs >= 85 or _rating_strong) and in_scan:
+        return "P1"
+    # Also P1: swing ≥ 85 AND scan confirmed regardless of conviction
+    if _sw >= 85 and _rating_strong and in_scan:
+        return "P1"
+    # P2: conviction ≥ 3 AND RS ≥ 70 (or in scan)
+    if conviction >= 3 and (_rs >= 70 or in_scan):
+        return "P2"
+    # P3: everything else
+    return "P3"
+
+
+def _enrich_watchlist_priority(item: dict) -> None:
+    """Dynamically recompute priority based on latest enrichment data."""
+    item["priority"] = _compute_priority(
+        conviction=item.get("conviction", 3),
+        rs_score=item.get("rs_score") or item.get("rsScore"),
+        scan_rating=item.get("scanRating", ""),
+        swing_score=item.get("swing_score"),
+        in_scan=item.get("inScan", False),
+    )
 
 
 def _enrich_watchlist_item_lite(item: dict, sig_index: dict) -> None:
-    """Light-weight enrichment (CMP, day-change, return-since-add, pair, scan).
+    """Light-weight enrichment (CMP, day-change, return-since-add, pair, scan, priority).
     Shared between /watchlist and /watchlist/enriched."""
     sym = item.get("symbol", "")
     mkt = item.get("market") or "india"
@@ -5056,12 +5617,36 @@ def _enrich_watchlist_item_lite(item: dict, sig_index: dict) -> None:
     else:
         item["inScan"] = False
 
+    # ── Priority tier (dynamic, recalculated each fetch) ──────────────────
+    _enrich_watchlist_priority(item)
+
+    # ── Entry proximity % (how close CMP is to scan entry price) ──────────
+    cmp_val = item.get("cmp")
+    scan_entry = item.get("scanEntry")
+    if cmp_val and scan_entry:
+        try:
+            se = float(scan_entry)
+            if se > 0:
+                dist = (cmp_val - se) / se * 100
+                item["entryDistPct"] = round(dist, 2)
+                # Near-entry flag (within ±2%)
+                item["nearEntry"] = abs(dist) <= 2.0
+        except (ValueError, TypeError):
+            pass
+
 
 @app.get("/api/trade-board/watchlist")
 def get_watchlist() -> dict:
+    from concurrent.futures import ThreadPoolExecutor
     with _watchlist_lock:
         items = _load_watchlist()
     sig_index = _load_scan_signals_index()
+    # Parallel live price pre-warm
+    india_syms = list({item.get("symbol", "") for item in items
+                       if item.get("symbol") and (item.get("market") or "india") != "us"})
+    if india_syms:
+        with ThreadPoolExecutor(max_workers=min(10, len(india_syms))) as pool:
+            list(pool.map(_get_live_price, india_syms))
     for item in items:
         _enrich_watchlist_item_lite(item, sig_index)
     return {
@@ -5241,10 +5826,17 @@ def _compute_rs_universe(
     top_n: int = 35,
     min_price: float = 50.0,
     min_bars: int = 150,
-    max_symbols: int = 0,  # 0 = all
+    max_symbols: int = 0,       # 0 = all
+    ipo_only: bool = False,     # return only IPO stocks (<126 bars)
+    sort_by: str = "swing",     # "swing" | "rs" | "adr" | "volume"
+    min_adr: float = 0.0,       # filter: minimum ADR% (e.g. 2.0 for ≥2%)
+    min_avg_vol: int = 0,       # filter: minimum 20d avg volume (e.g. 100000)
 ) -> dict:
     """
-    Rank every Indian stock in the cache by IBD-style RS vs Nifty 50.
+    Rank every Indian stock in the cache by IBD-style RS vs Nifty 50, enriched
+    with ADR%, volume metrics, trend data, sector/industry tags, and a composite
+    swing score designed to surface explosive-move candidates.
+
     Returns a dict with {top, total_scanned, computed, nifty_asof, generatedAt}.
     Thread-safe, memoized for _RS_SCAN_TTL seconds.
     """
@@ -5256,14 +5848,13 @@ def _compute_rs_universe(
     market_prices = _get_fresh_nifty_benchmark(days=260)
     live_nifty_asof = (market_prices or {}).get("dates", [None])[-1] if market_prices else None
 
+    _cache_key = (top_n, min_price, min_bars, max_symbols, ipo_only, sort_by, min_adr, min_avg_vol)
     with _rs_scan_lock:
         cached = _rs_scan_cache.get("data")
         if cached and (now - _rs_scan_cache.get("ts", 0)) < _RS_SCAN_TTL \
-                and cached.get("_params") == (top_n, min_price, min_bars, max_symbols):
+                and cached.get("_params") == _cache_key:
             # Bypass the TTL if the live ^NSEI CSV has a newer last-date than
-            # what the cached scan was computed against. Otherwise the RS
-            # table keeps showing e.g. "Nifty 2026-04-17" for ≤30 min even
-            # though fresh bars have already landed on disk.
+            # what the cached scan was computed against.
             cached_asof = cached.get("nifty_asof")
             if (not live_nifty_asof) or (not cached_asof) or live_nifty_asof <= cached_asof:
                 return cached
@@ -5274,6 +5865,13 @@ def _compute_rs_universe(
     if not market_prices or not market_prices.get("close"):
         raise HTTPException(status_code=503, detail="Could not fetch Nifty50 data for RS benchmark")
 
+    # ── Sector/industry taxonomy (loaded once, cached 30 min)
+    taxonomy = {}
+    try:
+        taxonomy = _load_taxonomy_cached() or {}
+    except Exception:
+        pass
+
     # 2. Universe = all cached NSE symbols (excluding Nifty itself)
     universe = [s for s in _list_india_cache_symbols() if s.upper() != "^NSEI"]
     if max_symbols and len(universe) > max_symbols:
@@ -5281,44 +5879,158 @@ def _compute_rs_universe(
 
     from concurrent.futures import ThreadPoolExecutor
 
+    def _ema(src: list[float], period: int) -> float:
+        """Exponential moving average — standard formula."""
+        k = 2 / (period + 1)
+        e = src[0]
+        for v in src[1:]:
+            e = v * k + e * (1 - k)
+        return e
+
     def _score_one(sym: str) -> Optional[dict]:
         rows = _read_ohlcv(sym, days=260, market="india")
-        if not rows or len(rows) < min_bars:
+        if not rows:
             return None
+
+        n_bars = len(rows)
         last_close = rows[-1]["close"]
         if last_close < min_price:
             return None
-        stock_prices = {
-            "close": [r["close"] for r in rows],
-            "dates": [r["date"]  for r in rows],
-        }
+
+        # ── IPO detection: <126 trading days ≈ listed within ~6 months
+        is_ipo = n_bars < 126
+
+        # For non-IPO: respect min_bars; for IPO: need at least 15 bars
+        if is_ipo:
+            if n_bars < 15:
+                return None
+        else:
+            if n_bars < min_bars:
+                return None
+
+        closes = [r["close"] for r in rows]
+        highs  = [r["high"]  for r in rows]
+        lows   = [r["low"]   for r in rows]
+        vols   = [r.get("volume", 0) or 0 for r in rows]
+        dates  = [r["date"]  for r in rows]
+
+        stock_prices = {"close": closes, "dates": dates}
+
+        # ── RS Score — IPO gets shorter periods (1M/2M/3M), normal gets standard
         try:
-            rs = _wpe.compute_rs_score(stock_prices, market_prices)
+            if is_ipo:
+                rs = _wpe.compute_rs_score(
+                    stock_prices, market_prices,
+                    periods=[21, 42, 63],
+                    weights=[0.50, 0.30, 0.20],
+                )
+            else:
+                rs = _wpe.compute_rs_score(stock_prices, market_prices)
         except Exception:
             return None
+
         score = rs.get("rs_score")
         if score is None:
             return None
-        # Quick trend filter: price above its 50-day SMA (IBD "Stage-2" lite)
-        closes = stock_prices["close"]
-        sma50 = sum(closes[-50:]) / 50 if len(closes) >= 50 else 0
+
+        # ── ADR%: Average Daily Range % over last 20 sessions
+        adr_period = min(20, n_bars)
+        recent = rows[-adr_period:]
+        adr_abs = sum(r["high"] - r["low"] for r in recent) / adr_period
+        adr_pct = round(adr_abs / last_close * 100, 2) if last_close else 0
+
+        # ── Volume metrics
+        vol_period = min(20, n_bars)
+        avg_vol_20 = sum(vols[-vol_period:]) / vol_period if vol_period else 0
+        last_vol   = vols[-1] if vols else 0
+        vol_ratio  = round(last_vol / avg_vol_20, 2) if avg_vol_20 else 1.0
+        # 5-day avg volume (recent footprint)
+        avg_vol_5 = sum(vols[-5:]) / min(5, n_bars) if n_bars >= 5 else avg_vol_20
+        vol_surge_5d = round(avg_vol_5 / avg_vol_20, 2) if avg_vol_20 else 1.0
+
+        # ── Liquidity filter: skip illiquid stocks early
+        if min_avg_vol and avg_vol_20 < min_avg_vol:
+            return None
+        # ── ADR filter: skip low-volatility stocks
+        if min_adr and adr_pct < min_adr:
+            return None
+
+        # ── Trend: EMA10, EMA21, SMA50
+        ema10  = round(_ema(closes, 10), 2)  if n_bars >= 10  else last_close
+        ema21  = round(_ema(closes, 21), 2)  if n_bars >= 21  else last_close
+        sma50  = round(sum(closes[-50:]) / 50, 2) if n_bars >= 50  else 0
+
+        above_ema21 = last_close >= ema21
         above_sma50 = last_close >= sma50 if sma50 else False
-        # 52-week high proximity
-        hi52 = max(r["high"] for r in rows[-252:]) if len(rows) >= 252 else max(r["high"] for r in rows)
-        pct_from_hi = ((last_close - hi52) / hi52 * 100) if hi52 else 0
+        ema10_gap_pct = round((last_close - ema10) / ema10 * 100, 1) if ema10 else 0
+        ema21_gap_pct = round((last_close - ema21) / ema21 * 100, 1) if ema21 else 0
+
+        # ── 52-week high/low proximity
+        lookback = rows[-252:] if n_bars >= 252 else rows
+        hi52  = max(r["high"] for r in lookback)
+        lo52  = min(r["low"]  for r in lookback)
+        pct_from_hi  = round((last_close - hi52) / hi52 * 100, 2) if hi52 else 0
+        pct_from_lo  = round((last_close - lo52) / lo52 * 100, 2) if lo52 else 0
+
+        # ── IPO-specific: % gain from listing price (first close)
+        listing_gain_pct = round((last_close - closes[0]) / closes[0] * 100, 1) if is_ipo and closes[0] else None
+
+        # ── Sector / industry tag from taxonomy
+        tax_entry = taxonomy.get(sym)
+        sector   = tax_entry[0] if tax_entry else "Other"
+        industry = tax_entry[1] if tax_entry else "Other"
+
+        # ── SWING SCORE (0-100)
+        # Designed to surface explosive-move candidates for swing trading:
+        #   RS strength  (40pts): core momentum vs market
+        #   ADR bonus    (20pts): higher ADR → bigger moves per day
+        #   Vol surge    (20pts): 5d avg vol vs 20d avg vol — accumulation signal
+        #   Near 52w hi  (20pts): price discovering highs — momentum confirmation
+        rs_pts   = min(score, 99) / 99 * 40           # 0-40
+        adr_pts  = min(adr_pct / 4.0, 1.0) * 20       # 2%→10, 4%+→20
+        vs_pts   = min((vol_surge_5d - 1.0) / 2.0, 1.0) * 20 if vol_surge_5d > 1 else 0  # 1.5x→5, 3x+→20
+        hi_pts   = max(0, (1 - abs(pct_from_hi) / 20.0)) * 20  # within 5%→15-20
+        swing_score = round(rs_pts + adr_pts + vs_pts + hi_pts, 1)
+
+        # ── IPO bonus: freshly-listed strong RS gets extra weight (recency premium)
+        if is_ipo:
+            swing_score = round(min(swing_score * 1.15, 100), 1)
+
         return {
-            "symbol":       sym,
-            "market":       "india",
-            "rs_score":     score,
-            "rs_label":     rs.get("rs_label"),
-            "rs_color":     rs.get("rs_color"),
-            "excess_pct":   rs.get("weighted_excess_pct"),
-            "period_returns": rs.get("period_returns", {}),
-            "cmp":          round(last_close, 2),
-            "pctFrom52wHigh": round(pct_from_hi, 2),
-            "aboveSma50":   above_sma50,
-            "bars":         len(rows),
-            "lastDate":     rows[-1]["date"],
+            "symbol":           sym,
+            "market":           "india",
+            "is_ipo":           is_ipo,
+            "bars":             n_bars,
+            "lastDate":         rows[-1]["date"],
+            # Sector / industry
+            "sector":           sector,
+            "industry":         industry,
+            # RS
+            "rs_score":         score,
+            "rs_label":         rs.get("rs_label"),
+            "rs_color":         rs.get("rs_color"),
+            "excess_pct":       rs.get("weighted_excess_pct"),
+            "period_returns":   rs.get("period_returns", {}),
+            # Price
+            "cmp":              round(last_close, 2),
+            "pctFrom52wHigh":   pct_from_hi,
+            "pctFrom52wLow":    pct_from_lo,
+            "listingGainPct":   listing_gain_pct,
+            # ADR
+            "adrPct":           adr_pct,
+            # Volume / liquidity
+            "avgVol20":         round(avg_vol_20),
+            "volRatio":         vol_ratio,
+            "volSurge5d":       vol_surge_5d,
+            # Trend
+            "ema10":            ema10,
+            "ema21":            ema21,
+            "ema10GapPct":      ema10_gap_pct,
+            "ema21GapPct":      ema21_gap_pct,
+            "aboveEma21":       above_ema21,
+            "aboveSma50":       above_sma50,
+            # Composite
+            "swingScore":       swing_score,
         }
 
     scored: list[dict] = []
@@ -5354,8 +6066,18 @@ def _compute_rs_universe(
     except Exception as _e:
         print(f"⚠ RS-universe freshness probe error: {_e}", flush=True)
 
-    # 3. Sort by rs_score desc; tiebreak by excess_pct
-    scored.sort(key=lambda x: (x["rs_score"], x.get("excess_pct") or 0), reverse=True)
+    # ── Optional IPO-only filter
+    if ipo_only:
+        scored = [s for s in scored if s.get("is_ipo")]
+
+    # ── Sort by chosen strategy
+    _sort_keys = {
+        "swing":  lambda x: (x.get("swingScore") or 0, x.get("rs_score") or 0),
+        "rs":     lambda x: (x.get("rs_score") or 0, x.get("excess_pct") or 0),
+        "adr":    lambda x: (x.get("adrPct") or 0, x.get("rs_score") or 0),
+        "volume": lambda x: (x.get("volSurge5d") or 0, x.get("rs_score") or 0),
+    }
+    scored.sort(key=_sort_keys.get(sort_by, _sort_keys["swing"]), reverse=True)
     top = scored[:top_n]
     # Add rank
     for i, s in enumerate(top, start=1):
@@ -5369,8 +6091,10 @@ def _compute_rs_universe(
         "total_computed": len(scored),
         "min_price":     min_price,
         "min_bars":      min_bars,
+        "sort_by":       sort_by,
+        "ipo_only":      ipo_only,
         "nifty_asof":    (market_prices.get("dates") or [None])[-1],
-        "_params":       (top_n, min_price, min_bars, max_symbols),
+        "_params":       _cache_key,
     }
     with _rs_scan_lock:
         _rs_scan_cache["data"] = data
@@ -5384,30 +6108,52 @@ def rs_leaders_preview(
     min_price: float = 50.0,
     min_bars: int = 150,
     refresh: bool = False,
+    ipo_only: bool = False,
+    sort_by: str = "swing",     # swing | rs | adr | volume
+    min_adr: float = 0.0,       # minimum ADR% filter (e.g. 2.0)
+    min_avg_vol: int = 0,       # minimum 20d avg volume filter
 ) -> dict:
     """
-    Rank every Indian stock in the cache by IBD-style RS vs Nifty 50 and return
-    the top `top` without inserting anything. Use this to preview before
-    auto-populating the watchlist.
+    Rank every Indian stock by IBD-style RS + swing composite score vs Nifty 50.
+
+    Each result includes: rs_score, swingScore, adrPct, avgVol20, volSurge5d,
+    sector, industry, EMA trend data, and 52-week proximity.
+
+    sort_by options:
+      swing  – composite score (RS 40% + ADR 20% + vol-surge 20% + 52wHigh 20%) [default]
+      rs     – pure IBD-style RS score (3M/6M/9M/12M excess vs Nifty)
+      adr    – highest ADR% first (most volatile / explosive)
+      volume – strongest 5d vs 20d volume surge (accumulation signal)
+
+    ipo_only=true  → only stocks with <126 bars; scored with short 1M/2M/3M RS periods.
+    min_adr=2.0    → filter out stocks with ADR% < 2% (low-volatility names).
+    min_avg_vol=100000 → filter out illiquid micro-caps.
     """
-    if top <= 0 or top > 200:
-        raise HTTPException(status_code=400, detail="top must be between 1 and 200")
+    if top <= 0 or top > 500:
+        raise HTTPException(status_code=400, detail="top must be between 1 and 500")
     if refresh:
         with _rs_scan_lock:
             _rs_scan_cache["ts"] = 0
-    return _compute_rs_universe(top_n=top, min_price=min_price, min_bars=min_bars)
+    return _compute_rs_universe(
+        top_n=top, min_price=min_price, min_bars=min_bars,
+        ipo_only=ipo_only, sort_by=sort_by, min_adr=min_adr, min_avg_vol=min_avg_vol,
+    )
 
 
 class RsLeaderAutoAddRequest(BaseModel):
-    top:       int = Field(default=35, ge=1, le=100)
+    top:       int = Field(default=35, ge=1, le=500)
     min_price: float = 50.0
     min_bars:  int = 150
     refresh:   bool = False
     replace_existing_auto: bool = True  # wipe prior auto_rs items first
+    ipo_only:  bool = False
+    sort_by:   str = "swing"     # swing | rs | adr | volume
+    min_adr:   float = 0.0
+    min_avg_vol: int = 0
 
 
 @app.post("/api/trade-board/watchlist/rs-leaders/auto-add")
-def rs_leaders_auto_add(req: RsLeaderAutoAddRequest | None = None) -> dict:
+def rs_leaders_auto_add(req: Optional[RsLeaderAutoAddRequest] = None) -> dict:
     """
     Compute the top-N RS leaders (vs Nifty 50) and insert them into the
     watchlist with bucket="rs_leaders" and source="auto_rs".
@@ -5428,6 +6174,8 @@ def rs_leaders_auto_add(req: RsLeaderAutoAddRequest | None = None) -> dict:
 
     ranking = _compute_rs_universe(
         top_n=req.top, min_price=req.min_price, min_bars=req.min_bars,
+        ipo_only=req.ipo_only, sort_by=req.sort_by,
+        min_adr=req.min_adr, min_avg_vol=req.min_avg_vol,
     )
     leaders = ranking["top"]
 
@@ -5435,6 +6183,8 @@ def rs_leaders_auto_add(req: RsLeaderAutoAddRequest | None = None) -> dict:
     skipped_manual: list[str] = []
     removed_auto:  list[str] = []
     today = datetime.now().strftime("%Y-%m-%d")
+    # Load scan signals for smart bucket assignment
+    sig_index = _load_scan_signals_index()
 
     with _watchlist_lock:
         items = _load_watchlist()
@@ -5451,43 +6201,93 @@ def rs_leaders_auto_add(req: RsLeaderAutoAddRequest | None = None) -> dict:
         existing_syms = {(it.get("symbol") or "").upper(): it for it in items}
         for row in leaders:
             sym_u = row["symbol"].upper()
+            # Look up scan signal for this symbol
+            sig = (sig_index.get(sym_u) or sig_index.get(sym_u + ".NS")
+                   or sig_index.get(sym_u.replace(".NS", "")))
+            scan_setup = (sig.get("setup", "") if sig else "")
+            scan_rating = (sig.get("rating", "") if sig else "")
+            in_scan = bool(sig)
+
+            # Smart bucket: prefer setup_* bucket from scan signal, else rs_leaders
+            best_bucket = _resolve_best_bucket(
+                scan_setup, is_ipo=row.get("is_ipo", False),
+                rs_score=row.get("rs_score", 0),
+            )
+            # Derive friendly setup name from scan
+            best_setup = scan_setup.replace("_", " ").title() if scan_setup else ""
+            # Compute conviction + priority
+            _conviction = max(3, min(5, int((row["rs_score"] or 50) / 20)))
+            _priority = _compute_priority(
+                conviction=_conviction, rs_score=row.get("rs_score"),
+                scan_rating=scan_rating,
+                swing_score=row.get("swingScore"), in_scan=in_scan,
+            )
+
             if sym_u in existing_syms:
-                # It's still in the list → either we kept a manual entry or
-                # replace_existing_auto was False and the auto entry is still there.
                 existing = existing_syms[sym_u]
                 if existing.get("source") == "manual":
                     skipped_manual.append(sym_u)
                     continue
-                # It's an auto entry we kept — refresh rank tags / score
-                existing["conviction"] = max(3, min(5, int((row["rs_score"] or 50) / 20)))
-                existing["tags"] = list({*existing.get("tags", []),
-                                         "rs_leader", f"rs{row['rs_score']}", f"rank{row['rank']}"})
-                existing["notes"] = f"Auto RS-Leader rank #{row['rank']}  ·  RS {row['rs_score']} {row.get('rs_label','')}"
+                # It's an auto entry we kept — refresh rank, bucket, priority
+                existing["conviction"] = _conviction
+                existing["priority"] = _priority
+                existing["bucket"] = best_bucket
+                existing["setup"] = best_setup or existing.get("setup", "")
+                _tags = {"rs_leader", f"rs{row['rs_score']}", f"rank{row['rank']}"}
+                if row.get("is_ipo"):
+                    _tags.add("ipo")
+                if row.get("sector") and row["sector"] != "Other":
+                    _tags.add(row["sector"].lower().replace(" ", "_"))
+                if _priority == "P1":
+                    _tags.add("p1")
+                existing["tags"] = list({*existing.get("tags", []), *_tags})
+                existing["notes"] = (
+                    f"Auto RS-Leader rank #{row['rank']}  ·  RS {row['rs_score']} {row.get('rs_label','')}"
+                    f"  ·  Swing {row.get('swingScore', '')}  ·  ADR {row.get('adrPct', '')}%"
+                    f"  ·  {row.get('sector', '')}"
+                )
                 added.append(existing)
                 continue
             # Fresh insert
             hint = ADR_HINTS.get(sym_u) or {}
+            _tags = ["rs_leader", f"rs{row['rs_score']}", f"rank{row['rank']}"]
+            if row.get("is_ipo"):
+                _tags.append("ipo")
+            if row.get("sector") and row["sector"] != "Other":
+                _tags.append(row["sector"].lower().replace(" ", "_"))
+            if _priority == "P1":
+                _tags.append("p1")
             rec = {
                 "id":          str(uuid.uuid4()),
                 "symbol":      sym_u,
                 "market":      "india",
                 "name":        "",
-                "bucket":      "rs_leaders",
-                "setup":       "",
-                "conviction":  max(3, min(5, int((row["rs_score"] or 50) / 20))),
-                "tags":        ["rs_leader", f"rs{row['rs_score']}", f"rank{row['rank']}"],
+                "bucket":      best_bucket,
+                "setup":       best_setup,
+                "conviction":  _conviction,
+                "tags":        _tags,
                 "add_price":   row.get("cmp"),
                 "add_date":    today,
                 "added_at":    datetime.now().isoformat(timespec="seconds"),
-                "alert_price": None,
+                "alert_price": float(sig["entry"]) if sig and sig.get("entry") else None,
                 "pair_symbol": hint.get("adr_symbol"),
                 "pair_market": hint.get("adr_market"),
-                "notes":       f"Auto RS-Leader rank #{row['rank']}  ·  RS {row['rs_score']} {row.get('rs_label','')}",
+                "notes":       (
+                    f"Auto RS-Leader rank #{row['rank']}  ·  RS {row['rs_score']} {row.get('rs_label','')}"
+                    f"  ·  Swing {row.get('swingScore', '')}  ·  ADR {row.get('adrPct', '')}%"
+                    f"  ·  {row.get('sector', '')}"
+                ),
                 "source":      "auto_rs",
+                "priority":    _priority,
                 # extra diagnostic fields (preserved in JSON)
                 "rs_score":    row["rs_score"],
                 "rs_rank":     row["rank"],
                 "rs_excess_pct": row.get("excess_pct"),
+                "swing_score":   row.get("swingScore"),
+                "adr_pct":       row.get("adrPct"),
+                "sector":        row.get("sector"),
+                "industry":      row.get("industry"),
+                "is_ipo":        row.get("is_ipo", False),
             }
             items.append(rec)
             added.append(rec)
@@ -5522,7 +6322,11 @@ def rs_leaders_remove_auto() -> dict:
 # ── Market Overview ────────────────────────────────────────────────────────────
 
 def _load_scan_signals_index(market: str = "india", timeframe: str = "daily") -> dict[str, dict]:
-    """Load latest scan signals into a symbol → record dict for quick lookup."""
+    """Load latest scan signals into a symbol → record dict for quick lookup.
+    Also merges weekly signals when loading daily, tagging with timeframe_alignment."""
+    index: dict[str, dict] = {}
+
+    # Load primary timeframe
     suffix = f"{market}_{timeframe}_full"
     for name in [f"open_trades_{suffix}_LATEST.json", f"vcp_hits_{suffix}_LATEST.json"]:
         p = OUTPUT_DIR / name
@@ -5531,10 +6335,54 @@ def _load_scan_signals_index(market: str = "india", timeframe: str = "daily") ->
         try:
             signals = json.loads(p.read_text(encoding="utf-8"))
             if isinstance(signals, list) and signals:
-                return {s.get("symbol", ""): s for s in signals}
+                for s in signals:
+                    sym = s.get("symbol", "")
+                    if sym:
+                        s["_timeframe"] = timeframe
+                        index[sym] = s
         except Exception:
             pass
-    return {}
+
+    # If loading daily, also check weekly signals for multi-timeframe alignment
+    if timeframe == "daily":
+        weekly_suffix = f"{market}_weekly_full"
+        weekly_syms: set[str] = set()
+        for name in [f"open_trades_{weekly_suffix}_LATEST.json", f"vcp_hits_{weekly_suffix}_LATEST.json"]:
+            p = OUTPUT_DIR / name
+            if not p.exists():
+                continue
+            try:
+                signals = json.loads(p.read_text(encoding="utf-8"))
+                if isinstance(signals, list):
+                    for s in signals:
+                        sym = s.get("symbol", "")
+                        if sym:
+                            weekly_syms.add(sym)
+            except Exception:
+                pass
+
+        # Tag daily entries that also have weekly confirmation
+        for sym in index:
+            if sym in weekly_syms:
+                index[sym]["timeframe_alignment"] = "BOTH_ALIGNED"
+            else:
+                index[sym]["timeframe_alignment"] = "DAILY_ONLY"
+
+    if not index:
+        # Fallback to original behavior
+        suffix = f"{market}_{timeframe}_full"
+        for name in [f"open_trades_{suffix}_LATEST.json", f"vcp_hits_{suffix}_LATEST.json"]:
+            p = OUTPUT_DIR / name
+            if not p.exists():
+                continue
+            try:
+                signals = json.loads(p.read_text(encoding="utf-8"))
+                if isinstance(signals, list) and signals:
+                    return {s.get("symbol", ""): s for s in signals}
+            except Exception:
+                pass
+
+    return index
 
 
 @app.get("/api/trade-board/market-overview")
@@ -5657,6 +6505,7 @@ def refresh_prices_now() -> dict:
     # Collect symbols
     with _board_lock:
         board_data = _load_board()
+        trail_state = _apply_trailing_stop_automation(board_data)
         positions = board_data.get("positions", [])
     open_syms = [
         p["symbol"] for p in positions
@@ -5695,6 +6544,7 @@ def refresh_prices_now() -> dict:
         "ok": True,
         "symbols": all_syms,
         "count": len(all_syms),
+        "trailing": trail_state,
         "marketOpen": _is_market_open(),
         "message": f"Live cache flushed for {len(all_syms)} symbols — prices refresh on next load",
     }
@@ -6130,6 +6980,127 @@ def position_ema5_scan_and_alert(threshold: float = 1.5) -> dict:
     }
 
 
+# ── Watchlist Entry Proximity Alerts ──────────────────────────────────────────
+
+_entry_alerted_keys: set = set()
+
+
+@app.get("/api/alerts/entry-proximity/check")
+def entry_proximity_check(threshold: float = 2.0) -> dict:
+    """
+    Check all watchlist items for entry price proximity.
+    Returns items where CMP is within `threshold`% of their scan entry price.
+    Useful for entry timing on setup/breakout triggers.
+    """
+    with _watchlist_lock:
+        items = _load_watchlist()
+    sig_index = _load_scan_signals_index()
+    for item in items:
+        _enrich_watchlist_item_lite(item, sig_index)
+
+    alerts = []
+    for item in items:
+        cmp = item.get("cmp")
+        scan_entry_raw = item.get("scanEntry")
+        if not cmp or not scan_entry_raw:
+            continue
+        try:
+            se = float(scan_entry_raw)
+        except (ValueError, TypeError):
+            continue
+        if se <= 0:
+            continue
+        dist = (cmp - se) / se * 100
+        if abs(dist) > threshold:
+            continue
+        scan_sl = float(item.get("scanSl", 0) or 0)
+        risk = round(se - scan_sl, 2) if scan_sl > 0 else 0
+        rr = round((se * 1.15 - se) / (se - scan_sl), 1) if scan_sl > 0 and se > scan_sl else 0
+        tier = "AT_ENTRY" if abs(dist) <= 0.5 else ("NEAR_ENTRY" if dist <= 0 else "ABOVE_ENTRY")
+        alerts.append({
+            "symbol": item.get("symbol", ""),
+            "name": item.get("name", ""),
+            "tier": tier,
+            "cmp": cmp,
+            "scanEntry": se,
+            "scanSl": scan_sl,
+            "distPct": round(dist, 2),
+            "riskPerShare": risk,
+            "rr": rr,
+            "setup": item.get("scanSetup") or item.get("setup", ""),
+            "rating": item.get("scanRating", ""),
+            "bucket": item.get("bucket", ""),
+            "priority": item.get("priority", "P3"),
+            "conviction": item.get("conviction", 3),
+            "sector": item.get("sector", ""),
+            "rs_score": item.get("rs_score"),
+            "swing_score": item.get("swing_score"),
+            "dayChangePct": item.get("dayChangePct"),
+            "id": item.get("id", ""),
+        })
+
+    # Sort: AT_ENTRY first, then NEAR_ENTRY, then ABOVE_ENTRY; within tier by priority
+    priority_order = {"P1": 0, "P2": 1, "P3": 2}
+    tier_order = {"AT_ENTRY": 0, "NEAR_ENTRY": 1, "ABOVE_ENTRY": 2}
+    alerts.sort(key=lambda a: (tier_order.get(a["tier"], 9),
+                                priority_order.get(a["priority"], 9),
+                                abs(a["distPct"])))
+    return {
+        "alerts": alerts,
+        "count": len(alerts),
+        "threshold": threshold,
+        "totalWatchlist": len(items),
+        "checkedAt": datetime.now().isoformat(timespec="seconds"),
+    }
+
+
+@app.post("/api/alerts/entry-proximity/scan-send")
+def entry_proximity_scan_and_alert(threshold: float = 2.0) -> dict:
+    """
+    Scan watchlist for entry proximity AND send Telegram alerts for new ones.
+    Deduplicates: won't re-alert same symbol+tier+date combo.
+    """
+    global _entry_alerted_keys
+    check_result = entry_proximity_check(threshold)
+    alerts = check_result.get("alerts", [])
+    config = _breakout_scanner.state.load_config()
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    new_alerts = []
+    for a in alerts:
+        key = f"{a['symbol']}:{today}:{a['tier']}"
+        if key not in _entry_alerted_keys:
+            _entry_alerted_keys.add(key)
+            new_alerts.append(a)
+
+    sent_count = 0
+    if config.telegram_enabled and new_alerts:
+        for a in new_alerts:
+            emoji = "🎯" if a["tier"] == "AT_ENTRY" else "📍" if a["tier"] == "NEAR_ENTRY" else "📊"
+            tier_label = a["tier"].replace("_", " ")
+            text = (
+                f"{emoji} *ENTRY ALERT — {a['symbol']}*\n"
+                f"Tier: {tier_label} | Priority: {a['priority']}\n"
+                f"CMP: ₹{a['cmp']:,.2f} | Entry: ₹{a['scanEntry']:,.2f}\n"
+                f"Distance: {a['distPct']:+.1f}%\n"
+                f"Setup: {a['setup']} | Rating: {a['rating']}\n"
+                f"SL: ₹{a['scanSl']:,.2f} | Risk/sh: ₹{a['riskPerShare']}"
+                + (f" | R:R {a['rr']}x" if a['rr'] else "")
+                + (f"\nSector: {a['sector']}" if a['sector'] else "")
+            )
+            ok = send_telegram_text(text, config)
+            if ok:
+                sent_count += 1
+                print(f"  🎯 Entry alert sent: {a['symbol']} {a['tier']} ₹{a['cmp']}", flush=True)
+
+    return {
+        "alerts": alerts,
+        "newAlerts": len(new_alerts),
+        "telegramSent": sent_count,
+        "checkedAt": datetime.now().isoformat(timespec="seconds"),
+    }
+
+
 # ── Trading wisdom / daily reminders ───────────────────────────────────────
 # These endpoints power the always-on nudge layer in the UI: quote-of-the-day
 # panel, page-contextual reminders, psychology pings on open positions, etc.
@@ -6192,4 +7163,1156 @@ def wisdom_for_page(page: str = "home", regime: str = "unknown",
 def wisdom_stats():
     """Totals, per-author & per-tag counts — used by tests and an About page."""
     return _wisdom_json(trading_wisdom.stats())
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ── IBD BACKTESTER ─────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _parse_scan_dir_date(dirname: str) -> str | None:
+    """Extract YYYYMMDD from a scan dir name like scan_india_daily_full_20260415_2331."""
+    parts = dirname.rsplit("_", 2)
+    if len(parts) >= 2:
+        datepart = parts[-2]
+        if len(datepart) == 8 and datepart.isdigit():
+            return f"{datepart[:4]}-{datepart[4:6]}-{datepart[6:8]}"
+    return None
+
+
+def _collect_scan_history(market: str = "india", timeframe: str = "daily") -> list[dict]:
+    """Collect all scan runs from output directories. Returns list of {date, dir, items}."""
+    import glob
+    pattern = str(OUTPUT_DIR / f"scan_{market}_{timeframe}_full_*")
+    dirs = sorted(glob.glob(pattern))
+    runs = []
+    seen_dates = set()
+    for d in dirs:
+        dirname = Path(d).name
+        scan_date = _parse_scan_dir_date(dirname)
+        if not scan_date:
+            continue
+        # Keep latest scan per date
+        if scan_date in seen_dates:
+            # Replace with later scan
+            runs = [r for r in runs if r["date"] != scan_date]
+        seen_dates.add(scan_date)
+        # Try watchlist JSON first, then vcp_hits
+        items = []
+        for prefix in ["watchlist", "vcp_hits"]:
+            pattern_json = list(Path(d).glob(f"{prefix}_*.json"))
+            if pattern_json:
+                try:
+                    data = json.loads(pattern_json[0].read_text(encoding="utf-8"))
+                    if isinstance(data, list):
+                        items = data
+                        break
+                except Exception:
+                    pass
+        runs.append({"date": scan_date, "dir": d, "items": items, "count": len(items)})
+    return runs
+
+
+@app.get("/api/ibd-backtest/scan-dates")
+def ibd_backtest_scan_dates(market: str = "india", timeframe: str = "daily") -> dict:
+    """List all available scan dates for the backtester date picker."""
+    runs = _collect_scan_history(market, timeframe)
+    dates = [{"date": r["date"], "count": r["count"]} for r in runs]
+    return {"dates": dates, "total": len(dates)}
+
+
+def _run_account_simulator(
+    filtered_runs: list[dict],
+    results: list[dict],
+    market: str,
+    starting_capital: float = 100_000.0,
+    max_open_risk_pct: float = 6.0,
+) -> dict:
+    """
+    Simulate a real trading account over scan history.
+    Rules:
+    - Per-trade risk: 1% (B/C) / 2% (A) / 3% (A+) of current capital
+    - Max 6% total open risk at any time
+    - Best R:R trades picked first each scan
+    - Exits tracked via OHLCV (SL hit / T2 / T3 / end of period)
+    """
+    from statistics import mean
+
+    results_by_sym = {r["symbol"]: r for r in results}
+
+    def _trade_risk_pct(rating: str) -> float:
+        return 3.0 if rating == "A+" else 2.0 if rating == "A" else 1.0
+
+    # State as mutable containers (avoids nonlocal issues)
+    state = {"capital": starting_capital}
+    open_positions: list[dict] = []
+    closed_trades: list[dict] = []
+    equity_curve: list[dict] = []
+
+    # OHLCV cache
+    ohlcv_cache: dict[str, list[dict]] = {}
+
+    def _get_ohlcv(sym: str) -> list[dict]:
+        if sym not in ohlcv_cache:
+            ohlcv_cache[sym] = _read_ohlcv(sym, days=0, market=market) or []
+        return ohlcv_cache[sym]
+
+    def _price_on_date(sym: str, dt: str) -> float:
+        rows = _get_ohlcv(sym)
+        last = 0.0
+        for row in rows:
+            if row["date"] == dt:
+                return float(row["close"])
+            if row["date"] < dt:
+                last = float(row["close"])
+            else:
+                break
+        return last
+
+    def _bar_on_date(sym: str, dt: str):
+        for row in _get_ohlcv(sym):
+            if row["date"] == dt:
+                return row
+        return None
+
+    # Build trading calendar from Nifty or first symbol
+    all_dates: set[str] = set()
+    for run in filtered_runs:
+        all_dates.add(run["date"])
+    cal_sym = "^NSEI" if market == "india" else (results[0]["symbol"] if results else "")
+    if cal_sym and filtered_runs:
+        first_dt = filtered_runs[0]["date"]
+        for row in _get_ohlcv(cal_sym):
+            if row["date"] >= first_dt:
+                all_dates.add(row["date"])
+    sorted_dates = sorted(all_dates)
+
+    scan_date_set = {run["date"] for run in filtered_runs}
+    scan_items_by_date = {run["date"]: run["items"] for run in filtered_runs}
+
+    def _open_risk_pct() -> float:
+        return sum(p["risk_pct"] for p in open_positions)
+
+    def _close_trade(pos: dict, exit_price: float, exit_reason: str, dt: str):
+        pnl_per = exit_price - pos["entry"]
+        pnl = round(pnl_per * pos["qty"], 2)
+        pnl_pct = round(pnl_per / pos["entry"] * 100, 2) if pos["entry"] else 0
+        rr = round(pnl / pos["risk_amt"], 2) if pos["risk_amt"] else 0
+        state["capital"] += pnl
+        holding = sum(1 for d in sorted_dates if pos["date"] < d <= dt)
+        closed_trades.append({
+            "symbol": pos["symbol"],
+            "displaySymbol": pos["displaySymbol"],
+            "setup": pos["setup"],
+            "rating": pos["rating"],
+            "entry": pos["entry"],
+            "exit": round(exit_price, 2),
+            "qty": pos["qty"],
+            "pnl": pnl,
+            "pnlPct": pnl_pct,
+            "riskPct": pos["risk_pct"],
+            "rrAchieved": rr,
+            "exitReason": exit_reason,
+            "entryDate": pos["date"],
+            "exitDate": dt,
+            "holdingDays": holding,
+        })
+
+    for dt in sorted_dates:
+        # 1. Check exits
+        still_open = []
+        for pos in open_positions:
+            bar = _bar_on_date(pos["symbol"], dt)
+            if not bar:
+                still_open.append(pos)
+                continue
+            lo, hi = float(bar.get("low", 0)), float(bar.get("high", 0))
+            if pos["sl"] > 0 and lo <= pos["sl"]:
+                _close_trade(pos, pos["sl"], "SL_HIT", dt)
+            elif pos["t3"] > 0 and hi >= pos["t3"]:
+                _close_trade(pos, pos["t3"], "T3_HIT", dt)
+            elif pos["t2"] > 0 and hi >= pos["t2"]:
+                _close_trade(pos, pos["t2"], "T2_HIT", dt)
+            else:
+                still_open.append(pos)
+        open_positions.clear()
+        open_positions.extend(still_open)
+
+        # 2. Enter trades on scan dates
+        if dt in scan_date_set:
+            open_syms = {p["symbol"] for p in open_positions}
+            candidates = []
+            for item in scan_items_by_date.get(dt, []):
+                sym = item.get("symbol", "")
+                if not sym or sym in open_syms:
+                    continue
+                if sym not in results_by_sym:
+                    continue
+                try:
+                    entry = float(item.get("entry") or item.get("close") or 0)
+                    sl = float(item.get("sl") or 0)
+                    t1 = float(item.get("T1") or item.get("t1") or 0)
+                    t2 = float(item.get("T2") or item.get("t2") or 0)
+                    t3 = float(item.get("T3") or item.get("t3") or 0)
+                except (ValueError, TypeError):
+                    continue
+                if entry <= 0 or sl <= 0 or sl >= entry:
+                    continue
+                risk_per = entry - sl
+                rr = (t1 - entry) / risk_per if t1 > entry and risk_per > 0 else 0
+                if rr < 1.0:
+                    continue
+                score = float(item.get("score") or item.get("rsScore") or 0)
+                candidates.append({
+                    "symbol": sym,
+                    "displaySymbol": results_by_sym[sym]["displaySymbol"],
+                    "entry": entry, "sl": sl, "t1": t1, "t2": t2, "t3": t3,
+                    "risk_per": risk_per, "rr": round(rr, 2),
+                    "rating": item.get("rating", ""),
+                    "setup": item.get("setup", ""),
+                    "score": score,
+                })
+            candidates.sort(key=lambda c: (-c["rr"], -c["score"]))
+            cap = state["capital"]
+            for cand in candidates:
+                if _open_risk_pct() >= max_open_risk_pct:
+                    break
+                trade_risk = _trade_risk_pct(cand["rating"])
+                avail_risk = max_open_risk_pct - _open_risk_pct()
+                trade_risk = min(trade_risk, avail_risk)
+                if trade_risk < 0.5:
+                    break
+                risk_amt = cap * trade_risk / 100.0
+                qty = max(1, int(risk_amt / cand["risk_per"]))
+                pos_size = qty * cand["entry"]
+                if pos_size > cap * 0.25:
+                    qty = max(1, int(cap * 0.25 / cand["entry"]))
+                    pos_size = qty * cand["entry"]
+                if pos_size > cap * 0.95:
+                    continue
+                open_positions.append({
+                    "symbol": cand["symbol"],
+                    "displaySymbol": cand["displaySymbol"],
+                    "entry": cand["entry"],
+                    "sl": cand["sl"], "t1": cand["t1"],
+                    "t2": cand["t2"], "t3": cand["t3"],
+                    "qty": qty,
+                    "risk_pct": trade_risk,
+                    "risk_amt": round(risk_amt, 2),
+                    "date": dt,
+                    "rating": cand["rating"],
+                    "setup": cand["setup"],
+                })
+                open_syms.add(cand["symbol"])
+
+        # 3. Mark-to-market equity snapshot
+        cap = state["capital"]
+        mtm = sum(
+            pos["qty"] * (_price_on_date(pos["symbol"], dt) or pos["entry"])
+            for pos in open_positions
+        )
+        invested = sum(p["qty"] * p["entry"] for p in open_positions)
+        equity_curve.append({
+            "date": dt,
+            "equity": round(cap + (mtm - invested), 2),
+            "cash": round(cap, 2),
+            "openRiskPct": round(_open_risk_pct(), 2),
+            "openPositions": len(open_positions),
+            "invested": round(invested, 2),
+        })
+
+    # Close all remaining positions at last known price
+    final_dt = sorted_dates[-1] if sorted_dates else ""
+    for pos in list(open_positions):
+        price = _price_on_date(pos["symbol"], final_dt) or pos["entry"]
+        _close_trade(pos, price, "STILL_OPEN", final_dt)
+    open_positions.clear()
+
+    # ── Summary ───────────────────────────────────────────────────────────────
+    total = len(closed_trades)
+    winners = [t for t in closed_trades if t["pnl"] > 0]
+    losers  = [t for t in closed_trades if t["pnl"] <= 0]
+    final_eq = equity_curve[-1]["equity"] if equity_curve else starting_capital
+    total_return = round((final_eq - starting_capital) / starting_capital * 100, 2)
+
+    max_eq = starting_capital
+    max_dd = 0.0
+    for pt in equity_curve:
+        max_eq = max(max_eq, pt["equity"])
+        dd = (pt["equity"] - max_eq) / max_eq * 100
+        max_dd = min(max_dd, dd)
+
+    gross_w = round(sum(t["pnl"] for t in winners), 2)
+    gross_l = round(sum(t["pnl"] for t in losers), 2)
+    pf = round(gross_w / abs(gross_l), 2) if gross_l else 999
+
+    max_ws = max_ls = cur_w = cur_l = 0
+    for t in closed_trades:
+        if t["pnl"] > 0:
+            cur_w += 1; cur_l = 0; max_ws = max(max_ws, cur_w)
+        else:
+            cur_l += 1; cur_w = 0; max_ls = max(max_ls, cur_l)
+
+    setup_stats: dict[str, dict] = {}
+    for t in closed_trades:
+        s = t["setup"] or "Unknown"
+        ss = setup_stats.setdefault(s, {"count": 0, "wins": 0, "totalPnl": 0.0, "pnls": []})
+        ss["count"] += 1
+        ss["totalPnl"] += t["pnl"]
+        ss["pnls"].append(t["pnlPct"])
+        if t["pnl"] > 0:
+            ss["wins"] += 1
+    setup_breakdown = [
+        {
+            "setup": s,
+            "count": ss["count"],
+            "winRate": round(ss["wins"] / ss["count"] * 100) if ss["count"] else 0,
+            "totalPnl": round(ss["totalPnl"], 2),
+            "avgPnl": round(mean(ss["pnls"]), 2) if ss["pnls"] else 0,
+        }
+        for s, ss in sorted(setup_stats.items(), key=lambda x: -x[1]["count"])
+    ]
+    best  = max(closed_trades, key=lambda t: t["pnlPct"]) if closed_trades else {}
+    worst = min(closed_trades, key=lambda t: t["pnlPct"]) if closed_trades else {}
+
+    return {
+        "startingCapital": starting_capital,
+        "finalEquity": final_eq,
+        "totalReturn": total_return,
+        "totalPnl": round(sum(t["pnl"] for t in closed_trades), 2),
+        "maxDrawdown": round(max_dd, 2),
+        "totalTrades": total,
+        "winners": len(winners),
+        "losers": len(losers),
+        "winRate": round(len(winners) / total * 100) if total else 0,
+        "avgWinner": round(mean([t["pnlPct"] for t in winners]), 2) if winners else 0,
+        "avgLoser":  round(mean([t["pnlPct"] for t in losers]),  2) if losers  else 0,
+        "avgRR": round(mean([t["rrAchieved"] for t in closed_trades]), 2) if closed_trades else 0,
+        "avgHoldDays": round(mean([t["holdingDays"] for t in closed_trades]), 1) if closed_trades else 0,
+        "profitFactor": pf,
+        "grossWinners": gross_w,
+        "grossLosers": gross_l,
+        "maxWinStreak": max_ws,
+        "maxLossStreak": max_ls,
+        "maxOpenRisk": max_open_risk_pct,
+        "bestTrade":  {"symbol": best.get("displaySymbol",""),  "pnlPct": best.get("pnlPct",0),  "pnl": best.get("pnl",0)}  if best  else {},
+        "worstTrade": {"symbol": worst.get("displaySymbol",""), "pnlPct": worst.get("pnlPct",0), "pnl": worst.get("pnl",0)} if worst else {},
+        "setupBreakdown": setup_breakdown,
+        "trades": closed_trades[-200:],
+        "equityCurve": equity_curve,
+    }
+
+
+@app.get("/api/ibd-backtest/run")
+def ibd_backtest_run(
+    market: str = "india",
+    timeframe: str = "daily",
+    start_date: str = "",
+    end_date: str = "",
+    preset: str = "",  # 1d, 1w, 1m, 3m, 6m, 1y, ytd, all
+    min_appearances: int = 1,
+    setup_filter: str = "",
+    rating_filter: str = "",
+    sector_filter: str = "",
+) -> dict:
+    """
+    Run IBD-style backtest over scan history.
+
+    Returns per-symbol analytics: return from scan entry, return till date,
+    RS changes, scan appearances, sector, setup type, and more.
+    """
+    from datetime import date as _date
+
+    today = _date.today()
+
+    # Resolve date range
+    if preset:
+        end = today
+        if preset == "1d":
+            start = today - timedelta(days=1)
+        elif preset == "1w":
+            start = today - timedelta(days=7)
+        elif preset == "1m":
+            start = today - timedelta(days=30)
+        elif preset == "3m":
+            start = today - timedelta(days=90)
+        elif preset == "6m":
+            start = today - timedelta(days=180)
+        elif preset == "1y":
+            start = today - timedelta(days=365)
+        elif preset == "ytd":
+            start = _date(today.year, 1, 1)
+        else:  # "all"
+            start = _date(2020, 1, 1)
+        start_str = start.isoformat()
+        end_str = end.isoformat()
+    else:
+        start_str = start_date or "2020-01-01"
+        end_str = end_date or today.isoformat()
+
+    runs = _collect_scan_history(market, timeframe)
+    # Filter to date range
+    filtered_runs = [r for r in runs if start_str <= r["date"] <= end_str]
+
+    if not filtered_runs:
+        return {
+            "dateRange": {"start": start_str, "end": end_str},
+            "totalScans": 0,
+            "symbols": [],
+            "summary": {},
+            "sectorBreakdown": [],
+            "setupBreakdown": [],
+            "ratingBreakdown": [],
+        }
+
+    # Aggregate per symbol across all scans in range
+    symbol_data: dict[str, dict] = {}
+    scan_dates_used = []
+
+    for run in filtered_runs:
+        scan_dates_used.append(run["date"])
+        for item in run["items"]:
+            sym = item.get("symbol", "")
+            if not sym:
+                continue
+            setup = item.get("setup", "")
+            rating = item.get("rating", "")
+
+            # Apply filters
+            if setup_filter and setup.upper() != setup_filter.upper():
+                continue
+            if rating_filter and rating.upper() != rating_filter.upper():
+                continue
+
+            if sym not in symbol_data:
+                symbol_data[sym] = {
+                    "symbol": sym,
+                    "appearances": [],
+                    "setups": [],
+                    "ratings": [],
+                    "rsScores": [],
+                    "rs3m": [],
+                    "rs6m": [],
+                    "rs12m": [],
+                    "entries": [],
+                    "targets": {"t1": [], "t2": [], "t3": []},
+                    "stops": [],
+                    "regimeStates": [],
+                    "rankingScores": [],
+                    "firstScanDate": run["date"],
+                    "lastScanDate": run["date"],
+                    "firstEntry": None,
+                    "firstClose": None,
+                }
+
+            sd = symbol_data[sym]
+            sd["appearances"].append(run["date"])
+            sd["lastScanDate"] = run["date"]
+            if setup and setup not in sd["setups"]:
+                sd["setups"].append(setup)
+            if rating and rating not in sd["ratings"]:
+                sd["ratings"].append(rating)
+
+            # RS scores over time
+            rs = item.get("rsScore")
+            if rs is not None:
+                try:
+                    sd["rsScores"].append({"date": run["date"], "value": round(float(rs), 1)})
+                except (ValueError, TypeError):
+                    pass
+            for rk in ["rs3m", "rs6m", "rs12m"]:
+                val = item.get(rk)
+                if val is not None:
+                    try:
+                        sd[rk].append({"date": run["date"], "value": round(float(val), 1)})
+                    except (ValueError, TypeError):
+                        pass
+
+            # Entry/SL/Targets
+            entry = item.get("entry")
+            if entry:
+                try:
+                    ev = float(entry)
+                    sd["entries"].append({"date": run["date"], "value": ev})
+                    if sd["firstEntry"] is None:
+                        sd["firstEntry"] = ev
+                except (ValueError, TypeError):
+                    pass
+            close_val = item.get("close")
+            if close_val:
+                try:
+                    sd["firstClose"] = sd["firstClose"] or float(close_val)
+                except (ValueError, TypeError):
+                    pass
+            for tk in ["T1", "T2", "T3"]:
+                tv = item.get(tk) or item.get(tk.lower())
+                if tv:
+                    try:
+                        sd["targets"][tk.lower()].append(float(tv))
+                    except (ValueError, TypeError):
+                        pass
+            sl_val = item.get("sl")
+            if sl_val:
+                try:
+                    sd["stops"].append(float(sl_val))
+                except (ValueError, TypeError):
+                    pass
+            regime = item.get("regimeState")
+            if regime and regime not in sd["regimeStates"]:
+                sd["regimeStates"].append(regime)
+            rs_rank = item.get("rankingScore")
+            if rs_rank is not None:
+                try:
+                    sd["rankingScores"].append(round(float(rs_rank), 1))
+                except (ValueError, TypeError):
+                    pass
+
+    # Now enrich with current price data and sector info
+    taxonomy = {}
+    try:
+        taxonomy = _load_taxonomy_cached() or {}
+    except Exception:
+        pass
+
+    results = []
+    for sym, sd in symbol_data.items():
+        # Get OHLCV for returns computation
+        base = sym.replace(".NS", "").replace(".BO", "")
+        rows = _read_ohlcv(sym, days=0, market=market)
+        current_price = 0
+        first_scan_price = 0
+        price_on_first_scan = 0
+        price_history = []
+
+        if rows:
+            current_price = rows[-1]["close"]
+            # Find price on first scan date
+            first_date = sd["firstScanDate"]
+            last_date = sd["lastScanDate"]
+            for r in rows:
+                if r["date"] == first_date:
+                    price_on_first_scan = r["close"]
+                    break
+                if r["date"] < first_date:
+                    price_on_first_scan = r["close"]  # use last available before scan
+            if not price_on_first_scan and rows:
+                # Fallback: use closest available
+                for r in rows:
+                    if r["date"] >= first_date:
+                        price_on_first_scan = r["close"]
+                        break
+            # Build mini price series from first scan date
+            for r in rows:
+                if r["date"] >= first_date:
+                    price_history.append({"date": r["date"], "close": r["close"]})
+
+        entry_price = sd["firstEntry"] or sd["firstClose"] or price_on_first_scan or 0
+        # Returns
+        return_from_entry = 0
+        return_from_scan = 0
+        if entry_price > 0 and current_price > 0:
+            return_from_entry = round((current_price - entry_price) / entry_price * 100, 2)
+        if price_on_first_scan > 0 and current_price > 0:
+            return_from_scan = round((current_price - price_on_first_scan) / price_on_first_scan * 100, 2)
+
+        # Max gain / max drawdown since first scan
+        max_gain = 0
+        max_drawdown = 0
+        if price_history and entry_price > 0:
+            for ph in price_history:
+                g = (ph["close"] - entry_price) / entry_price * 100
+                max_gain = max(max_gain, g)
+                max_drawdown = min(max_drawdown, g)
+
+        # Sector info from taxonomy
+        sector = "Other"
+        industry = "Other"
+        tax_entry = taxonomy.get(base)
+        if tax_entry:
+            sector = tax_entry[0] or "Other"
+            industry = tax_entry[1] or "Other"
+
+        # Apply sector filter
+        if sector_filter and sector.upper() != sector_filter.upper():
+            continue
+
+        # Average RS score
+        avg_rs = 0
+        if sd["rsScores"]:
+            avg_rs = round(sum(x["value"] for x in sd["rsScores"]) / len(sd["rsScores"]), 1)
+        latest_rs = sd["rsScores"][-1]["value"] if sd["rsScores"] else 0
+        first_rs = sd["rsScores"][0]["value"] if sd["rsScores"] else 0
+        rs_change = round(latest_rs - first_rs, 1) if sd["rsScores"] else 0
+
+        # Best targets
+        avg_t1 = round(sum(sd["targets"]["t1"]) / len(sd["targets"]["t1"]), 2) if sd["targets"]["t1"] else 0
+        avg_t2 = round(sum(sd["targets"]["t2"]) / len(sd["targets"]["t2"]), 2) if sd["targets"]["t2"] else 0
+        avg_t3 = round(sum(sd["targets"]["t3"]) / len(sd["targets"]["t3"]), 2) if sd["targets"]["t3"] else 0
+        avg_sl = round(sum(sd["stops"]) / len(sd["stops"]), 2) if sd["stops"] else 0
+        avg_rank = round(sum(sd["rankingScores"]) / len(sd["rankingScores"]), 1) if sd["rankingScores"] else 0
+
+        # Risk/Reward
+        risk = abs(entry_price - avg_sl) if entry_price and avg_sl else 0
+        rr_ratio = round((avg_t1 - entry_price) / risk, 1) if risk > 0 and avg_t1 else 0
+
+        # T1/T2/T3 hit status
+        t1_hit = current_price >= avg_t1 > 0 if avg_t1 else False
+        t2_hit = current_price >= avg_t2 > 0 if avg_t2 else False
+        t3_hit = current_price >= avg_t3 > 0 if avg_t3 else False
+        sl_hit = current_price <= avg_sl > 0 if avg_sl and current_price else False
+
+        # Outcome
+        outcome = "open"
+        if sl_hit:
+            outcome = "sl_hit"
+        elif t3_hit:
+            outcome = "t3_hit"
+        elif t2_hit:
+            outcome = "t2_hit"
+        elif t1_hit:
+            outcome = "t1_hit"
+        elif return_from_entry > 0:
+            outcome = "profit"
+        elif return_from_entry < 0:
+            outcome = "loss"
+
+        results.append({
+            "symbol": sym,
+            "displaySymbol": base,
+            "sector": sector,
+            "industry": industry,
+            "appearances": len(sd["appearances"]),
+            "scanDates": sd["appearances"],
+            "firstScanDate": sd["firstScanDate"],
+            "lastScanDate": sd["lastScanDate"],
+            "setups": sd["setups"],
+            "ratings": sd["ratings"],
+            "bestRating": "A+" if "A+" in sd["ratings"] else "A" if "A" in sd["ratings"] else (sd["ratings"][0] if sd["ratings"] else "—"),
+            "entryPrice": round(entry_price, 2),
+            "currentPrice": round(current_price, 2),
+            "scanDayPrice": round(price_on_first_scan, 2),
+            "returnFromEntry": return_from_entry,
+            "returnFromScan": return_from_scan,
+            "maxGain": round(max_gain, 2),
+            "maxDrawdown": round(max_drawdown, 2),
+            "avgRs": avg_rs,
+            "latestRs": latest_rs,
+            "rsChange": rs_change,
+            "rsHistory": sd["rsScores"][-10:],  # last 10 data points
+            "rs3mHistory": sd["rs3m"][-10:],
+            "rs6mHistory": sd["rs6m"][-10:],
+            "rs12mHistory": sd["rs12m"][-10:],
+            "avgT1": avg_t1,
+            "avgT2": avg_t2,
+            "avgT3": avg_t3,
+            "avgSl": avg_sl,
+            "avgRankScore": avg_rank,
+            "riskReward": rr_ratio,
+            "t1Hit": t1_hit,
+            "t2Hit": t2_hit,
+            "t3Hit": t3_hit,
+            "slHit": sl_hit,
+            "outcome": outcome,
+            "regimeStates": sd["regimeStates"],
+            "priceHistory": price_history[-60:],  # last 60 data points for sparkline
+        })
+
+    # Sort by return descending
+    results.sort(key=lambda x: -(x.get("returnFromEntry") or 0))
+
+    # Summary stats
+    total = len(results)
+    winners = [r for r in results if r["returnFromEntry"] > 0]
+    losers = [r for r in results if r["returnFromEntry"] < 0]
+    avg_return = round(sum(r["returnFromEntry"] for r in results) / total, 2) if total else 0
+    median_return = 0
+    if results:
+        sorted_rets = sorted(r["returnFromEntry"] for r in results)
+        mid = len(sorted_rets) // 2
+        median_return = sorted_rets[mid] if len(sorted_rets) % 2 else round((sorted_rets[mid-1] + sorted_rets[mid]) / 2, 2)
+    avg_winner = round(sum(r["returnFromEntry"] for r in winners) / len(winners), 2) if winners else 0
+    avg_loser = round(sum(r["returnFromEntry"] for r in losers) / len(losers), 2) if losers else 0
+    t1_hits = sum(1 for r in results if r["t1Hit"])
+    t2_hits = sum(1 for r in results if r["t2Hit"])
+    t3_hits = sum(1 for r in results if r["t3Hit"])
+    sl_hits = sum(1 for r in results if r["slHit"])
+
+    # Sector breakdown
+    sector_map: dict[str, list] = {}
+    for r in results:
+        s = r["sector"]
+        sector_map.setdefault(s, []).append(r)
+    sector_breakdown = []
+    for s, items in sorted(sector_map.items(), key=lambda x: -len(x[1])):
+        avg_ret = round(sum(i["returnFromEntry"] for i in items) / len(items), 2) if items else 0
+        w = sum(1 for i in items if i["returnFromEntry"] > 0)
+        sector_breakdown.append({
+            "sector": s,
+            "count": len(items),
+            "avgReturn": avg_ret,
+            "winRate": round(w / len(items) * 100) if items else 0,
+            "symbols": [i["displaySymbol"] for i in items[:10]],
+        })
+
+    # Setup breakdown
+    setup_map: dict[str, list] = {}
+    for r in results:
+        for s in r["setups"]:
+            setup_map.setdefault(s, []).append(r)
+    setup_breakdown = []
+    for s, items in sorted(setup_map.items(), key=lambda x: -len(x[1])):
+        avg_ret = round(sum(i["returnFromEntry"] for i in items) / len(items), 2) if items else 0
+        w = sum(1 for i in items if i["returnFromEntry"] > 0)
+        setup_breakdown.append({
+            "setup": s,
+            "count": len(items),
+            "avgReturn": avg_ret,
+            "winRate": round(w / len(items) * 100) if items else 0,
+        })
+
+    # Rating breakdown
+    rating_map: dict[str, list] = {}
+    for r in results:
+        br = r["bestRating"]
+        rating_map.setdefault(br, []).append(r)
+    rating_breakdown = []
+    for rt, items in sorted(rating_map.items()):
+        avg_ret = round(sum(i["returnFromEntry"] for i in items) / len(items), 2) if items else 0
+        w = sum(1 for i in items if i["returnFromEntry"] > 0)
+        rating_breakdown.append({
+            "rating": rt,
+            "count": len(items),
+            "avgReturn": avg_ret,
+            "winRate": round(w / len(items) * 100) if items else 0,
+        })
+
+    summary = {
+        "totalSymbols": total,
+        "totalScans": len(filtered_runs),
+        "scanDatesUsed": scan_dates_used,
+        "winners": len(winners),
+        "losers": len(losers),
+        "winRate": round(len(winners) / total * 100) if total else 0,
+        "avgReturn": avg_return,
+        "medianReturn": median_return,
+        "avgWinner": avg_winner,
+        "avgLoser": avg_loser,
+        "bestReturn": max((r["returnFromEntry"] for r in results), default=0),
+        "worstReturn": min((r["returnFromEntry"] for r in results), default=0),
+        "avgMaxGain": round(sum(r["maxGain"] for r in results) / total, 2) if total else 0,
+        "avgMaxDrawdown": round(sum(r["maxDrawdown"] for r in results) / total, 2) if total else 0,
+        "t1HitRate": round(t1_hits / total * 100) if total else 0,
+        "t2HitRate": round(t2_hits / total * 100) if total else 0,
+        "t3HitRate": round(t3_hits / total * 100) if total else 0,
+        "slHitRate": round(sl_hits / total * 100) if total else 0,
+        "avgAppearances": round(sum(r["appearances"] for r in results) / total, 1) if total else 0,
+    }
+
+    # ── Account Simulator ───────────────────────────────────────────────────────
+    account_sim = {}
+    try:
+        account_sim = _run_account_simulator(
+            filtered_runs, results, market, 100_000.0,
+            max_open_risk_pct=6.0,
+        )
+    except Exception as _sim_e:
+        print(f"⚠ account simulator failed: {_sim_e}", flush=True)
+        import traceback; traceback.print_exc()
+        account_sim = {"error": str(_sim_e)}
+
+    # ── Scan-by-scan history (for "By Scan Date" view) ──────────────────────────
+    results_by_sym = {r["symbol"]: r for r in results}
+    scan_history = []
+    for run in filtered_runs:
+        run_date = run["date"]
+        picks = []
+        for item in run["items"]:
+            sym = item.get("symbol", "")
+            if not sym:
+                continue
+            r = results_by_sym.get(sym)
+            if not r:
+                continue  # filtered out by sector/setup/rating filter
+            # Per-scan-date entry price (price when this specific scan ran)
+            scan_entry = 0.0
+            try:
+                scan_entry = float(item.get("entry") or item.get("close") or 0)
+            except (ValueError, TypeError):
+                pass
+            scan_return = 0.0
+            cur = r["currentPrice"]
+            if scan_entry > 0 and cur > 0:
+                scan_return = round((cur - scan_entry) / scan_entry * 100, 2)
+            picks.append({
+                "symbol": sym,
+                "displaySymbol": r["displaySymbol"],
+                "sector": r["sector"],
+                "setup": item.get("setup", ""),
+                "rating": item.get("rating", ""),
+                "rsScore": round(float(item.get("rsScore") or 0), 1),
+                "scanEntry": round(scan_entry, 2),
+                "currentPrice": round(cur, 2),
+                "returnFromDate": scan_return,
+                "outcome": r["outcome"],
+            })
+        picks.sort(key=lambda x: -(x.get("returnFromDate") or 0))
+        w = sum(1 for p in picks if p["returnFromDate"] > 0)
+        scan_history.append({
+            "date": run_date,
+            "count": len(picks),
+            "winners": w,
+            "losers": len(picks) - w,
+            "winRate": round(w / len(picks) * 100) if picks else 0,
+            "avgReturn": round(sum(p["returnFromDate"] for p in picks) / len(picks), 2) if picks else 0,
+            "picks": picks,
+        })
+
+    return {
+        "dateRange": {"start": start_str, "end": end_str},
+        "totalScans": len(filtered_runs),
+        "symbols": results,
+        "summary": summary,
+        "sectorBreakdown": sector_breakdown,
+        "setupBreakdown": setup_breakdown,
+        "ratingBreakdown": rating_breakdown,
+        "scanHistory": scan_history,
+        "accountSim": account_sim,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  RS SCAN AS-OF DATE — Run RS leaders scan using data only up to a past date,
+#  then calculate returns from that date to today.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/api/rs-scan-asof")
+def rs_scan_asof(
+    scan_date: str = "",            # YYYY-MM-DD — the "as-of" date
+    end_date: str = "",             # YYYY-MM-DD — forward perf cutoff (default: latest)
+    top_n: int = 50,
+    min_price: float = 50.0,
+    min_bars: int = 150,
+    sort_by: str = "swing",         # swing | rs | adr | volume
+    min_adr: float = 0.0,
+    min_avg_vol: int = 0,
+) -> dict:
+    """
+    Run the RS-leaders scan as if today were *scan_date*, using only OHLCV data
+    up to that date. Then for each leader, compute the return from scan-date
+    close to the most recent close (i.e. forward return till now).
+
+    This lets users ask: "If I picked the RS top-50 on date X, how would they
+    have done?"
+    """
+    from datetime import date as _date
+
+    if not scan_date:
+        raise HTTPException(status_code=400, detail="scan_date is required (YYYY-MM-DD)")
+
+    try:
+        sd = _date.fromisoformat(scan_date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid date format: {scan_date}")
+
+    today = _date.today()
+    if sd >= today:
+        raise HTTPException(status_code=400, detail="scan_date must be in the past")
+
+    # ── end_date validation
+    end_date_str = ""
+    if end_date:
+        try:
+            ed = _date.fromisoformat(end_date)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid end_date format: {end_date}")
+        if ed <= sd:
+            raise HTTPException(status_code=400, detail="end_date must be after scan_date")
+        end_date_str = end_date  # YYYY-MM-DD string for filtering
+
+    # ── Load Nifty benchmark — need enough history before scan_date for RS calc
+    # RS needs ~260 trading bars before scan_date. Calculate how many calendar
+    # days back from today we need to cover scan_date + 260 trading days of history.
+    days_since_scan = (today - sd).days
+    nifty_fetch_days = max(days_since_scan + 400, 520)  # +400 for ~260 trading day buffer
+    market_prices_full = _get_fresh_nifty_benchmark(days=nifty_fetch_days)
+    if not market_prices_full or not market_prices_full.get("close"):
+        # Fallback: try loading with days=0 (all data)
+        nifty_rows = _read_ohlcv("^NSEI", days=0, market="us")
+        if nifty_rows and len(nifty_rows) >= 20:
+            market_prices_full = {
+                "dates": [r["date"] for r in nifty_rows],
+                "close": [r["close"] for r in nifty_rows],
+            }
+        else:
+            raise HTTPException(status_code=503, detail="Could not fetch Nifty50 data")
+
+    # Truncate Nifty benchmark to scan_date (keep data UP TO and including scan_date)
+    nifty_dates = market_prices_full["dates"]
+    nifty_closes = market_prices_full["close"]
+    cut_idx = len(nifty_dates)  # default: use all
+    for i, d in enumerate(nifty_dates):
+        if d > scan_date:
+            cut_idx = i
+            break
+
+    if cut_idx < 60:
+        raise HTTPException(status_code=400, detail=f"Not enough Nifty data before {scan_date} for RS computation (need ≥60 bars, have {cut_idx})")
+
+    market_prices_trunc = {
+        "dates": nifty_dates[:cut_idx],
+        "close": nifty_closes[:cut_idx],
+    }
+
+    # Get Nifty close on scan_date and end_date (or latest) for benchmark return
+    nifty_scan_close = nifty_closes[cut_idx - 1] if cut_idx > 0 else nifty_closes[0]
+    if end_date_str:
+        nifty_end_idx = len(nifty_dates) - 1
+        for i, d in enumerate(nifty_dates):
+            if d > end_date_str:
+                nifty_end_idx = max(0, i - 1)
+                break
+        nifty_now_close = nifty_closes[nifty_end_idx]
+    else:
+        nifty_now_close = nifty_closes[-1]
+    nifty_return_pct = round((nifty_now_close - nifty_scan_close) / nifty_scan_close * 100, 2) if nifty_scan_close else 0
+
+    # ── Taxonomy
+    taxonomy = {}
+    try:
+        taxonomy = _load_taxonomy_cached() or {}
+    except Exception:
+        pass
+
+    universe = [s for s in _list_india_cache_symbols() if s.upper() != "^NSEI"]
+
+    def _ema(src: list[float], period: int) -> float:
+        k = 2 / (period + 1)
+        e = src[0]
+        for v in src[1:]:
+            e = v * k + e * (1 - k)
+        return e
+
+    def _score_one(sym: str):
+        rows_full = _read_ohlcv(sym, days=0, market="india")
+        if not rows_full:
+            return None
+
+        # Truncate to scan_date
+        rows = [r for r in rows_full if r["date"] <= scan_date]
+        if not rows:
+            return None
+
+        n_bars = len(rows)
+        last_close = rows[-1]["close"]
+        if last_close < min_price:
+            return None
+
+        # ── IPO detection: <126 trading days as of scan_date ≈ listed within ~6 months
+        is_ipo = n_bars < 126
+
+        # For non-IPO: respect min_bars; for IPO: need at least 15 bars
+        if is_ipo:
+            if n_bars < 15:
+                return None
+        else:
+            if n_bars < min_bars:
+                return None
+
+        closes = [r["close"] for r in rows]
+        highs  = [r["high"]  for r in rows]
+        lows   = [r["low"]   for r in rows]
+        vols   = [r.get("volume", 0) or 0 for r in rows]
+        dates  = [r["date"]  for r in rows]
+
+        stock_prices = {"close": closes, "dates": dates}
+
+        # ── RS Score — IPO gets shorter periods (1M/2M/3M), normal gets standard
+        try:
+            if is_ipo:
+                rs = _wpe.compute_rs_score(
+                    stock_prices, market_prices_trunc,
+                    periods=[21, 42, 63],
+                    weights=[0.50, 0.30, 0.20],
+                )
+            else:
+                rs = _wpe.compute_rs_score(stock_prices, market_prices_trunc)
+        except Exception:
+            return None
+
+        score = rs.get("rs_score")
+        if score is None:
+            return None
+
+        # ADR%
+        adr_period = min(20, n_bars)
+        recent = rows[-adr_period:]
+        adr_abs = sum(r["high"] - r["low"] for r in recent) / adr_period
+        adr_pct = round(adr_abs / last_close * 100, 2) if last_close else 0
+
+        # Volume
+        vol_period = min(20, n_bars)
+        avg_vol_20 = sum(vols[-vol_period:]) / vol_period if vol_period else 0
+        last_vol   = vols[-1] if vols else 0
+        vol_ratio  = round(last_vol / avg_vol_20, 2) if avg_vol_20 else 1.0
+        avg_vol_5 = sum(vols[-5:]) / min(5, n_bars) if n_bars >= 5 else avg_vol_20
+        vol_surge_5d = round(avg_vol_5 / avg_vol_20, 2) if avg_vol_20 else 1.0
+
+        if min_avg_vol and avg_vol_20 < min_avg_vol:
+            return None
+        if min_adr and adr_pct < min_adr:
+            return None
+
+        # Trend
+        ema10  = round(_ema(closes, 10), 2)  if n_bars >= 10  else last_close
+        ema21  = round(_ema(closes, 21), 2)  if n_bars >= 21  else last_close
+        sma50  = round(sum(closes[-50:]) / 50, 2) if n_bars >= 50  else 0
+
+        above_ema21 = last_close >= ema21
+        above_sma50 = last_close >= sma50 if sma50 else False
+
+        # 52wk
+        lookback = rows[-252:] if n_bars >= 252 else rows
+        hi52  = max(r["high"] for r in lookback)
+        lo52  = min(r["low"]  for r in lookback)
+        pct_from_hi  = round((last_close - hi52) / hi52 * 100, 2) if hi52 else 0
+
+        # Swing score
+        rs_pts   = min(score, 99) / 99 * 40
+        adr_pts  = min(adr_pct / 4.0, 1.0) * 20
+        vs_pts   = min((vol_surge_5d - 1.0) / 2.0, 1.0) * 20 if vol_surge_5d > 1 else 0
+        hi_pts   = max(0, (1 - abs(pct_from_hi) / 20.0)) * 20
+        swing_score = round(rs_pts + adr_pts + vs_pts + hi_pts, 1)
+
+        # ── IPO bonus: freshly-listed strong RS gets extra weight (recency premium)
+        if is_ipo:
+            swing_score = round(min(swing_score * 1.15, 100), 1)
+
+        # ── IPO-specific: % gain from listing price (first close)
+        listing_gain_pct = round((last_close - closes[0]) / closes[0] * 100, 1) if is_ipo and closes[0] else None
+
+        tax_entry = taxonomy.get(sym)
+        sector   = tax_entry[0] if tax_entry else "Other"
+        industry = tax_entry[1] if tax_entry else "Other"
+
+        # ── Forward return: scan_date close → end_date close (or latest)
+        if end_date_str:
+            end_rows = [r for r in rows_full if r["date"] <= end_date_str]
+            current_close = end_rows[-1]["close"] if end_rows else 0
+            current_date = end_rows[-1]["date"] if end_rows else ""
+        else:
+            current_close = rows_full[-1]["close"] if rows_full else 0
+            current_date = rows_full[-1]["date"] if rows_full else ""
+        scan_close = last_close  # close on/before scan_date
+        fwd_return_pct = round((current_close - scan_close) / scan_close * 100, 2) if scan_close > 0 and current_close > 0 else 0
+
+        # Max gain & max drawdown since scan_date (up to end_date if set)
+        if end_date_str:
+            fwd_rows = [r for r in rows_full if scan_date < r["date"] <= end_date_str]
+        else:
+            fwd_rows = [r for r in rows_full if r["date"] > scan_date]
+        max_gain = 0.0
+        max_dd = 0.0
+        if fwd_rows and scan_close > 0:
+            for fr in fwd_rows:
+                g = (fr["close"] - scan_close) / scan_close * 100
+                max_gain = max(max_gain, g)
+                max_dd = min(max_dd, g)
+
+        return {
+            "symbol":           sym,
+            "sector":           sector,
+            "industry":         industry,
+            "is_ipo":           is_ipo,
+            "bars":             n_bars,
+            "rs_score":         score,
+            "rs_label":         rs.get("rs_label"),
+            "excess_pct":       rs.get("weighted_excess_pct"),
+            "scanClose":        round(scan_close, 2),
+            "currentClose":     round(current_close, 2),
+            "currentDate":      current_date,
+            "fwdReturnPct":     fwd_return_pct,
+            "maxGainPct":       round(max_gain, 2),
+            "maxDrawdownPct":   round(max_dd, 2),
+            "adrPct":           adr_pct,
+            "avgVol20":         round(avg_vol_20),
+            "volSurge5d":       vol_surge_5d,
+            "aboveEma21":       above_ema21,
+            "aboveSma50":       above_sma50,
+            "swingScore":       swing_score,
+            "pctFrom52wHigh":   pct_from_hi,
+            "listingGainPct":   listing_gain_pct,
+        }
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    scored: list[dict] = []
+    with ThreadPoolExecutor(max_workers=12, initializer=_ig_worker_init) as pool:
+        for res in pool.map(_score_one, universe):
+            if res is not None:
+                scored.append(res)
+
+    # Sort
+    _sort_keys = {
+        "swing":  lambda x: (x.get("swingScore") or 0, x.get("rs_score") or 0),
+        "rs":     lambda x: (x.get("rs_score") or 0, x.get("excess_pct") or 0),
+        "adr":    lambda x: (x.get("adrPct") or 0, x.get("rs_score") or 0),
+        "volume": lambda x: (x.get("volSurge5d") or 0, x.get("rs_score") or 0),
+    }
+    scored.sort(key=_sort_keys.get(sort_by, _sort_keys["swing"]), reverse=True)
+    top = scored[:top_n]
+    for i, s in enumerate(top, start=1):
+        s["rank"] = i
+
+    # Summary stats
+    total = len(top)
+    winners = [s for s in top if s["fwdReturnPct"] > 0]
+    losers  = [s for s in top if s["fwdReturnPct"] < 0]
+    avg_ret = round(sum(s["fwdReturnPct"] for s in top) / total, 2) if total else 0
+    median_ret = 0
+    if top:
+        srt = sorted(s["fwdReturnPct"] for s in top)
+        mid = len(srt) // 2
+        median_ret = srt[mid] if len(srt) % 2 else round((srt[mid - 1] + srt[mid]) / 2, 2)
+    avg_winner = round(sum(s["fwdReturnPct"] for s in winners) / len(winners), 2) if winners else 0
+    avg_loser  = round(sum(s["fwdReturnPct"] for s in losers) / len(losers), 2) if losers else 0
+    avg_max_gain = round(sum(s["maxGainPct"] for s in top) / total, 2) if total else 0
+    avg_max_dd   = round(sum(s["maxDrawdownPct"] for s in top) / total, 2) if total else 0
+
+    # Sector breakdown
+    sec_map: dict[str, list] = {}
+    for s in top:
+        sec_map.setdefault(s["sector"], []).append(s)
+    sec_breakdown = []
+    for sec, items in sorted(sec_map.items(), key=lambda x: -len(x[1])):
+        ar = round(sum(i["fwdReturnPct"] for i in items) / len(items), 2) if items else 0
+        w = sum(1 for i in items if i["fwdReturnPct"] > 0)
+        sec_breakdown.append({
+            "sector": sec, "count": len(items), "avgReturn": ar,
+            "winRate": round(w / len(items) * 100) if items else 0,
+        })
+
+    return {
+        "scanDate":         scan_date,
+        "endDate":          end_date_str or None,
+        "generatedAt":      datetime.now().isoformat(timespec="seconds"),
+        "sortBy":           sort_by,
+        "topN":             top_n,
+        "totalScanned":     len(universe),
+        "totalComputed":    len(scored),
+        "leaders":          top,
+        "niftyReturnPct":   nifty_return_pct,
+        "summary": {
+            "total":        total,
+            "winners":      len(winners),
+            "losers":       len(losers),
+            "winRate":      round(len(winners) / total * 100) if total else 0,
+            "avgReturn":    avg_ret,
+            "medianReturn": median_ret,
+            "avgWinner":    avg_winner,
+            "avgLoser":     avg_loser,
+            "avgMaxGain":   avg_max_gain,
+            "avgMaxDD":     avg_max_dd,
+        },
+        "sectorBreakdown":  sec_breakdown,
+    }
+
 
