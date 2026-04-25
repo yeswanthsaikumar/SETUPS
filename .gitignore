@@ -45,7 +45,8 @@ trade_data/
 filtered.csv
 
 ### IDE project files ###
-*.iml
+# SETUPS.iml is kept — IntelliJ needs it to load the module (modules.xml references it)
+# *.iml
 
 ### Python venv ###
 .venv/
