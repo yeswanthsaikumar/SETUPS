@@ -1,0 +1,2347 @@
+nse_ticker,custom_basic_industry
+# ═══════════════════════════════════════════════════════════════════════════════
+# Custom sub-classification overrides for NSE basic_industry groups
+# ═══════════════════════════════════════════════════════════════════════════════
+# NSE official basic_industry is too coarse for some groups (e.g. "Heavy
+# Electrical Equipment" lumps HVDC/wind/transformers/switchgear together).
+# This file provides a finer classification for trading/RS analysis.
+#
+# Only tickers that need reclassification are listed here. All others keep
+# their NSE basic_industry from nse_stock_enriched.csv.
+#
+# Format: nse_ticker | custom_basic_industry
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── Heavy Electrical Equipment → split by product focus ──────────────────────
+# HVDC / Power Transmission Equipment
+ABB,Electrical Equipments - HVDC
+GVT&D,Electrical Equipments - HVDC
+SIEMENS,Electrical Equipments - HVDC
+POWERINDIA,Electrical Equipments - HVDC
+TDPOWERSYS,Electrical Equipments - HVDC
+CGPOWER,Electrical Equipments - HVDC
+
+# Transformers & Switchgear
+VOLTAMP,Transformers & Switchgear
+SWELECTES,Transformers & Switchgear
+BBL,Transformers & Switchgear
+TARIL,Transformers & Switchgear
+TARAPUR,Transformers & Switchgear
+INDOTECH,Transformers & Switchgear
+SHILCTECH,Transformers & Switchgear
+SCHNEIDER,Transformers & Switchgear
+ATLANTAELE,Transformers & Switchgear
+SALZERELEC,Transformers & Switchgear
+
+# Wind Energy Equipment
+INOXWIND,Wind Energy Equipment
+SUZLON,Wind Energy Equipment
+
+# Power EPC & Transmission Towers
+TRANSRAILL,Power EPC & Towers
+SKIPPER,Power EPC & Towers
+JYOTISTRUC,Power EPC & Towers
+MARSONS,Power EPC & Towers
+BAJEL,Power EPC & Towers
+SALASAR,Power EPC & Towers
+
+# Industrial Boilers & Turbines
+THERMAX,Industrial Boilers & Engineering
+BHEL,Industrial Boilers & Engineering
+TRITURBINE,Industrial Boilers & Engineering
+
+# Industrial Gears & Equipment
+ELECON,Industrial Gears & Equipment
+AARTECH,Industrial Gears & Equipment
+SHANTIGEAR,Industrial Gears & Equipment
+
+# Solar & Energy Storage
+EXICOM,Solar & Energy Storage
+SURANASOL,Solar & Energy Storage
+SOLEX,Solar & Energy Storage
+QPOWER,Solar & Energy Storage
+WAAREEENER,Solar & Energy Storage
+AVAADA,Solar & Energy Storage
+
+# Power Electronics & UPS
+ENRIN,Power Electronics & UPS
+PROSTARM,Power Electronics & UPS
+
+# Precision Engineering & Aerospace
+MTARTECH,Precision Engineering & Aerospace
+AZAD,Precision Engineering & Aerospace
+UNIMECH,Precision Engineering & Aerospace
+
+# EV Charging & Battery Tech
+SERVOTECH,EV Charging & Battery Tech
+SAATVIKGL,EV Charging & Battery Tech
+AEPL,EV Charging & Battery Tech
+
+# Smart Metering & Energy Electronics
+GENUSPOWER,Smart Metering & Energy Electronics
+RISHABH,Smart Metering & Energy Electronics
+
+# Solar & Renewable Equipment Manufacturing
+EMMVEE,Solar & Renewable Equipment
+PREMIERENE,Solar & Renewable Equipment
+UTLSOLAR,Solar & Renewable Equipment
+VIKRAMSOLR,Solar & Renewable Equipment
+WEBELSOLAR,Solar & Renewable Equipment
+WAAREERTL,Solar & Renewable Equipment
+URJA,Solar & Renewable Equipment
+
+# Electronics Manufacturing Services
+KAYNES,Electronics Manufacturing Services
+SYRMA,Electronics Manufacturing Services
+AVALON,Electronics Manufacturing Services
+
+# ── Other Electrical Equipment → split by product ────────────────────────────
+# Cables & Wires
+APARINDS,Cables & Wires - Power
+DIACABS,Cables & Wires - Power
+RAMRAT,Cables & Wires - Power
+RELTD,Cables & Wires - Power
+INA,Solar & Renewable Equipment
+KECL,Cables & Wires - Power
+MEIL,Cables & Wires - Power
+MODISONLTD,Cables & Wires - Power
+NITIRAJ,Cables & Wires - Power
+PIGL,Cables & Wires - Power
+
+# ── Telecom Equipment → already correct ──────────────────────────────────────
+# STLTECH correctly classified as "Telecom - Equipment & Accessories" via NSE data
+
+# ── IT Services → split by size/focus ────────────────────────────────────────
+# Large Cap IT Services
+TCS,IT Services - Large Cap
+INFY,IT Services - Large Cap
+WIPRO,IT Services - Large Cap
+HCLTECH,IT Services - Large Cap
+TECHM,IT Services - Large Cap
+LTIM,IT Services - Large Cap
+
+# Mid Cap IT Services
+COFORGE,IT Services - Mid Cap
+MPHASIS,IT Services - Mid Cap
+PERSISTENT,IT Services - Mid Cap
+KPITTECH,IT Services - Mid Cap
+BSOFT,IT Services - Mid Cap
+SONATSOFTW,IT Services - Mid Cap
+MASTEK,IT Services - Mid Cap
+ZENSARTECH,IT Services - Mid Cap
+HAPPSTMNDS,IT Services - Mid Cap
+NEWGEN,IT Services - Mid Cap
+RATEGAIN,IT Services - Mid Cap
+HEXT,IT Services - Mid Cap
+
+# IT - Engineering Services
+CYIENT,IT - Engineering Services
+LTTS,IT - Engineering Services
+TATATECH,IT - Engineering Services
+SASKEN,IT - Engineering Services
+EXPLEOSOL,IT - Engineering Services
+TATAELXSI,IT - Engineering Services
+
+# IT - Small Cap Services
+3IINFOLTD,IT Services - Small Cap
+63MOONS,IT Services - Small Cap
+ACCELYA,IT Services - Small Cap
+AURIONPRO,IT Services - Small Cap
+CALSOFT,IT Services - Small Cap
+CTE,IT Services - Small Cap
+CYBERTECH,IT Services - Small Cap
+DCI,IT Services - Small Cap
+DRCSYSTEMS,IT Services - Small Cap
+FRACTAL,IT Services - Small Cap
+INFOBEAN,IT Services - Small Cap
+INNOVANA,IT Services - Small Cap
+INTELLECT,IT Services - Small Cap
+KSOLVES,IT Services - Small Cap
+LATENTVIEW,IT Services - Small Cap
+LTM,IT Services - Small Cap
+MCLOUD,IT Services - Small Cap
+MINDTECK,IT Services - Small Cap
+NINSYS,IT Services - Small Cap
+ORCHASP,IT Services - Small Cap
+RSSOFTWARE,IT Services - Small Cap
+SAKSOFT,IT Services - Small Cap
+SECMARK,IT Services - Small Cap
+SILVERTUC,IT Services - Small Cap
+SOFTTECH,IT Services - Small Cap
+TREJHARA,IT Services - Small Cap
+TRIGYN,IT Services - Small Cap
+XCHANGING,IT Services - Small Cap
+XTGLOBAL,IT Services - Small Cap
+
+# IT Enabled Services - Data & Analytics
+DATAMATICS,IT Enabled Services - Data & Analytics
+CIGNITITEC,IT Enabled Services - Data & Analytics
+CEINSYS,IT Enabled Services - Data & Analytics
+GENESYS,IT Enabled Services - Data & Analytics
+ONWARDTEC,IT Enabled Services - Data & Analytics
+PROTEAN,IT Enabled Services - Data & Analytics
+ORIENTTECH,IT Enabled Services - Data & Analytics
+IKS,IT Enabled Services - Data & Analytics
+SAGILITY,IT Enabled Services - Data & Analytics
+
+# IT Enabled Services - Digital & Internet
+AFFLE,IT Enabled Services - Digital
+AMAGI,IT Enabled Services - Digital
+BBOX,IT Enabled Services - Digital
+EMUDHRA,IT Enabled Services - Digital
+KELLTONTEC,IT Enabled Services - Digital
+DIGISPICE,IT Enabled Services - Digital
+INTENTECH,IT Enabled Services - Digital
+VAKRANGEE,IT Enabled Services - Digital
+ZAGGLE,IT Enabled Services - Digital
+VERTOZ,IT Enabled Services - Digital
+
+# IT Enabled Services - Infrastructure & Hardware
+NETWEB,IT Enabled Services - Infrastructure
+ADROITINFO,IT Enabled Services - Infrastructure
+ADSL,IT Enabled Services - Infrastructure
+BLSE,IT Enabled Services - Infrastructure
+DSSL,IT Enabled Services - Infrastructure
+DEVIT,IT Enabled Services - Infrastructure
+PALREDTEC,IT Enabled Services - Infrastructure
+SECURKLOUD,IT Enabled Services - Infrastructure
+SIGMA,IT Enabled Services - Infrastructure
+TERASOFT,IT Enabled Services - Infrastructure
+SAHANA,IT Enabled Services - Infrastructure
+ODIGMA,IT Enabled Services - Infrastructure
+VLEGOV,IT Enabled Services - Infrastructure
+
+# IT Enabled Services - Misc / Small
+AIRAN,IT Enabled Services - Small Cap
+ASMS,IT Enabled Services - Small Cap
+AURUM,IT Enabled Services - Small Cap
+DCM,IT Enabled Services - Small Cap
+DIGITIDE,IT Enabled Services - Small Cap
+EXCELSOFT,IT Enabled Services - Small Cap
+FCSSOFT,IT Enabled Services - Small Cap
+GOLDTECH,IT Enabled Services - Small Cap
+GSS,IT Enabled Services - Small Cap
+GVPTECH,IT Enabled Services - Small Cap
+HGM,IT Enabled Services - Small Cap
+RSYSTEMS,IT Enabled Services - Small Cap
+
+# ── Pharma → split by sub-segment ────────────────────────────────────────────
+# Large Cap Pharma Formulations
+SUNPHARMA,Pharma - Large Cap Formulations
+DRREDDY,Pharma - Large Cap Formulations
+CIPLA,Pharma - Large Cap Formulations
+LUPIN,Pharma - Large Cap Formulations
+AUROPHARMA,Pharma - Large Cap Formulations
+ALKEM,Pharma - Large Cap Formulations
+TORNTPHARM,Pharma - Large Cap Formulations
+MANKIND,Pharma - Large Cap Formulations
+ZYDUSLIFE,Pharma - Large Cap Formulations
+EMCURE,Pharma - Large Cap Formulations
+
+# CDMO & API
+DIVI,CDMO & API
+SYNGENE,CDMO & API
+BIOCON,CDMO & API
+SHILPAMED,CDMO & API
+NEULANDLAB,CDMO & API
+LAURUS,CDMO & API
+LAURUSLABS,CDMO & API
+GLAND,CDMO & API
+CONCORDBIO,CDMO & API
+SOLARA,CDMO & API
+COHANCE,CDMO & API
+BLUEJET,CDMO & API
+IOLCP,CDMO & API
+AARTIDRUGS,CDMO & API
+AARTIPHARM,CDMO & API
+GRANULES,CDMO & API
+WINDLAS,CDMO & API
+AKUMS,CDMO & API
+SUPRIYA,CDMO & API
+SAILIFE,CDMO & API
+DCAL,CDMO & API
+RUBICON,CDMO & API
+
+# Diagnostics
+LALPATHLAB,Diagnostics
+METROPOLIS,Diagnostics
+KRSNAA,Diagnostics
+VIJAYA,Diagnostics
+SURAKSHA,Diagnostics
+THYROCARE,Diagnostics
+
+# Pharma - Mid Cap Formulations
+AJANTPHARM,Pharma - Mid Cap Formulations
+APLLTD,Pharma - Mid Cap Formulations
+IPCALAB,Pharma - Mid Cap Formulations
+JBCHEPHARM,Pharma - Mid Cap Formulations
+ERIS,Pharma - Mid Cap Formulations
+GLAXO,Pharma - Mid Cap Formulations
+ABBOTINDIA,Pharma - Mid Cap Formulations
+PPLPHARMA,Pharma - Mid Cap Formulations
+PFIZER,Pharma - Mid Cap Formulations
+SANOFI,Pharma - Mid Cap Formulations
+ASTRAZEN,Pharma - Mid Cap Formulations
+PGHL,Pharma - Mid Cap Formulations
+GLENMARK,Pharma - Mid Cap Formulations
+NATCOPHARM,Pharma - Mid Cap Formulations
+INDOCO,Pharma - Mid Cap Formulations
+CAPLIPOINT,Pharma - Mid Cap Formulations
+STAR,Pharma - Mid Cap Formulations
+WOCKPHARMA,Pharma - Mid Cap Formulations
+MARKSANS,Pharma - Mid Cap Formulations
+JUBLPHARMA,Pharma - Mid Cap Formulations
+INNOVACAP,Pharma - Mid Cap Formulations
+ORCHPHARMA,Pharma - Mid Cap Formulations
+SANOFICONR,Pharma - Mid Cap Formulations
+HIKAL,Pharma - Mid Cap Formulations
+
+# Pharma - Small Cap & Niche
+HESTERBIO,Pharma - Small Cap & Niche
+DIVISLAB,Pharma - Small Cap & Niche
+KOPRAN,Pharma - Small Cap & Niche
+BAJAJHCARE,Pharma - Small Cap & Niche
+BALAXI,Pharma - Small Cap & Niche
+BALPHARMA,Pharma - Small Cap & Niche
+BETA,Pharma - Small Cap & Niche
+BIOFILCHEM,Pharma - Small Cap & Niche
+BLISSGVS,Pharma - Small Cap & Niche
+BROOKS,Pharma - Small Cap & Niche
+FDC,Pharma - Small Cap & Niche
+GUFICBIO,Pharma - Small Cap & Niche
+GUJTHEM,Pharma - Small Cap & Niche
+HALEOSLABS,Pharma - Small Cap & Niche
+INDSWFTLAB,Pharma - Small Cap & Niche
+JAGSNPHARM,Pharma - Small Cap & Niche
+KILITCH,Pharma - Small Cap & Niche
+KREBSBIO,Pharma - Small Cap & Niche
+LASA,Pharma - Small Cap & Niche
+LINCOLN,Pharma - Small Cap & Niche
+LYKALABS,Pharma - Small Cap & Niche
+MEDICAMEQ,Pharma - Small Cap & Niche
+MEDICO,Pharma - Small Cap & Niche
+MOREPENLAB,Pharma - Small Cap & Niche
+NATCAPSUQ,Pharma - Small Cap & Niche
+NECLIFE,Pharma - Small Cap & Niche
+NGLFINE,Pharma - Small Cap & Niche
+ONESOURCE,Pharma - Small Cap & Niche
+PANACEABIO,Pharma - Small Cap & Niche
+PAR,Pharma - Small Cap & Niche
+RPGLIFE,Pharma - Small Cap & Niche
+SENORES,Pharma - Small Cap & Niche
+SIGACHI,Pharma - Small Cap & Niche
+SMSPHARMA,Pharma - Small Cap & Niche
+SPARC,Pharma - Small Cap & Niche
+SUDEEPPHRM,Pharma - Small Cap & Niche
+SYNCOMF,Pharma - Small Cap & Niche
+THEMISMED,Pharma - Small Cap & Niche
+UNICHEMLAB,Pharma - Small Cap & Niche
+VAISHALI,Pharma - Small Cap & Niche
+VALIANTLAB,Pharma - Small Cap & Niche
+VENUSREM,Pharma - Small Cap & Niche
+VINEETLAB,Pharma - Small Cap & Niche
+VIVIMEDLAB,Pharma - Small Cap & Niche
+VIYASH,Pharma - Small Cap & Niche
+ZIMLAB,Pharma - Small Cap & Niche
+ZOTA,Pharma - Small Cap & Niche
+BAFNAPH,Pharma - Small Cap & Niche
+AMANTA,Pharma - Small Cap & Niche
+ACUTAAS,Pharma - Small Cap & Niche
+AAREYDRUGS,Pharma - Small Cap & Niche
+AHCL,Pharma - Small Cap & Niche
+ALBERTDAVD,Pharma - Small Cap & Niche
+ALIVUS,Pharma - Small Cap & Niche
+ALPA,Pharma - Small Cap & Niche
+SAKAR,Pharma - Small Cap & Niche
+
+# Consumer Health & OTC Pharma
+AMRUTANJAN,Consumer Health & OTC Pharma
+
+# ── NBFC → split by business model ───────────────────────────────────────────
+# Diversified Retail Finance
+BAJFINANCE,NBFC - Diversified Retail Finance
+HDBFS,NBFC - Diversified Retail Finance
+IIFL,NBFC - Diversified Retail Finance
+POONAWALLA,NBFC - Diversified Retail Finance
+SHRIRAMFIN,NBFC - Diversified Retail Finance
+SUNDARMFIN,NBFC - Diversified Retail Finance
+FIVESTAR,NBFC - Diversified Retail Finance
+TATACAP,NBFC - Diversified Retail Finance
+CGCL,NBFC - Diversified Retail Finance
+SBICARD,NBFC - Diversified Retail Finance
+
+# Vehicle & Equipment Finance
+CHOLAFIN,NBFC - Vehicle & Equipment Finance
+M&MFIN,NBFC - Vehicle & Equipment Finance
+INDOSTAR,NBFC - Vehicle & Equipment Finance
+
+# Gold Finance
+MANAPPURAM,NBFC - Gold Finance
+MUTHOOTFIN,NBFC - Gold Finance
+MUTHOOTCAP,NBFC - Gold Finance
+
+# Microfinance
+ARMANFIN,NBFC - Microfinance & Rural
+AYE,NBFC - Microfinance & Rural
+UJJIVAN,NBFC - Microfinance & Rural
+
+# NBFC - Small & Niche
+AIIL,NBFC - Small & Niche
+AVONMORE,NBFC - Small & Niche
+BAIDFIN,NBFC - Small & Niche
+CIFL,NBFC - Small & Niche
+CPCAP,NBFC - Small & Niche
+CREST,NBFC - Small & Niche
+CSLFINANCE,NBFC - Small & Niche
+DHUNINV,NBFC - Small & Niche
+FEDFINA,NBFC - Small & Niche
+FINKURVE,NBFC - Small & Niche
+HBSL,NBFC - Small & Niche
+LAXMIINDIA,NBFC - Small & Niche
+MANBA,NBFC - Small & Niche
+MANCREDIT,NBFC - Small & Niche
+MASFIN,NBFC - Small & Niche
+MONEYBOXX,NBFC - Small & Niche
+MUFIN,NBFC - Small & Niche
+NBIFIN,NBFC - Small & Niche
+NORTHARC,NBFC - Small & Niche
+PAISALO,NBFC - Small & Niche
+PFS,NBFC - Small & Niche
+PIRAMALFIN,NBFC - Small & Niche
+SBFC,NBFC - Small & Niche
+SGFIN,NBFC - Small & Niche
+STARTECK,NBFC - Small & Niche
+TEAMGTY,NBFC - Small & Niche
+TFL,NBFC - Small & Niche
+TRU,NBFC - Small & Niche
+UGROCAP,NBFC - Small & Niche
+UYFINCORP,NBFC - Small & Niche
+
+# ── Auto Components → by product type ────────────────────────────────────────
+# Tyres
+APOLLOTYRE,Tyres
+BALKRISIND,Tyres
+MRF,Tyres
+CEATLTD,Tyres
+JKTYRE,Tyres
+MODIRUBBER,Tyres
+TVSSRICHAK,Tyres
+TOLINS,Tyres
+
+# Bearings
+SCHAEFFLER,Bearings
+SKFINDIA,Bearings
+TIMKEN,Bearings
+NRBBEARING,Bearings
+MENONBE,Bearings
+
+# Auto Electricals
+MOTHERSON,Auto Electricals & Wiring
+LUMAXTECH,Auto Electricals & Wiring
+LUMAXIND,Auto Electricals & Wiring
+MINDA,Auto Electricals & Wiring
+MINDACORP,Auto Electricals & Wiring
+UNOMINDA,Auto Electricals & Wiring
+FIEMIND,Auto Electricals & Wiring
+MSUMI,Auto Electricals & Wiring
+INDNIPPON,Auto Electricals & Wiring
+
+# Forgings & Castings
+BHARATFORG,Forgings & Castings - Auto
+CIEINDIA,Forgings & Castings - Auto
+RKFORGE,Forgings & Castings - Auto
+MMFL,Forgings & Castings - Auto
+SANSERA,Forgings & Castings - Auto
+ROLEXRINGS,Forgings & Castings - Auto
+CRAFTSMAN,Forgings & Castings - Auto
+
+# Auto Components - Engine & Drivetrain
+BOSCHLTD,Auto Components - Engine & Drivetrain
+DIVGIITTS,Auto Components - Engine & Drivetrain
+JTEKTINDIA,Auto Components - Engine & Drivetrain
+SUNCLAY,Auto Components - Engine & Drivetrain
+SUNDRMFAST,Auto Components - Engine & Drivetrain
+SUNDRMBRAK,Auto Components - Engine & Drivetrain
+SHRIPISTON,Auto Components - Engine & Drivetrain
+SUPRAJIT,Auto Components - Engine & Drivetrain
+STERTOOLS,Auto Components - Engine & Drivetrain
+GABRIEL,Auto Components - Engine & Drivetrain
+AUTOAXLES,Auto Components - Engine & Drivetrain
+CARRARO,Auto Components - Engine & Drivetrain
+LGBBROSLTD,Auto Components - Engine & Drivetrain
+PRECAM,Auto Components - Engine & Drivetrain
+PRICOLLTD,Auto Components - Engine & Drivetrain
+TALBROAUTO,Auto Components - Engine & Drivetrain
+SSWL,Auto Components - Engine & Drivetrain
+WHEELS,Auto Components - Engine & Drivetrain
+ZFCVINDIA,Auto Components - Engine & Drivetrain
+
+# Auto Components - Body & EV
+ALICON,Auto Components - Body & EV
+ARE&M,Auto Components - Body & EV
+BELRISE,Auto Components - Body & EV
+EXIDEIND,Auto Components - Body & EV
+SONACOMS,Auto Components - Body & EV
+TIINDIA,Auto Components - Body & EV
+ASAHIINDIA,Auto Components - Body & EV
+BHARATSE,Auto Components - Body & EV
+BHARATGEAR,Auto Components - Body & EV
+JAMNAAUTO,Auto Components - Body & EV
+JBMA,Auto Components - Body & EV
+ASKAUTOLTD,Auto Components - Body & EV
+BANCOINDIA,Auto Components - Body & EV
+PAVNAIND,Auto Components - Body & EV
+PPAP,Auto Components - Body & EV
+SEDEMAC,Auto Components - Body & EV
+SJS,Auto Components - Body & EV
+SANDHAR,Auto Components - Body & EV
+
+# Auto Components - Small & Misc
+ASAL,Auto Components - Small & Misc
+AUTOIND,Auto Components - Small & Misc
+GNA,Auto Components - Small & Misc
+HINDCOMPOS,Auto Components - Small & Misc
+IGARASHI,Auto Components - Small & Misc
+JAYBARMARU,Auto Components - Small & Misc
+JMTAUTOLTD,Auto Components - Small & Misc
+KROSS,Auto Components - Small & Misc
+MUNJALAU,Auto Components - Small & Misc
+MUNJALSHOW,Auto Components - Small & Misc
+NDRAUTO,Auto Components - Small & Misc
+OMAXAUTO,Auto Components - Small & Misc
+RACLGEAR,Auto Components - Small & Misc
+RAJRATAN,Auto Components - Small & Misc
+REMSONSIND,Auto Components - Small & Misc
+RICOAUTO,Auto Components - Small & Misc
+RML,Auto Components - Small & Misc
+SETCO,Auto Components - Small & Misc
+SHIVAMAUTO,Auto Components - Small & Misc
+SINTERCOM,Auto Components - Small & Misc
+STUDDS,Auto Components - Small & Misc
+TENNIND,Auto Components - Small & Misc
+UNIPARTS,Auto Components - Small & Misc
+URAVIDEF,Auto Components - Small & Misc
+VARROC,Auto Components - Small & Misc
+FMGOETZE,Auto Components - Small & Misc
+PRITIKAUTO,Auto Components - Small & Misc
+SHARDAMOTR,Auto Components - Small & Misc
+
+# ── Cement → by size ──────────────────────────────────────────────────────────
+# Large Cap Cement
+ULTRACEMCO,Cement - Large Cap
+SHREECEM,Cement - Large Cap
+AMBUJACEM,Cement - Large Cap
+ACC,Cement - Large Cap
+GRASIM,Cement - Large Cap
+
+# Mid Cap Cement
+DALBHARAT,Cement - Mid Cap
+JKCEMENT,Cement - Mid Cap
+RAMCOCEM,Cement - Mid Cap
+JSWCEMENT,Cement - Mid Cap
+NUVOCO,Cement - Mid Cap
+BIRLACORPN,Cement - Mid Cap
+HEIDELBERG,Cement - Mid Cap
+STARCEMENT,Cement - Mid Cap
+
+# Small Cap Cement
+INDIACEM,Cement - Small Cap
+JKLAKSHMI,Cement - Small Cap
+ORIENTCEM,Cement - Small Cap
+KCP,Cement - Small Cap
+SAGCEM,Cement - Small Cap
+DECCANCE,Cement - Small Cap
+APCL,Cement - Small Cap
+KAKATCEM,Cement - Small Cap
+MANGLMCEM,Cement - Small Cap
+PRSMJOHNSN,Cement - Small Cap
+NCLIND,Cement - Small Cap
+SAURASHCEM,Cement - Small Cap
+SANGHIIND,Cement - Small Cap
+SHREDIGCEM,Cement - Small Cap
+BIGBLOC,Cement - Small Cap
+BURNPUR,Cement - Small Cap
+BVCL,Cement - Small Cap
+ACL,Cement - Small Cap
+VISAKAIND,Cement - Small Cap
+
+# ── Banks → by size ───────────────────────────────────────────────────────────
+# Large Cap Private Banks
+HDFCBANK,Private Banks - Large Cap
+ICICIBANK,Private Banks - Large Cap
+KOTAKBANK,Private Banks - Large Cap
+AXISBANK,Private Banks - Large Cap
+
+# Mid Cap Private Banks
+FEDERALBNK,Private Banks - Mid Cap
+INDUSINDBK,Private Banks - Mid Cap
+BANDHANBNK,Private Banks - Mid Cap
+IDFCFIRSTB,Private Banks - Mid Cap
+RBLBANK,Private Banks - Mid Cap
+
+# Private Banks - Small
+CUB,Private Banks - Small
+DCBBANK,Private Banks - Small
+KTKBANK,Private Banks - Small
+KARURVYSYA,Private Banks - Small
+CSBBANK,Private Banks - Small
+DHANBANK,Private Banks - Small
+SOUTHBANK,Private Banks - Small
+TMB,Private Banks - Small
+J&KBANK,Private Banks - Small
+YESBANK,Private Banks - Small
+
+# Large Cap PSU Banks
+SBIN,PSU Banks - Large Cap
+BANKBARODA,PSU Banks - Large Cap
+PNB,PSU Banks - Large Cap
+CANBK,PSU Banks - Large Cap
+
+# Mid/Small PSU Banks
+UNIONBANK,PSU Banks - Mid Cap
+INDIANB,PSU Banks - Mid Cap
+IOB,PSU Banks - Mid Cap
+CENTRALBK,PSU Banks - Mid Cap
+UCOBANK,PSU Banks - Mid Cap
+MAHABANK,PSU Banks - Mid Cap
+PSB,PSU Banks - Mid Cap
+IDBI,PSU Banks - Mid Cap
+
+# ── Chemicals → by type ───────────────────────────────────────────────────────
+# Specialty Chemicals
+AARTI,Specialty Chemicals - Intermediates
+VINATIORGA,Specialty Chemicals - Intermediates
+CLEAN,Specialty Chemicals - Intermediates
+ATUL,Specialty Chemicals - Intermediates
+PIDILITIND,Specialty Chemicals - Intermediates
+DEEPAKNTR,Specialty Chemicals - Intermediates
+ALKYLAMINE,Specialty Chemicals - Intermediates
+BALAMINES,Specialty Chemicals - Intermediates
+ANURAS,Specialty Chemicals - Intermediates
+AETHER,Specialty Chemicals - Intermediates
+TATVA,Specialty Chemicals - Intermediates
+LXCHEM,Specialty Chemicals - Intermediates
+
+# Surfactants & Oleochemicals
+GALAXYSURF,Surfactants & Oleochemicals
+GODREJIND,Surfactants & Oleochemicals
+ROSSARI,Surfactants & Oleochemicals
+AARTISURF,Surfactants & Oleochemicals
+FCL,Surfactants & Oleochemicals
+FINEORG,Surfactants & Oleochemicals
+SHK,Surfactants & Oleochemicals
+
+# Fluorochemicals
+SRF,Fluorochemicals & Films
+NAVINFLUOR,Fluorochemicals & Films
+FLUOROCHEM,Fluorochemicals & Films
+NEOGEN,Fluorochemicals & Films
+
+# Agrochemicals
+UPL,Agrochemical Intermediates
+PIIND,Agrochemical Intermediates
+BAYERCROP,Agrochemical Intermediates
+RALLIS,Agrochemical Intermediates
+DHANUKA,Agrochemical Intermediates
+SUMICHEM,Agrochemical Intermediates
+SHARDACROP,Agrochemical Intermediates
+INSECTICID,Agrochemical Intermediates
+HERANBA,Agrochemical Intermediates
+DHARMAJ,Agrochemical Intermediates
+ADVANCE,Agrochemical Intermediates
+ASTEC,Agrochemical Intermediates
+BHAGCHEM,Agrochemical Intermediates
+BHARATRAS,Agrochemical Intermediates
+IPL,Agrochemical Intermediates
+IGCL,Agrochemical Intermediates
+MOL,Agrochemical Intermediates
+NACLIND,Agrochemical Intermediates
+NOVAAGRI,Agrochemical Intermediates
+PUNJABCHEM,Agrochemical Intermediates
+SHIVALIK,Agrochemical Intermediates
+SIKKO,Agrochemical Intermediates
+
+# Dyes & Pigments
+AKSHARCHEM,Dyes & Pigments
+ASAHISONG,Dyes & Pigments
+BHAGERIA,Dyes & Pigments
+BODALCHEM,Dyes & Pigments
+HPIL,Dyes & Pigments
+KIRIINDUS,Dyes & Pigments
+PODDARMENT,Dyes & Pigments
+SHREEPUSHK,Dyes & Pigments
+SUDARCOLOR,Dyes & Pigments
+SUDARSCHEM,Dyes & Pigments
+
+# Specialty Chemicals - Small & Diversified
+BASF,Specialty Chemicals - Diversified
+BEPL,Specialty Chemicals - Diversified
+CAMLINFINE,Specialty Chemicals - Diversified
+CHEMBOND,Specialty Chemicals - Diversified
+CHEMBONDCH,Specialty Chemicals - Diversified
+CHEMCON,Specialty Chemicals - Diversified
+CHEMPLASTS,Specialty Chemicals - Diversified
+DDEVPLSTIK,Specialty Chemicals - Diversified
+DIAMINESQ,Specialty Chemicals - Diversified
+DSFCL,Specialty Chemicals - Diversified
+DYNPRO,Specialty Chemicals - Diversified
+EPIGRAL,Specialty Chemicals - Diversified
+EXCELINDUS,Specialty Chemicals - Diversified
+FAIRCHEMOR,Specialty Chemicals - Diversified
+FOSECOIND,Specialty Chemicals - Diversified
+HINDCON,Specialty Chemicals - Diversified
+HPAL,Specialty Chemicals - Diversified
+INDOAMIN,Specialty Chemicals - Diversified
+ISHANCH,Specialty Chemicals - Diversified
+IVP,Specialty Chemicals - Diversified
+JAYAGROGN,Specialty Chemicals - Diversified
+JUBLCPL,Specialty Chemicals - Diversified
+JUBLINGREA,Specialty Chemicals - Diversified
+KRONOX,Specialty Chemicals - Diversified
+NOCIL,Specialty Chemicals - Diversified
+OAL,Specialty Chemicals - Diversified
+PAUSHAKLTD,Specialty Chemicals - Diversified
+PLASTIBLEN,Specialty Chemicals - Diversified
+PLATIND,Specialty Chemicals - Diversified
+PRIVISCL,Specialty Chemicals - Diversified
+STYRENIX,Specialty Chemicals - Diversified
+VALIANTORG,Specialty Chemicals - Diversified
+VIDHIING,Specialty Chemicals - Diversified
+VIKASECO,Specialty Chemicals - Diversified
+VISHNU,Specialty Chemicals - Diversified
+VITAL,Specialty Chemicals - Diversified
+YASHO,Specialty Chemicals - Diversified
+ALKALI,Specialty Chemicals - Diversified
+ACI,Specialty Chemicals - Diversified
+
+# ── Construction → by type ────────────────────────────────────────────────────
+# Civil EPC - Large
+NCC,Civil EPC - Large
+LT,Diversified EPC
+AFCONS,Civil EPC - Large
+DBL,Civil EPC - Large
+GRINFRA,Civil EPC - Large
+PNCINFRA,Civil EPC - Large
+KNRCON,Civil EPC - Large
+HGINFRA,Civil EPC - Large
+
+# Civil EPC - Small
+HCC,Civil EPC - Small
+AHLUCONT,Civil EPC - Small
+AKASH,Civil EPC - Small
+BANKA,Civil EPC - Small
+BLKASHYAP,Civil EPC - Small
+CAPACITE,Civil EPC - Small
+CEIGALL,Civil EPC - Small
+CEMPRO,Civil EPC - Small
+DBEIL,Civil EPC - Small
+GARUDA,Civil EPC - Small
+GKENERGY,Civil EPC - Small
+GLOBECIVIL,Civil EPC - Small
+GPTINFRA,Civil EPC - Small
+INTERARCH,Civil EPC - Small
+JKIL,Civil EPC - Small
+KRIDHANINF,Civil EPC - Small
+MADHUCON,Civil EPC - Small
+MARKOLINES,Civil EPC - Small
+MBEL,Civil EPC - Small
+MBLINFRA,Civil EPC - Small
+MOLDTECH,Civil EPC - Small
+NAVKARURB,Civil EPC - Small
+NIRAJ,Civil EPC - Small
+OMINFRAL,Civil EPC - Small
+PATELENG,Civil EPC - Small
+PSPPROJECT,Civil EPC - Small
+RAMKY,Civil EPC - Small
+RKEC,Civil EPC - Small
+RPPINFRA,Civil EPC - Small
+SADBHAV,Civil EPC - Small
+SADBHIN,Civil EPC - Small
+SEPC,Civil EPC - Small
+SIMPLEXINF,Civil EPC - Small
+SPMLINFRA,Civil EPC - Small
+SRM,Civil EPC - Small
+SEMAC,Civil EPC - Small
+SKIL,Civil EPC - Small
+TPHQ,Civil EPC - Small
+UNIVASTU,Civil EPC - Small
+VPRPL,Civil EPC - Small
+WELENT,Civil EPC - Small
+WSI,Civil EPC - Small
+ZODIAC,Civil EPC - Small
+VIKRAN,Civil EPC - Small
+ABINFRA,Civil EPC - Small
+
+# Railway EPC
+IRCON,Railway EPC
+RVNL,Railway EPC
+RITES,Railway EPC
+GVKPIL,Railway EPC
+
+# Power & Infra EPC
+KEC,Power & Infra EPC
+KALPATPOWR,Power & Infra EPC
+KPIL,Power & Infra EPC
+POWERMECH,Power & Infra EPC
+ENGINERSIN,Power & Infra EPC
+ISGEC,Power & Infra EPC
+TECHNOE,Power & Infra EPC
+SWSOLAR,Power & Infra EPC
+SOLARWORLD,Power & Infra EPC
+TICL,Power & Infra EPC
+LIKHITHA,Power & Infra EPC
+
+# Roads & Highway EPC
+IRB,Roads & Highway EPC
+ASHOKA,Roads & Highway EPC
+BRNL,Roads & Highway EPC
+HECPROJECT,Roads & Highway EPC
+NBCC,Roads & Highway EPC
+
+# Water & Environment EPC
+JPASSOCIAT,Water & Infra EPC
+
+# ── Realty → by size ──────────────────────────────────────────────────────────
+# Realty - Large Cap
+DLF,Realty - Large Cap
+GODREJPROP,Realty - Large Cap
+OBEROIRLTY,Realty - Large Cap
+LODHA,Realty - Large Cap
+PRESTIGE,Realty - Large Cap
+PHOENIXLTD,Realty - Large Cap
+BRIGADE,Realty - Large Cap
+
+# Realty - Mid Cap
+SOBHA,Realty - Mid Cap
+MAHLIFE,Realty - Mid Cap
+SUNTECK,Realty - Mid Cap
+KOLTEPATIL,Realty - Mid Cap
+PURVA,Realty - Mid Cap
+RUSTOMJEE,Realty - Mid Cap
+ASHIANA,Realty - Mid Cap
+MAXESTATES,Realty - Mid Cap
+ANANTRAJ,Realty - Mid Cap
+ARVSMART,Realty - Mid Cap
+SIGNATURE,Realty - Mid Cap
+SHRIRAMPPS,Realty - Mid Cap
+TARC,Realty - Mid Cap
+RAYMONDREL,Realty - Mid Cap
+
+# Realty - Small Cap
+ABREL,Realty - Small Cap
+AGIIL,Realty - Small Cap
+AJMERA,Realty - Small Cap
+ALEMBICLTD,Realty - Small Cap
+AMJLAND,Realty - Small Cap
+ARIHANTSUP,Realty - Small Cap
+ARKADE,Realty - Small Cap
+ARTNIRMAN,Realty - Small Cap
+ATALREAL,Realty - Small Cap
+CCCL,Realty - Small Cap
+CINEVISTA,Realty - Small Cap
+COUNCODOS,Realty - Small Cap
+DBREALTY,Realty - Small Cap
+ELDEHSG,Realty - Small Cap
+EMAMIREAL,Realty - Small Cap
+GANESHHOU,Realty - Small Cap
+GEECEE,Realty - Small Cap
+GENCON,Realty - Small Cap
+HUBTOWN,Realty - Small Cap
+KALPATARU,Realty - Small Cap
+LOTUSDEV,Realty - Small Cap
+MANINFRA,Realty - Small Cap
+MARATHON,Realty - Small Cap
+MODIS,Realty - Small Cap
+NILAINFRA,Realty - Small Cap
+NILASPACES,Realty - Small Cap
+OMAXE,Realty - Small Cap
+PANSARI,Realty - Small Cap
+PARSVNATH,Realty - Small Cap
+PENINLAND,Realty - Small Cap
+PRAENG,Realty - Small Cap
+PROZONER,Realty - Small Cap
+PVP,Realty - Small Cap
+RVHL,Realty - Small Cap
+SBGLP,Realty - Small Cap
+SHRADHA,Realty - Small Cap
+SURAJEST,Realty - Small Cap
+SUMIT,Realty - Small Cap
+SUPREME,Realty - Small Cap
+UNITECH,Realty - Small Cap
+VASCONEQ,Realty - Small Cap
+
+# ── Textiles → by product type ───────────────────────────────────────────────
+# Textiles - Spinning & Yarn
+ABCOTS,Textiles - Spinning & Yarn
+AKSHAR,Textiles - Spinning & Yarn
+AMBIKCO,Textiles - Spinning & Yarn
+BASML,Textiles - Spinning & Yarn
+LAGNAM,Textiles - Spinning & Yarn
+LAMBODHARA,Textiles - Spinning & Yarn
+NAHARINDUS,Textiles - Spinning & Yarn
+NAHARSPING,Textiles - Spinning & Yarn
+NITINSPIN,Textiles - Spinning & Yarn
+PASHUPATI,Textiles - Spinning & Yarn
+SALONA,Textiles - Spinning & Yarn
+SELMC,Textiles - Spinning & Yarn
+SANGAMIND,Textiles - Spinning & Yarn
+SPORTKING,Textiles - Spinning & Yarn
+SUPERSPIN,Textiles - Spinning & Yarn
+SURYALAXMI,Textiles - Spinning & Yarn
+
+# Textiles - Weaving & Fabric
+BANSWRAS,Textiles - Weaving & Fabric
+BOMDYEING,Textiles - Weaving & Fabric
+BSL,Textiles - Weaving & Fabric
+CENTENKA,Textiles - Weaving & Fabric
+DAMODARIND,Textiles - Weaving & Fabric
+DCMNVL,Textiles - Weaving & Fabric
+DCMSIL,Textiles - Weaving & Fabric
+DONEAR,Textiles - Weaving & Fabric
+DIGJAMLMTD,Textiles - Weaving & Fabric
+FILATEX,Textiles - Weaving & Fabric
+GHCLTEXTIL,Textiles - Weaving & Fabric
+HIMATSEIDE,Textiles - Weaving & Fabric
+ICIL,Textiles - Weaving & Fabric
+INDORAMA,Textiles - Weaving & Fabric
+JINDWORLD,Textiles - Weaving & Fabric
+KESORAMIND,Textiles - Weaving & Fabric
+KPRMILL,Textiles - Weaving & Fabric
+MARALOVER,Textiles - Weaving & Fabric
+NDL,Textiles - Weaving & Fabric
+PARAMOUNT,Textiles - Weaving & Fabric
+PIONEEREMB,Textiles - Weaving & Fabric
+RELCHEMQ,Textiles - Weaving & Fabric
+RUBYMILLS,Textiles - Weaving & Fabric
+RSWM,Textiles - Weaving & Fabric
+SANATHAN,Textiles - Weaving & Fabric
+SARLAPOLY,Textiles - Weaving & Fabric
+SHEKHAWATI,Textiles - Weaving & Fabric
+SHIVATEX,Textiles - Weaving & Fabric
+SHIVAMILLS,Textiles - Weaving & Fabric
+SIYSIL,Textiles - Weaving & Fabric
+SGL,Textiles - Weaving & Fabric
+SRTL,Textiles - Weaving & Fabric
+SUMEETINDS,Textiles - Weaving & Fabric
+SUTLEJTEX,Textiles - Weaving & Fabric
+TRIDENT,Textiles - Weaving & Fabric
+VARDHACRLC,Textiles - Weaving & Fabric
+VCL,Textiles - Weaving & Fabric
+VGL,Textiles - Weaving & Fabric
+VTL,Textiles - Weaving & Fabric
+UNITEDPOLY,Textiles - Weaving & Fabric
+WEIZMANIND,Textiles - Weaving & Fabric
+WELSPUNLIV,Textiles - Weaving & Fabric
+MODTHREAD,Textiles - Weaving & Fabric
+MOHITIND,Textiles - Weaving & Fabric
+MANOMAY,Textiles - Weaving & Fabric
+NAGREEKEXP,Textiles - Weaving & Fabric
+RAYMONDSQL,Textiles - Weaving & Fabric
+RAYMONDLSL,Textiles - Weaving & Fabric
+MHLXMIRU,Textiles - Weaving & Fabric
+MFML,Textiles - Weaving & Fabric
+GLOBE,Textiles - Weaving & Fabric
+ALOKINDS,Textiles - Weaving & Fabric
+ASHIMASYN,Textiles - Weaving & Fabric
+AYMSYNTEX,Textiles - Weaving & Fabric
+BHANDARI,Textiles - Weaving & Fabric
+FLEXITUFF,Textiles - Weaving & Fabric
+GANECOS,Textiles - Weaving & Fabric
+GINNIFILA,Textiles - Weaving & Fabric
+INDIANCARD,Textiles - Weaving & Fabric
+ORBTEXP,Textiles - Weaving & Fabric
+
+# Technical & Specialty Textiles
+GARFIBRES,Technical & Specialty Textiles
+AARNAV,Technical & Specialty Textiles
+
+# ── Iron & Steel Products → by type ──────────────────────────────────────────
+# Steel Tubes & Pipes
+APLAPOLLO,Steel Tubes & Pipes
+JTLIND,Steel Tubes & Pipes
+HITECH,Steel Tubes & Pipes
+JINDALSAW,Steel Tubes & Pipes
+WELCORP,Steel Tubes & Pipes
+MAHSEAMLES,Steel Tubes & Pipes
+RATNAMANI,Steel Tubes & Pipes
+RATNAVEER,Steel Tubes & Pipes
+HARIOMPIPE,Steel Tubes & Pipes
+GANDHITUBE,Steel Tubes & Pipes
+VENUSPIPES,Steel Tubes & Pipes
+SCODATUBES,Steel Tubes & Pipes
+VSTL,Steel Tubes & Pipes
+SURAJLTD,Steel Tubes & Pipes
+
+# Steel Products - Wire & Others
+BANSALWIRE,Steel Products - Wire & Misc
+BHARATWIRE,Steel Products - Wire & Misc
+DPWIRES,Steel Products - Wire & Misc
+ELECTCAST,Steel Products - Wire & Misc
+ELECTHERM,Steel Products - Wire & Misc
+HISARMETAL,Steel Products - Wire & Misc
+INCREDIBLE,Steel Products - Wire & Misc
+JAYNECOIND,Steel Products - Wire & Misc
+JSWISPL,Steel Products - Wire & Misc
+KAMDHENU,Steel Products - Wire & Misc
+KRITIKA,Steel Products - Wire & Misc
+KSL,Steel Products - Wire & Misc
+MANINDS,Steel Products - Wire & Misc
+MANAKCOAT,Steel Products - Wire & Misc
+MANAKSIA,Steel Products - Wire & Misc
+MSPL,Steel Products - Wire & Misc
+MWL,Steel Products - Wire & Misc
+PRAKASHSTL,Steel Products - Wire & Misc
+RAMASTEEL,Steel Products - Wire & Misc
+RHETAN,Steel Products - Wire & Misc
+RSL,Steel Products - Wire & Misc
+RUDRA,Steel Products - Wire & Misc
+SAMBHV,Steel Products - Wire & Misc
+SBCL,Steel Products - Wire & Misc
+SHAH,Steel Products - Wire & Misc
+SHAHALLOYS,Steel Products - Wire & Misc
+SHYAMMETL,Steel Products - Wire & Misc
+SMLT,Steel Products - Wire & Misc
+STEELXIND,Steel Products - Wire & Misc
+SUNFLAG,Steel Products - Wire & Misc
+SURYAROSNI,Steel Products - Wire & Misc
+TEMBO,Steel Products - Wire & Misc
+TIIL,Steel Products - Wire & Misc
+USHAMART,Steel Products - Wire & Misc
+VMSTMT,Steel Products - Wire & Misc
+VSSL,Steel Products - Wire & Misc
+ZENITHSTL,Steel Products - Wire & Misc
+GALLANTT,Steel Products - Wire & Misc
+GEEKAYWIRE,Steel Products - Wire & Misc
+GOODLUCK,Steel Products - Wire & Misc
+GPIL,Steel Products - Wire & Misc
+AEROFLEX,Steel Products - Wire & Misc
+AEROENTER,Steel Products - Wire & Misc
+
+# ── Diversified Commercial Services → by type ────────────────────────────────
+# Staffing & HR Services
+QUESS,Staffing & HR Services
+TEAMLEASE,Staffing & HR Services
+
+# Facility Management & Outsourcing
+KRYSTAL,Facility Management
+RADIANTCMS,Facility Management
+SANGHVIMOV,Facility Management
+CMSINFO,Facility Management
+
+# Co-working & Real Estate Services
+AWFIS,Co-working & Office Spaces
+DEVX,Co-working & Office Spaces
+SMARTWORKS,Co-working & Office Spaces
+WEWORK,Co-working & Office Spaces
+INDIQUBE,Co-working & Office Spaces
+
+# Commercial Services - Other
+ACEINTEG,Commercial Services - Other
+AARVI,Commercial Services - Other
+ALANKIT,Commercial Services - Other
+BLUSPRING,Commercial Services - Other
+CORALFINAC,Commercial Services - Other
+EFCIL,Commercial Services - Other
+FMNL,Commercial Services - Other
+HEMIPROP,Commercial Services - Other
+IBULLSLTD,Commercial Services - Other
+IGIL,Commercial Services - Other
+INOXGREEN,Commercial Services - Other
+MOTOGENFIN,Commercial Services - Other
+NESCO,Commercial Services - Other
+PTL,Commercial Services - Other
+RUCHINFRA,Commercial Services - Other
+SOUTHWEST,Commercial Services - Other
+TARACHAND,Commercial Services - Other
+TEXINFRA,Commercial Services - Other
+UDS,Commercial Services - Other
+
+# ── Investment Company → by type ──────────────────────────────────────────────
+# Strategic Holding Companies
+ABCAPITAL,Strategic Holding Companies
+BAJAJFINSV,Strategic Holding Companies
+BAJAJHLDNG,Strategic Holding Companies
+LTF,Strategic Holding Companies
+JIOFIN,Strategic Holding Companies
+CHOLAHLDNG,Strategic Holding Companies
+TVSHLTD,Strategic Holding Companies
+
+# Investment Companies - Diversified
+3PLAND,Investment Companies - Diversified
+BLAL,Investment Companies - Diversified
+GKWLIMITED,Investment Companies - Diversified
+HEXATRADEX,Investment Companies - Diversified
+IITL,Investment Companies - Diversified
+JINDALPHOT,Investment Companies - Diversified
+JPOLYINVST,Investment Companies - Diversified
+JSWHL,Investment Companies - Diversified
+KICL,Investment Companies - Diversified
+LFIC,Investment Companies - Diversified
+MAHSCOOTER,Investment Companies - Diversified
+MASKINVEST,Investment Companies - Diversified
+NAGREEKCAP,Investment Companies - Diversified
+NAHARCAP,Investment Companies - Diversified
+NSIL,Investment Companies - Diversified
+OSWALGREEN,Investment Companies - Diversified
+PILANIINVS,Investment Companies - Diversified
+PNBGILTS,Investment Companies - Diversified
+SCILAL,Investment Companies - Diversified
+SILINV,Investment Companies - Diversified
+STEL,Investment Companies - Diversified
+SUMMITSEC,Investment Companies - Diversified
+TATAINVEST,Investment Companies - Diversified
+TSFINV,Investment Companies - Diversified
+VHL,Investment Companies - Diversified
+VLSFINANCE,Investment Companies - Diversified
+WELINV,Investment Companies - Diversified
+WILLAMAGOR,Investment Companies - Diversified
+NDGL,Investment Companies - Diversified
+RELIGARE,Investment Companies - Diversified
+
+# ── Packaging → split ────────────────────────────────────────────────────────
+# Flexible & Film Packaging
+COSMOFIRST,Flexible & Film Packaging
+EPL,Flexible & Film Packaging
+HUHTAMAKI,Flexible & Film Packaging
+ESTER,Flexible & Film Packaging
+JINDALPOLY,Flexible & Film Packaging
+POLYPLEX,Flexible & Film Packaging
+UFLEX,Flexible & Film Packaging
+TCPLPACK,Flexible & Film Packaging
+
+# Rigid & Industrial Packaging
+AGI,Rigid & Industrial Packaging
+AMDIND,Rigid & Industrial Packaging
+ANTGRAPHIC,Rigid & Industrial Packaging
+ARROWGREEN,Rigid & Industrial Packaging
+BBTCL,Rigid & Industrial Packaging
+BALAJEE,Rigid & Industrial Packaging
+COMSYN,Rigid & Industrial Packaging
+EMMBI,Rigid & Industrial Packaging
+GUJRAFFIA,Rigid & Industrial Packaging
+HITECHCORP,Rigid & Industrial Packaging
+KANPRPLA,Rigid & Industrial Packaging
+MOLDTKPAC,Rigid & Industrial Packaging
+NAHARPOLY,Rigid & Industrial Packaging
+ORIENTLTD,Rigid & Industrial Packaging
+ORICONENT,Rigid & Industrial Packaging
+PYRAMID,Rigid & Industrial Packaging
+RPPL,Rigid & Industrial Packaging
+SHREERAMA,Rigid & Industrial Packaging
+TINPLATE,Rigid & Industrial Packaging
+TPLPLASTEH,Rigid & Industrial Packaging
+WORTHPERI,Rigid & Industrial Packaging
+XPROINDIA,Rigid & Industrial Packaging
+
+# ── Castings & Forgings (non-auto) ───────────────────────────────────────────
+AIAENG,Industrial Castings & Forgings
+BALUFORGE,Industrial Castings & Forgings
+GANGAFORGE,Industrial Castings & Forgings
+HAPPYFORGE,Industrial Castings & Forgings
+HILTON,Industrial Castings & Forgings
+KALYANIFRG,Industrial Castings & Forgings
+NELCAST,Industrial Castings & Forgings
+SGIL,Industrial Castings & Forgings
+STEELCAS,Industrial Castings & Forgings
+TIRUPATIFL,Industrial Castings & Forgings
+
+# ── Hotels & Resorts → by type ───────────────────────────────────────────────
+# Premium Hotels
+INDHOTEL,Premium Hotels
+CHALET,Premium Hotels
+ITCHOTELS,Premium Hotels
+EIHOTEL,Premium Hotels
+THELEELA,Premium Hotels
+JUNIPER,Premium Hotels
+VENTIVE,Premium Hotels
+SAMHI,Premium Hotels
+
+# Mid & Budget Hotels
+LEMONTREE,Mid & Budget Hotels
+MHRIL,Mid & Budget Hotels
+TAJGVK,Mid & Budget Hotels
+PARKHOTELS,Mid & Budget Hotels
+ORIENTHOT,Mid & Budget Hotels
+ADVANIHOTR,Mid & Budget Hotels
+ADVENTHTL,Mid & Budget Hotels
+AHLEAST,Mid & Budget Hotels
+ASIANHOTNR,Mid & Budget Hotels
+BLUECOAST,Mid & Budget Hotels
+BRIGHOTEL,Mid & Budget Hotels
+BYKE,Mid & Budget Hotels
+CCHHL,Mid & Budget Hotels
+EIHAHOTELS,Mid & Budget Hotels
+HAVISHA,Mid & Budget Hotels
+HLVLTD,Mid & Budget Hotels
+ITDC,Mid & Budget Hotels
+KAMATHOTEL,Mid & Budget Hotels
+KAUSHALYA,Mid & Budget Hotels
+APOLSINHOT,Mid & Budget Hotels
+RHL,Mid & Budget Hotels
+ROHLTD,Mid & Budget Hotels
+SINCLAIR,Mid & Budget Hotels
+TGBHOTELS,Mid & Budget Hotels
+
+# ── Compressors Pumps & Diesel Engines → split ────────────────────────────
+CUMMINSIND,Industrial Engines & Compressors
+ELGIEQUIP,Industrial Engines & Compressors
+INGERRAND,Industrial Engines & Compressors
+KIRLOSBROS,Industrial Pumps
+KIRLOSENG,Industrial Pumps
+KIRLPNU,Industrial Pumps
+KSB,Industrial Pumps
+LATTEYS,Industrial Pumps
+OSWALPUMPS,Industrial Pumps
+ROTO,Industrial Pumps
+SHAKTIPUMP,Industrial Pumps
+SWARAJENG,Industrial Engines & Compressors
+GREAVESCOT,Industrial Engines & Compressors
+
+# ── Housing Finance Company → single group (already fine) ─────────────────
+# Already well-sized, but consolidate naming
+AADHARHFC,Housing Finance Company
+AAVAS,Housing Finance Company
+APTUS,Housing Finance Company
+CANFINHOME,Housing Finance Company
+GICHSGFIN,Housing Finance Company
+HOMEFIRST,Housing Finance Company
+LICHSGFIN,Housing Finance Company
+INDIASHLTR,Housing Finance Company
+PNBHOUSING,Housing Finance Company
+REPCOHOME,Housing Finance Company
+SAMMAANCAP,Housing Finance Company
+SRGHFL,Housing Finance Company
+BAJAJHFL,Housing Finance Company
+
+# ── Fix uncovered tickers in already-split groups ─────────────────────────────
+ANUHPHR,Pharma - Small Cap & Niche
+CORONA,Pharma - Small Cap & Niche
+ENDURANCE,Auto Components - Engine & Drivetrain
+UCAL,Auto Components - Engine & Drivetrain
+EUROTEXIND,Textiles - Weaving & Fabric
+AARTIIND,Specialty Chemicals - Intermediates
+DMCC,Specialty Chemicals - Diversified
+AERONEU,Flexible & Film Packaging
+ADVAIT,Solar & Renewable Equipment
+YUKEN,Industrial Pumps
+BANKINDIA,PSU Banks - Mid Cap
+GAUDIUMIVF,Healthcare Service Provider - Fertility & Wellness
+NEPHROPLUS,Healthcare Service Provider - Dialysis & Renal
+SASTASUNDR,Healthcare Service Provider - Pharmacy & Retail
+
+# ── Industrial Products → split by product focus ─────────────────────────────
+# Industrial Machinery & Machine Tools
+JYOTICNC,Industrial Machinery & Machine Tools
+LOKESHMACH,Industrial Machinery & Machine Tools
+MACPOWER,Industrial Machinery & Machine Tools
+LMW,Industrial Machinery & Machine Tools
+KABRAEXTRU,Industrial Machinery & Machine Tools
+RAJOOENG,Industrial Machinery & Machine Tools
+WINDMACHIN,Industrial Machinery & Machine Tools
+MANUGRAPH,Industrial Machinery & Machine Tools
+MAMATA,Industrial Machinery & Machine Tools
+GUJAPOLLO,Industrial Machinery & Machine Tools
+EIMCOELECO,Industrial Machinery & Machine Tools
+RVTH,Industrial Machinery & Machine Tools
+AARON,Industrial Machinery & Machine Tools
+MAHEPC,Industrial Machinery & Machine Tools
+
+# Process Equipment & Engineering
+ANUP,Process Equipment & Engineering
+LLOYDSENGG,Process Equipment & Engineering
+GMMPFAUDLR,Process Equipment & Engineering
+HLEGLAS,Process Equipment & Engineering
+ATAM,Process Equipment & Engineering
+JASH,Process Equipment & Engineering
+DEEDEV,Process Equipment & Engineering
+JNKINDIA,Process Equipment & Engineering
+MAZDA,Process Equipment & Engineering
+PRAJIND,Process Equipment & Engineering
+WALCHANNAG,Process Equipment & Engineering
+EKC,Process Equipment & Engineering
+GALAPREC,Process Equipment & Engineering
+UNIDT,Process Equipment & Engineering
+
+# Material Handling & Wear Solutions
+BAJAJINDEF,Material Handling & Wear Solutions
+CROWN,Material Handling & Wear Solutions
+INTLCONV,Material Handling & Wear Solutions
+SOMICONVEY,Material Handling & Wear Solutions
+TRF,Material Handling & Wear Solutions
+TEGA,Material Handling & Wear Solutions
+THEJO,Material Handling & Wear Solutions
+
+# Building Products & Prefab
+INDIANHUME,Building Products & Prefab
+PENIND,Building Products & Prefab
+EPACKPEB,Building Products & Prefab
+
+# Industrial Automation & Electronics
+HONAUT,Industrial Automation & Electronics
+AFFORDABLE,Industrial Automation & Electronics
+CPPLUS,Industrial Automation & Electronics
+HIRECT,Industrial Automation & Electronics
+HPL,Industrial Automation & Electronics
+MARINE,Industrial Automation & Electronics
+PITTIENG,Industrial Automation & Electronics
+SPECTRUM,Industrial Automation & Electronics
+DYNAMATECH,Industrial Automation & Electronics
+DUCON,Industrial Automation & Electronics
+
+# Other Industrial Products
+HONDAPOWER,Other Industrial Products
+ICEMAKE,Other Industrial Products
+KANORICHEM,Other Industrial Products
+OMNI,Other Industrial Products
+PREMIER,Other Industrial Products
+RAYMOND,Other Industrial Products
+SETL,Other Industrial Products
+
+# ── Other Industrial Products (NSE group) → keep as-is ──────────────────────
+ADOR,Other Industrial Products
+BEARDSELL,Other Industrial Products
+DELTAMAGNT,Other Industrial Products
+DIFFNKG,Other Industrial Products
+ESABINDIA,Other Industrial Products
+HARSHA,Other Industrial Products
+HBLENGINE,Other Industrial Products
+INOXINDIA,Other Industrial Products
+KIRLOSIND,Other Industrial Products
+KRN,Other Industrial Products
+MALLCOM,Other Industrial Products
+MICEL,Other Industrial Products
+PTCIL,Other Industrial Products
+SAHASRA,Other Industrial Products
+SUBROS,Other Industrial Products
+
+# ── Garments & Apparels → split by segment ────────────────────────────────────
+# Branded Apparel - Premium
+PAGEIND,Branded Apparel - Premium
+MONTECARLO,Branded Apparel - Premium
+LUXIND,Branded Apparel - Premium
+DOLLAR,Branded Apparel - Premium
+RUPA,Branded Apparel - Premium
+LOVABLE,Branded Apparel - Premium
+LAXMICUT,Branded Apparel - Premium
+
+# Branded Apparel - Value & Retail
+ARVIND,Branded Apparel - Value & Retail
+CANTABIL,Branded Apparel - Value & Retail
+FILATFASH,Branded Apparel - Value & Retail
+KITEX,Branded Apparel - Value & Retail
+KKCL,Branded Apparel - Value & Retail
+LIBAS,Branded Apparel - Value & Retail
+JAIPURKURT,Branded Apparel - Value & Retail
+SPAL,Branded Apparel - Value & Retail
+VIPCLOTHNG,Branded Apparel - Value & Retail
+ZODIACLOTH,Branded Apparel - Value & Retail
+LAL,Branded Apparel - Value & Retail
+
+# Garments - Export & Small
+BANG,Garments - Export & Small
+BELLACASA,Garments - Export & Small
+CELEBRITY,Garments - Export & Small
+GOKEX,Garments - Export & Small
+INDTERRAIN,Garments - Export & Small
+IRISDOREME,Garments - Export & Small
+MITTAL,Garments - Export & Small
+PGIL,Garments - Export & Small
+SBC,Garments - Export & Small
+SSDL,Garments - Export & Small
+THOMASCOTT,Garments - Export & Small
+VINNY,Garments - Export & Small
+VIVIDHA,Garments - Export & Small
+
+# ── Stockbroking & Allied → split by size ─────────────────────────────────────
+# Stockbroking - Large & Mid
+360ONE,Stockbroking - Large & Mid
+ANGELONE,Stockbroking - Large & Mid
+MOTILALOFS,Stockbroking - Large & Mid
+NUVAMA,Stockbroking - Large & Mid
+GROWW,Stockbroking - Large & Mid
+IIFLCAPS,Stockbroking - Large & Mid
+5PAISA,Stockbroking - Large & Mid
+
+# Stockbroking - Small & Niche
+ALMONDZ,Stockbroking - Small & Niche
+ARIHANTCAP,Stockbroking - Small & Niche
+ARSSBL,Stockbroking - Small & Niche
+BIRLAMONEY,Stockbroking - Small & Niche
+DAMCAPITAL,Stockbroking - Small & Niche
+DBSTOCKBRO,Stockbroking - Small & Niche
+DOLATALGO,Stockbroking - Small & Niche
+EMKAY,Stockbroking - Small & Niche
+GEOJITFSL,Stockbroking - Small & Niche
+HYBRIDFIN,Stockbroking - Small & Niche
+INDBANK,Stockbroking - Small & Niche
+INDOTHAI,Stockbroking - Small & Niche
+INVENTURE,Stockbroking - Small & Niche
+KEYFINSERV,Stockbroking - Small & Niche
+KHANDSE,Stockbroking - Small & Niche
+MASTERTR,Stockbroking - Small & Niche
+MONARCH,Stockbroking - Small & Niche
+ONELIFECAP,Stockbroking - Small & Niche
+SHAREINDIA,Stockbroking - Small & Niche
+SMCGLOBAL,Stockbroking - Small & Niche
+STEELCITY,Stockbroking - Small & Niche
+SYSTMTXC,Stockbroking - Small & Niche
+
+# ── Gems Jewellery And Watches → split ───────────────────────────────────────
+# Jewellery - Branded Retail
+TITAN,Jewellery - Branded Retail
+KALYANKJIL,Jewellery - Branded Retail
+PNGJL,Jewellery - Branded Retail
+PNGSREVA,Jewellery - Branded Retail
+SENCO,Jewellery - Branded Retail
+TBZ,Jewellery - Branded Retail
+PCJEWELLER,Jewellery - Branded Retail
+BLUESTONE,Jewellery - Branded Retail
+DPABHUSHAN,Jewellery - Branded Retail
+THANGAMAYL,Jewellery - Branded Retail
+
+# Jewellery - Export & Manufacturing
+RAJESHEXPO,Jewellery - Export & Manufacturing
+GOLDIAM,Jewellery - Export & Manufacturing
+VAIBHAVGBL,Jewellery - Export & Manufacturing
+BANARBEADS,Jewellery - Export & Manufacturing
+KANANIIND,Jewellery - Export & Manufacturing
+LYPSAGEMS,Jewellery - Export & Manufacturing
+MOKSH,Jewellery - Export & Manufacturing
+MOTISONS,Jewellery - Export & Manufacturing
+MVGJL,Jewellery - Export & Manufacturing
+RADHIKAJWE,Jewellery - Export & Manufacturing
+RBZJEWEL,Jewellery - Export & Manufacturing
+RGL,Jewellery - Export & Manufacturing
+SHANTIGOLD,Jewellery - Export & Manufacturing
+SHRINGARMS,Jewellery - Export & Manufacturing
+SILGO,Jewellery - Export & Manufacturing
+SKYGOLD,Jewellery - Export & Manufacturing
+
+# Watches & Luxury Accessories
+ETHOSLTD,Watches & Luxury Accessories
+KDDL,Watches & Luxury Accessories
+LGHL,Watches & Luxury Accessories
+
+# ── Logistics Solution Provider → split ──────────────────────────────────────
+# Logistics - Express & Last Mile
+BLUEDART,Logistics - Express & Last Mile
+DELHIVERY,Logistics - Express & Last Mile
+SHADOWFAX,Logistics - Express & Last Mile
+TIGERLOGS,Logistics - Express & Last Mile
+PATINTLOG,Logistics - Express & Last Mile
+
+# Logistics - Freight & Warehousing
+ALLCARGO,Logistics - Freight & Warehousing
+CONCOR,Logistics - Freight & Warehousing
+GATEWAY,Logistics - Freight & Warehousing
+NAVKARCORP,Logistics - Freight & Warehousing
+SNOWMAN,Logistics - Freight & Warehousing
+TCI,Logistics - Freight & Warehousing
+TCIEXP,Logistics - Freight & Warehousing
+VRLLOG,Logistics - Freight & Warehousing
+TREL,Logistics - Freight & Warehousing
+
+# Logistics - Small & Niche
+ACCURACY,Logistics - Small & Niche
+ASPINWALL,Logistics - Small & Niche
+AVG,Logistics - Small & Niche
+GLOTTIS,Logistics - Small & Niche
+JETFREIGHT,Logistics - Small & Niche
+MAHLOG,Logistics - Small & Niche
+NECCLTD,Logistics - Small & Niche
+OBCL,Logistics - Small & Niche
+OMFREIGHT,Logistics - Small & Niche
+RIIL,Logistics - Small & Niche
+RITCO,Logistics - Small & Niche
+SVLL,Logistics - Small & Niche
+TOTAL,Logistics - Small & Niche
+WCIL,Logistics - Small & Niche
+
+# ── Sugar → single group (keep as-is, sector is small enough) ────────────────
+AVADHSUGAR,Sugar
+BAJAJHIND,Sugar
+BALRAMCHIN,Sugar
+BANARISUG,Sugar
+DALMIASUG,Sugar
+DBOL,Sugar
+DCMSRIND,Sugar
+DHAMPURSUG,Sugar
+DWARKESH,Sugar
+KCPSUGIND,Sugar
+KMSUGAR,Sugar
+KOTARISUG,Sugar
+MAGADSUGAR,Sugar
+MAWANASUG,Sugar
+PONNIERODE,Sugar
+PRUDMOULI,Sugar
+RAJSREESUG,Sugar
+RANASUG,Sugar
+RENUKA,Sugar
+SAKHTISUG,Sugar
+TRIVENI,Sugar
+UGARSUGAR,Sugar
+UTTAMSUGAR,Sugar
+VISHWARAJ,Sugar
+ZUARIIND,Sugar
+
+# ── Power Generation → split by fuel/source ──────────────────────────────────
+# Power - Thermal / Conventional
+NTPC,Power - Thermal & Conventional
+NHPC,Power - Thermal & Conventional
+NLCINDIA,Power - Thermal & Conventional
+JSWENERGY,Power - Thermal & Conventional
+JPPOWER,Power - Thermal & Conventional
+RPOWER,Power - Thermal & Conventional
+RTNPOWER,Power - Thermal & Conventional
+SJVN,Power - Thermal & Conventional
+GIPCL,Power - Thermal & Conventional
+GMRP&UI,Power - Thermal & Conventional
+NAVA,Power - Thermal & Conventional
+ENERGYDEV,Power - Thermal & Conventional
+KARMAENG,Power - Thermal & Conventional
+SURANAT&P,Power - Thermal & Conventional
+UEL,Power - Thermal & Conventional
+KPEL,Power - Thermal & Conventional
+
+# Power - Renewable / Green
+ADANIGREEN,Power - Renewable & Green
+NTPCGREEN,Power - Renewable & Green
+ACMESOLAR,Power - Renewable & Green
+CLEANMAX,Power - Renewable & Green
+GREENPOWER,Power - Renewable & Green
+INDOWIND,Power - Renewable & Green
+KPIGREEN,Power - Renewable & Green
+
+# ── Aerospace & Defense → split ──────────────────────────────────────────────
+# Defense - Large Cap
+HAL,Defense - Large Cap
+BEL,Defense - Large Cap
+BDL,Defense - Large Cap
+
+# Defense - Mid Cap & Shipbuilding
+GRSE,Defense - Shipbuilding & Naval
+MIDHANI,Defense - Materials & Alloys
+DATAPATTNS,Defense - Electronics & Systems
+AVANTEL,Defense - Electronics & Systems
+CENTUM,Defense - Electronics & Systems
+ASTRAMICRO,Defense - Electronics & Systems
+DCXINDIA,Defense - Electronics & Systems
+
+# Aerospace & Defense - Small & Niche
+AEQUS,Aerospace & Defense - Small & Niche
+APOLLO,Aerospace & Defense - Small & Niche
+AXISCADES,Aerospace & Defense - Small & Niche
+CYIENTDLM,Aerospace & Defense - Small & Niche
+IDEAFORGE,Aerospace & Defense - Small & Niche
+JAYKAY,Aerospace & Defense - Small & Niche
+KRISHNADEF,Aerospace & Defense - Small & Niche
+NIBE,Aerospace & Defense - Small & Niche
+PARAS,Aerospace & Defense - Small & Niche
+ROSSTECH,Aerospace & Defense - Small & Niche
+SIGMAADV,Aerospace & Defense - Small & Niche
+ZENTEC,Aerospace & Defense - Small & Niche
+
+# ── Commodity Chemicals → split ──────────────────────────────────────────────
+# Commodity Chemicals - Inorganic & Alkali
+TATACHEM,Commodity Chemicals - Inorganic & Alkali
+GHCL,Commodity Chemicals - Inorganic & Alkali
+GUJALKALI,Commodity Chemicals - Inorganic & Alkali
+GNFC,Commodity Chemicals - Inorganic & Alkali
+DEEPAKFERT,Commodity Chemicals - Inorganic & Alkali
+LORDSCHLO,Commodity Chemicals - Inorganic & Alkali
+OCCL,Commodity Chemicals - Inorganic & Alkali
+OCCLLTD,Commodity Chemicals - Inorganic & Alkali
+TECILCHEM,Commodity Chemicals - Inorganic & Alkali
+ANDHRSUGAR,Commodity Chemicals - Inorganic & Alkali
+CHEMFAB,Commodity Chemicals - Inorganic & Alkali
+IGPL,Commodity Chemicals - Inorganic & Alkali
+
+# Commodity Chemicals - Organic & Specialty
+AMNPLST,Commodity Chemicals - Organic & Specialty
+DCW,Commodity Chemicals - Organic & Specialty
+INDOBORAX,Commodity Chemicals - Organic & Specialty
+JGCHEM,Commodity Chemicals - Organic & Specialty
+JOCIL,Commodity Chemicals - Organic & Specialty
+KOTHARIPET,Commodity Chemicals - Organic & Specialty
+MANORG,Commodity Chemicals - Organic & Specialty
+PRIMO,Commodity Chemicals - Organic & Specialty
+SADHNANIQ,Commodity Chemicals - Organic & Specialty
+SRHHYPOLTD,Commodity Chemicals - Organic & Specialty
+TIRUMALCHM,Commodity Chemicals - Organic & Specialty
+TRANSPEK,Commodity Chemicals - Organic & Specialty
+
+# ── Household Appliances → split ─────────────────────────────────────────────
+# Household Appliances - Large Cap
+VOLTAS,Household Appliances - Large Cap
+CROMPTON,Household Appliances - Large Cap
+HAVELLS,Household Appliances - Large Cap
+BLUESTARCO,Household Appliances - Large Cap
+SYMPHONY,Household Appliances - Large Cap
+VGUARD,Household Appliances - Large Cap
+
+# Household Appliances - Mid & Small Cap
+AMBER,Household Appliances - Mid & Small Cap
+BAJAJELEC,Household Appliances - Mid & Small Cap
+BOSCH-HCIL,Household Appliances - Mid & Small Cap
+BUTTERFLY,Household Appliances - Mid & Small Cap
+CARYSIL,Household Appliances - Mid & Small Cap
+ELIN,Household Appliances - Mid & Small Cap
+EPACK,Household Appliances - Mid & Small Cap
+EUREKAFORB,Household Appliances - Mid & Small Cap
+IFBIND,Household Appliances - Mid & Small Cap
+LGEINDIA,Household Appliances - Mid & Small Cap
+ORIENTELEC,Household Appliances - Mid & Small Cap
+SINGERIND,Household Appliances - Mid & Small Cap
+STOVEKRAFT,Household Appliances - Mid & Small Cap
+TTKPRESTIG,Household Appliances - Mid & Small Cap
+WEL,Household Appliances - Mid & Small Cap
+WHIRLPOOL,Household Appliances - Mid & Small Cap
+
+# ── Paper & Paper Products → keep as single group ────────────────────────────
+ANDHRAPAP,Paper & Paper Products
+ASTRON,Paper & Paper Products
+BALKRISHNA,Paper & Paper Products
+EMAMIPAP,Paper & Paper Products
+GENUSPAPER,Paper & Paper Products
+JKPAPER,Paper & Paper Products
+KUANTUM,Paper & Paper Products
+MAGNUM,Paper & Paper Products
+MALUPAPER,Paper & Paper Products
+NRAIL,Paper & Paper Products
+ORIENTPPR,Paper & Paper Products
+PAKKA,Paper & Paper Products
+PDMJEPAPER,Paper & Paper Products
+RAMANEWS,Paper & Paper Products
+RUCHIRA,Paper & Paper Products
+SATIA,Paper & Paper Products
+SESHAPAPER,Paper & Paper Products
+SHREYANIND,Paper & Paper Products
+STARPAPER,Paper & Paper Products
+TNPL,Paper & Paper Products
+WSTCSTPAPR,Paper & Paper Products
+
+# ── Other Agricultural Products → split ──────────────────────────────────────
+# Agri - Staples & Grains
+KRBL,Agri - Staples & Grains
+LTFOODS,Agri - Staples & Grains
+KOHINOOR,Agri - Staples & Grains
+SARVESHWAR,Agri - Staples & Grains
+SUKHJITS,Agri - Staples & Grains
+KSCL,Agri - Staples & Grains
+
+# Agri - Seeds & Biotech
+OSWALSEEDS,Agri - Seeds & Biotech
+NATHBIOGEN,Agri - Seeds & Biotech
+REGAAL,Agri - Seeds & Biotech
+SANSTAR,Agri - Seeds & Biotech
+
+# Agri - Plantation & Diversified
+AVTNPL,Agri - Plantation & Diversified
+BSHSL,Agri - Plantation & Diversified
+CLSEL,Agri - Plantation & Diversified
+GAEL,Agri - Plantation & Diversified
+GRMOVER,Agri - Plantation & Diversified
+GULPOLY,Agri - Plantation & Diversified
+INDOUS,Agri - Plantation & Diversified
+MGEL,Agri - Plantation & Diversified
+MODINATUR,Agri - Plantation & Diversified
+TRUALT,Agri - Plantation & Diversified
+
+# ── Hospital → split ─────────────────────────────────────────────────────────
+# Hospitals - Large Cap
+APOLLOHOSP,Hospitals - Large Cap
+MAXHEALTH,Hospitals - Large Cap
+FORTIS,Hospitals - Large Cap
+MEDANTA,Hospitals - Large Cap
+
+# Hospitals - Mid & Small Cap
+ASTERDM,Hospitals - Mid & Small Cap
+NH,Hospitals - Mid & Small Cap
+KIMS,Hospitals - Mid & Small Cap
+RAINBOW,Hospitals - Mid & Small Cap
+SHALBY,Hospitals - Mid & Small Cap
+YATHARTH,Hospitals - Mid & Small Cap
+HCG,Hospitals - Mid & Small Cap
+ARTEMISMED,Hospitals - Mid & Small Cap
+PARKHOSPS,Hospitals - Mid & Small Cap
+GPTHEALTH,Hospitals - Mid & Small Cap
+GKSL,Hospitals - Mid & Small Cap
+
+# Hospitals - Eye & Specialty
+AGARWALEYE,Hospitals - Eye & Specialty
+INDRAMEDCO,Hospitals - Eye & Specialty
+JLHL,Hospitals - Eye & Specialty
+LOTUSEYE,Hospitals - Eye & Specialty
+
+# ── Trading & Distributors → keep as single group ────────────────────────────
+AKG,Trading & Distributors
+ANIKINDS,Trading & Distributors
+BUILDPRO,Trading & Distributors
+CNL,Trading & Distributors
+ESSENTIA,Trading & Distributors
+KOTHARIPRO,Trading & Distributors
+MMTC,Trading & Distributors
+MSTCLTD,Trading & Distributors
+OSWALAGRO,Trading & Distributors
+REDINGTON,Trading & Distributors
+SAKUMA,Trading & Distributors
+SHIVAUM,Trading & Distributors
+SHYAMTEL,Trading & Distributors
+SIGIND,Trading & Distributors
+SPCENET,Trading & Distributors
+STCINDIA,Trading & Distributors
+UMAEXPORTS,Trading & Distributors
+VIKASLIFE,Trading & Distributors
+VINCOFE,Trading & Distributors
+
+# ── Plastic Products - Industrial → split ─────────────────────────────────────
+# Plastic Pipes
+APOLLOPIPE,Plastic Pipes
+ASTRAL,Plastic Pipes
+FINPIPE,Plastic Pipes
+PRINCEPIPE,Plastic Pipes
+SUPREMEIND,Plastic Pipes
+TEXMOPIPES,Plastic Pipes
+TIRUPATI,Plastic Pipes
+
+# Plastic Products - Industrial Misc
+GRWRHITECH,Plastic Products - Industrial Misc
+JAICORPLTD,Plastic Products - Industrial Misc
+JISLDVREQS,Plastic Products - Industrial Misc
+JISLJALEQS,Plastic Products - Industrial Misc
+KINGFA,Plastic Products - Industrial Misc
+KRITI,Plastic Products - Industrial Misc
+PPL,Plastic Products - Industrial Misc
+PREMIERPOL,Plastic Products - Industrial Misc
+RMDRIP,Plastic Products - Industrial Misc
+SMVD,Plastic Products - Industrial Misc
+TAINWALCHM,Plastic Products - Industrial Misc
+TIMETECHNO,Plastic Products - Industrial Misc
+
+# ── Fertilizers → split ──────────────────────────────────────────────────────
+# Fertilizers - Large & Mid Cap
+COROMANDEL,Fertilizers - Large & Mid Cap
+CHAMBLFERT,Fertilizers - Large & Mid Cap
+GSFC,Fertilizers - Large & Mid Cap
+NFL,Fertilizers - Large & Mid Cap
+RCF,Fertilizers - Large & Mid Cap
+FACT,Fertilizers - Large & Mid Cap
+PARADEEP,Fertilizers - Large & Mid Cap
+
+# Fertilizers - Small & Niche
+AGROPHOS,Fertilizers - Small & Niche
+ARIES,Fertilizers - Small & Niche
+KHAICHEM,Fertilizers - Small & Niche
+KRISHANA,Fertilizers - Small & Niche
+MADRASFERT,Fertilizers - Small & Niche
+MBAPL,Fertilizers - Small & Niche
+NAGAFERT,Fertilizers - Small & Niche
+RAMAPHO,Fertilizers - Small & Niche
+SPIC,Fertilizers - Small & Niche
+ZUARI,Fertilizers - Small & Niche
+
+# ── Packaged Foods → split ───────────────────────────────────────────────────
+# Packaged Foods - Large & Mid Cap
+BRITANNIA,Packaged Foods - Large & Mid Cap
+NESTLEIND,Packaged Foods - Large & Mid Cap
+BIKAJI,Packaged Foods - Large & Mid Cap
+BBTC,Packaged Foods - Large & Mid Cap
+BECTORFOOD,Packaged Foods - Large & Mid Cap
+GOPAL,Packaged Foods - Large & Mid Cap
+ZYDUSWELL,Packaged Foods - Large & Mid Cap
+TASTYBITE,Packaged Foods - Large & Mid Cap
+
+# Packaged Foods - Small & Niche
+ADFFOODS,Packaged Foods - Small & Niche
+DANGEE,Packaged Foods - Small & Niche
+DIAMONDYD,Packaged Foods - Small & Niche
+EIFFL,Packaged Foods - Small & Niche
+FOODSIN,Packaged Foods - Small & Niche
+GANESHCP,Packaged Foods - Small & Niche
+NGIL,Packaged Foods - Small & Niche
+PALASHSECU,Packaged Foods - Small & Niche
+
+# ── Breweries & Distilleries → keep as single group ──────────────────────────
+ABDL,Breweries & Distilleries
+ASALCBR,Breweries & Distilleries
+BCLIND,Breweries & Distilleries
+GLOBUSSPR,Breweries & Distilleries
+GMBREW,Breweries & Distilleries
+IFBAGRO,Breweries & Distilleries
+INDIAGLYCO,Breweries & Distilleries
+PICCADIL,Breweries & Distilleries
+RADICO,Breweries & Distilleries
+RKDL,Breweries & Distilleries
+SDBL,Breweries & Distilleries
+SULA,Breweries & Distilleries
+TI,Breweries & Distilleries
+UBL,Breweries & Distilleries
+UNITDSPR,Breweries & Distilleries
+
+# ── Speciality Retail → keep as single group ─────────────────────────────────
+ABFRL,Speciality Retail
+ABLBL,Speciality Retail
+ARVINDFASN,Speciality Retail
+AVL,Speciality Retail
+BCONCEPTS,Speciality Retail
+GOCOLORS,Speciality Retail
+KALAMANDIR,Speciality Retail
+LENSKART,Speciality Retail
+MANYAVAR,Speciality Retail
+MUFTI,Speciality Retail
+PRAXIS,Speciality Retail
+SHANKARA,Speciality Retail
+STYLEBAAZA,Speciality Retail
+TRENT,Speciality Retail
+V2RETAIL,Speciality Retail
+
+# ── Edible Oil → keep as single group ────────────────────────────────────────
+AWL,Edible Oil
+GOKUL,Edible Oil
+GOKULAGRO,Edible Oil
+HALDER,Edible Oil
+KNAGRI,Edible Oil
+KRITINUT,Edible Oil
+MARICO,Edible Oil
+MKPL,Edible Oil
+NKIND,Edible Oil
+PATANJALI,Edible Oil
+ROML,Edible Oil
+SHANTI,Edible Oil
+SRPL,Edible Oil
+SUNDROP,Edible Oil
+
+# ── TV Broadcasting & Software Production → keep as single group ─────────────
+AQYLON,TV Broadcasting & Media
+BAGFILMS,TV Broadcasting & Media
+DEN,TV Broadcasting & Media
+DISHTV,TV Broadcasting & Media
+GTPL,TV Broadcasting & Media
+HATHWAY,TV Broadcasting & Media
+NDTV,TV Broadcasting & Media
+RAJTV,TV Broadcasting & Media
+SABTN,TV Broadcasting & Media
+SUNTV,TV Broadcasting & Media
+TV18BRDCST,TV Broadcasting & Media
+TVTODAY,TV Broadcasting & Media
+ZEEL,TV Broadcasting & Media
+
+# ── Software Products → keep as single group ─────────────────────────────────
+CAPILLARY,Software Products
+IRIS,Software Products
+MAPMYINDIA,Software Products
+NUCLEUS,Software Products
+OFSS,Software Products
+QUICKHEAL,Software Products
+RAMCOSYS,Software Products
+SUBEXLTD,Software Products
+TANLA,Software Products
+UNIECOM,Software Products
+VIRINCHI,Software Products
+XELPMOC,Software Products
+
+# ── Other Financial Services → keep as single group ──────────────────────────
+ALGOQUANT,Other Financial Services
+CENTRUM,Other Financial Services
+CRISIL,Other Financial Services
+DELPHIFX,Other Financial Services
+GATECH,Other Financial Services
+GATECHDVR,Other Financial Services
+MAHAPEXLTD,Other Financial Services
+NDLVENTURE,Other Financial Services
+PRIMESECU,Other Financial Services
+RELIABLE,Other Financial Services
+THEINVEST,Other Financial Services
+WEALTH,Other Financial Services
+
+# ── Media & Entertainment → keep as single group ─────────────────────────────
+BALAJITELE,Media & Entertainment
+CREATIVEYE,Media & Entertainment
+ENIL,Media & Entertainment
+NETWORK18,Media & Entertainment
+NEXTMEDIA,Media & Entertainment
+PFOCUS,Media & Entertainment
+RADAAN,Media & Entertainment
+RADIOCITY,Media & Entertainment
+SAREGAMA,Media & Entertainment
+SHEMAROO,Media & Entertainment
+SILLYMONKS,Media & Entertainment
+TIPSMUSIC,Media & Entertainment
+
+# ── Tea & Coffee → keep as single group ──────────────────────────────────────
+CCL,Tea & Coffee
+DTIL,Tea & Coffee
+GANGESSECU,Tea & Coffee
+GILLANDERS,Tea & Coffee
+GROBTEA,Tea & Coffee
+JAYSREETEA,Tea & Coffee
+MCLEODRUSS,Tea & Coffee
+PKTEA,Tea & Coffee
+ROSSELLIND,Tea & Coffee
+TATACOFFEE,Tea & Coffee
+TATACONSUM,Tea & Coffee
+UNITEDTEA,Tea & Coffee
+
+# ── Holding Company → keep as single group ───────────────────────────────────
+AFSL,Holding Company
+BFINVEST,Holding Company
+CHOICEIN,Holding Company
+EDELWEISS,Holding Company
+GFLLIMITED,Holding Company
+IDFC,Holding Company
+JMFINANCIL,Holding Company
+MAXIND,Holding Company
+RANEHOLDIN,Holding Company
+
+# ── Iron & Steel → split ─────────────────────────────────────────────────────
+# Steel - Large Cap
+JSWSTEEL,Steel - Large Cap
+TATASTEEL,Steel - Large Cap
+SAIL,Steel - Large Cap
+JINDALSTEL,Steel - Large Cap
+
+# Steel - Mid & Small Cap
+JAIBALAJI,Steel - Mid & Small Cap
+JSL,Steel - Mid & Small Cap
+MANAKSTEEL,Steel - Mid & Small Cap
+MUKANDLTD,Steel - Mid & Small Cap
+NSLNISP,Steel - Mid & Small Cap
+PRAKASH,Steel - Mid & Small Cap
+SARDAEN,Steel - Mid & Small Cap
+
+# ── Industrial Minerals → keep as single group ───────────────────────────────
+20MICRONS,Industrial Minerals
+ASHAPURMIN,Industrial Minerals
+GMDCLTD,Industrial Minerals
+GOACARBON,Industrial Minerals
+GRAVITA,Industrial Minerals
+LLOYDSME,Industrial Minerals
+MOIL,Industrial Minerals
+NILE,Industrial Minerals
+NMDC,Industrial Minerals
+ORISSAMINE,Industrial Minerals
+
+# ── Plywood Boards / Laminates → keep as single group ────────────────────────
+ADL,Plywood Boards & Laminates
+AIROLAM,Plywood Boards & Laminates
+ARCHIDPLY,Plywood Boards & Laminates
+CENTURYPLY,Plywood Boards & Laminates
+GREENLAM,Plywood Boards & Laminates
+GREENPANEL,Plywood Boards & Laminates
+GREENPLY,Plywood Boards & Laminates
+RUSHIL,Plywood Boards & Laminates
+STYLAMIND,Plywood Boards & Laminates
+WIPL,Plywood Boards & Laminates
+
+# ── Personal Care → keep as single group ─────────────────────────────────────
+BAJAJCON,Personal Care
+COLPAL,Personal Care
+CUPID,Personal Care
+DABUR,Personal Care
+EMAMILTD,Personal Care
+GILLETTE,Personal Care
+GODREJCP,Personal Care
+HONASA,Personal Care
+JHS,Personal Care
+PGHH,Personal Care
+
+# ── Consumer Electronics → keep as single group ──────────────────────────────
+BPL,Consumer Electronics
+DIXON,Consumer Electronics
+FOCUS,Consumer Electronics
+IKIO,Consumer Electronics
+KHAITANLTD,Consumer Electronics
+MIRCELECTR,Consumer Electronics
+PGEL,Consumer Electronics
+SONAMLTD,Consumer Electronics
+VETO,Consumer Electronics
+
+# ── E-Retail / E-Commerce → keep as single group ─────────────────────────────
+CARTRADE,E-Retail & E-Commerce
+DIGIDRIVE,E-Retail & E-Commerce
+ETERNAL,E-Retail & E-Commerce
+FIRSTCRY,E-Retail & E-Commerce
+ISFT,E-Retail & E-Commerce
+MEESHO,E-Retail & E-Commerce
+NYKAA,E-Retail & E-Commerce
+RTNINDIA,E-Retail & E-Commerce
+SWIGGY,E-Retail & E-Commerce
+URBANCO,E-Retail & E-Commerce
+
+# ── Computers Hardware & Equipments → keep as single group ───────────────────
+CONTROLPR,Computers Hardware & Equipments
+DLINKINDIA,Computers Hardware & Equipments
+EBGNG,Computers Hardware & Equipments
+HCL-INSYS,Computers Hardware & Equipments
+IVALUE,Computers Hardware & Equipments
+MOSCHIP,Computers Hardware & Equipments
+NELCO,Computers Hardware & Equipments
+RPTECH,Computers Hardware & Equipments
+SMARTLINK,Computers Hardware & Equipments
+TVSELECT,Computers Hardware & Equipments
+
+# ── Cables - Electricals → keep as single group ──────────────────────────────
+CORDSCABLE,Cables - Electricals
+DYCL,Cables - Electricals
+FINCABLES,Cables - Electricals
+KEI,Cables - Electricals
+PARACABLES,Cables - Electricals
+PLAZACABLE,Cables - Electricals
+POLYCAB,Cables - Electricals
+QUADFUTURE,Cables - Electricals
+RRKABEL,Cables - Electricals
+UNIVCABLES,Cables - Electricals
+
+# ── Petrochemicals → keep as single group ────────────────────────────────────
+AGARIND,Petrochemicals
+MANALIPETC,Petrochemicals
+PASUPTAC,Petrochemicals
+RAIN,Petrochemicals
+SPLPETRO,Petrochemicals
+SWANCORP,Petrochemicals
+TNPETRO,Petrochemicals
+
+# ── Furniture Home Furnishing → keep as single group ─────────────────────────
+AHLADA,Furniture & Home Furnishing
+BIRLANU,Furniture & Home Furnishing
+EUROPRATIK,Furniture & Home Furnishing
+MDL,Furniture & Home Furnishing
+PRITI,Furniture & Home Furnishing
+RESPONIND,Furniture & Home Furnishing
+SFL,Furniture & Home Furnishing
+STANLEY,Furniture & Home Furnishing
+WAKEFIT,Furniture & Home Furnishing
+
+# ── Other Bank (SFBs) → keep as single group ─────────────────────────────────
+AUBANK,Small Finance Banks
+CAPITALSFB,Small Finance Banks
+EQUITASBNK,Small Finance Banks
+ESAFSFB,Small Finance Banks
+FINOPB,Small Finance Banks
+JSFB,Small Finance Banks
+SURYODAY,Small Finance Banks
+UJJIVANSFB,Small Finance Banks
+UTKARSHBNK,Small Finance Banks
+
+# ── Restaurants → keep as single group ────────────────────────────────────────
+COFFEEDAY,Restaurants & QSR
+DEVYANI,Restaurants & QSR
+JUBLFOOD,Restaurants & QSR
+RBA,Restaurants & QSR
+SAPPHIRE,Restaurants & QSR
+SPECIALITY,Restaurants & QSR
+TRAVELFOOD,Restaurants & QSR
+UFBL,Restaurants & QSR
+WESTLIFE,Restaurants & QSR
+
+# ── Diversified Retail → keep as single group ────────────────────────────────
+DMART,Diversified Retail
+EMIL,Diversified Retail
+OSIAHYPER,Diversified Retail
+PATELRMART,Diversified Retail
+RETAIL,Diversified Retail
+SHOPERSTOP,Diversified Retail
+SPENCERS,Diversified Retail
+VMART,Diversified Retail
+VMM,Diversified Retail
+
+# ── Tyres & Rubber Products → keep as single group ──────────────────────────
+APCOTEXIND,Rubber Products
+ELGIRUBCO,Rubber Products
+GRPLTD,Rubber Products
+HARRMALAYA,Rubber Products
+PIXTRANS,Rubber Products
+RUBFILA,Rubber Products
+SAMPANN,Rubber Products
+TINNARUBR,Rubber Products
+
+# ── Education → keep as single group ─────────────────────────────────────────
+APTECHT,Education
+COMPUSOFT,Education
+CPEDU,Education
+GLOBAL,Education
+KEEPLEARN,Education
+NIITLTD,Education
+NIITMTS,Education
+ZEELEARN,Education
+
+# ── Ceramics → keep as single group ──────────────────────────────────────────
+ASIANTILES,Ceramics
+EXXARO,Ceramics
+KAJARIACER,Ceramics
+MURUDCERA,Ceramics
+NITCO,Ceramics
+ORIENTBELL,Ceramics
+REGENCERAM,Ceramics
+SOMANYCERA,Ceramics
+
+# ── Plastic Products - Consumer → keep as single group ───────────────────────
+AVROIND,Plastic Products - Consumer
+NILKAMAL,Plastic Products - Consumer
+PEARLPOLY,Plastic Products - Consumer
+PILITA,Plastic Products - Consumer
+SAFARI,Plastic Products - Consumer
+SHAILY,Plastic Products - Consumer
+TOKYOPLAST,Plastic Products - Consumer
+VIPIND,Plastic Products - Consumer
+
+# ── Footwear → keep as single group ──────────────────────────────────────────
+BATAINDIA,Footwear
+CAMPUS,Footwear
+KHADIM,Footwear
+LIBERTSHOE,Footwear
+METROBRAND,Footwear
+REDTAPE,Footwear
+RELAXO,Footwear
+SREEL,Footwear
+
+# ── Financial Technology (Fintech) → keep as single group ────────────────────
+CCAVENUE,Financial Technology (Fintech)
+MOBIKWIK,Financial Technology (Fintech)
+NPST,Financial Technology (Fintech)
+PAYTM,Financial Technology (Fintech)
+PINELABS,Financial Technology (Fintech)
+POLICYBZR,Financial Technology (Fintech)
+STYL,Financial Technology (Fintech)
+SUVIDHAA,Financial Technology (Fintech)
+
+# ── Aluminium Copper & Zinc Products → keep as single group ─────────────────
+CENTEXT,Aluminium Copper & Zinc Products
+CUBEXTUB,Aluminium Copper & Zinc Products
+EUROBOND,Aluminium Copper & Zinc Products
+KSHINTL,Aluminium Copper & Zinc Products
+PRECWIRE,Aluminium Copper & Zinc Products
+RAJMET,Aluminium Copper & Zinc Products
+SAGARDEEP,Aluminium Copper & Zinc Products
+VIDYAWIRES,Aluminium Copper & Zinc Products
+
+# ── Film Production Distribution & Exhibition → keep as single group ─────────
+CINELINE,Film Production & Exhibition
+EROSMEDIA,Film Production & Exhibition
+INOXLEISUR,Film Production & Exhibition
+MUKTAARTS,Film Production & Exhibition
+PNC,Film Production & Exhibition
+PVRINOX,Film Production & Exhibition
+TIPSFILMS,Film Production & Exhibition
+UFO,Film Production & Exhibition
+
+# ── Electrodes & Refractories → keep as single group ────────────────────────
+DENORA,Electrodes & Refractories
+GRAPHITE,Electrodes & Refractories
+HEG,Electrodes & Refractories
+IFGLEXPOR,Electrodes & Refractories
+ORIENTCER,Electrodes & Refractories
+RHIM,Electrodes & Refractories
+RPEL,Electrodes & Refractories
+VESUVIUS,Electrodes & Refractories
+
+# ── Diversified → keep as single group ───────────────────────────────────────
+3MINDIA,Diversified Conglomerates
+BALMLAWRIE,Diversified Conglomerates
+DCMSHRIRAM,Diversified Conglomerates
+DVL,Diversified Conglomerates
+MAHESHWARI,Diversified Conglomerates
+TTKHLTCARE,Diversified Conglomerates
+
+# ── Asset Management Company → keep as single group ──────────────────────────
+ABSLAMC,Asset Management Company
+CRAMC,Asset Management Company
+HDFCAMC,Asset Management Company
+ICICIAMC,Asset Management Company
+IVC,Asset Management Company
+NAM-INDIA,Asset Management Company
+UTIAMC,Asset Management Company
+
+# ── BPO / KPO → keep as single group ────────────────────────────────────────
+ALLDIGI,BPO & KPO Services
+ECLERX,BPO & KPO Services
+FSL,BPO & KPO Services
+HGS,BPO & KPO Services
+ONEPOINT,BPO & KPO Services
+RPSGVENT,BPO & KPO Services
+WEWIN,BPO & KPO Services
+
+# ── Paints → keep as single group ────────────────────────────────────────────
+ASIANPAINT,Paints
+BERGEPAINT,Paints
+INDIGOPNTS,Paints
+KAMOPAINTS,Paints
+KANSAINER,Paints
+SHALPAINTS,Paints
+SIRCA,Paints
+
+# ── LPG/CNG/PNG/LNG Supplier → keep as single group ─────────────────────────
+ATGL,Gas Distribution & Supply
+CONFIPET,Gas Distribution & Supply
+GUJGASLTD,Gas Distribution & Supply
+IGL,Gas Distribution & Supply
+IRMENERGY,Gas Distribution & Supply
+MGL,Gas Distribution & Supply
+PETRONET,Gas Distribution & Supply
+
+# ── Tour Travel Related Services → keep as single group ──────────────────────
+BLS,Tour Travel & Related Services
+EASEMYTRIP,Tour Travel & Related Services
+IRCTC,Tour Travel & Related Services
+IXIGO,Tour Travel & Related Services
+TBOTEK,Tour Travel & Related Services
+THOMASCOOK,Tour Travel & Related Services
+YATRA,Tour Travel & Related Services
+
+# ── Refineries & Marketing → keep as single group ────────────────────────────
+BPCL,Refineries & Marketing
+CHENNPETRO,Refineries & Marketing
+HINDPETRO,Refineries & Marketing
+IOC,Refineries & Marketing
+KOTYARK,Refineries & Marketing
+MRPL,Refineries & Marketing
+RELIANCE,Refineries & Marketing
+
+# ── Lubricants → keep as single group ────────────────────────────────────────
+CASTROLIND,Lubricants
+GANDHAR,Lubricants
+GULFOILLUB,Lubricants
+GULFPETRO,Lubricants
+PANAMAPET,Lubricants
+SOTL,Lubricants
+VEEDOL,Lubricants
+
+# ── Passenger Cars & Utility Vehicles → keep as single group ─────────────────
+FORCEMOT,Passenger Cars & Utility Vehicles
+HINDMOTORS,Passenger Cars & Utility Vehicles
+HYUNDAI,Passenger Cars & Utility Vehicles
+M&M,Passenger Cars & Utility Vehicles
+MARUTI,Passenger Cars & Utility Vehicles
+OLECTRA,Passenger Cars & Utility Vehicles
+TMPV,Passenger Cars & Utility Vehicles
+
+# ── Financial Institution → keep as single group ─────────────────────────────
+HUDCO,Financial Institutions
+IFCI,Financial Institutions
+IREDA,Financial Institutions
+IRFC,Financial Institutions
+PFC,Financial Institutions
+RECLTD,Financial Institutions
+TFCILTD,Financial Institutions
+
+# ── Animal Feed → keep as single group ───────────────────────────────────────
+AJOONI,Animal Feed
+AVANTIFEED,Animal Feed
+GODREJAGRO,Animal Feed
+MUKKA,Animal Feed
+NARMADA,Animal Feed
+WATERBASE,Animal Feed
+
+# ── Leather And Leather Products → keep as single group ──────────────────────
+AKI,Leather & Leather Products
+BIL,Leather & Leather Products
+MAYURUNIQ,Leather & Leather Products
+MIRZAINT,Leather & Leather Products
+SUPERHOUSE,Leather & Leather Products
+ZENITHEXPO,Leather & Leather Products
+
+# ── Granites & Marbles → keep as single group ────────────────────────────────
+AROGRANITE,Granites & Marbles
+GSLSU,Granites & Marbles
+MADHAV,Granites & Marbles
+MIDWESTLTD,Granites & Marbles
+ORIENTALTL,Granites & Marbles
+POKARNA,Granites & Marbles
+
+# ── 2/3 Wheelers → keep as single group ──────────────────────────────────────
+ATHERENERG,2/3 Wheelers
+BAJAJ-AUTO,2/3 Wheelers
+EICHERMOT,2/3 Wheelers
+HEROMOTOCO,2/3 Wheelers
+OLAELEC,2/3 Wheelers
+TVSMOTOR,2/3 Wheelers
+
+# ── Telecom - Cellular & Fixed line services → keep as single group ──────────
+BHARTIARTL,Telecom - Cellular & Fixed Line
+BHARTIHEXA,Telecom - Cellular & Fixed Line
+IDEA,Telecom - Cellular & Fixed Line
+MTNL,Telecom - Cellular & Fixed Line
+TATACOMM,Telecom - Cellular & Fixed Line
+TTML,Telecom - Cellular & Fixed Line
+
+# ── Life Insurance → keep as single group ─────────────────────────────────────
+CANHLIFE,Life Insurance
+HDFCLIFE,Life Insurance
+ICICIPRULI,Life Insurance
+LICI,Life Insurance
+MFSL,Life Insurance
+SBILIFE,Life Insurance
+
+# ── Abrasives & Bearings → keep as single group ──────────────────────────────
+CARBORUNIV,Abrasives & Bearings
+GRINDWELL,Abrasives & Bearings
+NIBL,Abrasives & Bearings
+SKFINDUS,Abrasives & Bearings
+WENDT,Abrasives & Bearings
+
+# ── Internet & Catalogue Retail → keep as single group ───────────────────────
+CRIZAC,Internet & Catalogue Retail
+INDIAMART,Internet & Catalogue Retail
+JUSTDIAL,Internet & Catalogue Retail
+MATRIMONY,Internet & Catalogue Retail
+NAUKRI,Internet & Catalogue Retail
+TCC,Internet & Catalogue Retail
+
+# ── Dairy Products → keep as single group ────────────────────────────────────
+DODLA,Dairy Products
+HATSUN,Dairy Products
+HERITGFOOD,Dairy Products
+KWIL,Dairy Products
+PARAGMILK,Dairy Products
+VADILALIND,Dairy Products
+
+# ── Stationary → keep as single group ────────────────────────────────────────
+DOMS,Stationary
+FLAIR,Stationary
+KOKUYOCMLN,Stationary
+LINC,Stationary
+NAVNETEDUL,Stationary
+SUNDARAM,Stationary
+
+# ── Shipping → keep as single group ──────────────────────────────────────────
+ESSARSHPNG,Shipping
+GESHIP,Shipping
+SCI,Shipping
+SEAMECLTD,Shipping
+SHREEJISPG,Shipping
+TRANSWORLD,Shipping
+
+# ── Medical Equipment & Supplies → keep as single group ──────────────────────
+FABTECH,Medical Equipment & Supplies
+FISCHER,Medical Equipment & Supplies
+LAXMIDENTL,Medical Equipment & Supplies
+NURECA,Medical Equipment & Supplies
+POLYMED,Medical Equipment & Supplies
+TARSONS,Medical Equipment & Supplies
+
+# ── General Insurance → keep as single group ─────────────────────────────────
+GICRE,General Insurance
+GODIGIT,General Insurance
+ICICIGI,General Insurance
+NIACL,General Insurance
+NIVABUPA,General Insurance
+STARHEALTH,General Insurance
+
+# ── Telecom - Infrastructure → keep as single group ──────────────────────────
+GTLINFRA,Telecom Infrastructure
+HFCL,Telecom Infrastructure
+INDUSTOWER,Telecom Infrastructure
+PACEDIGITK,Telecom Infrastructure
+SUYOG,Telecom Infrastructure
+VINDHYATEL,Telecom Infrastructure
+
+# ── Telecom - Equipment & Accessories → keep as single group ─────────────────
+AKSHOPTFBR,Telecom Equipment & Accessories
+BIRLACABLE,Telecom Equipment & Accessories
+ITI,Telecom Equipment & Accessories
+OPTIEMUS,Telecom Equipment & Accessories
+STLTECH,Telecom Equipment & Accessories
+TEJASNET,Telecom Equipment & Accessories
+TNTELE,Telecom Equipment & Accessories
+UMIYA-MRO,Telecom Equipment & Accessories
+
