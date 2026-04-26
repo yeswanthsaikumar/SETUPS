@@ -1966,7 +1966,10 @@ def _do_compute_industry_groups_inner(t0: float) -> list[dict]:
     industry_sectors: dict[str, str] = {}
     for ticker, tax_vals in taxonomy.items():
         sector = tax_vals[0] if tax_vals else "Other"
-        industry = tax_vals[1] if len(tax_vals) > 1 else "Other"
+        # Use basic_industry (index 2, finest level with custom sub-classification
+        # overrides) instead of industry (index 1, coarse NSE level).
+        industry = tax_vals[2] if len(tax_vals) > 2 and tax_vals[2] else (
+                   tax_vals[1] if len(tax_vals) > 1 else "Other")
         # Skip unclassified rows: any ticker that NSE couldn't bucket into
         # a concrete industry is noise for RS/breadth aggregation.
         if not industry or industry == "Other":

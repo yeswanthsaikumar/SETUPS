@@ -528,16 +528,18 @@ SETUP_META = {
 }
 
 # ── Merge taxonomy basic_industry into INDUSTRY_MAP ───────────────────────────
-# The hardcoded INDUSTRY_MAP above covers ~600 manually curated tickers.
-# For the remaining ~2000 NSE tickers, pull basic_industry from the taxonomy
-# module so every stock has a fine-grained classification (~200 groups).
+# The custom_sub_classification.csv (loaded via nse_taxonomy) is the single
+# source of truth for fine-grained industry groupings. It OVERRIDES the
+# hardcoded INDUSTRY_MAP above — so any ticker present in the custom CSV
+# gets its classification from there, not from the legacy hardcoded map.
 try:
     import nse_taxonomy as _taxo
+    # Taxonomy overrides hardcoded map — custom sub-classification wins.
     for _t, _bi in _taxo._BASIC_INDUSTRY_MAP.items():
-        if _t not in INDUSTRY_MAP and _bi:
+        if _bi:
             INDUSTRY_MAP[_t] = _bi
     for _t, _s in _taxo._SECTOR_MAP.items():
-        if _t not in SECTOR_MAP and _s:
+        if _s:
             SECTOR_MAP[_t] = _s
 except Exception:
     pass

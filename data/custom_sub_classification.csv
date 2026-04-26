@@ -23,7 +23,6 @@ CGPOWER,Electrical Equipments - HVDC
 
 # Transformers & Switchgear
 VOLTAMP,Transformers & Switchgear
-SWELECTES,Transformers & Switchgear
 BBL,Transformers & Switchgear
 TARIL,Transformers & Switchgear
 TARAPUR,Transformers & Switchgear
@@ -49,6 +48,7 @@ SALASAR,Power EPC & Towers
 THERMAX,Industrial Boilers & Engineering
 BHEL,Industrial Boilers & Engineering
 TRITURBINE,Industrial Boilers & Engineering
+ENRIN,Industrial Boilers & Engineering
 
 # Industrial Gears & Equipment
 ELECON,Industrial Gears & Equipment
@@ -56,15 +56,11 @@ AARTECH,Industrial Gears & Equipment
 SHANTIGEAR,Industrial Gears & Equipment
 
 # Solar & Energy Storage
-EXICOM,Solar & Energy Storage
 SURANASOL,Solar & Energy Storage
 SOLEX,Solar & Energy Storage
 QPOWER,Solar & Energy Storage
-WAAREEENER,Solar & Energy Storage
-AVAADA,Solar & Energy Storage
 
 # Power Electronics & UPS
-ENRIN,Power Electronics & UPS
 PROSTARM,Power Electronics & UPS
 
 # Precision Engineering & Aerospace
@@ -74,7 +70,7 @@ UNIMECH,Precision Engineering & Aerospace
 
 # EV Charging & Battery Tech
 SERVOTECH,EV Charging & Battery Tech
-SAATVIKGL,EV Charging & Battery Tech
+EXICOM,EV Charging & Battery Tech
 AEPL,EV Charging & Battery Tech
 
 # Smart Metering & Energy Electronics
@@ -88,6 +84,9 @@ UTLSOLAR,Solar & Renewable Equipment
 VIKRAMSOLR,Solar & Renewable Equipment
 WEBELSOLAR,Solar & Renewable Equipment
 WAAREERTL,Solar & Renewable Equipment
+WAAREEENER,Solar & Renewable Equipment
+SAATVIKGL,Solar & Renewable Equipment
+SWELECTES,Solar & Renewable Equipment
 URJA,Solar & Renewable Equipment
 
 # Electronics Manufacturing Services
@@ -239,12 +238,11 @@ ZYDUSLIFE,Pharma - Large Cap Formulations
 EMCURE,Pharma - Large Cap Formulations
 
 # CDMO & API
-DIVI,CDMO & API
+DIVISLAB,CDMO & API
 SYNGENE,CDMO & API
 BIOCON,CDMO & API
 SHILPAMED,CDMO & API
 NEULANDLAB,CDMO & API
-LAURUS,CDMO & API
 LAURUSLABS,CDMO & API
 GLAND,CDMO & API
 CONCORDBIO,CDMO & API
@@ -298,7 +296,6 @@ HIKAL,Pharma - Mid Cap Formulations
 
 # Pharma - Small Cap & Niche
 HESTERBIO,Pharma - Small Cap & Niche
-DIVISLAB,Pharma - Small Cap & Niche
 KOPRAN,Pharma - Small Cap & Niche
 BAJAJHCARE,Pharma - Small Cap & Niche
 BALAXI,Pharma - Small Cap & Niche
@@ -374,11 +371,11 @@ SBICARD,NBFC - Diversified Retail Finance
 CHOLAFIN,NBFC - Vehicle & Equipment Finance
 M&MFIN,NBFC - Vehicle & Equipment Finance
 INDOSTAR,NBFC - Vehicle & Equipment Finance
+MUTHOOTCAP,NBFC - Vehicle & Equipment Finance
 
 # Gold Finance
 MANAPPURAM,NBFC - Gold Finance
 MUTHOOTFIN,NBFC - Gold Finance
-MUTHOOTCAP,NBFC - Gold Finance
 
 # Microfinance
 ARMANFIN,NBFC - Microfinance & Rural
@@ -439,7 +436,6 @@ MENONBE,Bearings
 MOTHERSON,Auto Electricals & Wiring
 LUMAXTECH,Auto Electricals & Wiring
 LUMAXIND,Auto Electricals & Wiring
-MINDA,Auto Electricals & Wiring
 MINDACORP,Auto Electricals & Wiring
 UNOMINDA,Auto Electricals & Wiring
 FIEMIND,Auto Electricals & Wiring
@@ -609,7 +605,6 @@ IDBI,PSU Banks - Mid Cap
 
 # ── Chemicals → by type ───────────────────────────────────────────────────────
 # Specialty Chemicals
-AARTI,Specialty Chemicals - Intermediates
 VINATIORGA,Specialty Chemicals - Intermediates
 CLEAN,Specialty Chemicals - Intermediates
 ATUL,Specialty Chemicals - Intermediates
@@ -936,7 +931,6 @@ MODTHREAD,Textiles - Weaving & Fabric
 MOHITIND,Textiles - Weaving & Fabric
 MANOMAY,Textiles - Weaving & Fabric
 NAGREEKEXP,Textiles - Weaving & Fabric
-RAYMONDSQL,Textiles - Weaving & Fabric
 RAYMONDLSL,Textiles - Weaving & Fabric
 MHLXMIRU,Textiles - Weaving & Fabric
 MFML,Textiles - Weaving & Fabric
@@ -1322,7 +1316,6 @@ LUXIND,Branded Apparel - Premium
 DOLLAR,Branded Apparel - Premium
 RUPA,Branded Apparel - Premium
 LOVABLE,Branded Apparel - Premium
-LAXMICUT,Branded Apparel - Premium
 
 # Branded Apparel - Value & Retail
 ARVIND,Branded Apparel - Value & Retail
@@ -2345,3 +2338,125 @@ TEJASNET,Telecom Equipment & Accessories
 TNTELE,Telecom Equipment & Accessories
 UMIYA-MRO,Telecom Equipment & Accessories
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# MULTI-LABEL CONGLOMERATES
+# ═══════════════════════════════════════════════════════════════════════════════
+# Companies with significant revenue from multiple industries.
+# The FIRST row for each ticker (above) sets the primary classification.
+# Additional rows below add the ticker to secondary industry groups so it
+# appears in breadth/RS analysis for each business segment.
+#
+# Format: same ticker appearing again with a different custom_basic_industry.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── Reliance Industries ──────────────────────────────────────────────────────
+# Primary: Refineries & Marketing (above)
+# Secondary segments (each >15% revenue):
+RELIANCE,Telecom - Cellular & Fixed Line
+RELIANCE,Diversified Retail
+RELIANCE,Petrochemicals
+
+# ── ITC Limited ──────────────────────────────────────────────────────────────
+# NSE classifies as "Cigarettes & Tobacco Products" — but ITC has major
+# FMCG foods, hotels, paperboard, and agri businesses.
+ITC,Packaged Foods - Large & Mid Cap
+ITC,Premium Hotels
+ITC,Paper & Paper Products
+
+# ── L&T (Larsen & Toubro) ───────────────────────────────────────────────────
+# Primary: Diversified EPC (above)
+# Also significant in IT services and financial services:
+LT,IT Services - Large Cap
+LT,Financial Institutions
+
+# ── Mahindra & Mahindra ──────────────────────────────────────────────────────
+# Primary: Passenger Cars & Utility Vehicles (above)
+# Major farm equipment and financial services businesses:
+M&M,Tractors & Farm Equipment
+M&M,NBFC - Vehicle & Equipment Finance
+
+# ── Tata Power ───────────────────────────────────────────────────────────────
+# Dual presence in thermal and renewable:
+TATAPOWER,Power - Thermal & Conventional
+TATAPOWER,Power - Renewable & Green
+TATAPOWER,Solar & Renewable Equipment
+
+# ── Adani Enterprises ────────────────────────────────────────────────────────
+# Incubator conglomerate: mining, solar manufacturing, data centers, airports
+ADANIENT,Industrial Minerals
+ADANIENT,Solar & Renewable Equipment
+ADANIENT,E-Retail & E-Commerce
+
+# ── Grasim Industries ───────────────────────────────────────────────────────
+# Primary: Cement - Large Cap (above)
+# Also major in VSF/chemicals and now paints:
+GRASIM,Specialty Chemicals - Diversified
+GRASIM,Paints
+
+# ── Vedanta Limited ──────────────────────────────────────────────────────────
+VEDL,Aluminium Copper & Zinc Products
+VEDL,Oil Exploration & Production
+VEDL,Steel - Large Cap
+VEDL,Power - Thermal & Conventional
+
+# ── Godrej Industries ────────────────────────────────────────────────────────
+# Primary: Surfactants & Oleochemicals (above)
+# Also has real estate (Godrej Properties) and agri:
+GODREJIND,Realty - Large Cap
+GODREJIND,Animal Feed
+
+# ── DCM Shriram ──────────────────────────────────────────────────────────────
+# Primary: Diversified Conglomerates (above)
+# Distinct businesses: chlor-alkali, sugar, bioseed, fenesta windows
+DCMSHRIRAM,Commodity Chemicals - Inorganic & Alkali
+DCMSHRIRAM,Sugar
+
+# ── Tata Steel ───────────────────────────────────────────────────────────────
+# Primary: Steel - Large Cap (above)
+# Also significant mining operations:
+TATASTEEL,Industrial Minerals
+
+# ── Bajaj Holdings ───────────────────────────────────────────────────────────
+# Primary: Strategic Holding Companies (above)
+# Effectively a proxy for insurance + NBFC:
+BAJAJHLDNG,Life Insurance
+BAJAJHLDNG,NBFC - Diversified Retail Finance
+
+# ── JSW Energy ───────────────────────────────────────────────────────────────
+# Multi-fuel power producer:
+JSWENERGY,Power - Renewable & Green
+
+# ── SRF Limited ──────────────────────────────────────────────────────────────
+# Primary: Fluorochemicals & Films (above)
+# Also significant packaging films business:
+SRF,Flexible & Film Packaging
+
+# ── Piramal Enterprises ──────────────────────────────────────────────────────
+# Dual pharma + NBFC:
+PIRAMALFIN,Pharma - Mid Cap Formulations
+
+# ── Aditya Birla Capital ─────────────────────────────────────────────────────
+# Holding co but effectively multi-business financial:
+ABCAPITAL,Life Insurance
+ABCAPITAL,Asset Management Company
+ABCAPITAL,NBFC - Diversified Retail Finance
+
+# ── Tata Chemicals ───────────────────────────────────────────────────────────
+# Soda ash + consumer salt (Tata Salt) + crop sciences:
+TATACHEM,Packaged Foods - Large & Mid Cap
+
+# ── UPL Limited ──────────────────────────────────────────────────────────────
+# Primary: Agrochemical Intermediates (above)
+# Also significant seeds/biologicals business:
+UPL,Agri - Seeds & Biotech
+
+# ── Biocon Limited ───────────────────────────────────────────────────────────
+# Primary: CDMO & API (above)
+# Significant biosimilars formulation + IT services (Syngene spun off):
+BIOCON,Pharma - Large Cap Formulations
+
+# ── Raymond Limited ──────────────────────────────────────────────────────────
+# Primary: Other Industrial Products (above — engineering division)
+# Major textiles/lifestyle business:
+RAYMOND,Branded Apparel - Premium
+RAYMOND,Realty - Mid Cap

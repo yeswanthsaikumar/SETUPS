@@ -174,6 +174,12 @@ _NAME_MAP:           dict[str, str]       = {}
 _THEMES_MAP:         dict[str, list[str]] = {}
 _THEME_META:         dict[str, dict]      = {}  # theme_key → {name, description}
 
+# Multi-label basic_industry: for conglomerates that operate in multiple
+# industries (e.g. Reliance = Refineries + Telecom + Retail). The primary
+# classification stays in _BASIC_INDUSTRY_MAP (first row in CSV); additional
+# industries are stored here. group_tickers_by("basic_industry") merges both.
+_BASIC_INDUSTRY_MULTI: dict[str, list[str]] = {}
+
 
 def _load_enriched() -> None:
     """Populate the rich maps from data/nse_stock_enriched.csv (best-effort)."""
@@ -283,10 +289,19 @@ def _load_custom_sub_classification() -> None:
     Equipment" lumps HVDC, wind, transformers together). This file provides a
     finer trader-relevant classification that OVERRIDES basic_industry for
     listed tickers.
+
+    Multi-label support: if a ticker appears multiple times with DIFFERENT
+    custom_basic_industry values (e.g. RELIANCE in both "Refineries & Marketing"
+    and "Telecom - Cellular & Fixed Line"), the first row becomes the primary
+    classification and subsequent rows are stored in _BASIC_INDUSTRY_MULTI so
+    group_tickers_by includes the ticker in every listed group.
     """
     if not _CUSTOM_SUB_PATH.exists():
         return
     count = 0
+    _BASIC_INDUSTRY_MULTI.clear()
+    # Track which tickers we've already set from this CSV (not from enriched)
+    _seen_in_custom: set[str] = set()
     try:
         with _CUSTOM_SUB_PATH.open(newline="", encoding="utf-8") as f:
             for row in csv.DictReader(f):
@@ -295,9 +310,18 @@ def _load_custom_sub_classification() -> None:
                 # Skip comment lines that csv.DictReader parsed as data
                 if not t or not bi or t.startswith("#"):
                     continue
-                _BASIC_INDUSTRY_MAP[t] = bi
+                if t in _seen_in_custom:
+                    # Second+ row for this ticker → multi-label (conglomerate)
+                    existing = _BASIC_INDUSTRY_MAP.get(t, "")
+                    if bi != existing:
+                        _BASIC_INDUSTRY_MULTI.setdefault(t, []).append(bi)
+                else:
+                    _BASIC_INDUSTRY_MAP[t] = bi
+                    _seen_in_custom.add(t)
                 count += 1
-        logger.debug("Applied %d custom sub-classification overrides", count)
+        multi_count = len(_BASIC_INDUSTRY_MULTI)
+        logger.debug("Applied %d custom sub-classification overrides "
+                     "(%d multi-label tickers)", count, multi_count)
     except Exception as e:
         logger.warning("Could not load custom sub-classification: %s", e)
 
@@ -316,6 +340,7 @@ def reload() -> None:
     global _SECTOR_MAP, _INDUSTRY_MAP, _BASIC_INDUSTRY_MAP_CSV
     _MACRO_MAP.clear()
     _BASIC_INDUSTRY_MAP.clear()
+    _BASIC_INDUSTRY_MULTI.clear()
     _NAME_MAP.clear()
     _THEMES_MAP.clear()
     _THEME_META.clear()
@@ -364,8 +389,21 @@ def get_industry(symbol: str) -> str:
 
 
 def get_breadth_peers(industry: str) -> list[str]:
-    """Return all NSE tickers in the same industry (for breadth computation)."""
-    return [ticker for ticker, ind in _INDUSTRY_MAP.items() if ind == industry]
+    """Return all NSE tickers in the same basic_industry or industry group.
+
+    Checks _BASIC_INDUSTRY_MAP first (has custom sub-classification overrides),
+    including multi-label entries, then falls back to _INDUSTRY_MAP.
+    """
+    # Check basic_industry (finest level, with custom overrides)
+    peers = [t for t, bi in _BASIC_INDUSTRY_MAP.items() if bi == industry]
+    # Also include tickers that list this industry as a secondary label
+    for t, extras in _BASIC_INDUSTRY_MULTI.items():
+        if industry in extras and t not in peers:
+            peers.append(t)
+    if peers:
+        return peers
+    # Fallback to NSE industry level
+    return [t for t, ind in _INDUSTRY_MAP.items() if ind == industry]
 
 
 def list_industries() -> list[str]:
@@ -421,13 +459,17 @@ def list_macros() -> list[str]:
 
 
 def list_basic_industries() -> list[str]:
-    return sorted(set(_BASIC_INDUSTRY_MAP.values()))
+    all_bis = set(_BASIC_INDUSTRY_MAP.values())
+    for extras in _BASIC_INDUSTRY_MULTI.values():
+        all_bis.update(extras)
+    return sorted(all_bis)
 
 
 # ── Generic groupings for relative-strength / rotation analysis ──────────────
 # LEVELS is the set of group-by dimensions exposed to downstream consumers.
-# "theme" is multi-label (a stock can be in multiple themes); the rest are
-# single-label (one bucket per ticker).
+# "theme" is multi-label (a stock can be in multiple themes);
+# "basic_industry" is also multi-label for conglomerates (via _BASIC_INDUSTRY_MULTI);
+# the rest are single-label (one bucket per ticker).
 LEVELS = ("macro", "sector", "industry", "basic_industry", "theme")
 
 
@@ -435,9 +477,9 @@ def group_tickers_by(level: str) -> dict[str, list[str]]:
     """
     Return {group_name -> [tickers]} for the requested classification level.
 
-    `level` must be one of LEVELS. For "theme", a single ticker may appear in
-    multiple groups (multi-label). For all other levels, each ticker appears
-    in exactly one group (labelled 'Other' when missing).
+    `level` must be one of LEVELS. For "theme" and "basic_industry", a single
+    ticker may appear in multiple groups (multi-label). For all other levels,
+    each ticker appears in exactly one group (labelled 'Other' when missing).
     """
     if level not in LEVELS:
         raise ValueError(f"unknown level {level!r}; expected one of {LEVELS}")
@@ -463,6 +505,14 @@ def group_tickers_by(level: str) -> dict[str, list[str]]:
         if not name:
             continue
         groups.setdefault(name, []).append(ticker)
+
+    # For basic_industry, also add multi-label entries (conglomerates)
+    if level == "basic_industry":
+        for ticker, extras in _BASIC_INDUSTRY_MULTI.items():
+            for bi in extras:
+                if bi and ticker not in groups.get(bi, []):
+                    groups.setdefault(bi, []).append(ticker)
+
     return groups
 
 

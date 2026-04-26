@@ -246,8 +246,8 @@
     <div class="controls">
         <input type="text" class="ctrl-input" id="search" placeholder="🔍 Filter groups..." oninput="filterGroups()">
         <select class="ctrl-select" id="level-filter" onchange="changeLevel()" title="Classification level (from nse_stock_enriched.csv)">
-            <option value="basic_industry">Sub-Industry (finest)</option>
-            <option value="industry" selected>Industry (default)</option>
+            <option value="basic_industry" selected>Sub-Industry (finest)</option>
+            <option value="industry">Industry</option>
             <option value="sector">Sector (~55)</option>
             <option value="macro">Macro Sector (~20)</option>
             <option value="theme">Theme (curated)</option>
@@ -565,7 +565,7 @@ function closeDrillDown() {
 let allGroups = [];
 let filteredGroups = [];
 let currentSort = {field: 'rsScore', desc: true};
-let currentLevel = 'industry';
+let currentLevel = 'basic_industry';
 
 function _adaptGroupsPayload(rows, level) {
     return (rows || []).map(g => {
@@ -583,32 +583,20 @@ function _adaptGroupsPayload(rows, level) {
 }
 
 function changeLevel() {
-    currentLevel = document.getElementById('level-filter').value || 'industry';
+    currentLevel = document.getElementById('level-filter').value || 'basic_industry';
     fetchGroups();
 }
 
 async function _fetchGroupsForCurrentLevel() {
-    if (currentLevel === 'industry') {
-        const resp = await fetch('/api/industry-groups?min_stocks=2');
-        const data = await resp.json();
-        return {
-            groups: data.groups || [],
-            cachedAt: data.cachedAt,
-            cacheAgeSec: data.cacheAgeSec,
-            bgRefreshing: data.bgRefreshing,
-            ohlcvRefreshing: data.ohlcvRefreshing,
-            ohlcvProgress: data.ohlcvProgress,
-        };
-    }
     const resp = await fetch(`/api/groups?level=${encodeURIComponent(currentLevel)}&min_stocks=2`);
     const data = await resp.json();
     return {
         groups: _adaptGroupsPayload(data.groups || [], currentLevel),
         cachedAt: data.cachedAt,
         cacheAgeSec: data.cacheAgeSec,
-        bgRefreshing: false,
-        ohlcvRefreshing: false,
-        ohlcvProgress: null,
+        bgRefreshing: data.bgRefreshing || false,
+        ohlcvRefreshing: data.ohlcvRefreshing || false,
+        ohlcvProgress: data.ohlcvProgress || null,
     };
 }
 
