@@ -1896,14 +1896,15 @@ function updateSbStats(d) {
   document.getElementById('sbOpen').textContent = open.length;
   let dayPl = 0, totalPl = 0, risk = 0;
   for (const p of d.positions || []) {
-    const e = p.entry || 0, sl = p.sl || e;
+    const e = p.entry || 0, sl = (p.sl || 0);
     const realizedPl = p.realized_pl || 0;
     if (_isActivePosition(p)) {
       const qty = _remainingQty(p);
       const cmp = p.cmp || e;
       dayPl += p.dayChangeAmt || 0;
       totalPl += (cmp - e) * qty + realizedPl;
-      risk += Math.max(0, e - sl) * qty;
+      // Risk only makes sense when SL is set below entry for a long position.
+      risk += (sl > 0 && e > 0) ? Math.max(0, e - sl) * qty : 0;
     } else {
       // Closed: use realized_pl if available (covers partials + final close)
       if (realizedPl) {
@@ -1983,7 +1984,7 @@ function _healthScore(p) {
 }
 
 function buildActionSignal(p) {
-  const e = p.entry || 0, cmp = p.cmp || e, sl = p.sl || e;
+  const e = p.entry || 0, cmp = p.cmp || e, sl = p.sl || 0;
   const ext = p.ema20ext;
   const ema5Safe = p.ema5Safe;
   const surfing = p.surfing20ema;
@@ -1993,7 +1994,8 @@ function buildActionSignal(p) {
   if (!isOpen || e <= 0) return '';
   const distToSl = sl > 0 ? (cmp - sl) / sl * 100 : 999;
   const distToEntry = e > 0 ? (cmp - e) / e * 100 : 0;
-  if (sl > 0 && cmp <= sl)
+  // Touching SL is not an exit; only a strict breach.
+  if (sl > 0 && cmp < sl)
     return '<div class="action-banner ab-exit">🚨 BELOW SL — Exit now · ₹' + sl.toLocaleString('en-IN') + '</div>';
   if (sl > 0 && distToSl < 2 && distToSl > 0)
     return '<div class="action-banner ab-exit">⚠️ NEAR SL — Watch closely · ' + distToSl.toFixed(1) + '% away</div>';
@@ -2191,7 +2193,7 @@ function buildCard(p) {
   const isOpen = _isActivePosition(p);
   const isClosed = !isOpen;
   // For closed positions, use exit_price as the final price reference
-  const cmp = p.cmp || (isClosed ? (p.exit_price || e) : e), sl = p.sl || e;
+  const cmp = p.cmp || (isClosed ? (p.exit_price || e) : e), sl = p.sl || 0;
   const realizedPl = p.realized_pl || 0;
   // Gain%: for closed positions with realized_pl, compute from total capital deployed
   let gPct, gAmt;
@@ -2246,7 +2248,7 @@ function buildCard(p) {
     '<div class="card-chart" id="chart-' + p.id + '"></div>' +
     '<div class="price-row"><div><div class="pr-l">Entry</div><div class="pr-v pr-entry">₹' + e.toLocaleString('en-IN') + '</div></div>' +
     '<div><div class="pr-l">' + cmpLabel + '</div><div class="pr-v pr-cmp' + (priceIsStale ? ' stale-price' : '') + '">₹' + cmp.toLocaleString('en-IN') + '</div></div>' +
-    '<div><div class="pr-l">Stop</div><div class="pr-v pr-sl">₹' + sl.toLocaleString('en-IN') + '</div></div></div>' +
+    '<div><div class="pr-l">Stop</div><div class="pr-v pr-sl">' + (sl > 0 ? ('₹' + sl.toLocaleString('en-IN')) : '—') + '</div></div></div>' +
     buildRRGauge(p) +
     buildMetricsStrip(p) +
     buildHealthBar(p) +
@@ -2577,7 +2579,7 @@ async function loadDetChart(p, days) {
 function updateDetInfo(p) {
   const e = p.entry || 0, totalQty = p.quantity || 1, remaining = p.remaining_quantity != null ? p.remaining_quantity : totalQty;
   const isDetOpen = p.status === 'OPEN' || p.status === 'PARTIAL';
-  const cmp = p.cmp || (!isDetOpen ? (p.exit_price || e) : e), sl = p.sl || e;
+  const cmp = p.cmp || (!isDetOpen ? (p.exit_price || e) : e), sl = p.sl || 0;
   const realizedPl = p.realized_pl || 0;
   let gPct, gAmt, unrealizedAmt = 0;
   if (!isDetOpen && realizedPl) {
@@ -2588,7 +2590,8 @@ function updateDetInfo(p) {
     unrealizedAmt = (cmp - e) * remaining;
     gAmt = unrealizedAmt + realizedPl;
   }
-  const risk = Math.max(0, e - sl), riskT = risk * remaining, dPct = p.dayChangePct || 0;
+  const risk = (sl > 0 && e > 0) ? Math.max(0, e - sl) : 0;
+  const riskT = risk * remaining, dPct = p.dayChangePct || 0;
   const fp = v => v >= 0 ? '<span class="pos-color">+' + v.toFixed(2) + '%</span>' : '<span class="neg-color">' + v.toFixed(2) + '%</span>';
   const fa = v => v >= 0 ? '<span class="pos-color">+₹' + Math.abs(v).toLocaleString('en-IN', {maximumFractionDigits: 0}) + '</span>' : '<span class="neg-color">-₹' + Math.abs(v).toLocaleString('en-IN', {maximumFractionDigits: 0}) + '</span>';
   const tgts = [1,2,3].map(i => {

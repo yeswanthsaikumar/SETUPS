@@ -2673,6 +2673,66 @@ def get_industry_group_rs_history(group_name: str, days: int = 120,
     return {"group": decoded, "rsLine": rs_line}
 
 
+@app.get("/api/stock-group-lookup")
+def stock_group_lookup(q: str = "") -> dict:
+    """Search for a stock by ticker or company name and return which groups it
+    belongs to at every classification level.
+    Query param ``q`` is matched case-insensitively against the ticker and
+    company_name fields in the enriched taxonomy."""
+    q = q.strip()
+    if not q:
+        raise HTTPException(status_code=400, detail="query param 'q' is required")
+
+    _load_taxonomy_cached()
+    tax_mod = _taxonomy_module()
+
+    # Build a quick name→ticker reverse index from _NAME_MAP
+    q_upper = q.upper()
+    q_lower = q.lower()
+
+    # Collect matching tickers (exact ticker match first, then name search)
+    matches: list[dict] = []
+    seen: set[str] = set()
+
+    # 1. Exact ticker match (with .NS stripping)
+    clean_q = q_upper.replace(".NS", "").replace(".BO", "")
+    for candidate in [clean_q, q_upper]:
+        name = tax_mod.get_company_name(candidate)
+        sector = tax_mod.get_sector(candidate)
+        if sector and sector != "Other":
+            if candidate not in seen:
+                seen.add(candidate)
+                matches.append({"ticker": candidate, "name": name or candidate})
+
+    # 2. Fuzzy / substring match on company name & ticker
+    if hasattr(tax_mod, "_NAME_MAP"):
+        for ticker, name in tax_mod._NAME_MAP.items():
+            if ticker in seen:
+                continue
+            if q_lower in ticker.lower() or q_lower in name.lower():
+                matches.append({"ticker": ticker, "name": name})
+                seen.add(ticker)
+                if len(matches) >= 25:
+                    break
+
+    # For each match, look up groups at all levels
+    results = []
+    for m in matches:
+        t = m["ticker"]
+        entry = {
+            "ticker": t,
+            "companyName": m["name"],
+            "macro": tax_mod.get_macro(t),
+            "sector": tax_mod.get_sector(t),
+            "industry": tax_mod.get_industry(t),
+            "basicIndustry": tax_mod.get_basic_industry(t),
+            "themes": tax_mod.get_themes(t),
+        }
+        results.append(entry)
+
+    return {"query": q, "results": results}
+
+
 @app.get("/api/custom-groups")
 def list_custom_groups() -> dict:
     return {"groups": _load_custom_groups()}
@@ -3636,12 +3696,28 @@ def _apply_trailing_stop_automation(data: dict) -> dict:
         remaining = int(p.get("remaining_quantity") or p.get("quantity", 1) or 1)
         live_sl = float(p.get("sl", 0) or 0)
         entry_price = float(p.get("entry", 0) or 0)
+        # ── SL arming ──────────────────────────────────────────────────────
+        # Avoid instantly auto-closing a newly-added position if current price
+        # is already at/below the user-entered SL (common when adding during
+        # volatility or using stale quotes). We "arm" the SL only after the
+        # price has traded above the SL at least once.
+        if live_sl > 0:
+            if p.get("sl_armed") is None:
+                # Backward-compat: if a position predates this feature, treat it as armed
+                # only if it's currently above SL; otherwise keep unarmed until it trades above.
+                p["sl_armed"] = bool(cmp > live_sl)
+                changed = True
+            elif p.get("sl_armed") is False and cmp > live_sl:
+                p["sl_armed"] = True
+                changed = True
         # Only auto-close when:
         #  1. SL is set and CMP has breached it, AND
         #  2. The SL is at or below entry price (normal protective stop).
         # If SL has been trailed above entry (profit-lock zone), skip auto-close —
         # that is a manual decision; automation must not close profitable positions.
-        if live_sl > 0 and cmp <= live_sl and remaining > 0 and (entry_price <= 0 or live_sl <= entry_price):
+        # NOTE: We use a strict breach (cmp < sl). Touching the SL is not an exit.
+        if (live_sl > 0 and p.get("sl_armed") is True and cmp < live_sl
+                and remaining > 0 and (entry_price <= 0 or live_sl <= entry_price)):
             p["status"] = "SL_HIT"
             p["exit_price"] = round(cmp, 2)
             p["exit_date"] = today

@@ -97,7 +97,12 @@ class TestTrailingStopAutomation:
         add = api_client.post("/api/trade-board/positions", json=payload).json()
         pid = add["position"]["id"]
 
-        # Force a deterministic quote below SL to trigger automatic stop-close.
+        # SL must be "armed" first (price trades above SL at least once),
+        # then a strict breach triggers SL_HIT.
+        monkeypatch.setattr(api_main, "_get_price_info", lambda *a, **k: (95.0, 90.0, "2026-04-20"))
+        r1 = api_client.get("/api/trade-board/positions/enriched")
+        assert r1.status_code == 200
+
         monkeypatch.setattr(api_main, "_get_price_info", lambda *a, **k: (88.0, 90.0, "2026-04-20"))
 
         r = api_client.get("/api/trade-board/positions/enriched")
@@ -156,7 +161,11 @@ class TestTrailingStopAutomation:
         add = api_client.post("/api/trade-board/positions", json=payload).json()
         pid = add["position"]["id"]
 
-        # Mock price below SL
+        # Arm above SL, then breach below SL.
+        monkeypatch.setattr(api_main, "_get_price_info", lambda *a, **k: (190.0, 185.0, "2026-04-20"))
+        r1 = api_client.get("/api/trade-board/positions")
+        assert r1.status_code == 200
+
         monkeypatch.setattr(api_main, "_get_price_info", lambda *a, **k: (175.0, 185.0, "2026-04-20"))
 
         # Call regular endpoint instead of enriched
@@ -215,7 +224,11 @@ class TestTrailingStopAutomation:
         )
         assert pe.status_code == 200
 
-        # Now price drops below SL
+        # Arm above SL, then drop below SL.
+        monkeypatch.setattr(api_main, "_get_price_info", lambda *a, **k: (95.0, 90.0, "2026-04-20"))
+        r1 = api_client.get("/api/trade-board/positions/enriched")
+        assert r1.status_code == 200
+
         monkeypatch.setattr(api_main, "_get_price_info", lambda *a, **k: (88.0, 90.0, "2026-04-20"))
 
         r = api_client.get("/api/trade-board/positions/enriched")
