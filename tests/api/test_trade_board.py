@@ -239,6 +239,36 @@ class TestTrailingStopAutomation:
         # realized_pl = 3*(110-100) + 7*(88-100) = 30 - 84 = -54
         assert pos["realized_pl"] == -54.0
 
+    def test_manual_sl_update_is_not_overwritten_by_trailing(self, api_client, monkeypatch):
+        """User-updated SL should persist (not be immediately re-trailed)."""
+        import main as api_main
+
+        payload = {
+            "symbol": "RELIANCE.NS",
+            "name": "Reliance",
+            "entry": 100.0,
+            "quantity": 10,
+            "sl": 90.0,
+            "entry_date": "2026-04-15",
+            "status": "OPEN",
+        }
+        add = api_client.post("/api/trade-board/positions", json=payload).json()
+        pid = add["position"]["id"]
+
+        # User manually updates SL to 95.
+        u = api_client.put(f"/api/trade-board/positions/{pid}", json={"sl": 95.0})
+        assert u.status_code == 200
+
+        # Make trailing candidate want to move SL (risk=10 so candidate=min(entry, cmp-10)=100),
+        # but manual lock should prevent overwrite.
+        monkeypatch.setattr(api_main, "_read_ohlcv", lambda *a, **k: [])
+        monkeypatch.setattr(api_main, "_get_price_info", lambda *a, **k: (120.0, 110.0, "2026-04-20"))
+
+        r = api_client.get("/api/trade-board/positions")
+        assert r.status_code == 200
+        pos = next(p for p in r.json()["positions"] if p["id"] == pid)
+        assert pos["sl"] == 95.0
+
     def test_reopen_mistakenly_closed_position_restores_remaining_qty(self, api_client):
         payload = {
             "symbol": "SBIN.NS",

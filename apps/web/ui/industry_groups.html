@@ -151,6 +151,24 @@
         .summary-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid;transition:all .15s}
         .summary-chip:hover{opacity:.85}
         .summary-chip.selected{box-shadow:0 0 0 2px var(--cyan)}
+
+        /* STOCK LOOKUP */
+        .stock-lookup-wrap{position:relative;display:inline-block}
+        .stock-lookup-results{position:absolute;top:100%;left:0;right:0;min-width:420px;max-height:400px;overflow-y:auto;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.6);z-index:100;margin-top:4px;display:none}
+        .stock-lookup-results.active{display:block}
+        .slr-item{padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s}
+        .slr-item:hover{background:var(--bg3)}
+        .slr-item:last-child{border-bottom:none}
+        .slr-ticker{font-weight:800;color:var(--cyan);font-size:13px}
+        .slr-name{color:var(--muted);font-size:11px;margin-left:6px}
+        .slr-groups{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+        .slr-tag{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600;border:1px solid}
+        .slr-tag-macro{background:#1e1b4b;color:#a78bfa;border-color:#4c1d9544}
+        .slr-tag-sector{background:#172554;color:#60a5fa;border-color:#1e40af44}
+        .slr-tag-industry{background:#052e16;color:#4ade80;border-color:#16a34a44}
+        .slr-tag-bi{background:#422006;color:#fbbf24;border-color:#92400e44}
+        .slr-tag-theme{background:#4a044e22;color:#e879f9;border-color:#a21caf44}
+        .slr-empty{padding:16px;text-align:center;color:var(--muted);font-size:12px}
     </style>
 </head>
 <body>
@@ -265,6 +283,10 @@
             <option value="stockCount">Stock Count ↓</option>
         </select>
         <div class="ctrl-spacer"></div>
+        <div class="stock-lookup-wrap">
+            <input type="text" class="ctrl-input" id="stock-lookup" placeholder="🔎 Find stock's group..." style="width:200px" oninput="debouncedStockLookup()" onfocus="showLookupResults()" autocomplete="off">
+            <div class="stock-lookup-results" id="stock-lookup-results"></div>
+        </div>
         <span id="group-count" style="color:var(--muted);font-size:11px"></span>
         <button class="ctrl-btn ctrl-btn-primary" onclick="refreshData()">🔄 Refresh</button>
     </div>
@@ -1146,6 +1168,74 @@ function refreshData() {
             setTimeout(poll, 4000);
         });
 }
+
+// ── Stock Group Lookup ────────────────────────────────────────────────────
+let _lookupTimer = null;
+function debouncedStockLookup() {
+    clearTimeout(_lookupTimer);
+    _lookupTimer = setTimeout(stockLookup, 300);
+}
+
+async function stockLookup() {
+    const q = document.getElementById('stock-lookup').value.trim();
+    const panel = document.getElementById('stock-lookup-results');
+    if (!q || q.length < 1) {
+        panel.classList.remove('active');
+        return;
+    }
+    try {
+        const resp = await fetch('/api/stock-group-lookup?q=' + encodeURIComponent(q));
+        const data = await resp.json();
+        const results = data.results || [];
+        if (!results.length) {
+            panel.innerHTML = '<div class="slr-empty">No stocks found for "' + q.replace(/</g,'&lt;') + '"</div>';
+            panel.classList.add('active');
+            return;
+        }
+        panel.innerHTML = results.map(r => {
+            const themes = (r.themes || []).map(t =>
+                '<span class="slr-tag slr-tag-theme">' + t + '</span>'
+            ).join('');
+            return '<div class="slr-item" onclick="jumpToGroup(\'' + (r.basicIndustry||'').replace(/'/g,"\\'") + '\')">'
+                + '<div>'
+                + '<span class="slr-ticker">' + r.ticker + '</span>'
+                + '<span class="slr-name">' + (r.companyName || '') + '</span>'
+                + '</div>'
+                + '<div class="slr-groups">'
+                + '<span class="slr-tag slr-tag-macro">' + (r.macro || 'Other') + '</span>'
+                + '<span class="slr-tag slr-tag-sector">' + (r.sector || 'Other') + '</span>'
+                + '<span class="slr-tag slr-tag-industry">' + (r.industry || 'Other') + '</span>'
+                + '<span class="slr-tag slr-tag-bi">' + (r.basicIndustry || 'Other') + '</span>'
+                + themes
+                + '</div>'
+                + '</div>';
+        }).join('');
+        panel.classList.add('active');
+    } catch(e) {
+        panel.innerHTML = '<div class="slr-empty" style="color:var(--red)">Error: ' + e.message + '</div>';
+        panel.classList.add('active');
+    }
+}
+
+function showLookupResults() {
+    const q = document.getElementById('stock-lookup').value.trim();
+    const panel = document.getElementById('stock-lookup-results');
+    if (q && panel.innerHTML) panel.classList.add('active');
+}
+
+function jumpToGroup(groupName) {
+    if (!groupName) return;
+    document.getElementById('stock-lookup-results').classList.remove('active');
+    document.getElementById('stock-lookup').value = '';
+    showDetail(groupName, true);
+}
+
+document.addEventListener('click', function(e) {
+    const wrap = document.querySelector('.stock-lookup-wrap');
+    if (wrap && !wrap.contains(e.target)) {
+        document.getElementById('stock-lookup-results').classList.remove('active');
+    }
+});
 
 // Init — start on Sector Map
 showTab('sectormap');

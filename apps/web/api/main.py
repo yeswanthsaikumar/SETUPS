@@ -3632,6 +3632,10 @@ def _recompute_position_realized_pl(p: dict) -> float:
 
 def _compute_trailing_sl_candidate(p: dict, cmp: float) -> float | None:
     """1R trailing stop: trail to (highest-high since entry - initial risk)."""
+    # If the user manually updated SL, do not override it with automation.
+    # We still allow SL_HIT auto-close on breach; we only skip *trailing*.
+    if p.get("sl_manual") is True:
+        return None
     entry = float(p.get("entry", 0) or 0)
     sl = float(p.get("sl", 0) or 0)
     if entry <= 0 or sl <= 0:
@@ -4579,6 +4583,10 @@ def trade_board_update_position(position_id: str, update: TradeBoardUpdate) -> d
                 positions[i].update(upd)
                 if "sl" in upd and upd.get("sl") is not None and not positions[i].get("original_sl"):
                     positions[i]["original_sl"] = upd.get("sl")
+                # If user explicitly set SL via update endpoint, treat it as manual
+                # so trailing automation doesn't immediately overwrite it.
+                if "sl" in upd and upd.get("sl") is not None:
+                    positions[i]["sl_manual"] = bool(float(upd.get("sl") or 0) > 0)
                 # If status is a closing status and exit_price is set,
                 # auto-compute realized_pl for the remaining shares
                 new_status = positions[i].get("status", "OPEN")
