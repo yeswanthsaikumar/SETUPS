@@ -245,13 +245,13 @@
     .j-editor{flex:1;display:flex;flex-direction:column;overflow:hidden}
     .je-hdr{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--bg2);flex-shrink:0}
     .je-body{flex:1;overflow-y:auto;padding:14px}
-    .j-section{margin-bottom:14px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px}
-    .j-section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--cyan);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+    .j-section{margin-bottom:14px;padding:14px;background:linear-gradient(180deg,#121d31,#101a2a);border:1px solid #233149;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+    .j-section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--cyan);margin-bottom:10px;display:flex;align-items:center;gap:5px}
     .j-section.collapsed .j-section-body{display:none}
     .j-section-toggle{margin-left:auto;cursor:pointer;font-size:10px;color:var(--muted);transition:transform .2s}
     .j-section.collapsed .j-section-toggle{transform:rotate(-90deg)}
     .j-form-row{display:flex;gap:9px;margin-bottom:8px;flex-wrap:wrap}
-    .j-fg{display:flex;flex-direction:column;gap:3px;flex:1;min-width:100px}
+    .j-fg{display:flex;flex-direction:column;gap:4px;flex:1;min-width:100px}
     .j-fg-wide{min-width:200px}
     .fl{font-size:10px;color:var(--cyan);font-weight:700;text-transform:uppercase;letter-spacing:.3px}
     .fi{background:var(--bg);border:1px solid var(--border2);border-radius:5px;color:var(--text);padding:6px 9px;font-size:12px;outline:none;transition:border .15s;width:100%}
@@ -345,6 +345,26 @@
     .j-quote{padding:8px 14px;background:linear-gradient(135deg,#0c1a2e,#162040);border-bottom:1px solid var(--border);font-size:10px;color:var(--muted);font-style:italic;text-align:center;flex-shrink:0;letter-spacing:.2px}
     .j-tpl-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s}
     .j-tpl-card:hover{border-color:var(--cyan);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.4)}
+    .j-editor-hint{padding:7px 12px;border-bottom:1px solid var(--border);background:#0e1a2e;color:var(--muted);font-size:10px}
+    .j-editor-hint b{color:var(--cyan)}
+    .j-read-wrap{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;padding:16px}
+    .j-read-article{flex:1;min-height:0;border:1px solid #233149;border-radius:12px;background:#0b1424;overflow:auto;padding:30px 38px;scroll-behavior:smooth}
+    .j-read-kicker{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);font-weight:800}
+    .j-read-title{font-family:Georgia,'Times New Roman',serif;font-size:38px;line-height:1.08;margin:10px 0 10px 0;color:#fff;letter-spacing:-.4px}
+    .j-read-dek{font-size:18px;line-height:1.55;color:#9dddf8;font-style:italic;border-left:3px solid var(--accent);padding-left:12px;margin:0 0 12px 0}
+    .j-read-meta{font-size:13px;color:var(--muted);margin-bottom:20px}
+    .j-read-sec{padding-top:20px;margin-top:20px;border-top:1px solid #1f2a3f;scroll-margin-top:18px}
+    .j-read-sec h3{margin:0 0 10px 0;font-size:30px;color:#f8d48e;font-family:Georgia,'Times New Roman',serif;line-height:1.12}
+    .j-read-text{white-space:pre-wrap;line-height:1.9;font-size:24px;color:#dde6f2}
+    .j-read-bullets{margin:8px 0 0 0;padding-left:26px;line-height:1.9;font-size:24px}
+    .j-read-quote{margin-top:12px;padding:14px 16px;background:#121a29;border-left:4px solid var(--accent);border-radius:0 10px 10px 0;font-style:italic;font-size:22px;line-height:1.7}
+    @media (max-width:1200px){
+      .j-read-article{padding:22px}
+      .j-read-title{font-size:30px}
+      .j-read-sec h3{font-size:24px}
+      .j-read-text,.j-read-bullets{font-size:18px;line-height:1.8}
+      .j-read-quote{font-size:20px}
+    }
     /* WATCHLIST */
     .wl-wrap{flex:1;overflow-y:auto;padding:14px}
     .wl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:14px;margin-top:10px}
@@ -630,10 +650,29 @@
           <div class="perf-cell"><div class="perf-l">Avg Loss</div><div class="perf-v neg-color" id="csAL">—</div></div>
           <div class="perf-cell"><div class="perf-l">Expectancy</div><div class="perf-v" id="csEX">—</div></div>
         </div>
-        <div class="sec-hdr" style="margin-top:18px">📋 Closed Trades</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px">
+          <div class="sec-hdr" style="margin:0">📋 Closed Trades</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select class="f-sel" id="closedSortField" onchange="renderClosedTable()">
+              <option value="exit_date">Exit Date</option>
+              <option value="entry_date">Entry Date</option>
+              <option value="pl">P&L ₹</option>
+              <option value="pl_pct">P&L %</option>
+              <option value="rr">R:R</option>
+              <option value="hold_days">Hold Days</option>
+              <option value="symbol">Symbol</option>
+              <option value="setup">Setup</option>
+              <option value="status">Status</option>
+            </select>
+            <select class="f-sel" id="closedSortDir" onchange="renderClosedTable()">
+              <option value="desc">Desc</option>
+              <option value="asc">Asc</option>
+            </select>
+          </div>
+        </div>
         <div style="overflow-x:auto">
           <table class="plan-tbl">
-            <thead><tr><th>Symbol</th><th>Setup</th><th>Entry</th><th>Exit</th><th>P&L ₹</th><th>P&L %</th><th>R:R</th><th>Hold</th><th>Status</th></tr></thead>
+            <thead><tr><th>Symbol</th><th>Setup</th><th>Entry</th><th>Exit</th><th>Entry Date</th><th>Exit Date</th><th>P&L ₹</th><th>P&L %</th><th>R:R</th><th>Hold</th><th>Status</th></tr></thead>
             <tbody id="closedTbody"></tbody>
           </table>
         </div>
@@ -678,6 +717,7 @@
         <div class="j-right">
           <div class="j-tab-bar">
             <div class="j-tab active" onclick="switchJTab('editor')">✏️ Editor</div>
+            <div class="j-tab" onclick="switchJTab('read')">📖 Read</div>
             <div class="j-tab" onclick="switchJTab('dashboard')">📊 Dashboard</div>
             <div class="j-tab" onclick="switchJTab('templates')">⚡ Quick Entry</div>
           </div>
@@ -688,10 +728,12 @@
               <div class="je-hdr">
                 <span style="font-weight:700;font-size:.88em" id="jEdTitle">New Entry</span>
                 <span style="margin-left:auto;display:flex;gap:5px">
+                  <button class="btn btn-outline btn-xs" onclick="switchJTab('read')" title="Open playbook-style preview">📖 Preview</button>
                   <button class="btn btn-red btn-xs" id="jDelBtn" style="display:none" onclick="deleteCurrentJournal()">🗑</button>
                   <button class="btn btn-primary btn-sm" onclick="saveJournal()">💾 Save</button>
                 </span>
               </div>
+              <div class="j-editor-hint">Write like a blog: clear title, one-line summary, bullet observations, thesis, and a concrete action plan.</div>
               <div class="je-body">
                 <input type="hidden" id="jId">
 
@@ -724,7 +766,8 @@
                         </select>
                       </div>
                     </div>
-                    <div class="j-fg" style="margin-bottom:0"><span class="fl">Title *</span><input class="fi" id="jTitle" placeholder="Why I entered TATASTEEL at ₹155…"></div>
+                    <div class="j-fg" style="margin-bottom:8px"><span class="fl">Title *</span><input class="fi" id="jTitle" placeholder="Why I entered TATASTEEL at ₹155…"></div>
+                    <div class="j-fg" style="margin-bottom:0"><span class="fl">One-line Summary</span><input class="fi" id="jSummary" placeholder="Post-bounce chop: reduce aggression, protect capital."></div>
                   </div>
                 </div>
 
@@ -814,6 +857,7 @@
                         </select>
                       </div>
                     </div>
+                    <div class="j-fg j-fg-wide"><span class="fl">Observations (bullet points)</span><textarea class="fi" id="jObservations" rows="3" placeholder="Market bounced ~15% from lows&#10;Leaders are extended&#10;Breakouts failing; stops getting hit"></textarea></div>
                   </div>
                 </div>
 
@@ -853,7 +897,7 @@
                   <div class="j-section-title">🎭 State of Mind <span class="j-section-toggle" onclick="this.closest('.j-section').classList.toggle('collapsed')">▼</span></div>
                   <div class="j-section-body">
                     <div class="j-form-row">
-                      <div class="j-fg"><span class="fl">Overall Mood</span>
+                      <div class="j-fg"><span class="fl">Overall Mood (multi-select)</span>
                         <div class="mood-btns">
                           <button class="mood-btn" id="mood-disciplined" onclick="setMood('disciplined')">🎯 Disciplined</button>
                           <button class="mood-btn" id="mood-bullish" onclick="setMood('bullish')">🟢 Bullish</button>
@@ -941,7 +985,16 @@
                   </div>
                 </div>
 
-                <!-- SECTION 7: Screenshots -->
+                <!-- SECTION 7: Action Plan -->
+                <div class="j-section">
+                  <div class="j-section-title">🔧 Action Plan <span class="j-section-toggle" onclick="this.closest('.j-section').classList.toggle('collapsed')">▼</span></div>
+                  <div class="j-section-body">
+                    <div class="j-fg j-fg-wide" style="margin-bottom:8px"><span class="fl">Next Actions (checklist-style)</span><textarea class="fi" id="jActionPlan" rows="3" placeholder="Cut exposure to 50-60%&#10;Avoid extended names&#10;Shift to pullback entries"></textarea></div>
+                    <div class="j-fg j-fg-wide"><span class="fl">Anchor Thought</span><input class="fi" id="jAnchorThought" placeholder="When leaders are extended and sloppy, I play defense - not offense."></div>
+                  </div>
+                </div>
+
+                <!-- SECTION 8: Screenshots -->
                 <div class="j-section">
                   <div class="j-section-title">📸 Chart Screenshots <span style="font-weight:400;color:var(--muted);text-transform:none;font-size:9px;letter-spacing:0">(drag & drop or click)</span> <span class="j-section-toggle" onclick="this.closest('.j-section').classList.toggle('collapsed')">▼</span></div>
                   <div class="j-section-body">
@@ -953,13 +1006,20 @@
                   </div>
                 </div>
 
-                <!-- SECTION 8: Tags -->
+                <!-- SECTION 9: Tags -->
                 <div class="j-section">
                   <div class="j-section-title">🏷 Tags</div>
                   <div class="j-fg"><input class="fi" id="jTags" placeholder="comma separated: swing, breakout, NSE, earnings…"></div>
                 </div>
 
               </div>
+            </div>
+          </div>
+
+          <!-- READ TAB -->
+          <div class="j-tab-content" id="jTabRead">
+            <div class="j-read-wrap" id="jReadContent">
+              <div style="text-align:center;color:var(--muted);padding:40px">Open an entry to read in blog format.</div>
             </div>
           </div>
 
@@ -1020,6 +1080,11 @@
                   <div style="font-size:18px;margin-bottom:4px">⚠️</div>
                   <div style="font-weight:800;font-size:12px;margin-bottom:2px">Mistake Analysis</div>
                   <div style="font-size:10px;color:var(--muted)">Deep dive into what went wrong and how to prevent it.</div>
+                </div>
+                <div class="j-tpl-card" onclick="createSampleMultiTimeframeBlog()">
+                  <div style="font-size:18px;margin-bottom:4px">🧭</div>
+                  <div style="font-weight:800;font-size:12px;margin-bottom:2px">Multi-Timeframe Confirmation</div>
+                  <div style="font-size:10px;color:var(--muted)">Add a saved sample blog entry about higher-timeframe confirmation.</div>
                 </div>
               </div>
             </div>
@@ -2999,7 +3064,7 @@ function renderEqChart(curve) {
 function renderClosedTable() {
   // Include PARTIAL positions (they have booked partial exits) alongside fully closed ones
   const closed = positions.filter(p => p.status !== 'OPEN' && p.status !== 'T1_HIT' && p.status !== 'T2_HIT');
-  document.getElementById('closedTbody').innerHTML = closed.map(p => {
+  const rows = closed.map(p => {
     const e = p.entry || 0, qty = p.quantity || 1;
     const exit = p.exit_price || e;
     const realizedPl = p.realized_pl || 0;
@@ -3025,7 +3090,8 @@ function renderClosedTable() {
     const rr = totalRiskAmt > 0.01 ? (pl / totalRiskAmt).toFixed(1) + 'R' : '—';
     // Holding time: for partial positions without exit_date, use last partial exit date
     const effectiveExitDate = p.exit_date || (hasPartials ? partials[partials.length - 1].date : null);
-    const days = p.entry_date && effectiveExitDate ? Math.floor((new Date(effectiveExitDate) - new Date(p.entry_date)) / 86400000) : '—';
+    const holdDays = p.entry_date && effectiveExitDate ? Math.floor((new Date(effectiveExitDate) - new Date(p.entry_date)) / 86400000) : null;
+    const daysLabel = holdDays != null ? (holdDays + 'd') : '—';
     const c = pl >= 0 ? 'pos-color' : 'neg-color';
     const stCls = isPartialOpen ? 'bg-partial' : p.status === 'T3_HIT' ? 'bg-t3' : p.status === 'SL_HIT' ? 'bg-sl' : 'bg-closed';
     const partialCount = partials.length;
@@ -3034,13 +3100,47 @@ function renderClosedTable() {
     const partialAvgExit = hasPartials ? partials.reduce((s, pe) => s + pe.price * pe.quantity, 0) / partials.reduce((s, pe) => s + pe.quantity, 0) : 0;
     const displayExit = isPartialOpen ? (partialAvgExit || e) : exit;
     const statusLabel = isPartialOpen ? 'PARTIAL' : (p.status || '').replace('_HIT', ' ✓');
-    return '<tr><td><b>' + p.symbol + '</b>' + partialBadge + '</td><td><span class="badge bg-setup">' + (p.setup || '—') + '</span></td>' +
+    return {
+      symbol: (p.symbol || '').toUpperCase(),
+      setup: p.setup || '',
+      status: statusLabel,
+      entryDate: p.entry_date || '',
+      exitDate: effectiveExitDate || '',
+      pl,
+      pp,
+      rrNum: totalRiskAmt > 0.01 ? (pl / totalRiskAmt) : null,
+      holdDays,
+      html: '<tr><td><b>' + p.symbol + '</b>' + partialBadge + '</td><td><span class="badge bg-setup">' + (p.setup || '—') + '</span></td>' +
       '<td>₹' + e.toLocaleString('en-IN') + '</td><td>₹' + displayExit.toLocaleString('en-IN') + '</td>' +
+      '<td>' + (p.entry_date || '—') + '</td><td>' + (effectiveExitDate || '—') + '</td>' +
       '<td class="' + c + '">' + (pl >= 0 ? '+' : '') + '₹' + Math.abs(pl).toLocaleString('en-IN', {maximumFractionDigits: 0}) + '</td>' +
       '<td class="' + c + '">' + (pp >= 0 ? '+' : '') + pp.toFixed(2) + '%</td>' +
-      '<td style="color:var(--cyan)">' + rr + '</td><td>' + days + 'd</td>' +
-      '<td><span class="badge ' + stCls + '">' + statusLabel + '</span></td></tr>';
-  }).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:18px">No closed trades</td></tr>';
+      '<td style="color:var(--cyan)">' + rr + '</td><td>' + daysLabel + '</td>' +
+      '<td><span class="badge ' + stCls + '">' + statusLabel + '</span></td></tr>'
+    };
+  });
+
+  const sortField = document.getElementById('closedSortField')?.value || 'exit_date';
+  const sortDir = document.getElementById('closedSortDir')?.value || 'desc';
+  const sgn = sortDir === 'asc' ? 1 : -1;
+  rows.sort((a, b) => {
+    let av = 0, bv = 0;
+    if (sortField === 'symbol') { av = a.symbol; bv = b.symbol; }
+    else if (sortField === 'setup') { av = a.setup; bv = b.setup; }
+    else if (sortField === 'status') { av = a.status; bv = b.status; }
+    else if (sortField === 'entry_date') { av = a.entryDate || ''; bv = b.entryDate || ''; }
+    else if (sortField === 'exit_date') { av = a.exitDate || ''; bv = b.exitDate || ''; }
+    else if (sortField === 'pl') { av = a.pl; bv = b.pl; }
+    else if (sortField === 'pl_pct') { av = a.pp; bv = b.pp; }
+    else if (sortField === 'rr') { av = a.rrNum == null ? -999999 : a.rrNum; bv = b.rrNum == null ? -999999 : b.rrNum; }
+    else if (sortField === 'hold_days') { av = a.holdDays == null ? -1 : a.holdDays; bv = b.holdDays == null ? -1 : b.holdDays; }
+    if (typeof av === 'string' || typeof bv === 'string') return sgn * String(av).localeCompare(String(bv));
+    return sgn * ((av || 0) - (bv || 0));
+  });
+
+  document.getElementById('closedTbody').innerHTML =
+    rows.map(r => r.html).join('') ||
+    '<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:18px">No closed trades</td></tr>';
 }
 
 function toggleDrawer() {
@@ -3160,12 +3260,12 @@ function renderJournalList() {
   let entries = journalEntries;
   if (_jFilter) entries = entries.filter(e => e.category === _jFilter);
   if (_jSearch) entries = entries.filter(e =>
-    [(e.title||''), (e.symbol||''), (e.body||''), (e.thesis||''), (e.lesson_learned||''), (e.tags||[]).join(' ')].join(' ').toLowerCase().includes(_jSearch)
+    [(e.title||''), (e.one_line_summary||''), (e.symbol||''), (e.body||''), (e.thesis||''), (e.lesson_learned||''), (e.action_plan||''), (e.tags||[]).join(' ')].join(' ').toLowerCase().includes(_jSearch)
   );
   if (!entries.length) { el.innerHTML = '<div style="padding:18px;text-align:center;color:var(--muted);font-size:11.5px">No entries found.<br>Click &ldquo;+ New&rdquo; to start journaling.</div>'; return; }
   el.innerHTML = entries.map(e => {
     const moods = {bullish:'🟢',bearish:'🔴',neutral:'🟡',fearful:'😰',disciplined:'🎯',fomo:'🚀',greedy:'🤑',revenge:'😤'};
-    const mood = moods[e.mood] || '';
+    const mood = (e.moods || []).length ? (e.moods || []).map(m => moods[m] || '').join('') : (moods[e.mood] || '');
     const catLabels = {trade_entry:'📈 Entry',trade_exit:'📉 Exit',trade_review:'🔍 Review',market_analysis:'🌍 Market',cash_decision:'💰 Cash',lesson:'📖 Lesson',mistake:'⚠ Mistake',rules:'📏 Rules'};
     const catBadge = e.category ? '<span class="j-row-cat j-cat-' + e.category + '">' + (catLabels[e.category] || e.category) + '</span>' : '';
     const activeId = document.getElementById('jId')?.value;
@@ -3182,6 +3282,7 @@ function renderJournalList() {
         ' ' + rBadge + pnl +
       '</div>' +
       '<div class="j-ttl">' + (e.title || '(No title)') + '</div>' +
+      ((e.one_line_summary || '') ? '<div style="font-size:10px;color:var(--dim);margin-top:2px;line-height:1.4">' + e.one_line_summary + '</div>' : '') +
       '<div class="j-date">' + (e.date || '') + ' ' + mood + stars + hasScreenshots + '</div>' +
       catBadge + '</div>';
   }).join('');
@@ -3189,13 +3290,15 @@ function renderJournalList() {
 
 // ── Journal state variables ──
 let _jConviction = 0, _jExecRating = 0, _jStress = 0, _jFollowedRules = null, _jWTA = null;
+let _jMoods = [];
 let _jEmotions = [], _jRuleViolations = [], _jScreenshots = [], _jChecklist = [];
 
 // ── Tab switching ──
 function switchJTab(tab) {
-  document.querySelectorAll('.j-tab').forEach((t, i) => t.classList.toggle('active', ['editor','dashboard','templates'][i] === tab));
+  document.querySelectorAll('.j-tab').forEach((t, i) => t.classList.toggle('active', ['editor','read','dashboard','templates'][i] === tab));
   document.querySelectorAll('.j-tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('jTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+  if (tab === 'read') renderJournalReadView();
   if (tab === 'dashboard') renderJournalDashboard();
   if (tab === 'editor') switchJTab._lastTab = 'editor';
 }
@@ -3204,7 +3307,7 @@ function newJournal() {
   switchJTab('editor');
   document.getElementById('jId').value = '';
   document.getElementById('jDelBtn').style.display = 'none';
-  ['jSym','jTitle','jBody','jThesis','jWentWell','jWentWrong','jLesson','jTags'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  ['jSym','jTitle','jSummary','jObservations','jBody','jThesis','jWentWell','jWentWrong','jLesson','jActionPlan','jAnchorThought','jTags'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   ['jEntryPrice','jExitPrice','jSL','jQty','jRiskAmt','jRiskPct','jPnl','jRMul','jAccBal','jCapDeploy'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   document.getElementById('jDate').value = new Date().toISOString().slice(0, 10);
   document.getElementById('jCategory').value = '';
@@ -3217,7 +3320,7 @@ function newJournal() {
   document.getElementById('jSectorStrength') && (document.getElementById('jSectorStrength').value = '');
   document.getElementById('jEdTitle').textContent = 'New Entry';
   document.getElementById('jRiskSummary').style.display = 'none';
-  _mood = ''; _jConviction = 0; _jExecRating = 0; _jStress = 0; _jFollowedRules = null; _jWTA = null;
+  _mood = ''; _jMoods = []; _jConviction = 0; _jExecRating = 0; _jStress = 0; _jFollowedRules = null; _jWTA = null;
   _jEmotions = []; _jRuleViolations = []; _jScreenshots = []; _jChecklist = [];
   _updateMoodBtns(); _updateConvStars(); _updateExecStars(); _updateStressStars();
   _updateEmotionChips(); _updateRuleChips(); _updateFollowedRulesUI(); _updateWTAUI(); _updateSSUI();
@@ -3242,6 +3345,8 @@ function loadJEntry(id) {
   document.getElementById('jDelBtn').style.display = '';
   document.getElementById('jSym').value = e.symbol || '';
   document.getElementById('jTitle').value = e.title || '';
+  const jSummary = document.getElementById('jSummary'); if (jSummary) jSummary.value = e.one_line_summary || '';
+  const jObs = document.getElementById('jObservations'); if (jObs) jObs.value = e.observations || '';
   document.getElementById('jBody').value = e.body || '';
   document.getElementById('jDate').value = e.date || '';
   document.getElementById('jCategory').value = e.category || '';
@@ -3249,6 +3354,8 @@ function loadJEntry(id) {
   document.getElementById('jWentWell').value = e.what_went_well || '';
   document.getElementById('jWentWrong').value = e.what_went_wrong || '';
   document.getElementById('jLesson').value = e.lesson_learned || '';
+  const jAction = document.getElementById('jActionPlan'); if (jAction) jAction.value = e.action_plan || '';
+  const jAnchor = document.getElementById('jAnchorThought'); if (jAnchor) jAnchor.value = e.anchor_thought || '';
   document.getElementById('jTags').value = (e.tags || []).join(', ');
   document.getElementById('jEdTitle').textContent = e.title || 'Entry';
   // Trade details
@@ -3269,7 +3376,10 @@ function loadJEntry(id) {
   const jAb = document.getElementById('jAccBal'); if (jAb) jAb.value = e.account_balance || '';
   const jCd = document.getElementById('jCapDeploy'); if (jCd) jCd.value = e.capital_deployed_pct || '';
   // State
-  setMood(e.mood || '');
+  _jMoods = [...(e.moods || [])];
+  _mood = e.mood || _jMoods[0] || '';
+  if (!_jMoods.length && _mood) _jMoods = [_mood];
+  _updateMoodBtns();
   _jConviction = e.conviction || 0; _updateConvStars();
   _jExecRating = e.execution_rating || 0; _updateExecStars();
   _jStress = e.stress_level || 0; _updateStressStars();
@@ -3284,16 +3394,19 @@ function loadJEntry(id) {
   // Set trade link AFTER populating dropdown so the option exists
   const jTid = document.getElementById('jTradeId'); if (jTid) jTid.value = e.trade_id || '';
   renderJournalList();
+  renderJournalReadView(e);
 }
 
 function setMood(m) {
-  _mood = m;
+  if (_jMoods.includes(m)) _jMoods = _jMoods.filter(x => x !== m);
+  else _jMoods.push(m);
+  _mood = _jMoods[0] || '';
   _updateMoodBtns();
 }
 function _updateMoodBtns() {
   ['disciplined','bullish','neutral','bearish','fearful','fomo','greedy','revenge'].forEach(x => {
     const el = document.getElementById('mood-' + x);
-    if (el) el.className = 'mood-btn' + (x === _mood ? ' active-' + x : '');
+    if (el) el.className = 'mood-btn' + (_jMoods.includes(x) ? ' active-' + x : '');
   });
 }
 
@@ -3507,10 +3620,37 @@ function applyTemplate(tpl) {
     daily_review: { category: 'market_analysis', title: 'Daily Review — ' + new Date().toLocaleDateString('en-IN'), thesis_ph: 'How was the market today? What did I observe?', well_ph: 'What did I do well today?', wrong_ph: 'What could I improve?', lesson_ph: 'Key takeaway for today' },
     weekly_review: { category: 'trade_review', title: 'Weekly Review — Week of ', thesis_ph: 'Overall market assessment this week', well_ph: 'Best decisions this week', wrong_ph: 'Mistakes and areas for improvement', lesson_ph: 'One key lesson to carry forward', body_ph: 'Performance summary, P&L review, pattern recognition, goal check' },
     mistake_analysis: { category: 'mistake', title: 'Mistake: ', thesis_ph: 'What exactly happened? What was the mistake?', well_ph: 'Was there anything I did right despite the mistake?', wrong_ph: 'Root cause — WHY did this happen?', lesson_ph: 'How will I prevent this in the future? What rule do I need?' },
+    multi_timeframe_confirmation_blog: {
+      category: 'market_analysis',
+      title: 'Multi-Timeframe Confirmation — Why Higher Timeframe Wins',
+      one_line_summary: 'When higher timeframe trend aligns, lower timeframe entries fail less and hold longer.',
+      timeframe: 'swing',
+      market_condition: 'trending_up',
+      sector_strength: 'strong',
+      observations: 'Weekly trend is up with rising 30W MA\nDaily pullbacks are holding 20EMA\nIntraday breakdowns recover quickly in trend direction',
+      thesis: 'Higher timeframe (weekly/daily) defines the dominant order flow. Lower timeframe setups that align with that flow have better expectancy because they are supported by broader participation and slower capital. Counter-trend lower timeframe signals may look sharp but fail more often.',
+      what_went_well: 'Waited for daily pullback inside weekly uptrend before entry.\nUsed lower timeframe only for trigger, not for directional bias.',
+      what_went_wrong: 'Tried one early intraday breakout before daily confirmation and got chopped.',
+      lesson_learned: 'Direction from higher timeframe, timing from lower timeframe.',
+      body_ph: 'Add chart references: Weekly structure → Daily setup → 1H trigger.',
+      action_plan: 'Start every analysis from weekly, then daily, then 1H\nSkip trades that fight weekly trend unless explicit mean-reversion setup\nRequire at least 2-timeframe alignment for A-grade entries\nSize down when daily and weekly are not aligned',
+      anchor_thought: 'Higher timeframe is the river; lower timeframe is the wave.'
+    },
   };
   const t = templates[tpl]; if (!t) return;
   document.getElementById('jCategory').value = t.category || '';
   if (t.title) document.getElementById('jTitle').value = t.title;
+  if (t.one_line_summary && document.getElementById('jSummary')) document.getElementById('jSummary').value = t.one_line_summary;
+  if (t.observations && document.getElementById('jObservations')) document.getElementById('jObservations').value = t.observations;
+  if (t.timeframe && document.getElementById('jTimeframe')) document.getElementById('jTimeframe').value = t.timeframe;
+  if (t.market_condition && document.getElementById('jMarketCondition')) document.getElementById('jMarketCondition').value = t.market_condition;
+  if (t.sector_strength && document.getElementById('jSectorStrength')) document.getElementById('jSectorStrength').value = t.sector_strength;
+  if (t.action_plan && document.getElementById('jActionPlan')) document.getElementById('jActionPlan').value = t.action_plan;
+  if (t.anchor_thought && document.getElementById('jAnchorThought')) document.getElementById('jAnchorThought').value = t.anchor_thought;
+  if (t.thesis && document.getElementById('jThesis')) document.getElementById('jThesis').value = t.thesis;
+  if (t.what_went_well && document.getElementById('jWentWell')) document.getElementById('jWentWell').value = t.what_went_well;
+  if (t.what_went_wrong && document.getElementById('jWentWrong')) document.getElementById('jWentWrong').value = t.what_went_wrong;
+  if (t.lesson_learned && document.getElementById('jLesson')) document.getElementById('jLesson').value = t.lesson_learned;
   if (t.mood) setMood(t.mood);
   if (t.emotions) { _jEmotions = [...t.emotions]; _updateEmotionChips(); }
   if (t.thesis_ph) document.getElementById('jThesis').placeholder = t.thesis_ph;
@@ -3521,6 +3661,54 @@ function applyTemplate(tpl) {
   onJCategoryChange();
   document.getElementById('jTitle').focus();
   document.getElementById('jTitle').setSelectionRange(t.title.length, t.title.length);
+}
+
+async function createSampleMultiTimeframeBlog() {
+  const today = new Date().toISOString().slice(0, 10);
+  const sample = {
+    symbol: "NIFTY",
+    date: today,
+    category: "market_analysis",
+    timeframe: "swing",
+    title: "Multi-Timeframe Confirmation — Why Higher Timeframe Wins",
+    one_line_summary: "When higher timeframe trend aligns, lower timeframe entries fail less and hold longer.",
+    mood: "disciplined",
+    moods: ["disciplined", "neutral"],
+    emotions: ["patience", "discipline"],
+    stress_level: 2,
+    market_condition: "trending_up",
+    sector_strength: "strong",
+    observations: "Weekly trend is up with rising 30W MA\nDaily pullbacks are holding 20EMA\nIntraday breakdowns recover quickly in trend direction",
+    thesis: "Higher timeframe (weekly/daily) defines the dominant order flow. Lower timeframe setups that align with that flow have better expectancy because they are supported by broader participation and slower capital. Counter-trend lower timeframe signals may look sharp but fail more often.",
+    conviction: 4,
+    execution_rating: 4,
+    would_take_again: true,
+    followed_rules: true,
+    what_went_well: "Waited for daily pullback inside weekly uptrend before entry.\nUsed lower timeframe only for trigger, not for directional bias.",
+    what_went_wrong: "Tried one early intraday breakout before daily confirmation and got chopped.",
+    lesson_learned: "Direction from higher timeframe, timing from lower timeframe.",
+    body: "Workflow used:\n1) Weekly: identify structure and trend health.\n2) Daily: wait for pullback/continuation setup.\n3) 1H/15m: take trigger only in higher timeframe direction.\n\nRule: if weekly and daily conflict, cut size or skip.",
+    action_plan: "Start every analysis from weekly, then daily, then 1H\nSkip trades that fight weekly trend unless explicit mean-reversion setup\nRequire at least 2-timeframe alignment for A-grade entries\nSize down when daily and weekly are not aligned",
+    anchor_thought: "Higher timeframe is the river; lower timeframe is the wave.",
+    tags: ["multi-timeframe", "confirmation", "trend-following", "risk-management"],
+  };
+  try {
+    const r = await fetch(API + '/api/trade-journal', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(sample),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const d = await r.json();
+    await loadJournal();
+    if (d?.entry?.id) {
+      loadJEntry(d.entry.id);
+      switchJTab('read');
+    }
+    toast('Sample multi-timeframe blog added ✓', 'success');
+  } catch (e) {
+    toast('Failed to add sample blog: ' + e.message, 'error');
+  }
 }
 
 // ── Export ──
@@ -3535,8 +3723,11 @@ async function saveJournal() {
     symbol: document.getElementById('jSym').value.toUpperCase(),
     date: document.getElementById('jDate').value,
     title: document.getElementById('jTitle').value,
+    one_line_summary: document.getElementById('jSummary')?.value || '',
     body: document.getElementById('jBody').value,
+    observations: document.getElementById('jObservations')?.value || '',
     mood: _mood,
+    moods: _jMoods,
     tags: tags,
     category: document.getElementById('jCategory').value,
     thesis: document.getElementById('jThesis')?.value || '',
@@ -3550,6 +3741,8 @@ async function saveJournal() {
     what_went_well: document.getElementById('jWentWell')?.value || '',
     what_went_wrong: document.getElementById('jWentWrong')?.value || '',
     lesson_learned: document.getElementById('jLesson')?.value || '',
+    action_plan: document.getElementById('jActionPlan')?.value || '',
+    anchor_thought: document.getElementById('jAnchorThought')?.value || '',
     screenshots: _jScreenshots,
     // Trade details
     setup_type: document.getElementById('jSetup')?.value || '',
@@ -3582,7 +3775,74 @@ async function saveJournal() {
     toast('Journal saved ✓', 'success');
     await loadJournal();
     if (!id && result.entry?.id) loadJEntry(result.entry.id);
+    else if (id) renderJournalReadView(result.entry);
   } catch(e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+function _renderBulletLines(text, className = 'j-read-bullets') {
+  if (!text) return '<div style="color:var(--muted)">—</div>';
+  const lines = text.split('\n').map(x => x.trim()).filter(Boolean);
+  if (!lines.length) return '<div style="color:var(--muted)">—</div>';
+  return '<ul class="' + className + '">' +
+    lines.map(l => '<li>' + l.replace(/^[-*]\s*/, '') + '</li>').join('') + '</ul>';
+}
+
+function renderJournalReadView(entry) {
+  const el = document.getElementById('jReadContent');
+  if (!el) return;
+  const e = entry || journalEntries.find(x => x.id === document.getElementById('jId')?.value);
+  if (!e) {
+    el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px">Select an entry from left to read in blog format.</div>';
+    return;
+  }
+  const moodIcons = {bullish:'🟢 Bullish',bearish:'🔴 Bearish',neutral:'🟡 Neutral',fearful:'😰 Fearful',disciplined:'🎯 Disciplined',fomo:'🚀 FOMO',greedy:'🤑 Greedy',revenge:'😤 Revenge'};
+  const categoryLabels = {trade_entry:'📈 Trade Entry',trade_exit:'📉 Trade Exit',trade_review:'🔍 Trade Review',market_analysis:'🌍 Market Analysis',cash_decision:'💰 Cash / No Trade',lesson:'📖 Lesson',mistake:'⚠ Mistake',rules:'📏 Rules & Process'};
+  const regimeLabels = {trending_up:'📈 Trending Up',trending_down:'📉 Trending Down',range_bound:'↔ Range Bound',volatile:'🌪 Volatile / Choppy',uncertain:'❓ Uncertain'};
+  const sectorLabels = {strong:'💪 Strong',neutral:'🟡 Neutral',weak:'📉 Weak'};
+  const moodList = (e.moods || []).length ? e.moods : (e.mood ? [e.mood] : []);
+  const summary = (e.one_line_summary || '').trim() || ((e.thesis || '').split('\n').map(x => x.trim()).find(Boolean) || 'No one-line summary');
+  const actionPlan = (e.action_plan || '').trim() || ((e.what_went_wrong || '').split('\n').slice(0, 3).map(x => x.trim()).filter(Boolean).join('\n'));
+  const anchorThought = (e.anchor_thought || '').trim() || summary || ((e.lesson_learned || '').trim()) || 'Stay disciplined and follow your process.';
+  const symbol = (e.symbol || '').trim() || '—';
+  const conv = e.conviction ? '★'.repeat(e.conviction) + '☆'.repeat(5 - e.conviction) : '—';
+  const exec = e.execution_rating ? '★'.repeat(e.execution_rating) + '☆'.repeat(5 - e.execution_rating) : '—';
+  const stress = e.stress_level ? ('●'.repeat(e.stress_level) + '○'.repeat(5 - e.stress_level)) : '—';
+  el.innerHTML =
+    '<article class="j-read-article">' +
+      '<div class="j-read-kicker">Journal Blog View</div>' +
+      '<div class="j-read-title">' + (e.title || '(Untitled)') + '</div>' +
+      '<div class="j-read-dek">' + summary + '</div>' +
+      '<div class="j-read-meta">Date: ' + (e.date || '—') + ' · Symbol: ' + symbol + ' · Timeframe: ' + (e.timeframe || '—') + '</div>' +
+
+      '<section class="j-read-sec" id="jr-context"><h3>📋 Context</h3>' +
+      '<div class="j-read-text">Category: ' + (categoryLabels[e.category] || e.category || '—') + '</div></section>' +
+
+      '<section class="j-read-sec" id="jr-market"><h3>🌍 Market Conditions</h3>' +
+      '<div class="j-read-text">Regime: ' + (regimeLabels[e.market_condition] || e.market_condition || '—') + ' · Sector: ' + (sectorLabels[e.sector_strength] || e.sector_strength || '—') + '</div>' +
+      _renderBulletLines(e.observations) + '</section>' +
+
+      '<section class="j-read-sec" id="jr-decision"><h3>🧠 Decision Framework</h3>' +
+      '<div class="j-read-text">' + (e.thesis || '—') + '</div>' +
+      '<div class="j-read-meta">Conviction: ' + conv + ' · Execution: ' + exec + ' · Would take again: ' + (e.would_take_again ? '✅ Yes' : '❌ No') + '</div></section>' +
+
+      '<section class="j-read-sec" id="jr-mind"><h3>🎭 State of Mind</h3>' +
+      '<div class="j-read-text">Overall Mood: ' + (moodList.map(m => moodIcons[m] || m).join(' + ') || '—') + '</div>' +
+      '<div class="j-read-meta">Emotions: ' + ((e.emotions || []).join(', ') || '—') + ' · Stress: ' + stress + '</div></section>' +
+
+      '<section class="j-read-sec" id="jr-rules"><h3>📏 Rules & Process</h3>' +
+      '<div class="j-read-text">Followed rules: ' + (e.followed_rules ? '✅ Yes' : '❌ No') + '</div>' +
+      '<div class="j-read-text">Violations: ' + ((e.rule_violations || []).join(', ') || '—') + '</div></section>' +
+
+      '<section class="j-read-sec" id="jr-reflection"><h3>🪞 Reflection & Lessons</h3>' +
+      '<div class="j-read-text"><b>What went well</b>\n' + (e.what_went_well || '—') + '</div>' +
+      '<div class="j-read-text"><b>What went wrong</b>\n' + (e.what_went_wrong || '—') + '</div>' +
+      '<div class="j-read-text"><b>Key lesson</b>\n' + (e.lesson_learned || '—') + '</div>' +
+      '<div class="j-read-text"><b>Detailed notes</b>\n' + (e.body || '—') + '</div></section>' +
+
+      '<section class="j-read-sec" id="jr-action"><h3>🔧 Action Plan</h3>' +
+      _renderBulletLines(actionPlan) +
+      '<div class="j-read-quote">💡 ' + anchorThought + '</div></section>' +
+    '</article>';
 }
 
 async function deleteCurrentJournal() {

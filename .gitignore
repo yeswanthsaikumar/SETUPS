@@ -39,10 +39,7 @@ __pycache__/
 *.class
 
 ### Runtime artifacts ###
-cache/
 output/
-trade_data/
-filtered.csv
 
 ### IDE project files ###
 # SETUPS.iml is kept — IntelliJ needs it to load the module (modules.xml references it)

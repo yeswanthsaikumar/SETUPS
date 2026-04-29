@@ -5240,6 +5240,7 @@ class JournalEntry(BaseModel):
     title: str = ""
     body: str = ""
     mood: str = ""   # bullish/bearish/neutral/fearful/greedy/disciplined/fomo/revenge
+    moods: list[str] = Field(default_factory=list)  # allow multi-select overall mood
     tags: list[str] = Field(default_factory=list)
     # ── Advanced journal fields ──
     category: str = ""  # trade_entry/trade_exit/trade_review/market_analysis/cash_decision/lesson/mistake/rules
@@ -5281,6 +5282,11 @@ class JournalEntry(BaseModel):
     pre_trade_checklist: list[str] = Field(default_factory=list)
     capital_deployed_pct: float = 0  # % of total capital in this trade
     account_balance: float = 0  # account balance at time of entry
+    # Readability / blog-style helpers
+    one_line_summary: str = ""
+    observations: str = ""
+    action_plan: str = ""
+    anchor_thought: str = ""
 
 @app.get("/api/trade-journal")
 def get_journal(symbol: str = "", limit: int = 200, category: str = "", search: str = "", date_from: str = "", date_to: str = "") -> dict:
@@ -5325,9 +5331,15 @@ def get_journal(symbol: str = "", limit: int = 200, category: str = "", search: 
     best_pnl = 0; worst_pnl = 0
 
     for e in entries:
-        m = e.get("mood", "")
-        if m:
-            moods[m] = moods.get(m, 0) + 1
+        mood_list = e.get("moods", []) or []
+        if mood_list:
+            for m in mood_list:
+                if m:
+                    moods[m] = moods.get(m, 0) + 1
+        else:
+            m = e.get("mood", "")
+            if m:
+                moods[m] = moods.get(m, 0) + 1
         c = e.get("category", "")
         if c:
             categories[c] = categories.get(c, 0) + 1
@@ -5475,12 +5487,22 @@ def update_journal_entry(entry_id: str, entry: JournalEntry) -> dict:
         if idx is None:
             raise HTTPException(status_code=404, detail="Journal entry not found")
         rec = entry.model_dump()
+        prev = entries[idx]
+        # Guard against accidental empty-string overwrites from UI state drift.
+        # If user did not actually provide these fields in a meaningful way,
+        # preserve existing non-empty values.
+        for key in ("anchor_thought", "action_plan", "one_line_summary", "observations"):
+            if isinstance(rec.get(key), str) and not rec.get(key).strip() and isinstance(prev.get(key), str) and prev.get(key).strip():
+                rec[key] = prev[key]
+        # Preserve symbol if incoming payload leaves it blank.
+        if isinstance(rec.get("symbol"), str) and not rec.get("symbol").strip() and isinstance(prev.get("symbol"), str) and prev.get("symbol").strip():
+            rec["symbol"] = prev["symbol"]
         rec["id"] = entry_id
-        rec["created_at"] = entries[idx].get("created_at", datetime.now().isoformat(timespec="seconds"))
+        rec["created_at"] = prev.get("created_at", datetime.now().isoformat(timespec="seconds"))
         rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
         # Preserve screenshots from existing entry if not provided in update
-        if not rec.get("screenshots") and entries[idx].get("screenshots"):
-            rec["screenshots"] = entries[idx]["screenshots"]
+        if not rec.get("screenshots") and prev.get("screenshots"):
+            rec["screenshots"] = prev["screenshots"]
         entries[idx] = rec
         _save_journal(entries)
     return {"ok": True, "entry": rec}
@@ -5503,17 +5525,18 @@ def export_journal():
     entries = _load_journal()
     if not entries:
         raise HTTPException(status_code=404, detail="No entries to export")
-    fields = ["date","symbol","category","title","outcome","pnl_amount","r_multiple",
+    fields = ["date","symbol","category","title","one_line_summary","outcome","pnl_amount","r_multiple",
               "setup_type","entry_price","exit_price","stop_loss","position_size",
               "risk_amount","risk_pct","conviction","execution_rating","stress_level",
-              "mood","emotions","followed_rules","rule_violations","thesis",
+              "mood","moods","emotions","followed_rules","rule_violations","thesis",
               "what_went_well","what_went_wrong","lesson_learned","market_condition",
-              "timeframe","tags","body"]
+              "timeframe","observations","action_plan","anchor_thought","tags","body"]
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=fields, extrasaction="ignore")
     writer.writeheader()
     for e in sorted(entries, key=lambda x: x.get("date",""), reverse=True):
         row = dict(e)
+        row["moods"] = "; ".join(row.get("moods", []))
         row["emotions"] = "; ".join(row.get("emotions", []))
         row["rule_violations"] = "; ".join(row.get("rule_violations", []))
         row["tags"] = "; ".join(row.get("tags", []))
