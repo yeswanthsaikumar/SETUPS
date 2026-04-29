@@ -1,0 +1,127 @@
+{
+  "symbol": "SHILCTECH.NS",
+  "market": "india",
+  "screener_slug": "SHILCTECH",
+  "quarterly_data": [
+    {
+      "period": "Mar 2023",
+      "promoters": 65.85,
+      "fii": 1.89,
+      "dii": 0.0,
+      "government": 0.52,
+      "public": 31.76
+    },
+    {
+      "period": "Jun 2023",
+      "promoters": 65.85,
+      "fii": 0.59,
+      "dii": 0.0,
+      "government": 0.52,
+      "public": 33.05
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 65.85,
+      "fii": 1.0,
+      "dii": 0.0,
+      "government": 0.53,
+      "public": 32.63
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 64.01,
+      "fii": 3.17,
+      "dii": 0.0,
+      "government": 0.53,
+      "public": 32.29
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 64.01,
+      "fii": 3.55,
+      "dii": 0.0,
+      "government": 0.53,
+      "public": 31.93
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 64.01,
+      "fii": 3.08,
+      "dii": 0.02,
+      "government": 0.53,
+      "public": 32.37
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 64.01,
+      "fii": 3.22,
+      "dii": 0.03,
+      "government": 0.53,
+      "public": 32.22
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 64.01,
+      "fii": 2.29,
+      "dii": 0.11,
+      "government": 0.53,
+      "public": 33.06
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 64.01,
+      "fii": 2.05,
+      "dii": 0.11,
+      "government": 0.53,
+      "public": 33.3
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 64.01,
+      "fii": 2.12,
+      "dii": 0.13,
+      "government": 0.0,
+      "public": 33.73
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 64.01,
+      "fii": 2.73,
+      "dii": 0.33,
+      "government": 0.0,
+      "public": 32.92
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 62.12,
+      "fii": 2.75,
+      "dii": 1.49,
+      "government": 0.0,
+      "public": 33.65
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 1.3,
+  "insider_held_pct": 72.03,
+  "float_shares": 3139121,
+  "promoters_pct": 62.12,
+  "fii_pct": 2.75,
+  "dii_pct": 1.49,
+  "public_pct": 33.65,
+  "govt_pct": 0.0,
+  "mutual_funds_pct": null,
+  "promoters_trend": "down",
+  "fii_trend": "up",
+  "dii_trend": "up",
+  "fii_change_2q": 0.63,
+  "dii_change_2q": 1.36,
+  "latest_period": "Dec 2025",
+  "dii_accumulating": true,
+  "fii_accumulating": true,
+  "smart_money_signal": "STRONG_BUYING",
+  "swing_signal": "\ud83d\udd25 STRONG BUYING \u2014 Both DIIs & FIIs accumulating",
+  "summary": "DIIs \u2191 1.5% (+1.4%) | FIIs \u2191 2.8% (+0.6%) | Promoters \u2193 62.1%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-15T16:34:18.762977",
+  "_stale_reused": true
+}

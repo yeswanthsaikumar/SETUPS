@@ -1,0 +1,100 @@
+{
+  "symbol": "RUCHIRA.NS",
+  "market": "india",
+  "screener_slug": "RUCHIRA",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 68.67,
+      "fii": 0.68,
+      "public": 30.64
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 68.67,
+      "fii": 1.12,
+      "public": 30.19
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 68.67,
+      "fii": 0.87,
+      "public": 30.45
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 68.67,
+      "fii": 0.85,
+      "public": 30.48
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 68.67,
+      "fii": 0.86,
+      "public": 30.47
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 68.67,
+      "fii": 1.03,
+      "public": 30.3
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 68.67,
+      "fii": 0.97,
+      "public": 30.36
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 68.67,
+      "fii": 0.91,
+      "public": 30.42
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 68.67,
+      "fii": 1.29,
+      "public": 30.04
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 68.67,
+      "fii": 0.96,
+      "public": 30.36
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 68.67,
+      "fii": 0.9,
+      "public": 30.42
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 68.67,
+      "fii": 0.9,
+      "public": 30.42
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 68.67,
+  "fii_pct": 0.9,
+  "dii_pct": null,
+  "public_pct": 30.42,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.06,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 0.9% (-0.1%) | Promoters \u2192 68.7%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:35:43.911087"
+}

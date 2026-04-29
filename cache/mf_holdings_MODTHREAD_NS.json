@@ -1,0 +1,103 @@
+{
+  "symbol": "MODTHREAD.NS",
+  "market": "india",
+  "screener_slug": "MODTHREAD",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 65.1,
+      "dii": 11.76,
+      "public": 23.16
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 65.1,
+      "dii": 11.76,
+      "public": 23.16
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 65.1,
+      "dii": 11.76,
+      "public": 23.16
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 65.1,
+      "dii": 11.28,
+      "public": 23.63
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 65.1,
+      "dii": 10.94,
+      "public": 23.97
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 65.1,
+      "dii": 10.87,
+      "public": 24.04
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 65.1,
+      "dii": 10.87,
+      "public": 24.05
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 65.1,
+      "dii": 10.87,
+      "public": 24.03
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 65.1,
+      "dii": 10.87,
+      "public": 24.03
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 65.16,
+      "dii": 10.7,
+      "public": 24.14
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 65.16,
+      "dii": 10.7,
+      "public": 24.13
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 65.16,
+      "dii": 10.7,
+      "public": 24.14
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 7.72,
+  "insider_held_pct": 68.28,
+  "float_shares": null,
+  "promoters_pct": 65.16,
+  "fii_pct": null,
+  "dii_pct": 10.7,
+  "public_pct": 24.14,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": null,
+  "dii_change_2q": 0.0,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 10.7% (+0.0%) | Promoters \u2192 65.2%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-15T16:18:56.724763",
+  "_stale_reused": true
+}

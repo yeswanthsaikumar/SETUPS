@@ -1,0 +1,101 @@
+{
+  "symbol": "RRKABEL.NS",
+  "market": "india",
+  "screener_slug": "RRKABEL",
+  "quarterly_data": [
+    {
+      "period": "Sep 2023",
+      "promoters": 62.76,
+      "fii": 4.99,
+      "dii": 8.66,
+      "public": 23.58
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 62.76,
+      "fii": 4.69,
+      "dii": 8.83,
+      "public": 23.73
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 62.76,
+      "fii": 4.16,
+      "dii": 9.37,
+      "public": 23.7
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 61.89,
+      "fii": 6.54,
+      "dii": 13.53,
+      "public": 18.04
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 61.78,
+      "fii": 7.35,
+      "dii": 14.34,
+      "public": 16.54
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 61.8,
+      "fii": 7.83,
+      "dii": 14.33,
+      "public": 16.03
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 61.8,
+      "fii": 7.17,
+      "dii": 14.75,
+      "public": 16.27
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 61.76,
+      "fii": 8.57,
+      "dii": 13.62,
+      "public": 16.05
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 61.76,
+      "fii": 8.18,
+      "dii": 13.87,
+      "public": 16.2
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 61.65,
+      "fii": 8.4,
+      "dii": 13.94,
+      "public": 16.0
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 18.1,
+  "insider_held_pct": 70.26,
+  "float_shares": 33617473,
+  "promoters_pct": 61.65,
+  "fii_pct": 8.4,
+  "dii_pct": 13.94,
+  "public_pct": 16.0,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "up",
+  "fii_change_2q": -0.17,
+  "dii_change_2q": 0.32,
+  "latest_period": "Dec 2025",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+0.3% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 13.9% (+0.3%) | FIIs \u2192 8.4% (-0.2%) | Promoters \u2192 61.6%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-15T16:15:34.318413",
+  "_stale_reused": true
+}

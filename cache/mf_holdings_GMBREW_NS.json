@@ -1,0 +1,114 @@
+{
+  "symbol": "GMBREW.NS",
+  "market": "india",
+  "screener_slug": "GMBREW",
+  "quarterly_data": [
+    {
+      "period": "Mar 2023",
+      "promoters": 74.43,
+      "fii": 1.66,
+      "dii": 0.0,
+      "public": 23.91
+    },
+    {
+      "period": "Jun 2023",
+      "promoters": 74.43,
+      "fii": 0.3,
+      "dii": 0.02,
+      "public": 25.26
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 74.43,
+      "fii": 0.34,
+      "dii": 0.0,
+      "public": 25.24
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 74.43,
+      "fii": 0.3,
+      "dii": 0.0,
+      "public": 25.27
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 74.43,
+      "fii": 0.36,
+      "dii": 0.0,
+      "public": 25.22
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 74.43,
+      "fii": 0.63,
+      "dii": 0.0,
+      "public": 24.94
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 74.43,
+      "fii": 0.34,
+      "dii": 0.0,
+      "public": 25.22
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 74.43,
+      "fii": 0.37,
+      "dii": 0.0,
+      "public": 25.2
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 74.43,
+      "fii": 0.32,
+      "dii": 0.0,
+      "public": 25.25
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 74.43,
+      "fii": 0.44,
+      "dii": 0.01,
+      "public": 25.12
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 74.43,
+      "fii": 0.37,
+      "dii": 0.01,
+      "public": 25.18
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 74.43,
+      "fii": 1.2,
+      "dii": 0.15,
+      "public": 24.22
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.32,
+  "insider_held_pct": 75.39,
+  "float_shares": 5624331,
+  "promoters_pct": 74.43,
+  "fii_pct": 1.2,
+  "dii_pct": 0.15,
+  "public_pct": 24.22,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.76,
+  "dii_change_2q": 0.14,
+  "latest_period": "Dec 2025",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+0.8% in 2Q) (foreign buying)",
+  "summary": "DIIs \u2192 0.1% (+0.1%) | FIIs \u2191 1.2% (+0.8%) | Promoters \u2192 74.4%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-14T02:11:50.903931"
+}

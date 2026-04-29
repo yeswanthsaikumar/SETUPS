@@ -1,0 +1,101 @@
+{
+  "symbol": "GROBTEA.NS",
+  "market": "india",
+  "screener_slug": "GROBTEA",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 74.99,
+      "dii": 0.06,
+      "public": 24.94
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 74.99,
+      "dii": 0.06,
+      "public": 24.94
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 74.99,
+      "dii": 0.06,
+      "public": 24.94
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 74.99,
+      "dii": 0.06,
+      "public": 24.94
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 74.99,
+      "dii": 0.06,
+      "public": 24.94
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 74.99,
+      "dii": 0.06,
+      "public": 24.94
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 74.99,
+      "dii": 0.06,
+      "public": 24.94
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 74.99,
+      "dii": 0.06,
+      "public": 24.94
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 74.99,
+      "dii": 0.06,
+      "public": 24.94
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 74.99,
+      "dii": 0.06,
+      "public": 24.94
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 74.99,
+      "dii": 0.06,
+      "public": 24.95
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 74.99,
+      "dii": 0.06,
+      "public": 24.95
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": 127402,
+  "promoters_pct": 74.99,
+  "fii_pct": null,
+  "dii_pct": 0.06,
+  "public_pct": 24.95,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": null,
+  "dii_change_2q": 0.0,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 0.1% (+0.0%) | Promoters \u2192 75.0%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-15T16:32:22.155294",
+  "_stale_reused": true
+}

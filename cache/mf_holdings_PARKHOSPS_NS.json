@@ -1,0 +1,47 @@
+{
+  "symbol": "PARKHOSPS.NS",
+  "market": "india",
+  "screener_slug": "PARKHOSPS",
+  "quarterly_data": [
+    {
+      "period": "Dec 2025",
+      "promoters": 82.89,
+      "fii": 1.28,
+      "dii": 8.58,
+      "government": 0.2,
+      "public": 7.06
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 82.89,
+      "fii": 0.86,
+      "dii": 8.95,
+      "government": 0.3,
+      "public": 6.98
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 6.26,
+  "insider_held_pct": 82.89,
+  "float_shares": 64079480,
+  "promoters_pct": 82.89,
+  "fii_pct": 0.86,
+  "dii_pct": 8.95,
+  "public_pct": 6.98,
+  "govt_pct": 0.3,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "up",
+  "fii_change_2q": -0.42,
+  "dii_change_2q": 0.37,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+0.4% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 8.9% (+0.4%) | FIIs \u2193 0.9% (-0.4%) | Promoters \u2192 82.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-15T16:31:08.429371",
+  "_stale_reused": true
+}

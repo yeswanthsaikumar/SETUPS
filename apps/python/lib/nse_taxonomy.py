@@ -542,7 +542,11 @@ def group_parent_map(level: str) -> dict[str, str]:
 
 def _load_auto_cache() -> dict[str, dict]:
     try:
-        return json.loads(_AUTO_CACHE.read_text())
+        raw = json.loads(_AUTO_CACHE.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            return {}
+        # Keep only dict-like entries; ignore malformed cache rows.
+        return {str(k): v for k, v in raw.items() if isinstance(v, dict)}
     except Exception:
         return {}
 
@@ -550,7 +554,10 @@ def _load_auto_cache() -> dict[str, dict]:
 def _save_auto_cache(cache: dict) -> None:
     try:
         _AUTO_CACHE.parent.mkdir(parents=True, exist_ok=True)
-        _AUTO_CACHE.write_text(json.dumps(cache, indent=2))
+        # Atomic write to avoid partial/corrupt cache on interruption.
+        tmp = _AUTO_CACHE.with_suffix(".tmp")
+        tmp.write_text(json.dumps(cache, indent=2, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(_AUTO_CACHE)
     except Exception:
         pass
 

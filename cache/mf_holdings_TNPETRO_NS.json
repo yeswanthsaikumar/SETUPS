@@ -1,0 +1,113 @@
+{
+  "symbol": "TNPETRO.NS",
+  "market": "india",
+  "screener_slug": "TNPETRO",
+  "quarterly_data": [
+    {
+      "period": "Mar 2023",
+      "promoters": 34.54,
+      "fii": 8.02,
+      "dii": 0.03,
+      "public": 57.4
+    },
+    {
+      "period": "Jun 2023",
+      "promoters": 34.54,
+      "fii": 7.94,
+      "dii": 0.03,
+      "public": 57.46
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 34.54,
+      "fii": 7.74,
+      "dii": 0.03,
+      "public": 57.69
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 34.54,
+      "fii": 7.1,
+      "dii": 0.03,
+      "public": 58.33
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 34.54,
+      "fii": 6.14,
+      "dii": 0.03,
+      "public": 59.27
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 34.54,
+      "fii": 6.18,
+      "dii": 0.03,
+      "public": 59.24
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 34.54,
+      "fii": 5.85,
+      "dii": 0.03,
+      "public": 59.58
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 34.54,
+      "fii": 5.35,
+      "dii": 0.03,
+      "public": 60.08
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 34.54,
+      "fii": 5.56,
+      "dii": 0.03,
+      "public": 59.86
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 34.54,
+      "fii": 7.53,
+      "dii": 0.03,
+      "public": 57.89
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 34.54,
+      "fii": 8.76,
+      "dii": 0.0,
+      "public": 56.68
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 34.54,
+      "fii": 9.48,
+      "dii": 0.0,
+      "public": 55.96
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 34.54,
+  "fii_pct": 9.48,
+  "dii_pct": 0.0,
+  "public_pct": 55.96,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "stable",
+  "fii_change_2q": 1.95,
+  "dii_change_2q": -0.03,
+  "latest_period": "Dec 2025",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+1.9% in 2Q) (foreign buying)",
+  "summary": "DIIs \u2192 0.0% (-0.0%) | FIIs \u2191 9.5% (+1.9%) | Promoters \u2192 34.5%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-15T16:32:15.824094",
+  "_stale_reused": true
+}

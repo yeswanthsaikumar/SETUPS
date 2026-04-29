@@ -1,0 +1,102 @@
+{
+  "symbol": "BAIDFIN.NS",
+  "market": "india",
+  "screener_slug": "BAIDFIN",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 34.8,
+      "fii": 0.09,
+      "public": 65.1
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 34.81,
+      "fii": 0.0,
+      "public": 65.19
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 34.81,
+      "fii": 0.0,
+      "public": 65.2
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 34.81,
+      "fii": 0.03,
+      "public": 65.18
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 34.98,
+      "fii": 0.03,
+      "public": 64.99
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 35.42,
+      "fii": 0.04,
+      "public": 64.55
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 36.25,
+      "fii": 0.01,
+      "public": 63.75
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 36.25,
+      "fii": 0.29,
+      "public": 63.46
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 36.25,
+      "fii": 0.29,
+      "public": 63.45
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 36.25,
+      "fii": 0.26,
+      "public": 63.49
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 45.71,
+      "fii": 0.21,
+      "public": 54.1
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 47.39,
+      "fii": 0.2,
+      "public": 52.41
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.0,
+  "insider_held_pct": 64.62,
+  "float_shares": 48503091,
+  "promoters_pct": 47.39,
+  "fii_pct": 0.2,
+  "dii_pct": null,
+  "public_pct": 52.41,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "up",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.06,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 0.2% (-0.1%) | Promoters \u2191 47.4%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:27:48.864097"
+}

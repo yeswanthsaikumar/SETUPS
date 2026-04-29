@@ -1,0 +1,102 @@
+{
+  "symbol": "TMB.NS",
+  "market": "india",
+  "screener_slug": "TMB",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "fii": 0.07,
+      "dii": 5.09,
+      "public": 94.86
+    },
+    {
+      "period": "Sep 2023",
+      "fii": 2.06,
+      "dii": 3.85,
+      "public": 94.11
+    },
+    {
+      "period": "Dec 2023",
+      "fii": 3.13,
+      "dii": 3.2,
+      "public": 93.68
+    },
+    {
+      "period": "Mar 2024",
+      "fii": 3.45,
+      "dii": 2.75,
+      "public": 93.79
+    },
+    {
+      "period": "Jun 2024",
+      "fii": 3.67,
+      "dii": 2.73,
+      "public": 93.59
+    },
+    {
+      "period": "Sep 2024",
+      "fii": 4.08,
+      "dii": 2.22,
+      "public": 93.69
+    },
+    {
+      "period": "Dec 2024",
+      "fii": 4.12,
+      "dii": 2.67,
+      "public": 93.22
+    },
+    {
+      "period": "Mar 2025",
+      "fii": 4.22,
+      "dii": 2.66,
+      "public": 93.12
+    },
+    {
+      "period": "Jun 2025",
+      "fii": 4.58,
+      "dii": 2.4,
+      "public": 93.03
+    },
+    {
+      "period": "Sep 2025",
+      "fii": 4.65,
+      "dii": 2.41,
+      "public": 92.94
+    },
+    {
+      "period": "Dec 2025",
+      "fii": 4.95,
+      "dii": 2.47,
+      "public": 92.58
+    },
+    {
+      "period": "Mar 2026",
+      "fii": 6.19,
+      "dii": 1.91,
+      "public": 91.91
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 3.41,
+  "insider_held_pct": 29.31,
+  "float_shares": 107980178,
+  "promoters_pct": null,
+  "fii_pct": 6.19,
+  "dii_pct": 1.91,
+  "public_pct": 91.91,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "down",
+  "fii_change_2q": 1.54,
+  "dii_change_2q": -0.5,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+1.5% in 2Q) (foreign buying)",
+  "summary": "DIIs \u2193 1.9% (-0.5%) | FIIs \u2191 6.2% (+1.5%)",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:26:12.256170"
+}

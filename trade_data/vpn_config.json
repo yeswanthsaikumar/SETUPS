@@ -1,0 +1,12 @@
+{
+  "enabled": false,
+  "provider": "custom",
+  "custom_proxy_url": "http://u:p@127.0.0.1:3128",
+  "current_proxy": "http://198.199.86.11:3128",
+  "last_tested_at": 1776600926.60642,
+  "last_test_ok": false,
+  "last_test_ip": null,
+  "last_test_error": "ProxyError: HTTPSConnectionPool(host='api.ipify.org', port=443): Max retries exceeded with url: /?format=json (Caused by ProxyError('Unable to connect to proxy', ConnectTimeoutError(<HTTPSConnection(host='103.245.110.198', port=1452) at 0x1199f7750>, 'Connection to 103.245.110.198 timed out. (connect timeout=6)')))",
+  "proxy_list_fetched_at": 1776599712.6904352,
+  "proxy_list_size": 1501
+}

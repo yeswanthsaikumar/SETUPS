@@ -1,0 +1,114 @@
+{
+  "symbol": "TPLPLASTEH.NS",
+  "market": "india",
+  "screener_slug": "TPLPLASTEH",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 74.86,
+      "fii": 0.05,
+      "dii": 0.08,
+      "public": 25.01
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 74.86,
+      "fii": 0.0,
+      "dii": 0.08,
+      "public": 25.07
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 74.86,
+      "fii": 0.0,
+      "dii": 0.08,
+      "public": 25.06
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 74.86,
+      "fii": 0.01,
+      "dii": 0.08,
+      "public": 25.04
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 74.86,
+      "fii": 0.12,
+      "dii": 0.08,
+      "public": 24.94
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 74.86,
+      "fii": 0.26,
+      "dii": 0.08,
+      "public": 24.8
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 74.86,
+      "fii": 0.03,
+      "dii": 0.08,
+      "public": 25.02
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 74.86,
+      "fii": 0.0,
+      "dii": 0.08,
+      "public": 25.05
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 74.86,
+      "fii": 0.02,
+      "dii": 0.08,
+      "public": 25.04
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 74.86,
+      "fii": 0.0,
+      "dii": 0.08,
+      "public": 25.06
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 74.86,
+      "fii": 0.45,
+      "dii": 0.08,
+      "public": 24.62
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 74.86,
+      "fii": 0.5,
+      "dii": 0.04,
+      "public": 24.6
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.0,
+  "insider_held_pct": 78.2,
+  "float_shares": 17058251,
+  "promoters_pct": 74.86,
+  "fii_pct": 0.5,
+  "dii_pct": 0.04,
+  "public_pct": 24.6,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.5,
+  "dii_change_2q": -0.04,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+0.5% in 2Q) (foreign buying)",
+  "summary": "DIIs \u2192 0.0% (-0.0%) | FIIs \u2191 0.5% (+0.5%) | Promoters \u2192 74.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:24:33.457229"
+}

@@ -1,0 +1,112 @@
+{
+  "symbol": "MITCON.NS",
+  "market": "india",
+  "screener_slug": "MITCON",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "fii": 16.85,
+      "dii": 3.43,
+      "government": 6.11,
+      "public": 73.61
+    },
+    {
+      "period": "Sep 2023",
+      "fii": 16.85,
+      "dii": 3.43,
+      "government": 6.11,
+      "public": 73.61
+    },
+    {
+      "period": "Dec 2023",
+      "fii": 16.85,
+      "dii": 3.43,
+      "government": 6.11,
+      "public": 73.62
+    },
+    {
+      "period": "Mar 2024",
+      "fii": 16.85,
+      "dii": 3.42,
+      "government": 6.11,
+      "public": 73.62
+    },
+    {
+      "period": "Jun 2024",
+      "fii": 16.84,
+      "dii": 2.23,
+      "government": 6.11,
+      "public": 74.82
+    },
+    {
+      "period": "Sep 2024",
+      "fii": 17.21,
+      "dii": 2.23,
+      "government": 4.64,
+      "public": 75.92
+    },
+    {
+      "period": "Dec 2024",
+      "fii": 17.21,
+      "dii": 2.23,
+      "government": 4.64,
+      "public": 75.92
+    },
+    {
+      "period": "Mar 2025",
+      "fii": 17.33,
+      "dii": 2.23,
+      "government": 4.64,
+      "public": 75.8
+    },
+    {
+      "period": "Jun 2025",
+      "fii": 17.94,
+      "dii": 2.23,
+      "government": 4.64,
+      "public": 75.19
+    },
+    {
+      "period": "Sep 2025",
+      "fii": 18.21,
+      "dii": 1.72,
+      "government": 4.71,
+      "public": 75.36
+    },
+    {
+      "period": "Dec 2025",
+      "fii": 18.21,
+      "dii": 1.72,
+      "government": 4.71,
+      "public": 75.36
+    },
+    {
+      "period": "Mar 2026",
+      "fii": 18.24,
+      "dii": 1.72,
+      "government": 4.71,
+      "public": 75.33
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": null,
+  "fii_pct": 18.24,
+  "dii_pct": 1.72,
+  "public_pct": 75.33,
+  "govt_pct": 4.71,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.03,
+  "dii_change_2q": 0.0,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 1.7% (+0.0%) | FIIs \u2192 18.2% (+0.0%)",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:36:13.834271"
+}

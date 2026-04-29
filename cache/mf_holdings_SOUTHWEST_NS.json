@@ -1,0 +1,102 @@
+{
+  "symbol": "SOUTHWEST.NS",
+  "market": "india",
+  "screener_slug": "SOUTHWEST",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 74.68,
+      "fii": 0.09,
+      "public": 25.22
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 74.68,
+      "fii": 0.07,
+      "public": 25.25
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 74.68,
+      "fii": 0.08,
+      "public": 25.24
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 73.61,
+      "fii": 0.01,
+      "public": 26.38
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 73.61,
+      "fii": 0.0,
+      "public": 26.39
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 73.61,
+      "fii": 0.36,
+      "public": 26.02
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 73.61,
+      "fii": 0.08,
+      "public": 26.31
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 68.85,
+      "fii": 0.01,
+      "public": 31.13
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 68.85,
+      "fii": 0.12,
+      "public": 31.01
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 68.85,
+      "fii": 0.08,
+      "public": 31.07
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 68.85,
+      "fii": 0.28,
+      "public": 30.87
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 68.85,
+      "fii": 0.76,
+      "public": 30.39
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.0,
+  "insider_held_pct": 70.86,
+  "float_shares": 8088132,
+  "promoters_pct": 68.85,
+  "fii_pct": 0.76,
+  "dii_pct": null,
+  "public_pct": 30.39,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.68,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+0.7% in 2Q) (foreign buying)",
+  "summary": "FIIs \u2191 0.8% (+0.7%) | Promoters \u2192 68.8%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:28:10.068138"
+}

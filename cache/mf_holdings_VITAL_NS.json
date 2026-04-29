@@ -1,0 +1,84 @@
+{
+  "symbol": "VITAL.NS",
+  "market": "india",
+  "screener_slug": "VITAL",
+  "quarterly_data": [
+    {
+      "period": "Nov 2022",
+      "promoters": 73.28,
+      "fii": 6.53,
+      "dii": 4.12,
+      "public": 16.07
+    },
+    {
+      "period": "Mar 2023",
+      "promoters": 73.43,
+      "fii": 3.62,
+      "dii": 1.81,
+      "public": 21.14
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 73.43,
+      "fii": 0.78,
+      "dii": 0.96,
+      "public": 24.83
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 73.43,
+      "fii": 0.56,
+      "dii": 0.33,
+      "public": 25.68
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 73.43,
+      "fii": 0.16,
+      "dii": 0.25,
+      "public": 26.16
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 73.43,
+      "fii": 1.78,
+      "dii": 0.25,
+      "public": 24.54
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 73.43,
+      "fii": 1.78,
+      "dii": 0.25,
+      "public": 24.54
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 73.43,
+      "fii": 1.62,
+      "dii": 0.25,
+      "public": 24.7
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 73.43,
+  "fii_pct": 1.62,
+  "dii_pct": 0.25,
+  "public_pct": 24.7,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.16,
+  "dii_change_2q": 0.0,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 0.2% (+0.0%) | FIIs \u2192 1.6% (-0.2%) | Promoters \u2192 73.4%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:24:46.677050"
+}

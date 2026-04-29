@@ -1,0 +1,98 @@
+{
+  "symbol": "TATATECH.NS",
+  "market": "india",
+  "screener_slug": "TATATECH",
+  "quarterly_data": [
+    {
+      "period": "Dec 2023",
+      "promoters": 55.39,
+      "fii": 2.02,
+      "dii": 2.5,
+      "public": 40.09
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 55.39,
+      "fii": 1.1,
+      "dii": 1.51,
+      "public": 42.01
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 55.39,
+      "fii": 1.63,
+      "dii": 1.78,
+      "public": 41.2
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 55.22,
+      "fii": 3.62,
+      "dii": 3.44,
+      "public": 37.72
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 55.22,
+      "fii": 3.1,
+      "dii": 3.06,
+      "public": 38.61
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 55.22,
+      "fii": 3.1,
+      "dii": 2.48,
+      "public": 39.2
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 55.22,
+      "fii": 4.87,
+      "dii": 3.31,
+      "public": 36.58
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 55.22,
+      "fii": 5.25,
+      "dii": 2.88,
+      "public": 36.65
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 55.21,
+      "fii": 5.51,
+      "dii": 2.92,
+      "public": 36.34
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 55.18,
+      "fii": 5.77,
+      "dii": 3.44,
+      "public": 35.58
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 55.18,
+  "fii_pct": 5.77,
+  "dii_pct": 3.44,
+  "public_pct": 35.58,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "up",
+  "fii_change_2q": 0.52,
+  "dii_change_2q": 0.56,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": true,
+  "smart_money_signal": "STRONG_BUYING",
+  "swing_signal": "\ud83d\udd25 STRONG BUYING \u2014 Both DIIs & FIIs accumulating",
+  "summary": "DIIs \u2191 3.4% (+0.6%) | FIIs \u2191 5.8% (+0.5%) | Promoters \u2192 55.2%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:35:00.324603"
+}

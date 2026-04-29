@@ -1,0 +1,113 @@
+{
+  "symbol": "BHAGCHEM.NS",
+  "market": "india",
+  "screener_slug": "BHAGCHEM",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 23.52,
+      "fii": 0.12,
+      "dii": 0.0,
+      "public": 76.37
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 23.52,
+      "fii": 0.1,
+      "dii": 0.0,
+      "public": 76.38
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 23.52,
+      "fii": 0.17,
+      "dii": 0.0,
+      "public": 76.32
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 23.52,
+      "fii": 0.16,
+      "dii": 0.0,
+      "public": 76.33
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 20.27,
+      "fii": 0.17,
+      "dii": 3.14,
+      "public": 76.42
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 20.27,
+      "fii": 0.15,
+      "dii": 3.14,
+      "public": 76.44
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 20.27,
+      "fii": 0.18,
+      "dii": 3.08,
+      "public": 76.46
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 19.75,
+      "fii": 0.04,
+      "dii": 2.89,
+      "public": 77.33
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 19.75,
+      "fii": 0.05,
+      "dii": 2.89,
+      "public": 77.31
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 19.6,
+      "fii": 0.05,
+      "dii": 2.89,
+      "public": 77.48
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 19.6,
+      "fii": 0.2,
+      "dii": 2.99,
+      "public": 77.22
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 19.6,
+      "fii": 0.14,
+      "dii": 3.02,
+      "public": 77.24
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 19.6,
+  "fii_pct": 0.14,
+  "dii_pct": 3.02,
+  "public_pct": 77.24,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.09,
+  "dii_change_2q": 0.13,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 3.0% (+0.1%) | FIIs \u2192 0.1% (+0.1%) | Promoters \u2192 19.6%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-15T16:15:08.427263",
+  "_stale_reused": true
+}

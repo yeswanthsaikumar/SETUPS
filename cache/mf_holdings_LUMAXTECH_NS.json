@@ -1,0 +1,114 @@
+{
+  "symbol": "LUMAXTECH.NS",
+  "market": "india",
+  "screener_slug": "LUMAXTECH",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 55.98,
+      "fii": 18.24,
+      "dii": 6.85,
+      "public": 18.94
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 55.98,
+      "fii": 17.97,
+      "dii": 6.75,
+      "public": 19.29
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 55.98,
+      "fii": 15.89,
+      "dii": 8.32,
+      "public": 19.81
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 55.98,
+      "fii": 9.04,
+      "dii": 14.19,
+      "public": 20.77
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 55.98,
+      "fii": 6.93,
+      "dii": 15.85,
+      "public": 21.23
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 55.98,
+      "fii": 5.74,
+      "dii": 16.17,
+      "public": 22.1
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 55.98,
+      "fii": 5.91,
+      "dii": 16.09,
+      "public": 22.0
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 55.98,
+      "fii": 5.31,
+      "dii": 16.09,
+      "public": 22.61
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 55.98,
+      "fii": 7.04,
+      "dii": 16.31,
+      "public": 20.66
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 55.98,
+      "fii": 7.33,
+      "dii": 16.59,
+      "public": 20.08
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 55.98,
+      "fii": 8.0,
+      "dii": 16.52,
+      "public": 19.49
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 55.98,
+      "fii": 8.38,
+      "dii": 16.81,
+      "public": 18.83
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 18.55,
+  "insider_held_pct": 57.2,
+  "float_shares": 29172092,
+  "promoters_pct": 55.98,
+  "fii_pct": 8.38,
+  "dii_pct": 16.81,
+  "public_pct": 18.83,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "stable",
+  "fii_change_2q": 1.05,
+  "dii_change_2q": 0.22,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+1.1% in 2Q) (foreign buying)",
+  "summary": "DIIs \u2192 16.8% (+0.2%) | FIIs \u2191 8.4% (+1.1%) | Promoters \u2192 56.0%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:29:31.843804"
+}

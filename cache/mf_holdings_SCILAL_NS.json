@@ -1,0 +1,93 @@
+{
+  "symbol": "SCILAL.NS",
+  "market": "india",
+  "screener_slug": "SCILAL",
+  "quarterly_data": [
+    {
+      "period": "Mar 2024",
+      "promoters": 63.75,
+      "fii": 2.45,
+      "dii": 7.01,
+      "public": 26.8
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 63.75,
+      "fii": 1.62,
+      "dii": 6.66,
+      "public": 27.96
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 63.75,
+      "fii": 1.54,
+      "dii": 6.52,
+      "public": 28.19
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 63.75,
+      "fii": 1.12,
+      "dii": 6.52,
+      "public": 28.61
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 63.75,
+      "fii": 1.12,
+      "dii": 6.19,
+      "public": 28.93
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 63.75,
+      "fii": 1.11,
+      "dii": 6.2,
+      "public": 28.93
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 63.75,
+      "fii": 1.13,
+      "dii": 6.2,
+      "public": 28.93
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 63.75,
+      "fii": 1.12,
+      "dii": 6.2,
+      "public": 28.92
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 63.75,
+      "fii": 1.04,
+      "dii": 6.19,
+      "public": 29.02
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 5.97,
+  "insider_held_pct": 65.77,
+  "float_shares": 167900688,
+  "promoters_pct": 63.75,
+  "fii_pct": 1.04,
+  "dii_pct": 6.19,
+  "public_pct": 29.02,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.09,
+  "dii_change_2q": -0.01,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 6.2% (-0.0%) | FIIs \u2192 1.0% (-0.1%) | Promoters \u2192 63.8%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:20:30.627439"
+}

@@ -1,0 +1,114 @@
+{
+  "symbol": "VENUSREM.NS",
+  "market": "india",
+  "screener_slug": "VENUSREM",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 41.76,
+      "fii": 0.98,
+      "dii": 0.0,
+      "public": 57.26
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 41.76,
+      "fii": 1.03,
+      "dii": 0.0,
+      "public": 57.21
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 41.76,
+      "fii": 1.59,
+      "dii": 0.0,
+      "public": 56.65
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 41.76,
+      "fii": 1.48,
+      "dii": 0.0,
+      "public": 56.76
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 41.76,
+      "fii": 1.06,
+      "dii": 0.0,
+      "public": 57.17
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 41.76,
+      "fii": 1.18,
+      "dii": 0.0,
+      "public": 57.06
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 41.76,
+      "fii": 1.11,
+      "dii": 0.0,
+      "public": 57.13
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 41.76,
+      "fii": 1.34,
+      "dii": 0.0,
+      "public": 56.9
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 41.76,
+      "fii": 2.25,
+      "dii": 0.11,
+      "public": 55.89
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 41.76,
+      "fii": 1.86,
+      "dii": 0.75,
+      "public": 55.62
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 41.76,
+      "fii": 2.25,
+      "dii": 1.03,
+      "public": 54.95
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 41.76,
+      "fii": 2.8,
+      "dii": 1.2,
+      "public": 54.24
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 1.15,
+  "insider_held_pct": 48.62,
+  "float_shares": 6366266,
+  "promoters_pct": 41.76,
+  "fii_pct": 2.8,
+  "dii_pct": 1.2,
+  "public_pct": 54.24,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "up",
+  "fii_change_2q": 0.94,
+  "dii_change_2q": 0.45,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": true,
+  "smart_money_signal": "STRONG_BUYING",
+  "swing_signal": "\ud83d\udd25 STRONG BUYING \u2014 Both DIIs & FIIs accumulating",
+  "summary": "DIIs \u2191 1.2% (+0.5%) | FIIs \u2191 2.8% (+0.9%) | Promoters \u2192 41.8%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:20:38.930570"
+}

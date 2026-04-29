@@ -1,0 +1,115 @@
+{
+  "symbol": "INSECTICID.NS",
+  "market": "india",
+  "screener_slug": "INSECTICID",
+  "quarterly_data": [
+    {
+      "period": "Mar 2023",
+      "promoters": 72.16,
+      "fii": 6.46,
+      "dii": 10.77,
+      "public": 10.62
+    },
+    {
+      "period": "Jun 2023",
+      "promoters": 72.16,
+      "fii": 6.02,
+      "dii": 10.53,
+      "public": 11.3
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 72.16,
+      "fii": 5.19,
+      "dii": 9.36,
+      "public": 13.31
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 72.16,
+      "fii": 4.41,
+      "dii": 9.12,
+      "public": 14.32
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 72.16,
+      "fii": 4.31,
+      "dii": 9.14,
+      "public": 14.4
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 72.16,
+      "fii": 4.36,
+      "dii": 9.08,
+      "public": 14.41
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 72.16,
+      "fii": 5.43,
+      "dii": 9.06,
+      "public": 13.36
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 72.3,
+      "fii": 5.13,
+      "dii": 9.24,
+      "public": 13.34
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 72.3,
+      "fii": 4.5,
+      "dii": 9.59,
+      "public": 13.63
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 72.3,
+      "fii": 4.65,
+      "dii": 9.72,
+      "public": 13.32
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 72.3,
+      "fii": 4.51,
+      "dii": 9.5,
+      "public": 13.69
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 72.3,
+      "fii": 4.46,
+      "dii": 9.4,
+      "public": 13.85
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 9.5,
+  "insider_held_pct": 76.06,
+  "float_shares": 7899071,
+  "promoters_pct": 72.3,
+  "fii_pct": 4.46,
+  "dii_pct": 9.4,
+  "public_pct": 13.85,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "down",
+  "fii_change_2q": -0.19,
+  "dii_change_2q": -0.32,
+  "latest_period": "Dec 2025",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2193 9.4% (-0.3%) | FIIs \u2192 4.5% (-0.2%) | Promoters \u2192 72.3%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-15T16:35:21.057496",
+  "_stale_reused": true
+}

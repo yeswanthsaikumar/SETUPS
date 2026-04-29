@@ -1,0 +1,101 @@
+{
+  "symbol": "NITIRAJ.NS",
+  "market": "india",
+  "screener_slug": "NITIRAJ",
+  "quarterly_data": [
+    {
+      "period": "Mar 2023",
+      "promoters": 69.07,
+      "fii": 0.0,
+      "public": 30.93
+    },
+    {
+      "period": "Jun 2023",
+      "promoters": 69.07,
+      "fii": 0.0,
+      "public": 30.93
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 69.07,
+      "fii": 0.0,
+      "public": 30.93
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 69.07,
+      "fii": 0.0,
+      "public": 30.93
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 69.07,
+      "fii": 0.0,
+      "public": 30.93
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 69.07,
+      "fii": 0.0,
+      "public": 30.93
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 69.07,
+      "fii": 0.0,
+      "public": 30.93
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 69.07,
+      "fii": 0.0,
+      "public": 30.93
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 69.07,
+      "fii": 0.05,
+      "public": 30.88
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 69.07,
+      "fii": 0.0,
+      "public": 30.93
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 69.07,
+      "fii": 0.0,
+      "public": 30.93
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 69.07,
+      "fii": 0.0,
+      "public": 30.93
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": 2373603,
+  "promoters_pct": 69.07,
+  "fii_pct": 0.0,
+  "dii_pct": null,
+  "public_pct": 30.93,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.0,
+  "dii_change_2q": null,
+  "latest_period": "Dec 2025",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 0.0% (+0.0%) | Promoters \u2192 69.1%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-15T16:30:50.185459",
+  "_stale_reused": true
+}

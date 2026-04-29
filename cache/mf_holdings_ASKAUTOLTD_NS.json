@@ -1,0 +1,100 @@
+{
+  "symbol": "ASKAUTOLTD.NS",
+  "market": "india",
+  "screener_slug": "ASKAUTOLTD",
+  "quarterly_data": [
+    {
+      "period": "Dec 2023",
+      "promoters": 85.0,
+      "fii": 4.92,
+      "dii": 3.83,
+      "public": 6.25
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 85.0,
+      "fii": 4.48,
+      "dii": 4.02,
+      "public": 6.51
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 85.0,
+      "fii": 4.91,
+      "dii": 4.2,
+      "public": 5.87
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 78.95,
+      "fii": 9.16,
+      "dii": 4.51,
+      "public": 7.38
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 78.95,
+      "fii": 9.91,
+      "dii": 4.66,
+      "public": 6.47
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 78.95,
+      "fii": 9.94,
+      "dii": 4.95,
+      "public": 6.16
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 78.95,
+      "fii": 10.24,
+      "dii": 5.0,
+      "public": 5.82
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 78.95,
+      "fii": 10.34,
+      "dii": 4.82,
+      "public": 5.87
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 74.95,
+      "fii": 9.72,
+      "dii": 9.13,
+      "public": 6.2
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 74.95,
+      "fii": 9.29,
+      "dii": 10.25,
+      "public": 5.52
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 19.08,
+  "insider_held_pct": 74.95,
+  "float_shares": 47330400,
+  "promoters_pct": 74.95,
+  "fii_pct": 9.29,
+  "dii_pct": 10.25,
+  "public_pct": 5.52,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "down",
+  "fii_trend": "down",
+  "dii_trend": "up",
+  "fii_change_2q": -1.05,
+  "dii_change_2q": 5.43,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+5.4% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 10.2% (+5.4%) | FIIs \u2193 9.3% (-1.1%) | Promoters \u2193 75.0%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:22:08.231097"
+}

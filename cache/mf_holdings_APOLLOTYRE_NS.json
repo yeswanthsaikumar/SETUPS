@@ -1,0 +1,124 @@
+{
+  "symbol": "APOLLOTYRE.NS",
+  "market": "india",
+  "screener_slug": "APOLLOTYRE",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 37.34,
+      "fii": 23.41,
+      "dii": 17.22,
+      "government": 1.57,
+      "public": 20.46
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 37.34,
+      "fii": 22.1,
+      "dii": 17.74,
+      "government": 1.57,
+      "public": 21.26
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 37.34,
+      "fii": 17.96,
+      "dii": 22.02,
+      "government": 1.57,
+      "public": 21.1
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 37.36,
+      "fii": 18.16,
+      "dii": 21.99,
+      "government": 1.57,
+      "public": 20.93
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 37.36,
+      "fii": 14.46,
+      "dii": 25.12,
+      "government": 1.57,
+      "public": 21.48
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 37.36,
+      "fii": 14.55,
+      "dii": 25.56,
+      "government": 1.57,
+      "public": 20.97
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 37.36,
+      "fii": 14.21,
+      "dii": 26.12,
+      "government": 1.57,
+      "public": 20.73
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 37.36,
+      "fii": 13.43,
+      "dii": 26.51,
+      "government": 1.57,
+      "public": 21.13
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 36.95,
+      "fii": 12.27,
+      "dii": 27.54,
+      "government": 1.57,
+      "public": 21.44
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 36.95,
+      "fii": 11.9,
+      "dii": 27.93,
+      "government": 1.57,
+      "public": 21.38
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 36.93,
+      "fii": 12.26,
+      "dii": 27.89,
+      "government": 1.57,
+      "public": 21.06
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 36.93,
+      "fii": 12.15,
+      "dii": 27.56,
+      "government": 1.57,
+      "public": 21.38
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 36.93,
+  "fii_pct": 12.15,
+  "dii_pct": 27.56,
+  "public_pct": 21.38,
+  "govt_pct": 1.57,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "down",
+  "fii_change_2q": 0.25,
+  "dii_change_2q": -0.37,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2193 27.6% (-0.4%) | FIIs \u2192 12.2% (+0.2%) | Promoters \u2192 36.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:35:14.809962"
+}

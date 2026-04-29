@@ -1,0 +1,100 @@
+{
+  "symbol": "BANKA.NS",
+  "market": "india",
+  "screener_slug": "BANKA",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 55.12,
+      "fii": 0.0,
+      "public": 44.88
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 55.87,
+      "fii": 0.0,
+      "public": 44.13
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 53.2,
+      "fii": 0.0,
+      "public": 46.8
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 52.72,
+      "fii": 0.03,
+      "public": 47.25
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 52.72,
+      "fii": 0.0,
+      "public": 47.28
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 52.62,
+      "fii": 0.0,
+      "public": 47.38
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 52.62,
+      "fii": 0.0,
+      "public": 47.38
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 52.44,
+      "fii": 0.0,
+      "public": 47.56
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 52.38,
+      "fii": 0.0,
+      "public": 47.62
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 52.23,
+      "fii": 0.0,
+      "public": 47.77
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 52.2,
+      "fii": 0.0,
+      "public": 47.8
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 52.07,
+      "fii": 0.0,
+      "public": 47.93
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 52.07,
+  "fii_pct": 0.0,
+  "dii_pct": null,
+  "public_pct": 47.93,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.0,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 0.0% (+0.0%) | Promoters \u2192 52.1%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:35:23.511574"
+}

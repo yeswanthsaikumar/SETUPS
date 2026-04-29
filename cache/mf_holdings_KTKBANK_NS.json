@@ -1,0 +1,144 @@
+{
+  "symbol": "KTKBANK.NS",
+  "market": "india",
+  "screener_slug": "KTKBANK",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "fii": 21.03,
+      "dii": 6.0,
+      "public": 72.95
+    },
+    {
+      "period": "Sep 2023",
+      "fii": 22.67,
+      "dii": 8.6,
+      "public": 68.71
+    },
+    {
+      "period": "Dec 2023",
+      "fii": 19.03,
+      "dii": 17.69,
+      "public": 63.26
+    },
+    {
+      "period": "Mar 2024",
+      "fii": 18.86,
+      "dii": 23.06,
+      "public": 58.08
+    },
+    {
+      "period": "Jun 2024",
+      "fii": 14.72,
+      "dii": 22.85,
+      "public": 62.43
+    },
+    {
+      "period": "Sep 2024",
+      "fii": 10.29,
+      "dii": 22.05,
+      "public": 67.67
+    },
+    {
+      "period": "Dec 2024",
+      "fii": 11.22,
+      "dii": 20.23,
+      "public": 68.55
+    },
+    {
+      "period": "Mar 2025",
+      "fii": 12.88,
+      "dii": 18.16,
+      "public": 68.97
+    },
+    {
+      "period": "Jun 2025",
+      "fii": 15.66,
+      "dii": 17.01,
+      "public": 67.33
+    },
+    {
+      "period": "Sep 2025",
+      "fii": 14.6,
+      "dii": 16.11,
+      "public": 69.27
+    },
+    {
+      "period": "Dec 2025",
+      "fii": 11.69,
+      "dii": 15.84,
+      "public": 72.46
+    },
+    {
+      "period": "Mar 2026",
+      "fii": 11.78,
+      "dii": 16.16,
+      "public": 72.04
+    }
+  ],
+  "top_mf_holders": [
+    {
+      "name": "Vanguard International Stock Index-Total Intl Stock Indx",
+      "pct": 0.61,
+      "trend": "unknown"
+    },
+    {
+      "name": "Vanguard International Stock Index-Emerging Markets Stk",
+      "pct": 0.57,
+      "trend": "unknown"
+    },
+    {
+      "name": "DFA Emerging Markets Core Equity Portfolio",
+      "pct": 0.45,
+      "trend": "unknown"
+    },
+    {
+      "name": "WisdomTree Tr-WisdomTree India Earnings Fd",
+      "pct": 0.37,
+      "trend": "unknown"
+    },
+    {
+      "name": "iShares Core MSCI Emerging Markets ETF",
+      "pct": 0.37,
+      "trend": "unknown"
+    },
+    {
+      "name": "DFA Investment Dimensions-DFA Emerging Mkts Value",
+      "pct": 0.27,
+      "trend": "unknown"
+    },
+    {
+      "name": "Advisors Inner Circle Fund-Acadian Emerging Markets Port",
+      "pct": 0.19,
+      "trend": "unknown"
+    },
+    {
+      "name": "DFA Emerging Markets Small Cap Series",
+      "pct": 0.19,
+      "trend": "unknown"
+    }
+  ],
+  "inst_held_pct": 20.93,
+  "insider_held_pct": 7.43,
+  "float_shares": 335724429,
+  "_top_holders_source": "yfinance",
+  "promoters_pct": null,
+  "fii_pct": 11.78,
+  "dii_pct": 16.16,
+  "public_pct": 72.04,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "stable",
+  "fii_change_2q": -2.82,
+  "dii_change_2q": 0.05,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "FII_SELLING",
+  "swing_signal": "\u26a0\ufe0f FIIs selling \u2193 (-2.8% in 2Q) \u2014 watch for follow-through",
+  "summary": "DIIs \u2192 16.2% (+0.1%) | FIIs \u2193 11.8% (-2.8%)",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:19:23.640986"
+}

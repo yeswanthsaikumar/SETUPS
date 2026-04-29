@@ -1,0 +1,157 @@
+{
+  "symbol": "FINCABLES.NS",
+  "market": "india",
+  "screener_slug": "FINCABLES",
+  "quarterly_data": [
+    {
+      "period": "Mar 2023",
+      "promoters": 35.92,
+      "fii": 10.78,
+      "dii": 17.03,
+      "public": 36.28
+    },
+    {
+      "period": "Jun 2023",
+      "promoters": 35.92,
+      "fii": 11.25,
+      "dii": 15.56,
+      "public": 37.27
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 35.92,
+      "fii": 11.77,
+      "dii": 15.58,
+      "public": 36.73
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 35.92,
+      "fii": 11.06,
+      "dii": 15.93,
+      "public": 37.09
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 35.92,
+      "fii": 11.58,
+      "dii": 15.87,
+      "public": 36.65
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 35.86,
+      "fii": 11.64,
+      "dii": 16.83,
+      "public": 35.66
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 35.86,
+      "fii": 11.32,
+      "dii": 16.73,
+      "public": 36.1
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 35.86,
+      "fii": 10.99,
+      "dii": 16.25,
+      "public": 36.91
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 35.86,
+      "fii": 10.57,
+      "dii": 16.07,
+      "public": 37.5
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 35.86,
+      "fii": 10.67,
+      "dii": 15.57,
+      "public": 37.92
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 35.86,
+      "fii": 9.9,
+      "dii": 15.88,
+      "public": 38.36
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 35.86,
+      "fii": 9.42,
+      "dii": 15.77,
+      "public": 38.96
+    }
+  ],
+  "top_mf_holders": [
+    {
+      "name": "Matthews International Fds-Matthews Emerging Mkts Small Companies Fd",
+      "pct": 0.78,
+      "trend": "unknown"
+    },
+    {
+      "name": "Vanguard International Stock Index-Emerging Markets Stk",
+      "pct": 0.64,
+      "trend": "unknown"
+    },
+    {
+      "name": "Vanguard International Stock Index-Total Intl Stock Indx",
+      "pct": 0.62,
+      "trend": "unknown"
+    },
+    {
+      "name": "iShares Core MSCI Emerging Markets ETF",
+      "pct": 0.56,
+      "trend": "unknown"
+    },
+    {
+      "name": "DFA Emerging Markets Core Equity Portfolio",
+      "pct": 0.36,
+      "trend": "unknown"
+    },
+    {
+      "name": "DFA Investment Dimensions-DFA Emerging Mkts Value",
+      "pct": 0.32,
+      "trend": "unknown"
+    },
+    {
+      "name": "DFA Emerging Markets Small Cap Series",
+      "pct": 0.18,
+      "trend": "unknown"
+    },
+    {
+      "name": "iShares Core MSCI Total International Stock ETF",
+      "pct": 0.18,
+      "trend": "unknown"
+    }
+  ],
+  "inst_held_pct": 19.59,
+  "insider_held_pct": 58.66,
+  "float_shares": 66095070,
+  "_top_holders_source": "yfinance",
+  "promoters_pct": 35.86,
+  "fii_pct": 9.42,
+  "dii_pct": 15.77,
+  "public_pct": 38.96,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "stable",
+  "fii_change_2q": -1.25,
+  "dii_change_2q": 0.2,
+  "latest_period": "Dec 2025",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "FII_SELLING",
+  "swing_signal": "\u26a0\ufe0f FIIs selling \u2193 (-1.2% in 2Q) \u2014 watch for follow-through",
+  "summary": "DIIs \u2192 15.8% (+0.2%) | FIIs \u2193 9.4% (-1.2%) | Promoters \u2192 35.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-15T16:14:49.892474",
+  "_stale_reused": true
+}

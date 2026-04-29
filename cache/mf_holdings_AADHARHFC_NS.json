@@ -1,0 +1,86 @@
+{
+  "symbol": "AADHARHFC.NS",
+  "market": "india",
+  "screener_slug": "AADHARHFC",
+  "quarterly_data": [
+    {
+      "period": "Jun 2024",
+      "promoters": 76.48,
+      "fii": 4.18,
+      "dii": 8.5,
+      "public": 10.86
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 75.89,
+      "fii": 4.32,
+      "dii": 9.46,
+      "public": 10.33
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 75.74,
+      "fii": 4.3,
+      "dii": 9.27,
+      "public": 10.69
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 75.61,
+      "fii": 5.32,
+      "dii": 8.58,
+      "public": 10.51
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 75.5,
+      "fii": 5.58,
+      "dii": 8.43,
+      "public": 10.48
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 75.32,
+      "fii": 6.11,
+      "dii": 8.25,
+      "public": 10.33
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 75.19,
+      "fii": 6.19,
+      "dii": 8.45,
+      "public": 10.17
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 64.9,
+      "fii": 6.13,
+      "dii": 9.15,
+      "public": 19.83
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 8.97,
+  "insider_held_pct": 10.44,
+  "float_shares": 106794805,
+  "promoters_pct": 64.9,
+  "fii_pct": 6.13,
+  "dii_pct": 9.15,
+  "public_pct": 19.83,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "down",
+  "fii_trend": "stable",
+  "dii_trend": "up",
+  "fii_change_2q": 0.02,
+  "dii_change_2q": 0.9,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+0.9% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 9.2% (+0.9%) | FIIs \u2192 6.1% (+0.0%) | Promoters \u2193 64.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:25:24.057542"
+}

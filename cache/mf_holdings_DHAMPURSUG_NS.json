@@ -1,0 +1,112 @@
+{
+  "symbol": "DHAMPURSUG.NS",
+  "market": "india",
+  "screener_slug": "DHAMPURSUG",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 49.09,
+      "fii": 6.45,
+      "dii": 0.45,
+      "public": 44.02
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 49.09,
+      "fii": 7.57,
+      "dii": 0.47,
+      "public": 42.88
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 49.09,
+      "fii": 6.21,
+      "dii": 0.45,
+      "public": 44.24
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 49.12,
+      "fii": 6.02,
+      "dii": 0.46,
+      "public": 44.4
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 49.12,
+      "fii": 5.5,
+      "dii": 0.46,
+      "public": 44.92
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 49.12,
+      "fii": 3.99,
+      "dii": 0.46,
+      "public": 46.43
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 49.1,
+      "fii": 2.14,
+      "dii": 0.46,
+      "public": 48.3
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 49.1,
+      "fii": 1.98,
+      "dii": 0.47,
+      "public": 48.45
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 49.87,
+      "fii": 2.04,
+      "dii": 0.48,
+      "public": 47.61
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 49.87,
+      "fii": 2.05,
+      "dii": 0.48,
+      "public": 47.59
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 49.87,
+      "fii": 1.91,
+      "dii": 0.58,
+      "public": 47.63
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 49.87,
+      "fii": 2.41,
+      "dii": 0.83,
+      "public": 46.91
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 49.87,
+  "fii_pct": 2.41,
+  "dii_pct": 0.83,
+  "public_pct": 46.91,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "up",
+  "fii_change_2q": 0.36,
+  "dii_change_2q": 0.35,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": true,
+  "smart_money_signal": "STRONG_BUYING",
+  "swing_signal": "\ud83d\udd25 STRONG BUYING \u2014 Both DIIs & FIIs accumulating",
+  "summary": "DIIs \u2191 0.8% (+0.3%) | FIIs \u2191 2.4% (+0.4%) | Promoters \u2192 49.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:36:28.140484"
+}

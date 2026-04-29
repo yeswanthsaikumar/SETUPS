@@ -1,0 +1,114 @@
+{
+  "symbol": "LTF.NS",
+  "market": "india",
+  "screener_slug": "LTF",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 66.1,
+      "fii": 13.9,
+      "dii": 5.29,
+      "public": 14.73
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 66.02,
+      "fii": 12.11,
+      "dii": 7.02,
+      "public": 14.85
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 65.9,
+      "fii": 10.67,
+      "dii": 9.07,
+      "public": 14.36
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 65.86,
+      "fii": 11.04,
+      "dii": 8.69,
+      "public": 14.39
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 66.37,
+      "fii": 7.34,
+      "dii": 11.64,
+      "public": 14.66
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 66.29,
+      "fii": 6.73,
+      "dii": 12.33,
+      "public": 14.66
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 66.25,
+      "fii": 5.3,
+      "dii": 12.17,
+      "public": 16.27
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 66.24,
+      "fii": 5.48,
+      "dii": 13.28,
+      "public": 15.01
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 66.16,
+      "fii": 6.19,
+      "dii": 14.1,
+      "public": 13.55
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 66.1,
+      "fii": 6.4,
+      "dii": 14.33,
+      "public": 13.15
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 66.03,
+      "fii": 6.66,
+      "dii": 15.33,
+      "public": 11.99
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 65.99,
+      "fii": 7.64,
+      "dii": 14.91,
+      "public": 11.48
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 19.23,
+  "insider_held_pct": 65.99,
+  "float_shares": 835112556,
+  "promoters_pct": 65.99,
+  "fii_pct": 7.64,
+  "dii_pct": 14.91,
+  "public_pct": 11.48,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "up",
+  "fii_change_2q": 1.24,
+  "dii_change_2q": 0.58,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": true,
+  "smart_money_signal": "STRONG_BUYING",
+  "swing_signal": "\ud83d\udd25 STRONG BUYING \u2014 Both DIIs & FIIs accumulating",
+  "summary": "DIIs \u2191 14.9% (+0.6%) | FIIs \u2191 7.6% (+1.2%) | Promoters \u2192 66.0%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:32:18.456204"
+}

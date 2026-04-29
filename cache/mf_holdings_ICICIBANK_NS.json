@@ -1,0 +1,114 @@
+{
+  "symbol": "ICICIBANK.NS",
+  "market": "india",
+  "screener_slug": "ICICIBANK",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "fii": 44.53,
+      "dii": 45.0,
+      "government": 0.25,
+      "public": 10.22
+    },
+    {
+      "period": "Sep 2023",
+      "fii": 44.39,
+      "dii": 45.27,
+      "government": 0.26,
+      "public": 10.09
+    },
+    {
+      "period": "Dec 2023",
+      "fii": 43.65,
+      "dii": 46.0,
+      "government": 0.27,
+      "public": 10.09
+    },
+    {
+      "period": "Mar 2024",
+      "fii": 44.77,
+      "dii": 45.1,
+      "government": 0.28,
+      "public": 9.84
+    },
+    {
+      "period": "Jun 2024",
+      "fii": 45.48,
+      "dii": 44.45,
+      "government": 0.28,
+      "public": 9.79
+    },
+    {
+      "period": "Sep 2024",
+      "fii": 46.22,
+      "dii": 44.17,
+      "government": 0.27,
+      "public": 9.34
+    },
+    {
+      "period": "Dec 2024",
+      "fii": 45.7,
+      "dii": 44.95,
+      "government": 0.27,
+      "public": 9.08
+    },
+    {
+      "period": "Mar 2025",
+      "fii": 45.83,
+      "dii": 44.77,
+      "government": 0.27,
+      "public": 9.12
+    },
+    {
+      "period": "Jun 2025",
+      "fii": 46.77,
+      "dii": 43.91,
+      "government": 0.27,
+      "public": 9.06
+    },
+    {
+      "period": "Sep 2025",
+      "fii": 45.56,
+      "dii": 45.06,
+      "government": 0.27,
+      "public": 9.11
+    },
+    {
+      "period": "Dec 2025",
+      "fii": 43.87,
+      "dii": 46.74,
+      "government": 0.27,
+      "public": 9.13
+    },
+    {
+      "period": "Mar 2026",
+      "fii": 34.48,
+      "dii": 39.94,
+      "government": 0.22,
+      "public": 25.36
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 56.47,
+  "insider_held_pct": 3.01,
+  "float_shares": 7130929947,
+  "promoters_pct": null,
+  "fii_pct": 34.48,
+  "dii_pct": 39.94,
+  "public_pct": 25.36,
+  "govt_pct": 0.22,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "down",
+  "fii_change_2q": -11.08,
+  "dii_change_2q": -5.12,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "DISTRIBUTING",
+  "swing_signal": "\u26a0\ufe0f Institutions distributing \u2014 both FIIs & DIIs selling",
+  "summary": "DIIs \u2193 39.9% (-5.1%) | FIIs \u2193 34.5% (-11.1%)",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:29:27.808458"
+}

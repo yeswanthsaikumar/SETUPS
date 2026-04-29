@@ -1,0 +1,114 @@
+{
+  "symbol": "MSPL.NS",
+  "market": "india",
+  "screener_slug": "MSPL",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 41.61,
+      "fii": 0.0,
+      "dii": 16.6,
+      "public": 41.79
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 41.61,
+      "fii": 0.0,
+      "dii": 8.96,
+      "public": 49.43
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 41.61,
+      "fii": 0.0,
+      "dii": 3.14,
+      "public": 55.24
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 41.61,
+      "fii": 0.16,
+      "dii": 3.14,
+      "public": 55.08
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 42.34,
+      "fii": 0.33,
+      "dii": 3.17,
+      "public": 54.16
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 42.34,
+      "fii": 1.1,
+      "dii": 1.91,
+      "public": 54.65
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 36.85,
+      "fii": 0.52,
+      "dii": 12.9,
+      "public": 49.71
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 35.24,
+      "fii": 0.4,
+      "dii": 16.7,
+      "public": 47.65
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 35.24,
+      "fii": 0.18,
+      "dii": 16.7,
+      "public": 47.87
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 35.24,
+      "fii": 0.19,
+      "dii": 16.7,
+      "public": 47.87
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 37.74,
+      "fii": 0.37,
+      "dii": 16.7,
+      "public": 45.18
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 40.22,
+      "fii": 0.12,
+      "dii": 16.81,
+      "public": 42.86
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 2.19,
+  "insider_held_pct": 77.77,
+  "float_shares": 205015998,
+  "promoters_pct": 40.22,
+  "fii_pct": 0.12,
+  "dii_pct": 16.81,
+  "public_pct": 42.86,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "up",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.07,
+  "dii_change_2q": 0.11,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 16.8% (+0.1%) | FIIs \u2192 0.1% (-0.1%) | Promoters \u2191 40.2%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:25:44.015713"
+}

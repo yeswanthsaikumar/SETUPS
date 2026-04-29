@@ -1,0 +1,98 @@
+{
+  "symbol": "KNAGRI.NS",
+  "market": "india",
+  "screener_slug": "KNAGRI",
+  "quarterly_data": [
+    {
+      "period": "Mar 2022",
+      "promoters": 73.65,
+      "fii": 0.0,
+      "dii": 9.86,
+      "public": 16.48
+    },
+    {
+      "period": "Sep 2022",
+      "promoters": 73.66,
+      "fii": 3.19,
+      "dii": 3.17,
+      "public": 19.99
+    },
+    {
+      "period": "Mar 2023",
+      "promoters": 73.66,
+      "fii": 2.6,
+      "dii": 2.68,
+      "public": 21.06
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 73.66,
+      "fii": 2.35,
+      "dii": 2.61,
+      "public": 21.38
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 73.66,
+      "fii": 2.35,
+      "dii": 2.54,
+      "public": 21.45
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 73.66,
+      "fii": 2.6,
+      "dii": 2.04,
+      "public": 21.7
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 68.86,
+      "fii": 2.41,
+      "dii": 1.38,
+      "public": 27.36
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 68.86,
+      "fii": 3.03,
+      "dii": 0.59,
+      "public": 27.52
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 68.86,
+      "fii": 3.08,
+      "dii": 0.58,
+      "public": 27.48
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 68.86,
+      "fii": 3.11,
+      "dii": 0.42,
+      "public": 27.61
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 68.86,
+  "fii_pct": 3.11,
+  "dii_pct": 0.42,
+  "public_pct": 27.61,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.08,
+  "dii_change_2q": -0.17,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 0.4% (-0.2%) | FIIs \u2192 3.1% (+0.1%) | Promoters \u2192 68.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:36:49.474537"
+}

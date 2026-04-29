@@ -1,0 +1,114 @@
+{
+  "symbol": "PRESTIGE.NS",
+  "market": "india",
+  "screener_slug": "PRESTIGE",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 65.48,
+      "fii": 20.68,
+      "dii": 11.27,
+      "public": 2.57
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 65.48,
+      "fii": 19.5,
+      "dii": 12.82,
+      "public": 2.2
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 65.48,
+      "fii": 18.07,
+      "dii": 13.17,
+      "public": 3.28
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 65.48,
+      "fii": 16.06,
+      "dii": 14.96,
+      "public": 3.51
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 65.48,
+      "fii": 16.83,
+      "dii": 14.43,
+      "public": 3.27
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 60.95,
+      "fii": 19.12,
+      "dii": 16.75,
+      "public": 3.19
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 60.95,
+      "fii": 19.3,
+      "dii": 16.74,
+      "public": 3.02
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 60.95,
+      "fii": 17.08,
+      "dii": 19.23,
+      "public": 2.74
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 60.95,
+      "fii": 16.64,
+      "dii": 19.63,
+      "public": 2.78
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 60.95,
+      "fii": 15.74,
+      "dii": 20.68,
+      "public": 2.63
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 60.95,
+      "fii": 15.72,
+      "dii": 20.96,
+      "public": 2.37
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 60.95,
+      "fii": 14.2,
+      "dii": 22.6,
+      "public": 2.26
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 28.61,
+  "insider_held_pct": 63.53,
+  "float_shares": 155311938,
+  "promoters_pct": 60.95,
+  "fii_pct": 14.2,
+  "dii_pct": 22.6,
+  "public_pct": 2.26,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "up",
+  "fii_change_2q": -1.54,
+  "dii_change_2q": 1.92,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+1.9% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 22.6% (+1.9%) | FIIs \u2193 14.2% (-1.5%) | Promoters \u2192 61.0%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:31:52.194518"
+}

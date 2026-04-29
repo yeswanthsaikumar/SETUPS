@@ -1,0 +1,66 @@
+{
+  "symbol": "SAGILITY.NS",
+  "market": "india",
+  "screener_slug": "SAGILITY",
+  "quarterly_data": [
+    {
+      "period": "Dec 2024",
+      "promoters": 82.39,
+      "fii": 3.77,
+      "dii": 7.25,
+      "public": 6.59
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 82.39,
+      "fii": 3.39,
+      "dii": 7.47,
+      "public": 6.75
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 67.38,
+      "fii": 5.99,
+      "dii": 14.07,
+      "public": 12.57
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 67.38,
+      "fii": 5.59,
+      "dii": 14.87,
+      "public": 12.15
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 50.95,
+      "fii": 10.25,
+      "dii": 21.36,
+      "public": 17.44
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 18.07,
+  "insider_held_pct": 50.95,
+  "float_shares": 2303250316,
+  "promoters_pct": 50.95,
+  "fii_pct": 10.25,
+  "dii_pct": 21.36,
+  "public_pct": 17.44,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "down",
+  "fii_trend": "up",
+  "dii_trend": "up",
+  "fii_change_2q": 4.26,
+  "dii_change_2q": 7.29,
+  "latest_period": "Dec 2025",
+  "dii_accumulating": true,
+  "fii_accumulating": true,
+  "smart_money_signal": "STRONG_BUYING",
+  "swing_signal": "\ud83d\udd25 STRONG BUYING \u2014 Both DIIs & FIIs accumulating",
+  "summary": "DIIs \u2191 21.4% (+7.3%) | FIIs \u2191 10.2% (+4.3%) | Promoters \u2193 51.0%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-15T16:14:45.217325",
+  "_stale_reused": true
+}

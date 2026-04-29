@@ -1,0 +1,102 @@
+{
+  "symbol": "SHAHALLOYS.NS",
+  "market": "india",
+  "screener_slug": "SHAHALLOYS",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 53.75,
+      "fii": 0.0,
+      "public": 46.24
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 53.77,
+      "fii": 0.01,
+      "public": 46.22
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 53.78,
+      "fii": 0.0,
+      "public": 46.22
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 53.78,
+      "fii": 0.0,
+      "public": 46.22
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 53.78,
+      "fii": 0.0,
+      "public": 46.22
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 53.78,
+      "fii": 0.0,
+      "public": 46.22
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 53.78,
+      "fii": 0.0,
+      "public": 46.21
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 53.78,
+      "fii": 0.0,
+      "public": 46.22
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 53.78,
+      "fii": 0.0,
+      "public": 46.22
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 53.75,
+      "fii": 0.03,
+      "public": 46.22
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 53.75,
+      "fii": 0.08,
+      "public": 46.18
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 53.75,
+      "fii": 0.0,
+      "public": 46.26
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.0,
+  "insider_held_pct": 63.05,
+  "float_shares": 7047765,
+  "promoters_pct": 53.75,
+  "fii_pct": 0.0,
+  "dii_pct": null,
+  "public_pct": 46.26,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.03,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 0.0% (-0.0%) | Promoters \u2192 53.8%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:30:24.254631"
+}

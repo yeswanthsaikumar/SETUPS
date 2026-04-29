@@ -1,0 +1,58 @@
+{
+  "symbol": "ATHERENERG.NS",
+  "market": "india",
+  "screener_slug": "ATHERENERG",
+  "quarterly_data": [
+    {
+      "period": "Jun 2025",
+      "promoters": 42.09,
+      "fii": 24.07,
+      "dii": 24.01,
+      "public": 9.82
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 41.22,
+      "fii": 23.61,
+      "dii": 23.6,
+      "public": 11.58
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 40.86,
+      "fii": 17.45,
+      "dii": 28.1,
+      "public": 13.58
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 40.76,
+      "fii": 17.21,
+      "dii": 28.97,
+      "public": 13.03
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 23.57,
+  "insider_held_pct": 59.49,
+  "float_shares": 150755676,
+  "promoters_pct": 40.76,
+  "fii_pct": 17.21,
+  "dii_pct": 28.97,
+  "public_pct": 13.03,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "down",
+  "fii_trend": "down",
+  "dii_trend": "up",
+  "fii_change_2q": -6.4,
+  "dii_change_2q": 5.37,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+5.4% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 29.0% (+5.4%) | FIIs \u2193 17.2% (-6.4%) | Promoters \u2193 40.8%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:29:04.596801"
+}

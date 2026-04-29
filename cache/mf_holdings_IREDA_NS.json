@@ -1,0 +1,100 @@
+{
+  "symbol": "IREDA.NS",
+  "market": "india",
+  "screener_slug": "IREDA",
+  "quarterly_data": [
+    {
+      "period": "Dec 2023",
+      "promoters": 75.0,
+      "fii": 1.88,
+      "dii": 4.37,
+      "public": 18.75
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 75.0,
+      "fii": 1.36,
+      "dii": 0.94,
+      "public": 22.7
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 75.0,
+      "fii": 2.7,
+      "dii": 0.42,
+      "public": 21.87
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 75.0,
+      "fii": 2.02,
+      "dii": 0.35,
+      "public": 22.62
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 75.0,
+      "fii": 1.85,
+      "dii": 0.63,
+      "public": 22.51
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 75.0,
+      "fii": 1.74,
+      "dii": 0.51,
+      "public": 22.74
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 71.76,
+      "fii": 2.04,
+      "dii": 2.95,
+      "public": 23.24
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 71.76,
+      "fii": 1.92,
+      "dii": 2.57,
+      "public": 23.75
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 71.76,
+      "fii": 2.07,
+      "dii": 2.51,
+      "public": 23.67
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 71.76,
+      "fii": 2.14,
+      "dii": 2.44,
+      "public": 23.65
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 3.88,
+  "insider_held_pct": 71.76,
+  "float_shares": null,
+  "promoters_pct": 71.76,
+  "fii_pct": 2.14,
+  "dii_pct": 2.44,
+  "public_pct": 23.65,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.22,
+  "dii_change_2q": -0.13,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 2.4% (-0.1%) | FIIs \u2192 2.1% (+0.2%) | Promoters \u2192 71.8%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:22:26.684608"
+}

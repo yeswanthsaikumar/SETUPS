@@ -1,0 +1,72 @@
+{
+  "symbol": "DIFFNKG.NS",
+  "market": "india",
+  "screener_slug": "DIFFNKG",
+  "quarterly_data": [
+    {
+      "period": "Dec 2024",
+      "promoters": 69.7,
+      "fii": 1.38,
+      "dii": 8.56,
+      "public": 20.36
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 69.7,
+      "fii": 0.02,
+      "dii": 8.98,
+      "public": 21.31
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 69.7,
+      "fii": 0.67,
+      "dii": 7.92,
+      "public": 21.71
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 69.7,
+      "fii": 0.57,
+      "dii": 7.5,
+      "public": 22.23
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 69.7,
+      "fii": 0.14,
+      "dii": 6.8,
+      "public": 22.55
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 69.76,
+      "fii": 0.41,
+      "dii": 8.13,
+      "public": 20.9
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 4.35,
+  "insider_held_pct": 77.54,
+  "float_shares": 10066815,
+  "promoters_pct": 69.76,
+  "fii_pct": 0.41,
+  "dii_pct": 8.13,
+  "public_pct": 20.9,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "up",
+  "fii_change_2q": -0.16,
+  "dii_change_2q": 0.63,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+0.6% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 8.1% (+0.6%) | FIIs \u2192 0.4% (-0.2%) | Promoters \u2192 69.8%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:31:52.897125"
+}

@@ -1,0 +1,100 @@
+{
+  "symbol": "GUJRAFFIA.NS",
+  "market": "india",
+  "screener_slug": "GUJRAFFIA",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 39.55,
+      "fii": 0.0,
+      "public": 60.45
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 39.56,
+      "fii": 0.0,
+      "public": 60.44
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 39.56,
+      "fii": 0.0,
+      "public": 60.45
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 39.65,
+      "fii": 0.0,
+      "public": 60.35
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 39.56,
+      "fii": 0.0,
+      "public": 60.44
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 39.56,
+      "fii": 0.0,
+      "public": 60.44
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 39.56,
+      "fii": 0.44,
+      "public": 60.0
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 39.56,
+      "fii": 0.44,
+      "public": 60.0
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 39.6,
+      "fii": 0.0,
+      "public": 60.4
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 39.6,
+      "fii": 0.0,
+      "public": 60.39
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 39.6,
+      "fii": 0.0,
+      "public": 60.4
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 39.6,
+      "fii": 0.0,
+      "public": 60.41
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 39.6,
+  "fii_pct": 0.0,
+  "dii_pct": null,
+  "public_pct": 60.41,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.0,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 0.0% (+0.0%) | Promoters \u2192 39.6%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:34:34.439764"
+}

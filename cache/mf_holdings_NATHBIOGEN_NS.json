@@ -1,0 +1,114 @@
+{
+  "symbol": "NATHBIOGEN.NS",
+  "market": "india",
+  "screener_slug": "NATHBIOGEN",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 45.59,
+      "fii": 0.07,
+      "dii": 4.62,
+      "public": 49.71
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 45.59,
+      "fii": 0.22,
+      "dii": 4.37,
+      "public": 49.81
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 45.59,
+      "fii": 0.32,
+      "dii": 4.37,
+      "public": 49.72
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 45.59,
+      "fii": 0.27,
+      "dii": 4.37,
+      "public": 49.76
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 45.59,
+      "fii": 0.21,
+      "dii": 4.37,
+      "public": 49.8
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 45.59,
+      "fii": 0.18,
+      "dii": 4.37,
+      "public": 49.83
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 45.59,
+      "fii": 0.19,
+      "dii": 4.37,
+      "public": 49.83
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 45.59,
+      "fii": 0.21,
+      "dii": 3.94,
+      "public": 50.24
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 45.59,
+      "fii": 0.41,
+      "dii": 2.25,
+      "public": 51.73
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 45.59,
+      "fii": 0.32,
+      "dii": 0.76,
+      "public": 53.31
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 45.59,
+      "fii": 0.31,
+      "dii": 0.01,
+      "public": 54.08
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 45.59,
+      "fii": 0.22,
+      "dii": 0.01,
+      "public": 54.17
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.0,
+  "insider_held_pct": 61.39,
+  "float_shares": 6083908,
+  "promoters_pct": 45.59,
+  "fii_pct": 0.22,
+  "dii_pct": 0.01,
+  "public_pct": 54.17,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "down",
+  "fii_change_2q": -0.1,
+  "dii_change_2q": -0.75,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2193 0.0% (-0.8%) | FIIs \u2192 0.2% (-0.1%) | Promoters \u2192 45.6%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:28:35.001327"
+}

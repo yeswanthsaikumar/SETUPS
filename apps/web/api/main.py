@@ -1992,10 +1992,17 @@ def _do_compute_industry_groups_inner(t0: float) -> list[dict]:
         return (sym, rows) if rows and len(rows) >= 20 else (sym, None)
 
     preloaded: dict = {}
-    with ThreadPoolExecutor(max_workers=_IG_WORKERS, initializer=_ig_worker_init) as pool:
-        for sym, rows in pool.map(_load_one, all_syms):
-            if rows:
-                preloaded[sym] = rows
+    try:
+        with ThreadPoolExecutor(max_workers=_IG_WORKERS, initializer=_ig_worker_init) as pool:
+            for sym, rows in pool.map(_load_one, all_syms):
+                if rows:
+                    preloaded[sym] = rows
+    except RuntimeError as e:
+        # During interpreter shutdown, background daemon workers can still race
+        # with executor creation/submission. Avoid noisy tracebacks at exit.
+        if "interpreter shutdown" in str(e).lower():
+            return []
+        raise
 
     # ── Freshness check: if many CSVs are stale-for-today, delegate one
     # consolidated refresh to the OHLCV cache refresher (pooled, cooldowned).
@@ -3542,7 +3549,17 @@ def market_phases_endpoint(
     """
     market_prices = _get_fresh_nifty_benchmark(days=max(days, 252))
     if not market_prices:
-        raise HTTPException(status_code=503, detail="Could not fetch Nifty50 data")
+        # Degrade gracefully for UI/tests when upstream data providers are unavailable.
+        return {
+            "nifty_current": None,
+            "nifty_dates": [],
+            "nifty_closes": [],
+            "phases": [],
+            "phase_summary": "Nifty data unavailable",
+            "phase_count": 0,
+            "recent_phases": [],
+            "data_unavailable": True,
+        }
 
     phases = _wpe.detect_market_phases(market_prices)
     closes = market_prices.get("close", [])
@@ -5227,7 +5244,28 @@ def _load_journal() -> list:
     if not TRADE_JOURNAL_JSON.exists():
         return []
     try:
-        return json.loads(TRADE_JOURNAL_JSON.read_text(encoding="utf-8"))
+        raw = json.loads(TRADE_JOURNAL_JSON.read_text(encoding="utf-8"))
+        if not isinstance(raw, list):
+            return []
+        normalized: list[dict] = []
+        for e in raw:
+            if not isinstance(e, dict):
+                continue
+            x = dict(e)
+            # Backward/forward-compatible normalization for evolving journal schema.
+            x.setdefault("symbol", "")
+            x.setdefault("one_line_summary", "")
+            x.setdefault("observations", "")
+            x.setdefault("action_plan", "")
+            x.setdefault("anchor_thought", "")
+            x.setdefault("mood", "")
+            x.setdefault("moods", [])
+            if not isinstance(x.get("moods"), list):
+                x["moods"] = []
+            if not x["moods"] and isinstance(x.get("mood"), str) and x.get("mood"):
+                x["moods"] = [x["mood"]]
+            normalized.append(x)
+        return normalized
     except Exception:
         return []
 

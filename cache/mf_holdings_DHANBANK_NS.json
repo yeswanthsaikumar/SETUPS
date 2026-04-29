@@ -1,0 +1,102 @@
+{
+  "symbol": "DHANBANK.NS",
+  "market": "india",
+  "screener_slug": "DHANBANK",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "fii": 10.97,
+      "dii": 0.07,
+      "public": 88.95
+    },
+    {
+      "period": "Sep 2023",
+      "fii": 10.76,
+      "dii": 0.07,
+      "public": 89.16
+    },
+    {
+      "period": "Dec 2023",
+      "fii": 11.89,
+      "dii": 0.07,
+      "public": 88.04
+    },
+    {
+      "period": "Mar 2024",
+      "fii": 6.1,
+      "dii": 0.07,
+      "public": 93.82
+    },
+    {
+      "period": "Jun 2024",
+      "fii": 5.93,
+      "dii": 0.07,
+      "public": 93.99
+    },
+    {
+      "period": "Sep 2024",
+      "fii": 4.97,
+      "dii": 0.07,
+      "public": 94.96
+    },
+    {
+      "period": "Dec 2024",
+      "fii": 6.95,
+      "dii": 0.16,
+      "public": 92.9
+    },
+    {
+      "period": "Mar 2025",
+      "fii": 15.26,
+      "dii": 0.05,
+      "public": 84.69
+    },
+    {
+      "period": "Jun 2025",
+      "fii": 15.52,
+      "dii": 0.05,
+      "public": 84.43
+    },
+    {
+      "period": "Sep 2025",
+      "fii": 15.27,
+      "dii": 0.05,
+      "public": 84.68
+    },
+    {
+      "period": "Dec 2025",
+      "fii": 15.32,
+      "dii": 0.05,
+      "public": 84.63
+    },
+    {
+      "period": "Mar 2026",
+      "fii": 15.42,
+      "dii": 0.05,
+      "public": 84.53
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 5.99,
+  "insider_held_pct": 44.4,
+  "float_shares": 229905678,
+  "promoters_pct": null,
+  "fii_pct": 15.42,
+  "dii_pct": 0.05,
+  "public_pct": 84.53,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.15,
+  "dii_change_2q": 0.0,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 0.1% (+0.0%) | FIIs \u2192 15.4% (+0.1%)",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:25:47.913875"
+}

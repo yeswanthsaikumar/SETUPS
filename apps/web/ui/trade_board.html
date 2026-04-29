@@ -3339,7 +3339,8 @@ function _populateTradeLinks() {
 }
 
 function loadJEntry(id) {
-  switchJTab('editor');
+  const readTabActive = document.getElementById('jTabRead')?.classList.contains('active');
+  if (!readTabActive) switchJTab('editor');
   const e = journalEntries.find(x => x.id === id); if (!e) return;
   document.getElementById('jId').value = e.id;
   document.getElementById('jDelBtn').style.display = '';
@@ -3394,7 +3395,7 @@ function loadJEntry(id) {
   // Set trade link AFTER populating dropdown so the option exists
   const jTid = document.getElementById('jTradeId'); if (jTid) jTid.value = e.trade_id || '';
   renderJournalList();
-  renderJournalReadView(e);
+  if (readTabActive) renderJournalReadView(e);
 }
 
 function setMood(m) {
@@ -3790,7 +3791,42 @@ function _renderBulletLines(text, className = 'j-read-bullets') {
 function renderJournalReadView(entry) {
   const el = document.getElementById('jReadContent');
   if (!el) return;
-  const e = entry || journalEntries.find(x => x.id === document.getElementById('jId')?.value);
+  let e = entry || journalEntries.find(x => x.id === document.getElementById('jId')?.value);
+  if (!e) {
+    // Draft preview: render directly from current editor form, even before save.
+    const title = (document.getElementById('jTitle')?.value || '').trim();
+    const thesis = (document.getElementById('jThesis')?.value || '').trim();
+    const body = (document.getElementById('jBody')?.value || '').trim();
+    if (title || thesis || body) {
+      e = {
+        title: title || 'Draft entry',
+        one_line_summary: (document.getElementById('jSummary')?.value || '').trim(),
+        date: document.getElementById('jDate')?.value || '',
+        symbol: (document.getElementById('jSym')?.value || '').trim().toUpperCase(),
+        timeframe: document.getElementById('jTimeframe')?.value || '',
+        category: document.getElementById('jCategory')?.value || '',
+        market_condition: document.getElementById('jMarketCondition')?.value || '',
+        sector_strength: document.getElementById('jSectorStrength')?.value || '',
+        observations: (document.getElementById('jObservations')?.value || '').trim(),
+        thesis,
+        conviction: _jConviction || 0,
+        execution_rating: _jExecRating || 0,
+        would_take_again: _jWTA !== false,
+        moods: Array.isArray(_jMoods) ? _jMoods : [],
+        mood: _mood || '',
+        emotions: Array.isArray(_jEmotions) ? _jEmotions : [],
+        stress_level: _jStress || 0,
+        followed_rules: _jFollowedRules !== false,
+        rule_violations: Array.isArray(_jRuleViolations) ? _jRuleViolations : [],
+        what_went_well: (document.getElementById('jWentWell')?.value || '').trim(),
+        what_went_wrong: (document.getElementById('jWentWrong')?.value || '').trim(),
+        lesson_learned: (document.getElementById('jLesson')?.value || '').trim(),
+        body,
+        action_plan: (document.getElementById('jActionPlan')?.value || '').trim(),
+        anchor_thought: (document.getElementById('jAnchorThought')?.value || '').trim(),
+      };
+    }
+  }
   if (!e) {
     el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px">Select an entry from left to read in blog format.</div>';
     return;

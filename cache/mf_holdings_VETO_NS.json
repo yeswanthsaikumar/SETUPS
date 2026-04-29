@@ -1,0 +1,103 @@
+{
+  "symbol": "VETO.NS",
+  "market": "india",
+  "screener_slug": "VETO",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 50.08,
+      "fii": 0.0,
+      "public": 49.92
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 47.15,
+      "fii": 0.0,
+      "public": 52.86
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 45.06,
+      "fii": 0.0,
+      "public": 54.93
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 45.06,
+      "fii": 0.01,
+      "public": 54.94
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 45.06,
+      "fii": 0.0,
+      "public": 54.94
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 45.06,
+      "fii": 0.09,
+      "public": 54.86
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 45.06,
+      "fii": 0.01,
+      "public": 54.94
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 45.06,
+      "fii": 0.42,
+      "public": 54.53
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 45.06,
+      "fii": 0.53,
+      "public": 54.42
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 45.06,
+      "fii": 0.0,
+      "public": 54.95
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 45.06,
+      "fii": 0.01,
+      "public": 54.93
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 45.06,
+      "fii": 0.01,
+      "public": 54.94
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.0,
+  "insider_held_pct": 47.56,
+  "float_shares": 9823703,
+  "promoters_pct": 45.06,
+  "fii_pct": 0.01,
+  "dii_pct": null,
+  "public_pct": 54.94,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.01,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 0.0% (+0.0%) | Promoters \u2192 45.1%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-15T16:17:33.659056",
+  "_stale_reused": true
+}

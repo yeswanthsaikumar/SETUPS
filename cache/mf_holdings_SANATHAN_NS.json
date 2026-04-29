@@ -1,0 +1,72 @@
+{
+  "symbol": "SANATHAN.NS",
+  "market": "india",
+  "screener_slug": "SANATHAN",
+  "quarterly_data": [
+    {
+      "period": "Dec 2024",
+      "promoters": 78.58,
+      "fii": 3.75,
+      "dii": 8.89,
+      "public": 8.79
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 78.58,
+      "fii": 1.89,
+      "dii": 12.1,
+      "public": 7.42
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 78.58,
+      "fii": 2.19,
+      "dii": 12.32,
+      "public": 6.91
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 78.58,
+      "fii": 1.68,
+      "dii": 11.45,
+      "public": 8.29
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 78.58,
+      "fii": 1.47,
+      "dii": 12.03,
+      "public": 7.92
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 78.58,
+      "fii": 1.58,
+      "dii": 12.31,
+      "public": 7.54
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 11.97,
+  "insider_held_pct": 78.58,
+  "float_shares": 17920974,
+  "promoters_pct": 78.58,
+  "fii_pct": 1.58,
+  "dii_pct": 12.31,
+  "public_pct": 7.54,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "up",
+  "fii_change_2q": -0.1,
+  "dii_change_2q": 0.86,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+0.9% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 12.3% (+0.9%) | FIIs \u2192 1.6% (-0.1%) | Promoters \u2192 78.6%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:19:13.761333"
+}

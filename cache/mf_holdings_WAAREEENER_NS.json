@@ -1,0 +1,72 @@
+{
+  "symbol": "WAAREEENER.NS",
+  "market": "india",
+  "screener_slug": "WAAREEENER",
+  "quarterly_data": [
+    {
+      "period": "Dec 2024",
+      "promoters": 64.31,
+      "fii": 1.4,
+      "dii": 2.7,
+      "public": 31.58
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 64.31,
+      "fii": 0.7,
+      "dii": 2.46,
+      "public": 32.53
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 64.31,
+      "fii": 2.68,
+      "dii": 2.86,
+      "public": 30.15
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 64.22,
+      "fii": 6.35,
+      "dii": 2.82,
+      "public": 26.6
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 64.22,
+      "fii": 6.91,
+      "dii": 2.86,
+      "public": 26.01
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 64.19,
+      "fii": 7.06,
+      "dii": 4.32,
+      "public": 24.44
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 6.76,
+  "insider_held_pct": 68.35,
+  "float_shares": 76945682,
+  "promoters_pct": 64.19,
+  "fii_pct": 7.06,
+  "dii_pct": 4.32,
+  "public_pct": 24.44,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "up",
+  "fii_change_2q": 0.71,
+  "dii_change_2q": 1.5,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": true,
+  "smart_money_signal": "STRONG_BUYING",
+  "swing_signal": "\ud83d\udd25 STRONG BUYING \u2014 Both DIIs & FIIs accumulating",
+  "summary": "DIIs \u2191 4.3% (+1.5%) | FIIs \u2191 7.1% (+0.7%) | Promoters \u2192 64.2%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:21:43.178605"
+}

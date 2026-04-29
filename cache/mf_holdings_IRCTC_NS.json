@@ -1,0 +1,110 @@
+{
+  "symbol": "IRCTC.NS",
+  "market": "india",
+  "screener_slug": "IRCTC",
+  "quarterly_data": [
+    {
+      "period": "Mar 2023",
+      "promoters": 62.4,
+      "fii": 6.53,
+      "dii": 10.06,
+      "public": 21.01
+    },
+    {
+      "period": "Jun 2023",
+      "promoters": 62.4,
+      "fii": 6.99,
+      "dii": 9.92,
+      "public": 20.68
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 62.4,
+      "fii": 7.11,
+      "dii": 10.53,
+      "public": 19.97
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 62.4,
+      "fii": 7.34,
+      "dii": 11.98,
+      "public": 18.28
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 62.4,
+      "fii": 8.08,
+      "dii": 12.72,
+      "public": 16.79
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 62.4,
+      "fii": 7.78,
+      "dii": 13.74,
+      "public": 16.06
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 62.4,
+      "fii": 7.54,
+      "dii": 13.92,
+      "public": 16.14
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 62.4,
+      "fii": 7.45,
+      "dii": 13.73,
+      "public": 16.43
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 62.4,
+      "fii": 7.37,
+      "dii": 13.89,
+      "public": 16.35
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 62.4,
+      "fii": 7.28,
+      "dii": 14.16,
+      "public": 16.17
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 62.4,
+      "fii": 7.27,
+      "dii": 14.18,
+      "public": 16.16
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 62.4,
+      "fii": 7.19,
+      "dii": 14.02,
+      "public": 16.39
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 16.15,
+  "insider_held_pct": 62.4,
+  "float_shares": 300771142,
+  "promoters_pct": 62.4,
+  "fii_pct": 7.19,
+  "dii_pct": 14.02,
+  "public_pct": 16.39,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "latest_period": "Dec 2025",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u219214.0% | FIIs \u21927.2% | Promoters \u219262.4%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-04T02:26:08.190225"
+}

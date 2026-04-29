@@ -1,0 +1,88 @@
+{
+  "symbol": "MAHESHWARI.NS",
+  "market": "india",
+  "screener_slug": "MAHESHWARI",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 57.4,
+      "public": 41.37
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 57.37,
+      "public": 41.4
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 57.36,
+      "public": 41.41
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 57.13,
+      "public": 41.63
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 57.11,
+      "public": 41.65
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 57.11,
+      "public": 41.66
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 57.11,
+      "public": 41.66
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 57.14,
+      "public": 41.63
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 57.14,
+      "public": 41.63
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 56.58,
+      "public": 41.63
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 56.58,
+      "public": 41.63
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 57.15,
+      "public": 40.98
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": 12121207,
+  "promoters_pct": 57.15,
+  "fii_pct": null,
+  "dii_pct": null,
+  "public_pct": 40.98,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "up",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": null,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "PROMOTER_HELD",
+  "swing_signal": "\ud83c\udfe2 Promoter-held 57.1% \u2014 limited institutional data",
+  "summary": "Promoters \u2191 57.1%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:28:53.272478"
+}

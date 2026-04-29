@@ -1,0 +1,107 @@
+{
+  "symbol": "SENCO.NS",
+  "market": "india",
+  "screener_slug": "SENCO",
+  "quarterly_data": [
+    {
+      "period": "Sep 2023",
+      "promoters": 68.48,
+      "fii": 14.45,
+      "dii": 8.48,
+      "public": 8.6
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 68.46,
+      "fii": 14.48,
+      "dii": 7.0,
+      "public": 10.07
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 68.46,
+      "fii": 14.02,
+      "dii": 7.52,
+      "public": 10.0
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 68.46,
+      "fii": 7.72,
+      "dii": 10.46,
+      "public": 13.35
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 67.47,
+      "fii": 8.58,
+      "dii": 9.58,
+      "public": 14.36
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 64.1,
+      "fii": 8.88,
+      "dii": 13.31,
+      "public": 13.69
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 64.33,
+      "fii": 7.18,
+      "dii": 12.55,
+      "public": 15.93
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 64.38,
+      "fii": 6.76,
+      "dii": 12.77,
+      "public": 16.09
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 64.39,
+      "fii": 8.81,
+      "dii": 11.58,
+      "public": 15.21
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 64.47,
+      "fii": 8.21,
+      "dii": 12.08,
+      "public": 15.25
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 64.49,
+      "fii": 7.6,
+      "dii": 12.61,
+      "public": 15.29
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 14.97,
+  "insider_held_pct": 64.55,
+  "float_shares": 58223054,
+  "promoters_pct": 64.49,
+  "fii_pct": 7.6,
+  "dii_pct": 12.61,
+  "public_pct": 15.29,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "up",
+  "fii_change_2q": -1.21,
+  "dii_change_2q": 1.03,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+1.0% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 12.6% (+1.0%) | FIIs \u2193 7.6% (-1.2%) | Promoters \u2192 64.5%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:29:40.874699"
+}

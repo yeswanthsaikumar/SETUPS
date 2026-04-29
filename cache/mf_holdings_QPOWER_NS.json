@@ -1,0 +1,65 @@
+{
+  "symbol": "QPOWER.NS",
+  "market": "india",
+  "screener_slug": "QPOWER",
+  "quarterly_data": [
+    {
+      "period": "Mar 2025",
+      "promoters": 73.91,
+      "fii": 3.99,
+      "dii": 8.76,
+      "public": 13.35
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 73.91,
+      "fii": 1.97,
+      "dii": 6.0,
+      "public": 18.14
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 73.91,
+      "fii": 2.13,
+      "dii": 5.92,
+      "public": 18.05
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 73.91,
+      "fii": 1.97,
+      "dii": 6.03,
+      "public": 18.1
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 73.91,
+      "fii": 2.28,
+      "dii": 5.97,
+      "public": 17.85
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 4.74,
+  "insider_held_pct": 75.46,
+  "float_shares": 17592202,
+  "promoters_pct": 73.91,
+  "fii_pct": 2.28,
+  "dii_pct": 5.97,
+  "public_pct": 17.85,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.15,
+  "dii_change_2q": 0.05,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 6.0% (+0.1%) | FIIs \u2192 2.3% (+0.1%) | Promoters \u2192 73.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:24:54.518871"
+}

@@ -1,0 +1,114 @@
+{
+  "symbol": "SOBHA.NS",
+  "market": "india",
+  "screener_slug": "SOBHA",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 52.28,
+      "fii": 12.74,
+      "dii": 12.21,
+      "public": 22.76
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 52.28,
+      "fii": 11.22,
+      "dii": 14.95,
+      "public": 21.54
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 52.28,
+      "fii": 11.13,
+      "dii": 17.23,
+      "public": 19.36
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 52.28,
+      "fii": 11.87,
+      "dii": 17.55,
+      "public": 18.28
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 52.28,
+      "fii": 11.48,
+      "dii": 18.6,
+      "public": 17.65
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 52.78,
+      "fii": 10.93,
+      "dii": 23.44,
+      "public": 12.87
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 52.78,
+      "fii": 10.03,
+      "dii": 24.16,
+      "public": 13.04
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 52.88,
+      "fii": 8.91,
+      "dii": 23.98,
+      "public": 14.23
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 52.88,
+      "fii": 8.09,
+      "dii": 24.62,
+      "public": 14.4
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 52.88,
+      "fii": 6.41,
+      "dii": 26.04,
+      "public": 14.68
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 52.88,
+      "fii": 6.26,
+      "dii": 25.78,
+      "public": 15.09
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 52.88,
+      "fii": 6.23,
+      "dii": 26.1,
+      "public": 14.78
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 27.96,
+  "insider_held_pct": 58.47,
+  "float_shares": 44506565,
+  "promoters_pct": 52.88,
+  "fii_pct": 6.23,
+  "dii_pct": 26.1,
+  "public_pct": 14.78,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.18,
+  "dii_change_2q": 0.06,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 26.1% (+0.1%) | FIIs \u2192 6.2% (-0.2%) | Promoters \u2192 52.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:31:22.200972"
+}

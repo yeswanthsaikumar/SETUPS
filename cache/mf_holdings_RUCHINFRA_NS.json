@@ -1,0 +1,102 @@
+{
+  "symbol": "RUCHINFRA.NS",
+  "market": "india",
+  "screener_slug": "RUCHINFRA",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 67.3,
+      "fii": 9.45,
+      "public": 23.26
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 67.29,
+      "fii": 9.45,
+      "public": 23.26
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 67.29,
+      "fii": 9.45,
+      "public": 23.26
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 66.26,
+      "fii": 9.05,
+      "public": 24.71
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 66.0,
+      "fii": 9.12,
+      "public": 24.89
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 65.69,
+      "fii": 8.62,
+      "public": 25.7
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 65.1,
+      "fii": 8.62,
+      "public": 26.29
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 55.42,
+      "fii": 8.6,
+      "public": 35.98
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 53.7,
+      "fii": 8.6,
+      "public": 37.69
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 53.7,
+      "fii": 8.6,
+      "public": 37.7
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 53.7,
+      "fii": 8.6,
+      "public": 37.71
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 53.7,
+      "fii": 8.6,
+      "public": 37.7
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.0,
+  "insider_held_pct": 79.57,
+  "float_shares": 104602920,
+  "promoters_pct": 53.7,
+  "fii_pct": 8.6,
+  "dii_pct": null,
+  "public_pct": 37.7,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.0,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 8.6% (+0.0%) | Promoters \u2192 53.7%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:22:40.655579"
+}

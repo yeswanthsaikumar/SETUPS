@@ -1,0 +1,102 @@
+{
+  "symbol": "BHAGERIA.NS",
+  "market": "india",
+  "screener_slug": "BHAGERIA",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 71.75,
+      "fii": 0.0,
+      "public": 28.25
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 71.75,
+      "fii": 0.0,
+      "public": 28.25
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 71.75,
+      "fii": 0.0,
+      "public": 28.25
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 71.75,
+      "fii": 0.01,
+      "public": 28.23
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 71.75,
+      "fii": 0.0,
+      "public": 28.25
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 71.75,
+      "fii": 0.21,
+      "public": 28.05
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 71.75,
+      "fii": 0.0,
+      "public": 28.25
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 71.75,
+      "fii": 0.02,
+      "public": 28.23
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 71.75,
+      "fii": 0.02,
+      "public": 28.23
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 71.75,
+      "fii": 0.13,
+      "public": 28.12
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 71.75,
+      "fii": 0.94,
+      "public": 27.32
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 71.77,
+      "fii": 0.44,
+      "public": 27.8
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.0,
+  "insider_held_pct": 72.65,
+  "float_shares": 8095057,
+  "promoters_pct": 71.77,
+  "fii_pct": 0.44,
+  "dii_pct": null,
+  "public_pct": 27.8,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.31,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+0.3% in 2Q) (foreign buying)",
+  "summary": "FIIs \u2191 0.4% (+0.3%) | Promoters \u2192 71.8%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:24:40.862497"
+}

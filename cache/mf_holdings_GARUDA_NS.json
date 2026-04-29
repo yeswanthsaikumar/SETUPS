@@ -1,0 +1,72 @@
+{
+  "symbol": "GARUDA.NS",
+  "market": "india",
+  "screener_slug": "GARUDA",
+  "quarterly_data": [
+    {
+      "period": "Dec 2024",
+      "promoters": 67.56,
+      "fii": 6.65,
+      "dii": 1.45,
+      "public": 24.34
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 67.56,
+      "fii": 4.53,
+      "dii": 0.93,
+      "public": 26.97
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 67.56,
+      "fii": 4.48,
+      "dii": 0.65,
+      "public": 27.31
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 67.56,
+      "fii": 3.09,
+      "dii": 1.12,
+      "public": 28.23
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 67.56,
+      "fii": 2.34,
+      "dii": 1.01,
+      "public": 29.08
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 67.56,
+      "fii": 2.64,
+      "dii": 0.48,
+      "public": 29.32
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.42,
+  "insider_held_pct": 76.95,
+  "float_shares": 22921101,
+  "promoters_pct": 67.56,
+  "fii_pct": 2.64,
+  "dii_pct": 0.48,
+  "public_pct": 29.32,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "down",
+  "fii_change_2q": -0.45,
+  "dii_change_2q": -0.64,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "DISTRIBUTING",
+  "swing_signal": "\u26a0\ufe0f Institutions distributing \u2014 both FIIs & DIIs selling",
+  "summary": "DIIs \u2193 0.5% (-0.6%) | FIIs \u2193 2.6% (-0.5%) | Promoters \u2192 67.6%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:33:07.781215"
+}

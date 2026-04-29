@@ -1,0 +1,72 @@
+{
+  "symbol": "SAILIFE.NS",
+  "market": "india",
+  "screener_slug": "SAILIFE",
+  "quarterly_data": [
+    {
+      "period": "Dec 2024",
+      "promoters": 35.23,
+      "fii": 11.72,
+      "dii": 11.95,
+      "public": 41.08
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 35.16,
+      "fii": 12.36,
+      "dii": 13.26,
+      "public": 39.21
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 35.15,
+      "fii": 14.57,
+      "dii": 21.64,
+      "public": 28.64
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 34.95,
+      "fii": 22.5,
+      "dii": 29.92,
+      "public": 12.65
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 34.7,
+      "fii": 21.41,
+      "dii": 31.41,
+      "public": 12.49
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 34.61,
+      "fii": 21.17,
+      "dii": 31.54,
+      "public": 12.69
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 44.24,
+  "insider_held_pct": 38.05,
+  "float_shares": 88665765,
+  "promoters_pct": 34.61,
+  "fii_pct": 21.17,
+  "dii_pct": 31.54,
+  "public_pct": 12.69,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "down",
+  "fii_trend": "down",
+  "dii_trend": "up",
+  "fii_change_2q": -1.33,
+  "dii_change_2q": 1.62,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+1.6% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 31.5% (+1.6%) | FIIs \u2193 21.2% (-1.3%) | Promoters \u2193 34.6%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:23:07.438573"
+}

@@ -1,0 +1,156 @@
+{
+  "symbol": "PAISALO.NS",
+  "market": "india",
+  "screener_slug": "PAISALO",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 46.24,
+      "fii": 19.92,
+      "dii": 14.18,
+      "public": 19.65
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 47.05,
+      "fii": 17.01,
+      "dii": 14.2,
+      "public": 21.73
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 48.86,
+      "fii": 15.66,
+      "dii": 14.15,
+      "public": 21.33
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 50.38,
+      "fii": 15.06,
+      "dii": 12.88,
+      "public": 21.68
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 51.66,
+      "fii": 13.83,
+      "dii": 12.8,
+      "public": 21.71
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 52.38,
+      "fii": 10.72,
+      "dii": 12.69,
+      "public": 24.22
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 52.62,
+      "fii": 9.53,
+      "dii": 11.44,
+      "public": 26.4
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 50.37,
+      "fii": 10.38,
+      "dii": 10.77,
+      "public": 28.47
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 48.21,
+      "fii": 8.08,
+      "dii": 10.34,
+      "public": 33.36
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 41.16,
+      "fii": 20.89,
+      "dii": 7.68,
+      "public": 30.25
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 41.75,
+      "fii": 20.08,
+      "dii": 7.69,
+      "public": 30.47
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 41.75,
+      "fii": 17.55,
+      "dii": 6.84,
+      "public": 33.86
+    }
+  ],
+  "top_mf_holders": [
+    {
+      "name": "DFA Emerging Markets Core Equity Portfolio",
+      "pct": 0.2,
+      "trend": "unknown"
+    },
+    {
+      "name": "DFA Emerging Markets Small Cap Series",
+      "pct": 0.1,
+      "trend": "unknown"
+    },
+    {
+      "name": "iShares MSCI India Small Cap ETF",
+      "pct": 0.07,
+      "trend": "unknown"
+    },
+    {
+      "name": "SPDR Portfolio Emerging Markets ETF",
+      "pct": 0.07,
+      "trend": "unknown"
+    },
+    {
+      "name": "College Retirement Equities Fund-Stock Account",
+      "pct": 0.05,
+      "trend": "unknown"
+    },
+    {
+      "name": "SPDR (R) Idx Shares-SPDR (R) Emerging Markets Small Cap ETF",
+      "pct": 0.05,
+      "trend": "unknown"
+    },
+    {
+      "name": "DFA Investment Dimensions-Emerging Markets Social Core Equity",
+      "pct": 0.03,
+      "trend": "unknown"
+    },
+    {
+      "name": "iShares MSCI Emerging Markets Small Cap ETF",
+      "pct": 0.03,
+      "trend": "unknown"
+    }
+  ],
+  "inst_held_pct": 16.43,
+  "insider_held_pct": 51.65,
+  "float_shares": 441755435,
+  "_top_holders_source": "yfinance",
+  "promoters_pct": 41.75,
+  "fii_pct": 17.55,
+  "dii_pct": 6.84,
+  "public_pct": 33.86,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "up",
+  "fii_trend": "down",
+  "dii_trend": "down",
+  "fii_change_2q": -3.34,
+  "dii_change_2q": -0.84,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "DISTRIBUTING",
+  "swing_signal": "\u26a0\ufe0f Institutions distributing \u2014 both FIIs & DIIs selling",
+  "summary": "DIIs \u2193 6.8% (-0.8%) | FIIs \u2193 17.6% (-3.3%) | Promoters \u2191 41.8%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:22:22.645973"
+}

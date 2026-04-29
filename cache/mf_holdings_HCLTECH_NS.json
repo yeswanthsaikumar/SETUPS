@@ -1,0 +1,126 @@
+{
+  "symbol": "HCLTECH.NS",
+  "market": "india",
+  "screener_slug": "HCLTECH",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 60.82,
+      "fii": 18.98,
+      "dii": 15.33,
+      "government": 0.02,
+      "public": 4.63
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 60.82,
+      "fii": 18.8,
+      "dii": 15.62,
+      "government": 0.02,
+      "public": 4.54
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 60.82,
+      "fii": 19.42,
+      "dii": 15.12,
+      "government": 0.02,
+      "public": 4.4
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 60.82,
+      "fii": 19.65,
+      "dii": 14.95,
+      "government": 0.02,
+      "public": 4.35
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 60.82,
+      "fii": 18.45,
+      "dii": 15.77,
+      "government": 0.02,
+      "public": 4.65
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 60.82,
+      "fii": 18.67,
+      "dii": 15.78,
+      "government": 0.02,
+      "public": 4.53
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 60.82,
+      "fii": 19.38,
+      "dii": 15.21,
+      "government": 0.04,
+      "public": 4.42
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 60.82,
+      "fii": 19.15,
+      "dii": 15.44,
+      "government": 0.04,
+      "public": 4.37
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 60.82,
+      "fii": 18.56,
+      "dii": 16.17,
+      "government": 0.04,
+      "public": 4.24
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 60.82,
+      "fii": 16.64,
+      "dii": 17.8,
+      "government": 0.04,
+      "public": 4.41
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 60.82,
+      "fii": 16.21,
+      "dii": 18.37,
+      "government": 0.04,
+      "public": 4.26
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 60.86,
+      "fii": 15.51,
+      "dii": 18.95,
+      "government": 0.04,
+      "public": 4.36
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 27.21,
+  "insider_held_pct": 62.66,
+  "float_shares": 1043046011,
+  "promoters_pct": 60.86,
+  "fii_pct": 15.51,
+  "dii_pct": 18.95,
+  "public_pct": 4.36,
+  "govt_pct": 0.04,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "up",
+  "fii_change_2q": -1.13,
+  "dii_change_2q": 1.15,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+1.1% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 18.9% (+1.1%) | FIIs \u2193 15.5% (-1.1%) | Promoters \u2192 60.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:25:17.670175"
+}

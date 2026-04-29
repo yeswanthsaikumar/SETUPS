@@ -1,0 +1,102 @@
+{
+  "symbol": "CREST.NS",
+  "market": "india",
+  "screener_slug": "CREST",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 68.96,
+      "fii": 5.31,
+      "public": 24.85
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 69.11,
+      "fii": 5.29,
+      "public": 24.7
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 69.11,
+      "fii": 4.74,
+      "public": 25.25
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 69.11,
+      "fii": 3.3,
+      "public": 26.7
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 69.11,
+      "fii": 1.25,
+      "public": 28.74
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 69.11,
+      "fii": 1.42,
+      "public": 28.58
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 69.11,
+      "fii": 1.43,
+      "public": 28.57
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 69.46,
+      "fii": 1.5,
+      "public": 28.16
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 69.75,
+      "fii": 1.63,
+      "public": 27.74
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 69.75,
+      "fii": 1.63,
+      "public": 27.73
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 69.75,
+      "fii": 1.63,
+      "public": 27.71
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 69.75,
+      "fii": 1.71,
+      "public": 27.9
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 1.01,
+  "insider_held_pct": 73.18,
+  "float_shares": 7664277,
+  "promoters_pct": 69.75,
+  "fii_pct": 1.71,
+  "dii_pct": null,
+  "public_pct": 27.9,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.08,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 1.7% (+0.1%) | Promoters \u2192 69.8%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:31:35.421867"
+}

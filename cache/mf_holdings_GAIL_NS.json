@@ -1,0 +1,168 @@
+{
+  "symbol": "GAIL.NS",
+  "market": "india",
+  "screener_slug": "GAIL",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 51.91,
+      "fii": 16.09,
+      "dii": 18.06,
+      "government": 7.93,
+      "public": 6.01
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 51.91,
+      "fii": 14.76,
+      "dii": 19.14,
+      "government": 7.91,
+      "public": 6.3
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 51.9,
+      "fii": 14.24,
+      "dii": 19.37,
+      "government": 7.92,
+      "public": 6.58
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 51.9,
+      "fii": 14.17,
+      "dii": 19.56,
+      "government": 7.63,
+      "public": 6.75
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 51.92,
+      "fii": 15.2,
+      "dii": 18.13,
+      "government": 7.63,
+      "public": 7.14
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 51.92,
+      "fii": 16.79,
+      "dii": 16.92,
+      "government": 7.62,
+      "public": 6.76
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 51.9,
+      "fii": 16.05,
+      "dii": 17.59,
+      "government": 7.61,
+      "public": 6.84
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 51.88,
+      "fii": 14.79,
+      "dii": 19.02,
+      "government": 7.61,
+      "public": 6.68
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 51.88,
+      "fii": 14.91,
+      "dii": 18.93,
+      "government": 7.61,
+      "public": 6.66
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 51.88,
+      "fii": 13.72,
+      "dii": 19.88,
+      "government": 7.61,
+      "public": 6.92
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 51.88,
+      "fii": 14.07,
+      "dii": 19.76,
+      "government": 7.61,
+      "public": 6.69
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 51.88,
+      "fii": 13.04,
+      "dii": 20.5,
+      "government": 7.61,
+      "public": 6.98
+    }
+  ],
+  "top_mf_holders": [
+    {
+      "name": "Vanguard International Stock Index-Emerging Markets Stk",
+      "pct": 0.56,
+      "trend": "unknown"
+    },
+    {
+      "name": "Vanguard International Stock Index-Total Intl Stock Indx",
+      "pct": 0.51,
+      "trend": "unknown"
+    },
+    {
+      "name": "Vanguard International Value Fund",
+      "pct": 0.47,
+      "trend": "unknown"
+    },
+    {
+      "name": "iShares Core MSCI Emerging Markets ETF",
+      "pct": 0.32,
+      "trend": "unknown"
+    },
+    {
+      "name": "DFA Investment Dimensions-DFA Emerging Mkts Value",
+      "pct": 0.21,
+      "trend": "unknown"
+    },
+    {
+      "name": "iShares MSCI India ETF",
+      "pct": 0.17,
+      "trend": "unknown"
+    },
+    {
+      "name": "DFA Emerging Markets Core Equity Portfolio",
+      "pct": 0.16,
+      "trend": "unknown"
+    },
+    {
+      "name": "Goldman Sachs Emerging Markets Equity Insights Fund",
+      "pct": 0.16,
+      "trend": "unknown"
+    }
+  ],
+  "inst_held_pct": 28.06,
+  "insider_held_pct": 62.87,
+  "float_shares": 2697529739,
+  "_top_holders_source": "yfinance",
+  "promoters_pct": 51.88,
+  "fii_pct": 13.04,
+  "dii_pct": 20.5,
+  "public_pct": 6.98,
+  "govt_pct": 7.61,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "up",
+  "fii_change_2q": -0.68,
+  "dii_change_2q": 0.62,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+0.6% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 20.5% (+0.6%) | FIIs \u2193 13.0% (-0.7%) | Promoters \u2192 51.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:31:12.339327"
+}

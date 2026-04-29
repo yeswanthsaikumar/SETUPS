@@ -1,0 +1,102 @@
+{
+  "symbol": "IEX.NS",
+  "market": "india",
+  "screener_slug": "IEX",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "fii": 17.28,
+      "dii": 21.11,
+      "public": 61.33
+    },
+    {
+      "period": "Sep 2023",
+      "fii": 14.12,
+      "dii": 22.61,
+      "public": 62.98
+    },
+    {
+      "period": "Dec 2023",
+      "fii": 13.37,
+      "dii": 26.34,
+      "public": 60.01
+    },
+    {
+      "period": "Mar 2024",
+      "fii": 10.89,
+      "dii": 27.24,
+      "public": 61.57
+    },
+    {
+      "period": "Jun 2024",
+      "fii": 11.66,
+      "dii": 31.24,
+      "public": 56.82
+    },
+    {
+      "period": "Sep 2024",
+      "fii": 15.66,
+      "dii": 31.48,
+      "public": 52.59
+    },
+    {
+      "period": "Dec 2024",
+      "fii": 16.24,
+      "dii": 32.78,
+      "public": 50.72
+    },
+    {
+      "period": "Mar 2025",
+      "fii": 16.13,
+      "dii": 34.15,
+      "public": 49.47
+    },
+    {
+      "period": "Jun 2025",
+      "fii": 18.53,
+      "dii": 34.12,
+      "public": 47.07
+    },
+    {
+      "period": "Sep 2025",
+      "fii": 13.2,
+      "dii": 36.43,
+      "public": 50.11
+    },
+    {
+      "period": "Dec 2025",
+      "fii": 11.42,
+      "dii": 34.95,
+      "public": 53.37
+    },
+    {
+      "period": "Mar 2026",
+      "fii": 14.16,
+      "dii": 30.26,
+      "public": 55.31
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 36.06,
+  "insider_held_pct": 13.44,
+  "float_shares": 792476225,
+  "promoters_pct": null,
+  "fii_pct": 14.16,
+  "dii_pct": 30.26,
+  "public_pct": 55.31,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "down",
+  "fii_change_2q": 0.96,
+  "dii_change_2q": -6.17,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+1.0% in 2Q) (foreign buying)",
+  "summary": "DIIs \u2193 30.3% (-6.2%) | FIIs \u2191 14.2% (+1.0%)",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:30:32.467167"
+}

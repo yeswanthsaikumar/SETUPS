@@ -1,0 +1,73 @@
+{
+  "symbol": "STYLEBAAZA.NS",
+  "market": "india",
+  "screener_slug": "STYLEBAAZA",
+  "quarterly_data": [
+    {
+      "period": "Sep 2024",
+      "promoters": 45.56,
+      "fii": 6.53,
+      "dii": 9.96,
+      "public": 37.96
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 45.56,
+      "fii": 5.98,
+      "dii": 10.44,
+      "public": 38.02
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 45.57,
+      "fii": 2.53,
+      "dii": 11.15,
+      "public": 40.75
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 45.57,
+      "fii": 2.41,
+      "dii": 11.29,
+      "public": 40.75
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 45.71,
+      "fii": 3.13,
+      "dii": 10.35,
+      "public": 40.8
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 45.71,
+      "fii": 2.4,
+      "dii": 8.69,
+      "public": 43.2
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 7.54,
+  "insider_held_pct": 60.51,
+  "float_shares": 24448241,
+  "promoters_pct": 45.71,
+  "fii_pct": 2.4,
+  "dii_pct": 8.69,
+  "public_pct": 43.2,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "down",
+  "fii_change_2q": -0.01,
+  "dii_change_2q": -2.6,
+  "latest_period": "Dec 2025",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2193 8.7% (-2.6%) | FIIs \u2192 2.4% (-0.0%) | Promoters \u2192 45.7%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-15T16:31:19.651477",
+  "_stale_reused": true
+}

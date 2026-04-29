@@ -1,0 +1,114 @@
+{
+  "symbol": "BERGEPAINT.NS",
+  "market": "india",
+  "screener_slug": "BERGEPAINT",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 75.0,
+      "fii": 10.83,
+      "dii": 3.75,
+      "public": 10.42
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 75.0,
+      "fii": 10.89,
+      "dii": 4.06,
+      "public": 10.05
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 74.99,
+      "fii": 10.68,
+      "dii": 4.67,
+      "public": 9.65
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 74.99,
+      "fii": 10.66,
+      "dii": 5.17,
+      "public": 9.17
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 74.99,
+      "fii": 7.51,
+      "dii": 7.57,
+      "public": 9.93
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 74.99,
+      "fii": 6.98,
+      "dii": 8.77,
+      "public": 9.24
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 74.99,
+      "fii": 5.94,
+      "dii": 9.6,
+      "public": 9.47
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 74.99,
+      "fii": 5.75,
+      "dii": 10.11,
+      "public": 9.15
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 74.99,
+      "fii": 5.59,
+      "dii": 10.45,
+      "public": 8.97
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 74.99,
+      "fii": 5.35,
+      "dii": 10.71,
+      "public": 8.95
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 74.98,
+      "fii": 5.25,
+      "dii": 11.08,
+      "public": 8.68
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 74.98,
+      "fii": 4.68,
+      "dii": 11.71,
+      "public": 8.63
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 15.03,
+  "insider_held_pct": 75.65,
+  "float_shares": 114701844,
+  "promoters_pct": 74.98,
+  "fii_pct": 4.68,
+  "dii_pct": 11.71,
+  "public_pct": 8.63,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "up",
+  "fii_change_2q": -0.67,
+  "dii_change_2q": 1.0,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+1.0% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 11.7% (+1.0%) | FIIs \u2193 4.7% (-0.7%) | Promoters \u2192 75.0%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:28:31.043188"
+}

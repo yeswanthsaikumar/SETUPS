@@ -1,0 +1,84 @@
+{
+  "symbol": "SANOFICONR.NS",
+  "market": "india",
+  "screener_slug": "SANOFICONR",
+  "quarterly_data": [
+    {
+      "period": "Jun 2024",
+      "promoters": 60.4,
+      "fii": 6.03,
+      "dii": 22.6,
+      "public": 10.98
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 60.4,
+      "fii": 5.22,
+      "dii": 23.83,
+      "public": 10.56
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 60.4,
+      "fii": 4.42,
+      "dii": 25.35,
+      "public": 9.84
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 60.4,
+      "fii": 4.52,
+      "dii": 25.48,
+      "public": 9.59
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 71.27,
+      "fii": 3.24,
+      "dii": 16.89,
+      "public": 8.59
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 71.27,
+      "fii": 2.94,
+      "dii": 17.21,
+      "public": 8.58
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 71.27,
+      "fii": 2.83,
+      "dii": 17.33,
+      "public": 8.57
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 71.27,
+      "fii": 2.76,
+      "dii": 17.57,
+      "public": 8.41
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 71.27,
+  "fii_pct": 2.76,
+  "dii_pct": 17.57,
+  "public_pct": 8.41,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "up",
+  "fii_change_2q": -0.18,
+  "dii_change_2q": 0.36,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+0.4% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 17.6% (+0.4%) | FIIs \u2192 2.8% (-0.2%) | Promoters \u2192 71.3%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:35:56.934337"
+}

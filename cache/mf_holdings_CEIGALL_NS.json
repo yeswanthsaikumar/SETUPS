@@ -1,0 +1,79 @@
+{
+  "symbol": "CEIGALL.NS",
+  "market": "india",
+  "screener_slug": "CEIGALL",
+  "quarterly_data": [
+    {
+      "period": "Sep 2024",
+      "promoters": 82.05,
+      "fii": 2.97,
+      "dii": 6.88,
+      "public": 8.09
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 82.05,
+      "fii": 1.58,
+      "dii": 7.67,
+      "public": 8.7
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 82.05,
+      "fii": 1.47,
+      "dii": 8.23,
+      "public": 8.25
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 82.05,
+      "fii": 1.81,
+      "dii": 7.33,
+      "public": 8.8
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 82.05,
+      "fii": 2.48,
+      "dii": 5.67,
+      "public": 9.79
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 82.05,
+      "fii": 2.9,
+      "dii": 5.08,
+      "public": 9.96
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 82.05,
+      "fii": 3.14,
+      "dii": 5.37,
+      "public": 9.44
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 5.71,
+  "insider_held_pct": 82.06,
+  "float_shares": 31966576,
+  "promoters_pct": 82.05,
+  "fii_pct": 3.14,
+  "dii_pct": 5.37,
+  "public_pct": 9.44,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.66,
+  "dii_change_2q": -0.3,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+0.7% in 2Q) (foreign buying)",
+  "summary": "DIIs \u2192 5.4% (-0.3%) | FIIs \u2191 3.1% (+0.7%) | Promoters \u2192 82.0%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:22:22.134438"
+}
