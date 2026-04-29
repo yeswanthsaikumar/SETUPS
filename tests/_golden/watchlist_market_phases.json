@@ -1,0 +1,10 @@
+{
+  "data_unavailable": "bool",
+  "nifty_closes": [],
+  "nifty_current": "NoneType",
+  "nifty_dates": [],
+  "phase_count": "int",
+  "phase_summary": "str",
+  "phases": [],
+  "recent_phases": []
+}

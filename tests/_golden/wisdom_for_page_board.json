@@ -1,0 +1,14 @@
+{
+  "count": "int",
+  "items": [
+    {
+      "author": "str",
+      "tags": [
+        "str"
+      ],
+      "text": "str"
+    }
+  ],
+  "page": "str",
+  "regime": "str"
+}
