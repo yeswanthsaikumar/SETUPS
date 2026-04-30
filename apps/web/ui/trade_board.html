@@ -1130,6 +1130,20 @@
           <select class="f-sel" id="wlSectorFilter" onchange="renderWatchlist()" style="min-width:120px">
             <option value="">All sectors</option>
           </select>
+          <select class="f-sel" id="wlSortBy" onchange="renderWatchlist()" style="min-width:190px">
+            <option value="smart">Sort: Smart (default)</option>
+            <option value="sector_az">Sort: Sector (A → Z)</option>
+            <option value="priority">Sort: RS Tier (P1 → P3)</option>
+            <option value="rs_score_desc">Sort: RS Score (high → low)</option>
+            <option value="rs_rank_asc">Sort: RS Rank (#1 first)</option>
+            <option value="since_add_desc">Sort: Since Add % (high → low)</option>
+            <option value="since_add_asc">Sort: Since Add % (low → high)</option>
+            <option value="adr_desc">Sort: ADR % (high → low)</option>
+            <option value="day_desc">Sort: Day % (high → low)</option>
+            <option value="conviction_desc">Sort: Conviction (high → low)</option>
+            <option value="near_entry">Sort: Near Entry First</option>
+            <option value="recent_add_desc">Sort: Recently Added</option>
+          </select>
           <select class="f-sel" id="wlSetupFilter" onchange="renderWatchlist()" style="min-width:140px">
             <option value="">All setups</option>
           </select>
@@ -4186,6 +4200,7 @@ function renderWatchlist() {
   const setupF = document.getElementById('wlSetupFilter')?.value || '';
   const sectorF = document.getElementById('wlSectorFilter')?.value || '';
   const prioF = document.getElementById('wlPriorityFilter')?.value || '';
+  const sortBy = document.getElementById('wlSortBy')?.value || 'smart';
   let list = watchlistItems.filter(it => {
     if (wlActiveBucket !== 'ALL' && (it.bucket || 'watching') !== wlActiveBucket) return false;
     if (setupF && (it.setup || '').toLowerCase() !== setupF.toLowerCase() && (it.scanSetup || '').toLowerCase() !== setupF.toLowerCase()) return false;
@@ -4197,22 +4212,57 @@ function renderWatchlist() {
     }
     return true;
   });
-  // Sort: priority first (P1→P2→P3), then by context
+  // Sort helpers + comparators
   const _priOrd = {'P1': 0, 'P2': 1, 'P3': 2};
-  if (wlActiveBucket === 'rs_leaders') {
-    // Group by sector first if sector filter not active, then by priority + rank
-    if (!sectorF) {
-      list.sort((a,b) => {
+  const _num = (v, d=0) => (v == null || Number.isNaN(Number(v))) ? d : Number(v);
+  const _str = (v, d='') => ((v == null ? d : String(v))).toLowerCase();
+  const _dt = (v) => {
+    if (!v) return 0;
+    const t = Date.parse(v);
+    return Number.isNaN(t) ? 0 : t;
+  };
+  const _smartSort = (a, b) => {
+    if (wlActiveBucket === 'rs_leaders') {
+      if (!sectorF) {
         const sa = (a.sector || 'ZZZ'), sb = (b.sector || 'ZZZ');
         if (sa !== sb) return sa.localeCompare(sb);
-        return (_priOrd[a.priority||'P3']||2) - (_priOrd[b.priority||'P3']||2) || (a.rs_rank || 9999) - (b.rs_rank || 9999);
-      });
-    } else {
-      list.sort((a,b) => (_priOrd[a.priority||'P3']||2) - (_priOrd[b.priority||'P3']||2) || (a.rs_rank || 9999) - (b.rs_rank || 9999) || (b.rs_score || 0) - (a.rs_score || 0));
+      }
+      return (_priOrd[a.priority||'P3']||2) - (_priOrd[b.priority||'P3']||2)
+        || (_num(a.rs_rank, 9999) - _num(b.rs_rank, 9999))
+        || (_num(b.rs_score) - _num(a.rs_score));
     }
-  } else {
-    list.sort((a,b) => (_priOrd[a.priority||'P3']||2) - (_priOrd[b.priority||'P3']||2) || (b.returnSinceAddPct || 0) - (a.returnSinceAddPct || 0) || (b.conviction || 0) - (a.conviction || 0));
-  }
+    return (_priOrd[a.priority||'P3']||2) - (_priOrd[b.priority||'P3']||2)
+      || (_num(b.returnSinceAddPct) - _num(a.returnSinceAddPct))
+      || (_num(b.conviction) - _num(a.conviction));
+  };
+  const _comparators = {
+    smart: _smartSort,
+    sector_az: (a,b) => _str(a.sector || 'Other').localeCompare(_str(b.sector || 'Other'))
+      || (_priOrd[a.priority||'P3']||2) - (_priOrd[b.priority||'P3']||2)
+      || _str(a.symbol).localeCompare(_str(b.symbol)),
+    priority: (a,b) => (_priOrd[a.priority||'P3']||2) - (_priOrd[b.priority||'P3']||2)
+      || (_num(b.rs_score) - _num(a.rs_score)),
+    rs_score_desc: (a,b) => (_num(b.rs_score) - _num(a.rs_score))
+      || (_num(a.rs_rank, 9999) - _num(b.rs_rank, 9999)),
+    rs_rank_asc: (a,b) => (_num(a.rs_rank, 9999) - _num(b.rs_rank, 9999))
+      || (_num(b.rs_score) - _num(a.rs_score)),
+    since_add_desc: (a,b) => (_num(b.returnSinceAddPct) - _num(a.returnSinceAddPct))
+      || (_priOrd[a.priority||'P3']||2) - (_priOrd[b.priority||'P3']||2),
+    since_add_asc: (a,b) => (_num(a.returnSinceAddPct) - _num(b.returnSinceAddPct))
+      || (_priOrd[a.priority||'P3']||2) - (_priOrd[b.priority||'P3']||2),
+    adr_desc: (a,b) => (_num(b.adr_pct, _num(b.adrPct)) - _num(a.adr_pct, _num(a.adrPct)))
+      || (_num(b.rs_score) - _num(a.rs_score)),
+    day_desc: (a,b) => (_num(b.dayChangePct) - _num(a.dayChangePct))
+      || (_num(b.returnSinceAddPct) - _num(a.returnSinceAddPct)),
+    conviction_desc: (a,b) => (_num(b.conviction) - _num(a.conviction))
+      || (_num(b.returnSinceAddPct) - _num(a.returnSinceAddPct)),
+    near_entry: (a,b) => (b.nearEntry === true) - (a.nearEntry === true)
+      || (Math.abs(_num(a.entryDistPct, 9999)) - Math.abs(_num(b.entryDistPct, 9999)))
+      || (_num(b.returnSinceAddPct) - _num(a.returnSinceAddPct)),
+    recent_add_desc: (a,b) => (_dt(b.date_added || b.created_at) - _dt(a.date_added || a.created_at))
+      || (_num(b.returnSinceAddPct) - _num(a.returnSinceAddPct)),
+  };
+  list.sort((_comparators[sortBy] || _smartSort));
   document.getElementById('wlTotalCount').textContent = list.length + ' / ' + watchlistItems.length;
   if (!list.length) {
     g.innerHTML = '<div class="empty-st"><div class="empty-ttl">Nothing here</div><div class="empty-sub">Add stocks with the &ldquo;+ Add&rdquo; button, or switch bucket.</div></div>';
