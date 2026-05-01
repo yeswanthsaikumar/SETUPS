@@ -370,3 +370,73 @@ class TestTrailingStopAutomation:
         assert pos.get("exit_price") is None
         assert pos.get("realized_pl", 0) == 0  # partial exits cleared
 
+
+class TestTradeBoardChartRs:
+    def test_chart_includes_rs_snapshot_for_india(self, api_client, monkeypatch):
+        import main as api_main
+
+        stock = [
+            {"date": "2026-04-01", "open": 99, "high": 101, "low": 98, "close": 100, "volume": 1000},
+            {"date": "2026-04-02", "open": 100, "high": 103, "low": 99, "close": 102, "volume": 1100},
+            {"date": "2026-04-03", "open": 102, "high": 106, "low": 101, "close": 105, "volume": 1200},
+            {"date": "2026-04-04", "open": 105, "high": 108, "low": 104, "close": 107, "volume": 1300},
+        ]
+        nifty = [
+            {"date": "2026-04-01", "open": 200, "high": 202, "low": 199, "close": 200, "volume": 10},
+            {"date": "2026-04-03", "open": 201, "high": 203, "low": 200, "close": 202, "volume": 10},
+            {"date": "2026-04-04", "open": 202, "high": 205, "low": 201, "close": 204, "volume": 10},
+        ]
+        mid = [
+            {"date": "2026-04-01", "open": 300, "high": 302, "low": 299, "close": 300, "volume": 10},
+            {"date": "2026-04-02", "open": 300, "high": 303, "low": 299, "close": 301, "volume": 10},
+            {"date": "2026-04-03", "open": 301, "high": 304, "low": 300, "close": 303, "volume": 10},
+            {"date": "2026-04-04", "open": 303, "high": 306, "low": 302, "close": 305, "volume": 10},
+        ]
+        sml = [
+            {"date": "2026-04-01", "open": 150, "high": 151, "low": 149, "close": 150, "volume": 10},
+            {"date": "2026-04-02", "open": 150, "high": 151, "low": 149, "close": 149, "volume": 10},
+            {"date": "2026-04-03", "open": 149, "high": 150, "low": 148, "close": 148, "volume": 10},
+            {"date": "2026-04-04", "open": 148, "high": 149, "low": 147, "close": 147, "volume": 10},
+        ]
+
+        def fake_read(sym, days=0, market="india"):
+            if sym == "ABC.NS":
+                return stock
+            if sym == "^NSEI":
+                return nifty
+            if sym == "NIFTY_MIDCAP_100.NS":
+                return mid
+            if sym == "^CNXSC":
+                return sml
+            if sym == "^NSMIDCAP":
+                return mid
+            return []
+
+        monkeypatch.setattr(api_main, "_read_ohlcv", fake_read)
+        monkeypatch.setattr(api_main, "_get_live_price", lambda *a, **k: None)
+
+        r = api_client.get("/api/trade-board/chart/ABC.NS?days=120&market=india")
+        assert r.status_code == 200
+        body = r.json()
+        assert "rsLines" in body and "rsSnapshot" in body
+        assert len(body["rsLines"]["nifty50"]) == 4  # 2026-04-02 aligns using 2026-04-01 benchmark close
+        snap = body["rsSnapshot"]
+        assert snap.get("leader") in ("nifty50", "niftyMidcap100", "niftySmallcap100")
+        assert isinstance(snap.get("benchmarks"), dict)
+        assert snap["benchmarks"]["nifty50"]["points"] >= 2
+
+    def test_rs_line_skips_stale_benchmark_gaps(self):
+        import main as api_main
+
+        stock_rows = [
+            {"date": "2026-04-10", "close": 100},
+            {"date": "2026-04-11", "close": 105},
+        ]
+        bench_rows = [
+            {"date": "2026-04-01", "close": 1000},
+            {"date": "2026-04-02", "close": 1005},
+        ]
+        rs = api_main._rs_line_vs_benchmark(stock_rows, bench_rows)
+        assert rs == []
+
+

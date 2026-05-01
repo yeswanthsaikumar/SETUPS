@@ -79,8 +79,8 @@
        • will-change:transform keeps the :hover lift animation smooth.
        • z-index on :hover lifts the card above siblings so a wider shadow
          doesn't get painted behind neighbour cards.                        */
-    .pos-card{background:var(--bg2);border:1px solid var(--border2);border-radius:11px;overflow:visible;cursor:pointer;transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;position:relative;will-change:transform;z-index:1}
-    .pos-card:hover{border-color:#3b5f8a;box-shadow:0 12px 38px rgba(0,0,0,.65),0 0 0 1px rgba(59,130,246,.25);transform:translateY(-3px) scale(1.015);z-index:20}
+    .pos-card{background:linear-gradient(180deg,#0d1728,#0c1626);border:1px solid #23344e;border-radius:13px;overflow:visible;cursor:pointer;transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;position:relative;will-change:transform;z-index:1}
+    .pos-card:hover{border-color:#3b5f8a;box-shadow:0 10px 28px rgba(0,0,0,.5),0 0 0 1px rgba(59,130,246,.2);transform:translateY(-2px) scale(1.006);z-index:20}
     .pos-card:active{transform:translateY(-1px) scale(1.005)}
     .pos-card.status-open{border-top:2px solid var(--green)}.pos-card.status-partial{border-top:2px solid var(--purple)}.pos-card.status-sl{border-top:2px solid var(--red);background:#0c0808}
     .pos-card.status-t1{border-top:2px solid #4ade80}.pos-card.status-t2{border-top:2px solid var(--cyan)}
@@ -100,10 +100,10 @@
     @media (prefers-reduced-motion: reduce){
       .pos-card,.pos-card:hover{transition:none;transform:none}
     }
-    .card-hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 12px 4px}
+    .card-hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:11px 14px 6px;gap:10px}
     .card-sym{font-size:1.1em;font-weight:900;color:var(--text)}.card-name{font-size:10.5px;color:var(--muted);margin-top:1px}
-    .card-badges{display:flex;gap:3px;flex-wrap:wrap;margin-top:3px}
-    .badge{padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700;white-space:nowrap}
+    .card-badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px;max-width:92%}
+    .badge{padding:2px 7px;border-radius:999px;font-size:8.5px;font-weight:700;white-space:nowrap;letter-spacing:.1px}
     .bg-setup{background:#1e293b;color:#7dd3fc}.bg-ap{background:#2a2000;color:#ffd700;border:1px solid #ffd70022}
     .bg-a{background:#1e1b4b;color:#a5b4fc}.bg-b{background:#1a1a2e;color:#94a3b8}
     .bg-open{background:var(--green-bg);color:#4ade80}.bg-partial{background:#1e1040;color:#a78bfa;border:1px solid #7c3aed33}.bg-sl{background:var(--red-bg);color:#f87171}
@@ -155,8 +155,8 @@
     .card-gain-amt{font-size:11.5px;font-weight:700;margin-top:1px}
     .card-gain-day{font-size:9px;color:var(--muted);margin-top:2px}
     .gain-pos{color:var(--green)}.gain-neg{color:var(--red)}.gain-neu{color:var(--muted)}
-    .card-chart{height:210px;background:var(--bg4);position:relative}
-    .price-row{display:grid;grid-template-columns:repeat(3,1fr);background:var(--bg4);border-top:1px solid var(--border);padding:5px 12px}
+    .card-chart{height:220px;background:linear-gradient(180deg,#091224,#08101d);position:relative;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .price-row{display:grid;grid-template-columns:repeat(3,1fr);background:#0b1525;border-top:1px solid var(--border);padding:7px 14px;gap:8px}
     .pr-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;font-weight:700}
     .pr-v{font-size:.95em;font-weight:800}
     .pr-entry{color:#7dd3fc}.pr-cmp{color:var(--text)}.pr-sl{color:var(--red)}
@@ -182,9 +182,12 @@
     .det-body{flex:1;display:grid;grid-template-rows:1fr auto;overflow:hidden;min-height:0}
     .det-chart-wrap{position:relative;min-height:0}
     .det-chart{width:100%;height:100%}
-    .chart-ctrls{position:absolute;top:8px;left:8px;display:flex;gap:3px;z-index:5}
+    .chart-ctrls{position:absolute;top:8px;left:8px;display:flex;gap:3px;z-index:5;flex-wrap:wrap;align-items:center;max-width:calc(100% - 24px)}
+    .chart-ctrls .chart-sep{width:1px;height:14px;background:var(--border2);margin:0 4px;flex-shrink:0}
     .chart-btn{padding:3px 9px;border-radius:5px;font-size:10.5px;font-weight:700;border:1px solid var(--border2);background:rgba(8,14,26,.85);color:var(--muted);cursor:pointer;transition:all .15s;backdrop-filter:blur(4px)}
     .chart-btn:hover,.chart-btn.active{border-color:var(--blue);color:#93c5fd;background:#0a1628}
+    .leg-rs{cursor:pointer;user-select:none}
+    .leg-rs-cb{margin:0 4px 0 0;accent-color:var(--blue);cursor:pointer;flex-shrink:0}
     .chart-leg{position:absolute;top:8px;right:12px;display:flex;gap:7px;z-index:5;font-size:10px;font-weight:700;background:rgba(8,14,26,.85);padding:3px 9px;border-radius:5px;border:1px solid var(--border2)}
     .leg-item{display:flex;align-items:center;gap:3px}.leg-dot{width:8px;height:2px;border-radius:1px}
     .det-info{border-top:1px solid var(--border);background:var(--bg2);padding:10px 16px;display:flex;gap:14px;flex-wrap:wrap;overflow-y:auto;max-height:260px;flex-shrink:0}
@@ -199,6 +202,11 @@
     .plan-tbl td{padding:6px 9px;border-bottom:1px solid var(--border)}
     /* ANALYTICS */
     .eq-wrap{padding:16px;overflow-y:auto;flex:1}
+    /* P&L summary (analytics page — moved from sidebar) */
+    .an-pl-summary{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:20px;max-width:340px}
+    .an-pl-summary .sb-sect{padding:0 0 10px 0;margin:0}
+    .an-pl-summary .sb-stat{margin:0 0 8px 0}
+    .an-pl-summary .sb-stat:last-child{margin-bottom:0}
     .sec-hdr{font-size:13px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:8px}
     .eq-chart-wrap{height:200px;background:var(--bg2);border:1px solid var(--border);border-radius:9px;overflow:hidden}
     .perf-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-radius:7px;overflow:hidden;margin-top:12px}
@@ -563,11 +571,6 @@
      </button>
     </div>
     <div class="sb-div"></div>
-    <div class="sb-sect">P&L Summary</div>
-    <div class="sb-stat"><div class="sb-stat-l">Day P&amp;L</div><div class="sb-stat-v" id="sbDayPl">—</div></div>
-    <div class="sb-stat" style="margin-top:3px"><div class="sb-stat-l">Total P&amp;L</div><div class="sb-stat-v" id="sbTotalPl">—</div></div>
-    <div class="sb-stat" style="margin-top:3px"><div class="sb-stat-l">Open Risk</div><div class="sb-stat-v neg-color" id="sbRisk">—</div></div>
-    <div class="sb-div"></div>
     <div class="sb-sect">Quick Links</div>
     <button class="sb-item" onclick="openEmbed('/reports/trade_plans_live.html','Trade Plans','plans')">
       <svg class="sb-icon" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M8 2l6 6-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -642,6 +645,12 @@
     <!-- ANALYTICS PAGE -->
     <div class="page" id="page-analytics">
       <div class="eq-wrap">
+        <div class="an-pl-summary">
+          <div class="sb-sect">P&amp;L Summary</div>
+          <div class="sb-stat"><div class="sb-stat-l">Day P&amp;L</div><div class="sb-stat-v" id="anDayPl">—</div></div>
+          <div class="sb-stat"><div class="sb-stat-l">Total P&amp;L</div><div class="sb-stat-v" id="anTotalPl">—</div></div>
+          <div class="sb-stat"><div class="sb-stat-l">Open Risk</div><div class="sb-stat-v neg-color" id="anRisk">—</div></div>
+        </div>
         <div class="sec-hdr">📈 Equity Curve</div>
         <div class="eq-chart-wrap" id="equityChart"></div>
         <div class="perf-grid" id="perfGrid" style="display:none">
@@ -1530,13 +1539,19 @@
   <div class="det-body">
     <div class="det-chart-wrap">
       <div class="chart-ctrls">
-        <button class="chart-btn" onclick="setChartDays(30,this)">30d</button>
-        <button class="chart-btn" onclick="setChartDays(90,this)">90d</button>
-        <button class="chart-btn active" onclick="setChartDays(180,this)">180d</button>
-        <button class="chart-btn" onclick="setChartDays(365,this)">1Y</button>
-        <button class="chart-btn" onclick="setChartDays(730,this)">2Y</button>
+        <button type="button" class="chart-btn days-btn" onclick="setChartDays(30,this)">30d</button>
+        <button type="button" class="chart-btn days-btn" onclick="setChartDays(90,this)">90d</button>
+        <button type="button" class="chart-btn days-btn active" onclick="setChartDays(180,this)">180d</button>
+        <button type="button" class="chart-btn days-btn" onclick="setChartDays(365,this)">1Y</button>
+        <button type="button" class="chart-btn days-btn" onclick="setChartDays(730,this)">2Y</button>
+        <span class="chart-sep" aria-hidden="true"></span>
+        <button type="button" class="chart-btn ohlc-btn active" data-ohlc="candle" onclick="setDetOhlcMode('candle',this)" title="Candlesticks">Candles</button>
+        <button type="button" class="chart-btn ohlc-btn" data-ohlc="bar" onclick="setDetOhlcMode('bar',this)" title="Colored OHLC bars">Bars</button>
       </div>
-      <div class="chart-leg">
+      <div class="chart-leg" id="detChartLegend">
+        <label class="leg-item leg-rs" style="display:none" data-rs-key="nifty50"><input type="checkbox" class="leg-rs-cb" checked><span class="leg-dot" style="background:#38bdf8"></span>RS·N50</label>
+        <label class="leg-item leg-rs" style="display:none" data-rs-key="niftyMidcap100"><input type="checkbox" class="leg-rs-cb" checked><span class="leg-dot" style="background:#fb923c"></span>RS·Mid</label>
+        <label class="leg-item leg-rs" style="display:none" data-rs-key="niftySmallcap100"><input type="checkbox" class="leg-rs-cb" checked><span class="leg-dot" style="background:#f472b6"></span>RS·Sml</label>
         <span class="leg-item"><span class="leg-dot" style="background:#3b82f6"></span>EMA20</span>
         <span class="leg-item"><span class="leg-dot" style="background:#8b5cf6"></span>EMA50</span>
         <span class="leg-item"><span class="leg-dot" style="background:#f59e0b;height:1px;opacity:.6"></span>SMA150</span>
@@ -1995,9 +2010,13 @@ function updateSbStats(d) {
   }
   const fA = v => (v >= 0 ? '+' : '') + '₹' + Math.abs(v).toLocaleString('en-IN', {maximumFractionDigits: 0});
   const cl = v => v >= 0 ? 'pos-color' : 'neg-color';
-  document.getElementById('sbDayPl').innerHTML = '<span class="' + cl(dayPl) + '">' + fA(dayPl) + '</span>';
-  document.getElementById('sbTotalPl').innerHTML = '<span class="' + cl(totalPl) + '">' + fA(totalPl) + '</span>';
-  document.getElementById('sbRisk').textContent = '₹' + risk.toLocaleString('en-IN', {maximumFractionDigits: 0});
+  const dayH = '<span class="' + cl(dayPl) + '">' + fA(dayPl) + '</span>';
+  const totH = '<span class="' + cl(totalPl) + '">' + fA(totalPl) + '</span>';
+  const riskT = '₹' + risk.toLocaleString('en-IN', {maximumFractionDigits: 0});
+  const ad = document.getElementById('anDayPl'), at = document.getElementById('anTotalPl'), ar = document.getElementById('anRisk');
+  if (ad) ad.innerHTML = dayH;
+  if (at) at.innerHTML = totH;
+  if (ar) ar.textContent = riskT;
 }
 
 function setTab(t) {
@@ -2370,6 +2389,179 @@ function buildRevealPanel(p, ctx) {
   '</div></div>';
 }
 
+/** RS vs Nifty 50, Midcap 100, Smallcap 100 (India); rebased to 100 at window start. Left price scale `rs` only. */
+function addChartRsLines(chart, d, minPts, seriesOut) {
+  minPts = minPts || 5;
+  if (!d || !d.rsLines || d.market === 'us') return false;
+  const rs = d.rsLines;
+  const keys = ['nifty50', 'niftyMidcap100', 'niftySmallcap100'];
+  if (!keys.some(k => (rs[k] || []).length >= minPts)) return false;
+  const specs = [
+    { key: 'nifty50', color: '#38bdf8' },
+    { key: 'niftyMidcap100', color: '#fb923c' },
+    { key: 'niftySmallcap100', color: '#f472b6' },
+  ];
+  let added = 0;
+  let refPts = null;
+  const out = seriesOut && typeof seriesOut === 'object' && !Array.isArray(seriesOut) ? seriesOut : null;
+  for (const spec of specs) {
+    const pts = rs[spec.key];
+    if (!pts || pts.length < minPts) continue;
+    const s = chart.addLineSeries({
+      color: spec.color,
+      lineWidth: 2,
+      priceScaleId: 'rs',
+      priceLineVisible: false,
+      lastValueVisible: true,
+      crosshairMarkerVisible: true,
+    });
+    s.setData(pts.map(pt => ({ time: (pt.time || '').slice(0, 10), value: pt.value })));
+    if (out) out[spec.key] = s;
+    if (!refPts) refPts = pts;
+    added++;
+  }
+  if (!added) return false;
+  if (refPts && refPts.length >= minPts) {
+    const base = chart.addLineSeries({
+      color: '#64748b',
+      lineWidth: 1,
+      lineStyle: 3,
+      priceScaleId: 'rs',
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+    base.setData(refPts.map(pt => ({ time: (pt.time || '').slice(0, 10), value: 100 })));
+  }
+  chart.priceScale('rs').applyOptions({
+    position: 'left',
+    visible: true,
+    borderVisible: true,
+    borderColor: '#475569',
+    scaleMargins: { top: 0.02, bottom: 0.18 },
+    entireTextOnly: false,
+    autoScale: true,
+    ticksVisible: true,
+    alignLabels: false,
+    minimumWidth: 56,
+  });
+  chart.applyOptions({ leftPriceScale: { visible: true, borderColor: '#334155', borderVisible: true, scaleMargins: { top: 0.02, bottom: 0.18 }, ticksVisible: true, minimumWidth: 56 } });
+  return true;
+}
+
+function _resolveRsSnapshot(d) {
+  if (!d) return null;
+  if (d.rsSnapshot && d.rsSnapshot.benchmarks && Object.keys(d.rsSnapshot.benchmarks).length) return d.rsSnapshot;
+  if (!d.rsLines) return null;
+  const labels = { nifty50: 'Nifty 50', niftyMidcap100: 'Nifty Midcap 100', niftySmallcap100: 'Nifty Smallcap 100' };
+  const stats = {};
+  Object.keys(labels).forEach(k => {
+    const pts = (d.rsLines[k] || []).filter(x => x && x.value != null);
+    if (pts.length < 2) return;
+    const last = Number(pts[pts.length - 1].value);
+    const prev20 = Number(pts[Math.max(0, pts.length - 21)].value);
+    const prev5 = Number(pts[Math.max(0, pts.length - 6)].value);
+    const d5 = +(last - prev5).toFixed(2);
+    stats[k] = {
+      label: labels[k],
+      last: +last.toFixed(2),
+      delta5: d5,
+      delta20: +(last - prev20).toFixed(2),
+      trend: d5 > 0.75 ? 'up' : d5 < -0.75 ? 'down' : 'flat',
+      points: pts.length,
+    };
+  });
+  const keys = Object.keys(stats);
+  if (!keys.length) return null;
+  const leader = keys.sort((a, b) => (stats[b].last || 0) - (stats[a].last || 0))[0];
+  return {
+    leader,
+    leaderLabel: stats[leader].label,
+    leaderLast: stats[leader].last,
+    leaderDelta20: stats[leader].delta20,
+    benchmarks: stats,
+  };
+}
+
+function _rsLegendHint(snapshot) {
+  if (!snapshot || snapshot.leaderLast == null) return '';
+  const d20 = Number(snapshot.leaderDelta20 || 0);
+  const col = d20 >= 0 ? '#4ade80' : '#f87171';
+  const sign = d20 >= 0 ? '+' : '';
+  const short = snapshot.leader === 'niftyMidcap100' ? 'Mid' : snapshot.leader === 'niftySmallcap100' ? 'Sml' : 'N50';
+  return '<span style="color:' + col + '">Lead ' + short + ' ' + sign + d20.toFixed(1) + '</span>';
+}
+
+function _buildRsCardBadge(snapshot) {
+  if (!snapshot || snapshot.leaderLast == null) return '';
+  const rel = Number(snapshot.leaderLast || 0) - 100;
+  const relCol = rel >= 0 ? '#4ade80' : '#f87171';
+  const relSign = rel >= 0 ? '+' : '';
+  const trend = snapshot.benchmarks && snapshot.benchmarks[snapshot.leader] ? snapshot.benchmarks[snapshot.leader].trend : 'flat';
+  const trendGlyph = trend === 'up' ? '▲' : trend === 'down' ? '▼' : '•';
+  return '<span class="badge" style="background:#052031;color:' + relCol + ';border:1px solid #0ea5e933">RSL ' + trendGlyph + ' ' + relSign + rel.toFixed(1) + '%</span>';
+}
+
+function _detRsPrefKey(k) { return 'det_rs_' + k; }
+function _detGetRsPref(k, def) {
+  try {
+    const v = localStorage.getItem(_detRsPrefKey(k));
+    if (v === null) return def;
+    return v === '1';
+  } catch(e) { return def; }
+}
+function _detSetRsPref(k, on) {
+  try { localStorage.setItem(_detRsPrefKey(k), on ? '1' : '0'); } catch(e) {}
+}
+function _detOhlcPref() {
+  try { return localStorage.getItem('det_ohlc_mode') || 'candle'; } catch(e) { return 'candle'; }
+}
+function _detSetOhlcPref(m) {
+  try { localStorage.setItem('det_ohlc_mode', m); } catch(e) {}
+}
+
+function _detAddPriceLines(ser, p) {
+  const h = [];
+  if (!ser || !p) return h;
+  if (p.entry) h.push(ser.createPriceLine({price: p.entry, color: '#7dd3fc', lineWidth: 1.5, lineStyle: 1, axisLabelVisible: false, title: 'Entry'}));
+  if (p.sl) h.push(ser.createPriceLine({price: p.sl, color: '#ef4444', lineWidth: 1.5, lineStyle: 1, axisLabelVisible: false, title: 'SL'}));
+  if (p.t1) h.push(ser.createPriceLine({price: p.t1, color: '#4ade80', lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: 'T1'}));
+  if (p.t2) h.push(ser.createPriceLine({price: p.t2, color: '#06b6d4', lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: 'T2'}));
+  if (p.t3) h.push(ser.createPriceLine({price: p.t3, color: '#f59e0b', lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: 'T3'}));
+  return h;
+}
+
+function _detSyncRsScale() {
+  const ctx = window._detChartCtx;
+  if (!ctx || !ctx.chart) return;
+  let any = false;
+  document.querySelectorAll('#detChartLegend .leg-rs').forEach(row => {
+    if (row.style.display === 'none') return;
+    const cb = row.querySelector('.leg-rs-cb');
+    if (cb && cb.checked) any = true;
+  });
+  try { ctx.chart.priceScale('rs').applyOptions({ visible: any }); } catch(e) {}
+}
+
+function setDetOhlcMode(mode, btn) {
+  const ctx = window._detChartCtx;
+  if (!ctx || !ctx.chart || !ctx.candle || !ctx.bar) return;
+  _detSetOhlcPref(mode);
+  ctx.mode = mode;
+  document.querySelectorAll('.chart-ctrls .ohlc-btn').forEach(b => b.classList.toggle('active', (b.getAttribute('data-ohlc') || '') === mode));
+  const showC = mode === 'candle';
+  const fromSer = showC ? ctx.bar : ctx.candle;
+  const toSer = showC ? ctx.candle : ctx.bar;
+  for (const h of ctx.priceLineHandles) {
+    try { fromSer.removePriceLine(h); } catch(e) {}
+  }
+  ctx.priceLineHandles = [];
+  ctx.candle.applyOptions({ visible: showC });
+  ctx.bar.applyOptions({ visible: !showC });
+  const p = window._detChartPos;
+  if (p) ctx.priceLineHandles = _detAddPriceLines(toSer, p);
+}
+
 async function initMini(p) {
   const el = document.getElementById('chart-' + p.id);
   if (!el || miniInst[p.id]) return;
@@ -2378,7 +2570,8 @@ async function initMini(p) {
     return;
   }
   try {
-    const r = await fetch(API + '/api/trade-board/chart/' + p.symbol + '?days=120');
+    const mkt = p.market === 'us' ? 'us' : 'india';
+    const r = await fetch(API + '/api/trade-board/chart/' + encodeURIComponent(p.symbol) + '?days=120&market=' + mkt);
     const d = await r.json();
     if (!d.candles || d.candles.length < 2) return;
     if (miniInst[p.id]) return;
@@ -2391,6 +2584,7 @@ async function initMini(p) {
       grid: {vertLines: {visible: false}, horzLines: {color: '#1a243a', style: 3}},
       crosshair: {mode: LightweightCharts.CrosshairMode.Magnet, vertLine: {labelVisible: false}, horzLine: {labelVisible: true}},
       rightPriceScale: {visible: true, borderColor: '#1a2840', scaleMargins: {top: 0.02, bottom: 0.18}},
+      leftPriceScale: {visible: true, borderColor: '#334155', borderVisible: true, scaleMargins: {top: 0.02, bottom: 0.18}, ticksVisible: true, minimumWidth: 56},
       timeScale: {visible: true, borderColor: '#1a2840', timeVisible: false, fixLeftEdge: true, fixRightEdge: true},
       handleScroll: {mouseWheel: false, pressedMouseMove: true}, handleScale: false,
     });
@@ -2415,6 +2609,8 @@ async function initMini(p) {
         s.setData(pts);
       }
     });
+
+    const showRs = false;
 
     // Volume histogram (bottom pane via overlay)
     const volSeries = chart.addHistogramSeries({
@@ -2469,8 +2665,9 @@ async function initMini(p) {
       }
     }
     // Chart legend overlay
-    el2.insertAdjacentHTML('beforeend', '<div style="position:absolute;bottom:2px;left:6px;display:flex;gap:6px;font-size:8px;font-weight:700;opacity:.7;z-index:5;pointer-events:none">' +
+    el2.insertAdjacentHTML('beforeend', '<div style="position:absolute;bottom:6px;left:8px;display:flex;gap:6px;font-size:8px;font-weight:700;opacity:.9;z-index:5;pointer-events:none;flex-wrap:wrap;background:rgba(6,12,22,.72);padding:2px 6px;border-radius:6px;border:1px solid #223249">' +
       '<span style="color:#facc15">5E</span><span style="color:#3b82f6">20E</span><span style="color:#a855f7">50E</span>' +
+      (showRs ? '<span style="color:#38bdf8">R·N50</span><span style="color:#fb923c">R·Mid</span><span style="color:#f472b6">R·Sml</span>' : '') +
       '<span style="color:#7dd3fc">Entry</span><span style="color:#ef4444">SL</span></div>');
   } catch(e) { console.warn('initMini error:', e); }
 }
@@ -2520,6 +2717,7 @@ async function openWlDetail(id) {
   // Build a pseudo-position object so loadDetChart can draw entry/SL lines from scan data
   const pseudoPos = {
     symbol: item.symbol,
+    market: item.market || 'india',
     entry: item.scanEntry ? parseFloat(item.scanEntry) : 0,
     sl: item.scanSl ? parseFloat(item.scanSl) : 0,
     t1: 0, t2: 0, t3: 0,
@@ -2569,6 +2767,7 @@ function updateWlDetInfo(item) {
     '<div class="di-stat"><div class="di-l">52W Low</div><div class="di-v" style="font-size:.82em">' + l52 + '</div></div>' +
     '<div class="di-stat"><div class="di-l">From 52WH</div><div class="di-v" style="font-size:.85em;color:var(--red)">' + pct52 + '</div></div>' +
     '<div class="di-stat"><div class="di-l">Avg Vol 20</div><div class="di-v" style="font-size:.85em">' + avgVol + '</div></div>' +
+    _buildRsDetailStats(cm) +
     _buildVolRecordStat(item) +
     '<div class="di-stat"><div class="di-l">Accum/Dist</div><div class="di-v" style="font-size:.82em"><span class="pos-color">' + accD + 'A</span>/<span class="neg-color">' + distD + 'D</span></div></div>' +
     '</div>' +
@@ -2600,9 +2799,12 @@ async function deleteWlFromDetail() {
 async function loadDetChart(p, days) {
   const el = document.getElementById('detChart');
   if (detChart) { try { detChart.remove(); } catch(e) {} detChart = null; }
+  window._detChartCtx = null;
   el.innerHTML = '';
+  window._detChartPos = p;
   try {
-    const r = await fetch(API + '/api/trade-board/chart/' + encodeURIComponent(p.symbol) + '?days=' + days);
+    const mkt = p.market === 'us' ? 'us' : 'india';
+    const r = await fetch(API + '/api/trade-board/chart/' + encodeURIComponent(p.symbol) + '?days=' + days + '&market=' + mkt);
     if (!r.ok) { el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted)">No price data (HTTP ' + r.status + ')</div>'; return; }
     const d = await r.json();
     if (!d.candles || !d.candles.length) { el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted)">No price data</div>'; return; }
@@ -2612,7 +2814,7 @@ async function loadDetChart(p, days) {
     d.candles = Array.from(candleMap.values()).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
     // Store chart metadata for detail info panel
     window._lastChartMeta = d;
-    // Ensure non-zero dimensions — overlay may still be animating
+    const ohlcMode = _detOhlcPref() === 'bar' ? 'bar' : 'candle';
     const cw = Math.max(el.offsetWidth, 320);
     const ch = Math.max(el.offsetHeight, 300);
     const chart = LightweightCharts.createChart(el, {
@@ -2620,18 +2822,26 @@ async function loadDetChart(p, days) {
       layout: {background: {type: 'Solid', color: '#080e1a'}, textColor: '#8b9dba'},
       grid: {vertLines: {color: '#0f1928'}, horzLines: {color: '#0f1928'}},
       crosshair: {mode: LightweightCharts.CrosshairMode.Normal},
-      rightPriceScale: {borderColor: '#1a2840'},
+      rightPriceScale: {visible: true, borderColor: '#1a2840', scaleMargins: { top: 0.05, bottom: 0.22 }},
+      leftPriceScale: {visible: true, borderColor: '#334155', borderVisible: true, scaleMargins: {top: 0.02, bottom: 0.18}, ticksVisible: true, minimumWidth: 56},
       timeScale: {borderColor: '#1a2840', timeVisible: true},
     });
+    const candleData = d.candles.map(c => ({time: c.date.slice(0, 10), open: c.open, high: c.high, low: c.low, close: c.close}));
     const cs = chart.addCandlestickSeries({upColor: '#22c55e', downColor: '#ef4444', borderUpColor: '#22c55e', borderDownColor: '#ef4444', wickUpColor: '#22c55e', wickDownColor: '#ef4444'});
-    cs.setData(d.candles.map(c => ({time: c.date.slice(0, 10), open: c.open, high: c.high, low: c.low, close: c.close})));
-    const vs = chart.addHistogramSeries({color: 'rgba(59,130,246,.2)', priceFormat: {type: 'volume'}, priceScaleId: 'vol', scaleMargins: {top: .85, bottom: 0}});
+    const bs = chart.addBarSeries({upColor: '#22c55e', downColor: '#ef4444', thinBars: false});
+    cs.setData(candleData);
+    bs.setData(candleData);
+    const showCandles = ohlcMode === 'candle';
+    cs.applyOptions({ visible: showCandles });
+    bs.applyOptions({ visible: !showCandles });
+    document.querySelectorAll('.chart-ctrls .ohlc-btn').forEach(b => b.classList.toggle('active', (b.getAttribute('data-ohlc') || '') === (showCandles ? 'candle' : 'bar')));
+    const vs = chart.addHistogramSeries({color: 'rgba(59,130,246,.2)', priceFormat: {type: 'volume'}, priceScaleId: 'vol'});
+    chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
     vs.setData(d.candles.map(c => ({time: c.date.slice(0, 10), value: c.volume, color: c.close >= c.open ? 'rgba(34,197,94,.25)' : 'rgba(239,68,68,.2)'})));
     const e20 = chart.addLineSeries({color: '#3b82f6', lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false});
     const e50 = chart.addLineSeries({color: '#8b5cf6', lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false});
     e20.setData(d.candles.filter(c => c.ema20 != null).map(c => ({time: c.date.slice(0, 10), value: c.ema20})));
     e50.setData(d.candles.filter(c => c.ema50 != null).map(c => ({time: c.date.slice(0, 10), value: c.ema50})));
-    // SMA150 and SMA200
     const s150data = d.candles.filter(c => c.sma150 != null);
     const s200data = d.candles.filter(c => c.sma200 != null);
     if (s150data.length > 1) {
@@ -2642,15 +2852,33 @@ async function loadDetChart(p, days) {
       const s200 = chart.addLineSeries({color: '#ef4444', lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false});
       s200.setData(s200data.map(c => ({time: c.date.slice(0, 10), value: c.sma200})));
     }
-    cs.createPriceLine({price: p.entry, color: '#7dd3fc', lineWidth: 1.5, lineStyle: 1, axisLabelVisible: false, title: 'Entry'});
-    if (p.sl) cs.createPriceLine({price: p.sl, color: '#ef4444', lineWidth: 1.5, lineStyle: 1, axisLabelVisible: false, title: 'SL'});
-    if (p.t1) cs.createPriceLine({price: p.t1, color: '#4ade80', lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: 'T1'});
-    if (p.t2) cs.createPriceLine({price: p.t2, color: '#06b6d4', lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: 'T2'});
-    if (p.t3) cs.createPriceLine({price: p.t3, color: '#f59e0b', lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: 'T3'});
+    const rsSeries = {};
+    const hasRsDet = addChartRsLines(chart, d, 2, rsSeries);
+    document.querySelectorAll('#detChartLegend .leg-rs').forEach(row => {
+      const key = row.dataset.rsKey;
+      if (!hasRsDet || !key) { row.style.display = 'none'; return; }
+      const n = (d.rsLines && d.rsLines[key] || []).length;
+      if (n < 2) { row.style.display = 'none'; return; }
+      row.style.display = 'flex';
+      const cb = row.querySelector('.leg-rs-cb');
+      const ser = rsSeries[key];
+      if (cb && ser) {
+        cb.checked = _detGetRsPref(key, false);
+        ser.applyOptions({ visible: cb.checked });
+        cb.onchange = function() {
+          _detSetRsPref(key, this.checked);
+          if (ser) ser.applyOptions({ visible: this.checked });
+          _detSyncRsScale();
+        };
+      }
+    });
+    _detSyncRsScale();
+    const activeOhlc = showCandles ? cs : bs;
+    const priceLineHandles = _detAddPriceLines(activeOhlc, p);
     chart.timeScale().fitContent();
     new ResizeObserver(() => { const rw = el.offsetWidth; const rh = el.offsetHeight; if (rw > 0 && rh > 0) chart.applyOptions({width: rw, height: rh}); }).observe(el);
     detChart = chart;
-    // Update info with chart metadata
+    window._detChartCtx = { chart, candle: cs, bar: bs, mode: ohlcMode, rsSeries, priceLineHandles };
     updateDetInfo(p);
   } catch(e) { console.error('loadDetChart error:', e); el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted)">Error loading chart: ' + (e.message || e) + '</div>'; }
 }
@@ -2741,6 +2969,7 @@ function updateDetInfo(p) {
     '<div class="di-stat"><div class="di-l">52W Low</div><div class="di-v" style="font-size:.82em">' + l52 + '</div></div>' +
     '<div class="di-stat"><div class="di-l">From 52WH</div><div class="di-v" style="font-size:.85em;color:var(--red)">' + pct52 + '</div></div>' +
     '<div class="di-stat"><div class="di-l">Avg Vol 20</div><div class="di-v" style="font-size:.85em">' + avgVol + '</div></div>' +
+    _buildRsDetailStats(cm) +
     _buildVolRecordStat(p) +
     '<div class="di-stat"><div class="di-l">Accum/Dist</div><div class="di-v" style="font-size:.82em"><span class="pos-color">' + accD + 'A</span>/<span class="neg-color">' + distD + 'D</span></div></div>' +
     '</div>' +
@@ -2776,15 +3005,31 @@ function _buildVolRecordStat(p) {
   return '<div class="di-stat"><div class="di-l">Vol Ratio</div><div class="di-v" style="font-size:.85em">' + (vr != null ? vr.toFixed(1) + 'x' : '—') + '</div></div>';
 }
 
+function _buildRsDetailStats(meta) {
+  const snap = _resolveRsSnapshot(meta || {});
+  if (!snap || snap.leaderLast == null) {
+    return '<div class="di-stat"><div class="di-l">RS Line</div><div class="di-v" style="font-size:.85em;color:var(--muted)">—</div></div>';
+  }
+  const rel = Number(snap.leaderLast) - 100;
+  const d20 = Number(snap.leaderDelta20 || 0);
+  const relCol = rel >= 0 ? '#4ade80' : '#f87171';
+  const d20Col = d20 >= 0 ? '#4ade80' : '#f87171';
+  const relSign = rel >= 0 ? '+' : '';
+  const d20Sign = d20 >= 0 ? '+' : '';
+  return '<div class="di-stat"><div class="di-l">RS Lead</div><div class="di-v" style="font-size:.85em;color:' + relCol + '">' +
+    snap.leaderLabel + ' ' + relSign + rel.toFixed(1) + '%</div><div style="font-size:8px;color:' + d20Col + '">1M: ' + d20Sign + d20.toFixed(1) + '</div></div>';
+}
+
 function setChartDays(days, btn) {
   currentDetDays = days;
-  document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.chart-ctrls .days-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   if (currentDetType === 'watchlist') {
     const item = watchlistItems.find(x => x.id === currentDetId);
     if (item) {
       const pseudoPos = {
         symbol: item.symbol,
+        market: item.market || 'india',
         entry: item.scanEntry ? parseFloat(item.scanEntry) : 0,
         sl: item.scanSl ? parseFloat(item.scanSl) : 0,
         t1: item.alert_price || 0, t2: 0, t3: 0,
@@ -2801,6 +3046,8 @@ function setChartDays(days, btn) {
 function closeDetail() {
   document.getElementById('detOverlay').classList.remove('open');
   currentDetId = null;
+  window._detChartCtx = null;
+  window._detChartPos = null;
   if (detChart) { try { detChart.remove(); } catch(e) {} detChart = null; }
 }
 
@@ -4384,7 +4631,8 @@ async function initWlMini(item) {
     return;
   }
   try {
-    const r = await fetch(API + '/api/trade-board/chart/' + item.symbol + '?days=120');
+    const mkt = item.market === 'us' ? 'us' : 'india';
+    const r = await fetch(API + '/api/trade-board/chart/' + encodeURIComponent(item.symbol) + '?days=120&market=' + mkt);
     const d = await r.json();
     if (!d.candles || d.candles.length < 2) { el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--dim);font-size:10px">No data</div>'; return; }
     if (wlMiniInst[item.id]) return;
@@ -4395,6 +4643,7 @@ async function initWlMini(item) {
       grid: {vertLines: {visible: false}, horzLines: {color: '#1a243a', style: 3}},
       crosshair: {mode: LightweightCharts.CrosshairMode.Magnet, vertLine: {labelVisible: false}, horzLine: {labelVisible: true}},
       rightPriceScale: {visible: true, borderColor: '#1a2840', scaleMargins: {top: 0.02, bottom: 0.18}},
+      leftPriceScale: {visible: true, borderColor: '#334155', borderVisible: true, scaleMargins: {top: 0.02, bottom: 0.18}, ticksVisible: true, minimumWidth: 56},
       timeScale: {visible: true, borderColor: '#1a2840', timeVisible: false, fixLeftEdge: true, fixRightEdge: true},
       handleScroll: {mouseWheel: false, pressedMouseMove: true}, handleScale: false,
     });
@@ -4419,6 +4668,8 @@ async function initWlMini(item) {
         s.setData(pts);
       }
     });
+
+    const showRsWl = false;
 
     // Volume histogram
     const volSeries = chart.addHistogramSeries({
@@ -4476,8 +4727,10 @@ async function initWlMini(item) {
       }
     }
     // Chart legend overlay
-    el.insertAdjacentHTML('beforeend', '<div style="position:absolute;bottom:2px;left:6px;display:flex;gap:6px;font-size:8px;font-weight:700;opacity:.7;z-index:5;pointer-events:none">' +
-      '<span style="color:#facc15">5E</span><span style="color:#3b82f6">20E</span><span style="color:#a855f7">50E</span></div>');
+    el.insertAdjacentHTML('beforeend', '<div style="position:absolute;bottom:6px;left:8px;display:flex;gap:6px;font-size:8px;font-weight:700;opacity:.9;z-index:5;pointer-events:none;flex-wrap:wrap;background:rgba(6,12,22,.72);padding:2px 6px;border-radius:6px;border:1px solid #223249">' +
+      '<span style="color:#facc15">5E</span><span style="color:#3b82f6">20E</span><span style="color:#a855f7">50E</span>' +
+      (showRsWl ? '<span style="color:#38bdf8">R·N50</span><span style="color:#fb923c">R·Mid</span><span style="color:#f472b6">R·Sml</span>' : '') +
+      '</div>');
   } catch(e) { console.warn('initWlMini error:', e); }
 }
 

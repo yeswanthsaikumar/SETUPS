@@ -5003,9 +5003,125 @@ def _calc_sma(closes: list[float], period: int) -> list[Optional[float]]:
     return result
 
 
+# Mini-chart RS benchmarks (Yahoo / cache tickers; mid/small verified via yfinance)
+_RS_CHART_NIFTY50 = "^NSEI"
+_RS_CHART_MIDCAP100 = "NIFTY_MIDCAP_100.NS"
+_RS_CHART_MIDCAP_ALT = "^NSMIDCAP"  # Yahoo Nifty Midcap 150 if .NS cache missing
+_RS_CHART_SMLCAP100 = "^CNXSC"
+
+
+def _normalized_close_series(rows: list[dict]) -> list[tuple[str, float]]:
+    """Return date-sorted unique (date, close) pairs with valid positive closes."""
+    by_date: dict[str, float] = {}
+    for r in rows or []:
+        d = str(r.get("date", ""))[:10]
+        c = r.get("close")
+        if not d or c is None:
+            continue
+        try:
+            cv = float(c)
+        except (TypeError, ValueError):
+            continue
+        if cv > 0:
+            by_date[d] = cv
+    return sorted(by_date.items(), key=lambda x: x[0])
+
+
+def _date_lag_days(newer: str, older: str) -> Optional[int]:
+    try:
+        nd = datetime.strptime(newer, "%Y-%m-%d")
+        od = datetime.strptime(older, "%Y-%m-%d")
+        return (nd - od).days
+    except Exception:
+        return None
+
+
+def _rs_line_vs_benchmark(stock_rows: list[dict], bench_rows: list[dict]) -> list[dict]:
+    """Relative strength vs index: first aligned session = 100; then (s/s0)/(i/i0)*100."""
+    stock = _normalized_close_series(stock_rows)
+    bench = _normalized_close_series(bench_rows)
+    if len(stock) < 2 or len(bench) < 2:
+        return []
+
+    aligned: list[tuple[str, float, float]] = []
+    j = 0
+    max_lag_days = 7  # allow normal holiday/weekend gaps between stock/index sessions
+    for d, sc in stock:
+        while j + 1 < len(bench) and bench[j + 1][0] <= d:
+            j += 1
+        bd, bc = bench[j]
+        if bd > d or bc <= 0:
+            continue
+        lag = _date_lag_days(d, bd)
+        if lag is not None and lag > max_lag_days:
+            continue
+        aligned.append((d, sc, bc))
+
+    if len(aligned) < 2:
+        return []
+
+    _d0, s0, b0 = aligned[0]
+    if s0 <= 0 or b0 <= 0:
+        return []
+    out: list[dict] = []
+    for d, s, b in aligned:
+        if b <= 0:
+            continue
+        rs = (s / s0) / (b / b0) * 100.0
+        out.append({"time": d, "value": round(rs, 4)})
+    return out
+
+
+def _build_rs_snapshot(rs_lines: dict[str, list[dict]]) -> dict:
+    """Compact RS summary for UI badges/details from per-benchmark RS lines."""
+    labels = {
+        "nifty50": "Nifty 50",
+        "niftyMidcap100": "Nifty Midcap 100",
+        "niftySmallcap100": "Nifty Smallcap 100",
+    }
+    bench_stats: dict[str, dict] = {}
+    for key, pts in (rs_lines or {}).items():
+        if not isinstance(pts, list) or len(pts) < 2:
+            continue
+        vals = [p.get("value") for p in pts if isinstance(p, dict) and p.get("value") is not None]
+        if len(vals) < 2:
+            continue
+        last = float(vals[-1])
+        prev_5 = float(vals[max(0, len(vals) - 6)])
+        prev_20 = float(vals[max(0, len(vals) - 21)])
+        d5 = round(last - prev_5, 2)
+        d20 = round(last - prev_20, 2)
+        trend = "up" if d5 > 0.75 else "down" if d5 < -0.75 else "flat"
+        bench_stats[key] = {
+            "label": labels.get(key, key),
+            "last": round(last, 2),
+            "delta5": d5,
+            "delta20": d20,
+            "trend": trend,
+            "points": len(vals),
+        }
+    if not bench_stats:
+        return {}
+    leader_key = max(bench_stats.keys(), key=lambda k: bench_stats[k]["last"])
+    return {
+        "leader": leader_key,
+        "leaderLabel": bench_stats[leader_key]["label"],
+        "leaderLast": bench_stats[leader_key]["last"],
+        "leaderDelta20": bench_stats[leader_key]["delta20"],
+        "benchmarks": bench_stats,
+    }
+
+
 @app.get("/api/trade-board/chart/{symbol}")
-def trade_board_chart(symbol: str, days: int = 252) -> dict:
-    rows = _read_ohlcv(symbol, days=max(days, 30) if days > 0 else 0)
+def trade_board_chart(symbol: str, days: int = 252, market: str = "india") -> dict:
+    mkt = (market or "india").lower()
+    if mkt not in ("india", "us"):
+        mkt = "india"
+    rows = _read_ohlcv(
+        symbol,
+        days=max(days, 30) if days > 0 else 0,
+        market=mkt,
+    )
     if not rows:
         raise HTTPException(status_code=404, detail=f"No price data for {symbol}")
 
@@ -5013,7 +5129,8 @@ def trade_board_chart(symbol: str, days: int = 252) -> dict:
     # The CSV cache only has completed daily bars.  During market hours the
     # latest bar may be yesterday's close.  Fetch live price and either
     # update today's row (if cache already has today) or append a new one.
-    live = _get_live_price(symbol)
+    # US symbols: skip Groww/NSE live merge (quotes target .NS); CSV bar is enough.
+    live = None if mkt == "us" else _get_live_price(symbol)
     if live and live.get("price") and live["price"] > 0:
         import datetime as _dtmod
         today_str = _dtmod.datetime.now(_IST).strftime("%Y-%m-%d")
@@ -5086,8 +5203,26 @@ def trade_board_chart(symbol: str, days: int = 252) -> dict:
 
     last_date = rows[-1]["date"] if rows else None
 
+    rs_lines: dict[str, list[dict]] = {}
+    rs_snapshot: dict = {}
+    if mkt == "india":
+        # Full history for indices so every bar in `rows` can align (trim is cheap).
+        try:
+            n50 = _read_ohlcv(_RS_CHART_NIFTY50, days=0, market="us") or []
+            mid = _read_ohlcv(_RS_CHART_MIDCAP100, days=0, market="india") or []
+            if len(mid) < 20:
+                mid = _read_ohlcv(_RS_CHART_MIDCAP_ALT, days=0, market="us") or []
+            sml = _read_ohlcv(_RS_CHART_SMLCAP100, days=0, market="us") or []
+            rs_lines["nifty50"] = _rs_line_vs_benchmark(rows, n50)
+            rs_lines["niftyMidcap100"] = _rs_line_vs_benchmark(rows, mid)
+            rs_lines["niftySmallcap100"] = _rs_line_vs_benchmark(rows, sml)
+            rs_snapshot = _build_rs_snapshot(rs_lines)
+        except Exception:
+            rs_lines = {}
+            rs_snapshot = {}
+
     return {
-        "symbol": symbol, "days": len(rows), "avgVol20": round(avg_vol, 0),
+        "symbol": symbol, "market": mkt, "days": len(rows), "avgVol20": round(avg_vol, 0),
         "avgVol50": round(avg_vol_50, 0),
         "cmp": closes[-1],
         "lastDate": last_date,
@@ -5096,6 +5231,8 @@ def trade_board_chart(symbol: str, days: int = 252) -> dict:
         "distDays50": dist_days, "accumDays50": accum_days,
         "rsi": rsi14[-1] if rsi14 and rsi14[-1] is not None else None,
         "adr": adr_abs, "adrPct": adr_pct,
+        "rsLines": rs_lines,
+        "rsSnapshot": rs_snapshot,
         "candles": rows
     }
 
