@@ -50,7 +50,6 @@ REFRESH_CACHE_SCRIPT = ROOT / "scripts" / "refresh_cache.py"
 REFRESH_LOG = OUTPUT_DIR / "cache_refresh.log"
 
 sys.path.insert(0, str(PY_LIB_DIR))
-from trade_plan_assistant import brief_as_json, build_scan_brief
 from stock_analyzer import analyze_stock
 import trading_wisdom
 import performance_tracker as _pt
@@ -81,15 +80,6 @@ RUN_VCP_SYSTEM = CLI_DIR / "run_vcp_system.py"
 RUN_BACKTEST = CLI_DIR / "run_backtest.py"
 
 
-class ScanJobRequest(BaseModel):
-    markets: list[Literal["india", "us"]] = Field(default_factory=lambda: ["india", "us"])
-    timeframes: list[Literal["daily", "weekly"]] = Field(default_factory=lambda: ["daily", "weekly"])
-    setups: Literal["full", "both", "vcp", "range_expansion", "mean_reversion", "breakout_pullback", "bull_flag", "all"] = "full"
-    daily_lookback: int = 252
-    weekly_lookback: int = 104
-    workers: int = 6
-    batch: int = 40
-    skip_us_refresh: bool = True
 
 
 class BacktestJobRequest(BaseModel):
@@ -104,7 +94,7 @@ class BacktestJobRequest(BaseModel):
 
 class JobRecord(BaseModel):
     id: str
-    kind: Literal["scan", "backtest"]
+    kind: Literal["backtest"]
     command: list[str]
     status: Literal["queued", "running", "succeeded", "failed"]
     created_at: str
@@ -3085,33 +3075,6 @@ def vpn_health() -> dict:
     return _vpn.health_check()
 
 
-@app.post("/api/jobs/scan")
-def start_scan(req: ScanJobRequest) -> dict:
-    setups = "full" if req.setups == "all" else req.setups
-    command = [
-        sys.executable,
-        str(RUN_VCP_SYSTEM),
-        "--markets",
-        ",".join(req.markets),
-        "--timeframes",
-        ",".join(req.timeframes),
-        "--setups",
-        setups,
-        "--daily-lookback",
-        str(req.daily_lookback),
-        "--weekly-lookback",
-        str(req.weekly_lookback),
-        "--workers",
-        str(req.workers),
-        "--batch",
-        str(req.batch),
-        "--output-dir",
-        str(OUTPUT_DIR),
-    ]
-    if req.skip_us_refresh:
-        command.append("--skip-us-refresh")
-    job = _submit_job("scan", command)
-    return {"job": job}
 
 
 # ── iCloud Backup ──────────────────────────────────────────────────────────
@@ -3138,24 +3101,6 @@ def backup_trigger(force: bool = False) -> dict:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/assistant/scan-brief")
-def assistant_scan_brief(
-    market: Literal["india", "us"] = "india",
-    timeframe: Literal["daily", "weekly"] = "daily",
-    setups: Literal["full", "both", "vcp", "range_expansion", "mean_reversion", "breakout_pullback", "bull_flag", "all"] = "full",
-    top_n: int = 12,
-) -> dict:
-    if top_n <= 0:
-        raise HTTPException(status_code=400, detail="top_n must be greater than 0")
-
-    summary = build_scan_brief(
-        output_dir=OUTPUT_DIR,
-        market=market,
-        timeframe=timeframe,
-        setups="full" if setups == "all" else setups,
-        top_n=top_n,
-    )
-    return {"brief": brief_as_json(summary)}
 
 
 @app.post("/api/jobs/backtest")
@@ -3235,33 +3180,6 @@ def stock_analyze(
     return {"analysis": result}
 
 
-@app.get("/api/outputs/scan/latest")
-def scan_latest_summary() -> dict:
-    summary_json = OUTPUT_DIR / "system_latest_summary.json"
-    data = _read_json_if_exists(summary_json)
-    if data is None:
-        raise HTTPException(status_code=404, detail="No latest scan summary found")
-    return {
-        "summary": data,
-        "summaryJson": f"/reports/{summary_json.name}",
-        "summaryMd": "/reports/system_latest_summary.md",
-    }
-
-
-@app.get("/api/outputs/scan/manifests")
-def scan_manifests() -> dict:
-    manifests = sorted(OUTPUT_DIR.glob("scan_manifest_*_LATEST.json"), key=lambda p: p.stat().st_mtime, reverse=True)
-    items: list[dict] = []
-    for path in manifests[:30]:
-        items.append(
-            {
-                "name": path.name,
-                "updatedAt": datetime.fromtimestamp(path.stat().st_mtime).isoformat(timespec="seconds"),
-                "url": f"/reports/{path.name}",
-                "data": _read_json_if_exists(path),
-            }
-        )
-    return {"items": items}
 
 
 @app.get("/api/outputs/backtest/latest")
@@ -5313,65 +5231,6 @@ def trade_board_equity() -> dict:
 
     return {"curve": curve, "totalPl": round(total, 2)}
 
-@app.get("/api/trade-board/scan-signals")
-def trade_board_scan_signals(market: str = "india", timeframe: str = "daily") -> dict:
-    """Return top open trade signals from scan output for quick import, enriched with vol/RS data."""
-    suffix = f"{market}_{timeframe}_full"
-    # Try open_trades first, then vcp_hits as fallback
-    candidates = [
-        OUTPUT_DIR / f"open_trades_{suffix}_LATEST.json",
-        OUTPUT_DIR / f"vcp_hits_{suffix}_LATEST.json",
-    ]
-    for json_path in candidates:
-        if not json_path.exists():
-            continue
-        try:
-            signals = json.loads(json_path.read_text(encoding="utf-8"))
-            if isinstance(signals, list) and signals:
-                # Normalize and enrich fields
-                for s in signals:
-                    if "rankingScore" not in s:
-                        s["rankingScore"] = s.get("score", 0)
-                    # Normalize vol% field
-                    vol_raw = s.get("vol%", s.get("vol_pct"))
-                    try:
-                        s["volPct"] = round(float(vol_raw), 1) if vol_raw not in (None, "", "0.0") else None
-                    except (ValueError, TypeError):
-                        s["volPct"] = None
-                    # Normalize dist% field
-                    dist_raw = s.get("distFromPivot%", s.get("dist%", s.get("distance_from_pivot_pct", s.get("distFromPivot%"))))
-                    try:
-                        s["distPct"] = round(float(dist_raw), 1) if dist_raw not in (None, "", "0.0") else None
-                    except (ValueError, TypeError):
-                        s["distPct"] = None
-                    # Avg volume
-                    try:
-                        s["avgVol20"] = round(float(s.get("avgVol20", 0))) if s.get("avgVol20") else None
-                    except (ValueError, TypeError):
-                        s["avgVol20"] = None
-                    try:
-                        s["lastVol"] = round(float(s.get("lastVol", 0))) if s.get("lastVol") else None
-                    except (ValueError, TypeError):
-                        s["lastVol"] = None
-                    # RS data
-                    try:
-                        s["rsScore"] = round(float(s.get("rsScore", 0)), 1) if s.get("rsScore") else None
-                    except (ValueError, TypeError):
-                        s["rsScore"] = None
-                    try:
-                        s["rs3m"] = round(float(s.get("rs3m", 0)), 1) if s.get("rs3m") else None
-                    except (ValueError, TypeError):
-                        s["rs3m"] = None
-                    try:
-                        s["rs6m"] = round(float(s.get("rs6m", 0)), 1) if s.get("rs6m") else None
-                    except (ValueError, TypeError):
-                        s["rs6m"] = None
-
-                signals.sort(key=lambda x: -float(x.get("rankingScore") or x.get("score") or 0))
-                return {"signals": signals[:40], "total": len(signals), "source": json_path.name}
-        except Exception:
-            pass
-    return {"signals": [], "total": 0}
 
 
 # ── Trade Journal ──────────────────────────────────────────────────────────────
