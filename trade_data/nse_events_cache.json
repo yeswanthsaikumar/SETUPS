@@ -1,56 +1,8 @@
 {
   "version": 1,
   "upcoming:60": {
-    "fetched_at": "2026-05-01T11:32:08.253241+00:00",
+    "fetched_at": "2026-05-01T20:09:20.484878+00:00",
     "payload": {
-      "FILATEX": [
-        {
-          "date": "2026-05-01",
-          "purpose": "Financial Results/Dividend",
-          "details": "To consider and approve the financial results for the period ended March 31, 2026 and dividend",
-          "source": "nse-event-calendar"
-        }
-      ],
-      "JINDALSTEL": [
-        {
-          "date": "2026-05-01",
-          "purpose": "Financial Results",
-          "details": "To consider and approve the financial results for the period ended March 31, 2026",
-          "source": "nse-event-calendar"
-        }
-      ],
-      "NEUEON": [
-        {
-          "date": "2026-05-01",
-          "purpose": "Financial Results/Other business matters",
-          "details": "To consider and approve the financial results for the period ended March 31, 2026 and other business matters",
-          "source": "nse-event-calendar"
-        }
-      ],
-      "PUNJABCHEM": [
-        {
-          "date": "2026-05-01",
-          "purpose": "Financial Results/Dividend",
-          "details": "To consider and approve the financial results for the period ended March 31, 2026 and dividend",
-          "source": "nse-event-calendar"
-        }
-      ],
-      "RKFORGE": [
-        {
-          "date": "2026-05-01",
-          "purpose": "Financial Results/Dividend/Other business matters",
-          "details": "To consider and approve the financial results for the quarter and financial year ended on March 31, 2026, 1st Interim dividend for the financial year 2025-26 and other business matters",
-          "source": "nse-event-calendar"
-        }
-      ],
-      "ZENTEC": [
-        {
-          "date": "2026-05-01",
-          "purpose": "Financial Results/Dividend",
-          "details": "To consider and approve the financial results for the period ended March 31, 2026 and dividend",
-          "source": "nse-event-calendar"
-        }
-      ],
       "APLAPOLLO": [
         {
           "date": "2026-05-02",
@@ -1025,13 +977,13 @@
         {
           "date": "2026-05-06",
           "purpose": "Financial Results/Fund Raising",
-          "details": "Corrigendum to Intimation letter of Board Meeting to be held on May 06, 2026 under Regulations 29 and 50 of the SEBI (Listing Obligations and Disclosure Requirements) Regulations, 2015 (\"SEBI Listing Regulations\")",
+          "details": "To consider and approve the financial results for the period ended March 31, 2026 and Fund Raising",
           "source": "nse-event-calendar"
         },
         {
           "date": "2026-05-06",
           "purpose": "Financial Results/Fund Raising",
-          "details": "To consider and approve the financial results for the period ended March 31, 2026 and Fund Raising",
+          "details": "Corrigendum to Intimation letter of Board Meeting to be held on May 06, 2026 under Regulations 29 and 50 of the SEBI (Listing Obligations and Disclosure Requirements) Regulations, 2015 (\"SEBI Listing Regulations\")",
           "source": "nse-event-calendar"
         }
       ],
@@ -1272,6 +1224,14 @@
           "date": "2026-05-07",
           "purpose": "Financial Results",
           "details": "To consider and approve the financial results for the period ended March 31, 2026",
+          "source": "nse-event-calendar"
+        }
+      ],
+      "HARSHA": [
+        {
+          "date": "2026-05-07",
+          "purpose": "Financial Results/Dividend/Fund Raising",
+          "details": "To consider and approve the financial results for the period ended March 31, 2026, dividend and ESOP Scheme",
           "source": "nse-event-calendar"
         }
       ],
@@ -1651,6 +1611,14 @@
           "source": "nse-event-calendar"
         }
       ],
+      "JSWINFRA": [
+        {
+          "date": "2026-05-08",
+          "purpose": "Financial Results/Dividend",
+          "details": "To consider and approve the financial results for the period ended March 31, 2026 and dividend",
+          "source": "nse-event-calendar"
+        }
+      ],
       "KALYANKJIL": [
         {
           "date": "2026-05-08",
@@ -1667,6 +1635,14 @@
           "source": "nse-event-calendar"
         }
       ],
+      "MANYAVAR": [
+        {
+          "date": "2026-05-08",
+          "purpose": "Financial Results/Dividend",
+          "details": "To consider and approve the financial results for the period ended March 31, 2026 and dividend",
+          "source": "nse-event-calendar"
+        }
+      ],
       "MUTHOOTCAP": [
         {
           "date": "2026-05-08",
@@ -1680,6 +1656,14 @@
           "date": "2026-05-08",
           "purpose": "Financial Results",
           "details": "To consider and approve the financial results for the period ended March 31, 2026",
+          "source": "nse-event-calendar"
+        }
+      ],
+      "OBEROIRLTY": [
+        {
+          "date": "2026-05-08",
+          "purpose": "Financial Results/Dividend/Fund Raising",
+          "details": "To consider and approve the financial results for the financialyear ended March 31, 2026 and other specified matters",
           "source": "nse-event-calendar"
         }
       ],
@@ -1704,6 +1688,14 @@
           "date": "2026-05-08",
           "purpose": "Financial Results",
           "details": "To consider and approve the financial results for the period ended March 31, 2026",
+          "source": "nse-event-calendar"
+        }
+      ],
+      "SASKEN": [
+        {
+          "date": "2026-05-08",
+          "purpose": "Financial Results/Dividend/Other business matters",
+          "details": "To consider and approve the financial results for the period ended March 31, 2026, dividend and other business matters",
           "source": "nse-event-calendar"
         }
       ],
@@ -1752,6 +1744,14 @@
           "date": "2026-05-08",
           "purpose": "Financial Results",
           "details": "To consider and approve the audited standalone and consolidated financial results of the Company for the quarter and financial year ended March 31, 2026.",
+          "source": "nse-event-calendar"
+        }
+      ],
+      "BIRLACORPN": [
+        {
+          "date": "2026-05-09",
+          "purpose": "Financial Results/Dividend",
+          "details": "To consider and approve standalone and consolidated Audited Financial Results of the Company for the quarter and year ended 31st March, 2026; recommend dividend, if any, on the equity shares of the Company for the financial year ended 31st March, 2026.",
           "source": "nse-event-calendar"
         }
       ],
@@ -1923,6 +1923,14 @@
           "source": "nse-event-calendar"
         }
       ],
+      "AAKASH": [
+        {
+          "date": "2026-05-12",
+          "purpose": "Financial Results/Other business matters",
+          "details": "To consider and approve the financial results for the period ended March 31, 2026 and other business matters",
+          "source": "nse-event-calendar"
+        }
+      ],
       "BBL": [
         {
           "date": "2026-05-12",
@@ -1949,13 +1957,13 @@
         {
           "date": "2026-05-12",
           "purpose": "Financial Results",
-          "details": "To consider and approve the financial results for the quarter and year ending March 31, 2026",
+          "details": "To consider and approve the financial results for the period ended March 31, 2026",
           "source": "nse-event-calendar"
         },
         {
           "date": "2026-05-12",
           "purpose": "Financial Results",
-          "details": "To consider and approve the financial results for the period ended March 31, 2026",
+          "details": "To consider and approve the financial results for the quarter and year ending March 31, 2026",
           "source": "nse-event-calendar"
         }
       ],
@@ -2076,6 +2084,22 @@
           "date": "2026-05-12",
           "purpose": "Financial Results/Dividend",
           "details": "To consider and approve the financial results for the period ended March 31, 2026 and dividend",
+          "source": "nse-event-calendar"
+        }
+      ],
+      "BHARTIARTL": [
+        {
+          "date": "2026-05-13",
+          "purpose": "Financial Results",
+          "details": "To consider and approve the financial results for the period ended March 31, 2026",
+          "source": "nse-event-calendar"
+        }
+      ],
+      "BHARTIHEXA": [
+        {
+          "date": "2026-05-13",
+          "purpose": "Financial Results",
+          "details": "To consider and approve the financial results for the fourth quarter and year ended on March 31, 2026",
           "source": "nse-event-calendar"
         }
       ],
@@ -2348,6 +2372,14 @@
           "date": "2026-05-16",
           "purpose": "Financial Results/Dividend",
           "details": "To consider and approve the financial results for the period ended March 31, 2026 and dividend",
+          "source": "nse-event-calendar"
+        }
+      ],
+      "GVT&D": [
+        {
+          "date": "2026-05-18",
+          "purpose": "Financial Results/Dividend/Other business matters",
+          "details": "To consider and approve the financial results for the period ended March 31, 2026, dividend and other business matters",
           "source": "nse-event-calendar"
         }
       ],
@@ -2696,7 +2728,7 @@
     }
   },
   "recent_results": {
-    "fetched_at": "2026-05-01T11:32:09.262940+00:00",
+    "fetched_at": "2026-05-01T20:09:22.688965+00:00",
     "payload": {
       "VALUEIND": [
         {

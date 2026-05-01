@@ -1077,20 +1077,68 @@ def industry_groups_page() -> FileResponse:
 #   GET /api/playbook/markdown[?doc=…]    → raw markdown source
 #   GET /api/playbook/download[?doc=…]    → self-contained HTML, print-to-PDF
 _PLAYBOOK_UI_PATH = ROOT / "apps" / "web" / "ui" / "playbook.html"
+# ── _PLAYBOOK_DOCS ────────────────────────────────────────────────────────────
+# To add a new blog post / wisdom doc:
+#   1. Drop a .md file into docs/
+#   2. Add an entry below with category="blog" (category="core" for ref docs).
+#   3. Restart the server — the UI auto-discovers it via /api/playbook/meta.
 _PLAYBOOK_DOCS: dict[str, dict] = {
+    # ── Core reference docs ───────────────────────────────────────────────────
     "playbook": {
-        "path":  ROOT / "docs" / "TRADING_PLAYBOOK.md",
-        "title": "The Trading Playbook",
-        "dek":   "Why chart patterns work, which ones actually pay, and the "
-                 "distilled philosophies of the traders who pioneered them.",
-        "file":  "Trading_Playbook.html",
+        "path":     ROOT / "docs" / "TRADING_PLAYBOOK.md",
+        "title":    "The Trading Playbook",
+        "dek":      "Why chart patterns work, which ones actually pay, and the "
+                    "distilled philosophies of the traders who pioneered them.",
+        "file":     "Trading_Playbook.html",
+        "category": "core",
+        "icon":     "📖",
+        "order":    1,
     },
     "evidence": {
-        "path":  ROOT / "docs" / "TRADING_PLAYBOOK_EVIDENCE.md",
-        "title": "Trading Playbook — Evidence",
-        "dek":   "Hard statistics, audited track records, and academic research "
-                 "behind every claim in the playbook.",
-        "file":  "Trading_Playbook_Evidence.html",
+        "path":     ROOT / "docs" / "TRADING_PLAYBOOK_EVIDENCE.md",
+        "title":    "Trading Playbook · Evidence",
+        "dek":      "Hard statistics, audited track records, and academic research "
+                    "behind every claim in the playbook.",
+        "file":     "Trading_Playbook_Evidence.html",
+        "category": "core",
+        "icon":     "🔬",
+        "order":    2,
+    },
+    # ── Wisdom blog posts ─────────────────────────────────────────────────────
+    "livermore": {
+        "path":     ROOT / "docs" / "JESSE_LIVERMORE_WISDOM.md",
+        "title":    "Jesse Livermore — The Complete Wisdom",
+        "dek":      "Time-tested principles, entries, exits, position sizing, "
+                    "psychology, checklists, 50 quotes, and daily affirmations "
+                    "from the trader who made $100M shorting the 1929 crash.",
+        "file":     "Jesse_Livermore_Wisdom.html",
+        "category": "blog",
+        "icon":     "🎯",
+        "order":    1,
+    },
+    "impulse-control-trading": {
+        "path":     ROOT / "docs" / "IMPULSE_CONTROL_TRADING.md",
+        "title":    "The Anti-Impulse Trading Protocol",
+        "dek":      "A professional guide to avoiding immediate buys, greedy "
+                    "entries, panic selling, phone-driven over-monitoring, and "
+                    "emotion-led rule breaks using calm process and Mark Douglas "
+                    "style probabilistic thinking.",
+        "file":     "Impulse_Control_Trading.html",
+        "category": "blog",
+        "icon":     "🧠",
+        "order":    2,
+    },
+    "chart-pattern-trade-plans": {
+        "path":     ROOT / "docs" / "CHART_PATTERN_TRADE_PLANS.md",
+        "title":    "Chart Patterns & Trade Plans",
+        "dek":      "A daily price-action and volume playbook covering bull flags, "
+                    "triangles, cup-and-handle, VCP, double bottoms, reversals, "
+                    "trade plans, stops, targets, invalidation, and pattern failure "
+                    "signs.",
+        "file":     "Chart_Pattern_Trade_Plans.html",
+        "category": "blog",
+        "icon":     "📈",
+        "order":    3,
     },
 }
 
@@ -1134,14 +1182,27 @@ def playbook_markdown(doc: str = "playbook") -> Response:
 
 @app.get("/api/playbook/meta")
 def playbook_meta() -> dict:
-    """List available playbook documents so the UI can render a switcher."""
-    return {
-        "docs": [
-            {"key": k, "title": v["title"], "dek": v["dek"]}
-            for k, v in _PLAYBOOK_DOCS.items()
-            if v["path"].exists()
-        ],
-    }
+    """List available documents grouped by category.
+
+    Each entry includes: key, title, dek, category, icon, order.
+    The UI uses category to render Core docs vs Wisdom Blog posts separately.
+    Adding a new .md + entry in _PLAYBOOK_DOCS is the only step needed to
+    surface a new blog post in the UI.
+    """
+    docs = [
+        {
+            "key":      k,
+            "title":    v["title"],
+            "dek":      v["dek"],
+            "category": v.get("category", "core"),
+            "icon":     v.get("icon", "📄"),
+            "order":    v.get("order", 99),
+        }
+        for k, v in _PLAYBOOK_DOCS.items()
+        if v["path"].exists()
+    ]
+    docs.sort(key=lambda d: (d["category"] != "core", d["order"]))
+    return {"docs": docs}
 
 
 @app.get("/api/playbook/download")

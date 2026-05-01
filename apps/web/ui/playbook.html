@@ -38,12 +38,13 @@ a:hover{text-decoration:underline}
 /* ── Top ribbon ─────────────────────────────────────────── */
 .ribbon{
   position:sticky;top:0;z-index:20;
-  display:flex;align-items:center;gap:14px;
-  padding:10px 18px;background:rgba(11,15,26,.92);
+  display:flex;align-items:center;gap:10px;
+  padding:9px 18px;background:rgba(11,15,26,.96);
   backdrop-filter:saturate(140%) blur(14px);
   border-bottom:1px solid var(--rule);
+  flex-wrap:wrap;
 }
-.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.2px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.2px;white-space:nowrap}
 .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px 2px rgba(245,183,72,.5)}
 .brand small{color:var(--muted);font-weight:500;letter-spacing:1px;text-transform:uppercase;font-size:10px}
 .spacer{flex:1}
@@ -53,15 +54,45 @@ a:hover{text-decoration:underline}
 .btn.primary:hover{background:#ffcf6a;color:#1a1a1a}
 .btn svg{width:14px;height:14px}
 .progress-bar{position:absolute;left:0;bottom:-1px;height:2px;background:var(--accent);width:0;transition:width .1s linear}
-.doc-switch{display:flex;gap:4px;margin-left:10px;background:var(--bg2);border:1px solid var(--rule);border-radius:8px;padding:3px}
-.doc-switch button{background:none;border:0;padding:5px 11px;font-size:11.5px;font-weight:700;color:var(--muted);border-radius:6px;cursor:pointer;font-family:inherit}
-.doc-switch button.active{background:var(--bg3);color:var(--accent);box-shadow:inset 0 0 0 1px rgba(245,183,72,.25)}
-.doc-switch button:hover:not(.active){color:var(--ink)}
+
+/* ── Grouped doc switcher ───────────────────────────────── */
+.nav-group{display:flex;align-items:center;gap:4px}
+.nav-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;padding:0 6px 0 2px;white-space:nowrap}
+.nav-divider{width:1px;height:20px;background:var(--rule);margin:0 4px}
+.nav-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  background:none;border:1px solid transparent;padding:5px 11px;
+  font-size:11.5px;font-weight:700;color:var(--muted);border-radius:6px;
+  cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;
+}
+.nav-btn:hover:not(.active){color:var(--ink);background:var(--bg3)}
+.nav-btn.active{background:var(--bg3);color:var(--accent);border-color:rgba(245,183,72,.25)}
+.nav-hub{position:relative}
+.nav-popover{
+  position:absolute;top:38px;left:0;z-index:30;
+  width:min(420px,84vw);max-height:62vh;overflow:auto;
+  background:var(--bg2);border:1px solid var(--rule);border-radius:10px;
+  box-shadow:0 20px 40px rgba(0,0,0,.45);padding:10px;display:none;
+}
+.nav-hub.open .nav-popover{display:block}
+.nav-popover-search{
+  width:100%;background:var(--bg3);color:var(--ink);border:1px solid var(--rule);
+  border-radius:8px;padding:8px 10px;font:inherit;font-size:12px;margin-bottom:8px;
+}
+.nav-popover-list{display:flex;flex-direction:column;gap:6px}
+.nav-popover-item{
+  text-align:left;background:transparent;border:1px solid transparent;color:var(--ink-dim);
+  border-radius:8px;padding:8px 10px;cursor:pointer;font:inherit;line-height:1.35;
+}
+.nav-popover-item:hover{background:var(--bg3);color:var(--ink)}
+.nav-popover-item.active{border-color:rgba(245,183,72,.25);background:rgba(245,183,72,.07);color:var(--accent)}
+.nav-popover-empty{padding:10px;color:var(--muted);font-size:12px}
 
 /* ── Layout ─────────────────────────────────────────────── */
 .wrap{display:grid;grid-template-columns:260px minmax(0,1fr);gap:32px;max-width:1180px;margin:0 auto;padding:24px 20px 80px}
+.sidebar{display:flex;flex-direction:column;gap:0}
 .toc{position:sticky;top:72px;align-self:start;max-height:calc(100vh - 96px);overflow:auto;padding-right:6px}
-.toc h5{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 10px 8px}
+.toc-header{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 10px 8px;display:flex;align-items:center;gap:6px}
 .toc ol{list-style:none;padding:0;margin:0;counter-reset:sec}
 .toc li{counter-increment:sec;margin:0}
 .toc a{display:block;padding:6px 10px;border-left:2px solid transparent;color:var(--ink-dim);font-size:12.5px;line-height:1.4;border-radius:0 6px 6px 0;transition:all .15s}
@@ -69,10 +100,33 @@ a:hover{text-decoration:underline}
 .toc a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(245,183,72,.07)}
 .toc a::before{content:counter(sec,decimal) ". ";color:var(--muted);font-variant-numeric:tabular-nums;margin-right:4px}
 
+/* ── Blog post cards panel ──────────────────────────────── */
+.blog-panel{margin-top:24px;border-top:1px solid var(--rule);padding-top:16px}
+.blog-panel-header{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 10px 8px}
+.blog-panel-tools{display:flex;gap:8px;align-items:center;padding:0 8px 10px}
+.blog-filter{flex:1;background:var(--bg2);border:1px solid var(--rule);border-radius:8px;padding:7px 9px;color:var(--ink);font:inherit;font-size:12px}
+.blog-more{background:transparent;border:1px solid var(--rule);color:var(--muted);border-radius:8px;padding:6px 8px;cursor:pointer;font:inherit;font-size:11px}
+.blog-more:hover{color:var(--ink);border-color:var(--accent)}
+.blog-cards-scroll{max-height:44vh;overflow:auto;padding-right:2px}
+.blog-card{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 10px;border-radius:8px;cursor:pointer;
+  border:1px solid transparent;transition:all .15s;margin-bottom:4px;
+}
+.blog-card:hover{background:var(--bg2);border-color:var(--rule)}
+.blog-card.active-card{background:rgba(245,183,72,.06);border-color:rgba(245,183,72,.2)}
+.blog-card-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.blog-card-body{min-width:0}
+.blog-card-title{font-size:12px;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:3px}
+.blog-card.active-card .blog-card-title{color:var(--accent)}
+.blog-card-dek{font-size:11px;color:var(--muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
 /* ── Reading column ─────────────────────────────────────── */
 .article{max-width:var(--content-width);margin:0 auto;font-family:var(--serif);font-size:18px;line-height:1.72;color:#e3e8f1}
 .masthead{text-align:center;padding:48px 0 24px;border-bottom:1px solid var(--rule);margin-bottom:36px}
 .eyebrow{font-family:var(--sans);font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:14px}
+/* blog-eyebrow shows category badge */
+.cat-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:20px;font-size:10px;letter-spacing:1.5px;font-weight:700;border:1px solid rgba(245,183,72,.3);background:rgba(245,183,72,.06);color:var(--accent);margin-bottom:12px}
 .masthead h1{font-family:var(--serif);font-weight:700;font-size:2.6rem;line-height:1.12;letter-spacing:-.5px;margin:0 0 14px}
 .masthead .dek{font-family:var(--serif);font-style:italic;color:var(--ink-dim);font-size:1.05rem;max-width:580px;margin:0 auto;line-height:1.55}
 .meta{font-family:var(--sans);color:var(--muted);font-size:12px;margin-top:18px;letter-spacing:.5px}
@@ -133,7 +187,7 @@ a:hover{text-decoration:underline}
 @media print{
   :root{--bg:#fff;--bg2:#f8f7f2;--bg3:#eeece3;--ink:#1a1a1a;--ink-dim:#333;--muted:#666;--rule:#d9d6cc;--accent:#b8830c;--accent-2:#1d4ed8}
   body{background:#fff;color:#1a1a1a}
-  .ribbon,.toc,.footer .btn,.daily{display:none !important}
+  .ribbon,.sidebar,.footer .btn,.daily{display:none !important}
   .wrap{grid-template-columns:1fr;padding:0;max-width:none}
   .article{max-width:none;font-size:11pt;line-height:1.55;color:#111}
   .article h1{page-break-before:always;font-size:22pt}
@@ -151,9 +205,11 @@ a:hover{text-decoration:underline}
 /* narrow screens */
 @media (max-width:900px){
   .wrap{grid-template-columns:1fr;padding:16px}
-  .toc{position:static;max-height:none;order:2;margin-top:28px}
+  .sidebar{position:static;order:2;margin-top:28px}
+  .toc{position:static;max-height:none}
   .article{font-size:17px}
   .masthead h1{font-size:2rem}
+  .ribbon{gap:6px}
 }
 
 /* loading / empty states */
@@ -166,7 +222,12 @@ a:hover{text-decoration:underline}
 
 <nav class="ribbon">
   <div class="brand"><span class="dot"></span> SETUPS <small>Daily Read</small></div>
-  <div class="doc-switch" id="doc-switch"></div>
+
+  <!-- Grouped switcher — populated by JS from /api/playbook/meta -->
+  <div id="nav-core" class="nav-group" style="margin-left:10px"></div>
+  <div class="nav-divider" id="nav-divider" style="display:none"></div>
+  <div id="nav-blog" class="nav-group"></div>
+
   <div class="spacer"></div>
   <button class="btn" id="btn-search" title="Search (/)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>Search</button>
   <button class="btn" id="btn-print" title="Save as PDF / Print"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Print / PDF</button>
@@ -175,19 +236,34 @@ a:hover{text-decoration:underline}
 </nav>
 
 <main class="wrap">
-  <aside class="toc" id="toc">
-    <h5>In this playbook</h5>
-    <ol id="toc-list"><li style="padding:8px 10px;color:var(--muted);font-size:12px">Loading contents…</li></ol>
+  <!-- ── Sidebar: TOC + Blog cards ───────────────────────── -->
+  <aside class="sidebar toc" id="sidebar">
+    <div class="toc-header" id="toc-header">
+      <span>In this playbook</span>
+    </div>
+    <ol id="toc-list"><li style="padding:8px 10px;color:var(--muted);font-size:12px">Loading…</li></ol>
+
+    <!-- Blog card list — only shown when blog posts exist -->
+    <div class="blog-panel" id="blog-panel" style="display:none">
+      <div class="blog-panel-header">📚 Wisdom Blog</div>
+      <div class="blog-panel-tools">
+        <input id="blog-filter" class="blog-filter" type="search" placeholder="Filter posts..." />
+        <button id="blog-more" class="blog-more" type="button" style="display:none">Show more</button>
+      </div>
+      <div id="blog-cards" class="blog-cards-scroll"></div>
+    </div>
   </aside>
 
+  <!-- ── Reading column ──────────────────────────────────── -->
   <article class="article" id="article">
     <header class="masthead">
       <div class="eyebrow" id="today-date">—</div>
-      <h1>The Trading Playbook</h1>
-      <p class="dek">Why chart patterns work, which ones actually pay, and the distilled philosophies of the traders who pioneered them — a single reference to read before the open every day.</p>
+      <div class="cat-badge" id="cat-badge" style="display:none"></div>
+      <h1 id="masthead-title">The Trading Playbook</h1>
+      <p class="dek" id="masthead-dek">Why chart patterns work, which ones actually pay, and the distilled philosophies of the traders who pioneered them — a single reference to read before the open every day.</p>
       <div class="meta">
-        <span>~25 min read</span>
-        <span>17 sections</span>
+        <span id="read-time">~25 min read</span>
+        <span id="section-count">—</span>
         <span id="word-count">—</span>
       </div>
       <div class="daily" id="daily-quote">
@@ -196,11 +272,11 @@ a:hover{text-decoration:underline}
       </div>
     </header>
 
-    <div id="content" class="skeleton"><span class="spinner"></span>Loading playbook…</div>
+    <div id="content" class="skeleton"><span class="spinner"></span>Loading…</div>
 
     <footer class="footer">
       <div>Read daily. Execute with discipline. <span class="kbd">/</span> to search · <span class="kbd">J</span>/<span class="kbd">K</span> to navigate sections · <span class="kbd">P</span> to print.</div>
-      <div style="margin-top:8px">Source: <code>docs/TRADING_PLAYBOOK.md</code> · rendered live from the repo.</div>
+      <div style="margin-top:8px">Source: <code id="footer-src">docs/TRADING_PLAYBOOK.md</code> · rendered live from the repo.</div>
     </footer>
   </article>
 </main>
@@ -224,6 +300,9 @@ const DAILY_QUOTES = [
   ["Trade only the strongest 1% of stocks.", "Dan Zanger"],
   ["Think in probabilities over a series of trades.", "Mark Douglas"],
   ["Cut losses fast. Let winners run.", "The single rule that compounds"],
+  ["There is a time to go long, a time to go short, and a time to go fishing.", "Jesse Livermore"],
+  ["Big money is not in the fluctuations but in the main movements.", "Jesse Livermore"],
+  ["Markets are never wrong — opinions often are.", "Jesse Livermore"],
 ];
 const today = new Date();
 const dateKey = today.getFullYear()*10000 + (today.getMonth()+1)*100 + today.getDate();
@@ -232,82 +311,325 @@ document.getElementById('daily-quote-text').textContent = '"' + pick[0] + '"';
 document.getElementById('daily-quote-byline').textContent = '— ' + pick[1];
 document.getElementById('today-date').textContent = today.toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
-// ── Render markdown ────────────────────────────────────────────────────────
+// ── Markdown renderer setup ────────────────────────────────────────────────
 const slug = s => s.toLowerCase().replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'-');
-
 const renderer = new marked.Renderer();
 renderer.heading = (text, level) => {
-  // marked 12 passes an object in some paths — defensive read.
   const plain = typeof text === 'string' ? text : (text.text || text.raw || '');
   const id = slug(plain.replace(/<[^>]+>/g,''));
   return `<h${level} id="${id}">${plain}<a href="#${id}" class="anchor-btn" title="Link to section">#</a></h${level}>`;
 };
 marked.use({ renderer, gfm: true, breaks: false });
 
-async function loadPlaybook(){
-  try{
-    // Pick doc from ?doc=evidence (defaults to the main playbook)
-    const params = new URLSearchParams(window.location.search);
-    const doc = params.get('doc') || 'playbook';
-    // Build the document switcher from /api/playbook/meta so a new .md file
-    // in the repo lights up a new tab automatically (no HTML edits needed).
-    try{
-      const metaRes = await fetch('/api/playbook/meta');
-      if(metaRes.ok){
-        const { docs } = await metaRes.json();
-        const sw = document.getElementById('doc-switch');
-        sw.innerHTML = '';
-        docs.forEach(d => {
-          const b = document.createElement('button');
-          b.textContent = d.title.replace(/^The\s+/, '').replace(' — Evidence',' · Evidence');
-          b.className = (d.key === doc) ? 'active' : '';
-          b.onclick = () => {
-            const u = new URL(window.location.href);
-            if (d.key === 'playbook') u.searchParams.delete('doc');
-            else u.searchParams.set('doc', d.key);
-            window.location.href = u.toString();
-          };
-          sw.appendChild(b);
-        });
+// ── State ──────────────────────────────────────────────────────────────────
+let allDocs = [];   // full list from /api/playbook/meta
+let activeDoc = ''; // current doc key
+const BLOG_INLINE_LIMIT = 8;
+const blogPanelState = { query: '', expanded: false };
+
+function _bindNavGlobalCloseOnce(){
+  if(window.__playbookNavBound) return;
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.nav-hub.open').forEach(el => el.classList.remove('open'));
+  });
+  window.__playbookNavBound = true;
+}
+
+// ── Build grouped ribbon switcher ─────────────────────────────────────────
+function buildSwitcher(docs, activeKey) {
+  // If no doc carries a category field (old server), treat all as core
+  const hasCategories = docs.some(d => d.category);
+  const coreDocs = hasCategories
+    ? docs.filter(d => !d.category || d.category === 'core')
+    : docs;
+  const blogDocs = hasCategories
+    ? docs.filter(d => d.category === 'blog')
+    : [];
+
+  const coreEl  = document.getElementById('nav-core');
+  const blogEl  = document.getElementById('nav-blog');
+  const divider = document.getElementById('nav-divider');
+  coreEl.innerHTML = '';
+  blogEl.innerHTML = '';
+
+  coreDocs.forEach(d => {
+    const b = document.createElement('button');
+    b.className = 'nav-btn' + (d.key === activeKey ? ' active' : '');
+    b.textContent = (d.icon ? d.icon + ' ' : '') + d.title.replace(/^The\s+/,'').replace(' · Evidence',' · Evidence');
+    b.title = d.dek;
+    b.onclick = () => navigate(d.key);
+    coreEl.appendChild(b);
+  });
+
+  if(blogDocs.length > 0){
+    divider.style.display = '';
+    _bindNavGlobalCloseOnce();
+
+    const lbl = document.createElement('span');
+    lbl.className = 'nav-label';
+    lbl.textContent = 'Wisdom';
+    blogEl.appendChild(lbl);
+
+    // Scalable hub: one top button + searchable dropdown instead of N tabs.
+    const hub = document.createElement('div');
+    hub.className = 'nav-hub';
+
+    const hubBtn = document.createElement('button');
+    hubBtn.type = 'button';
+    hubBtn.className = 'nav-btn' + (blogDocs.some(d => d.key === activeKey) ? ' active' : '');
+    hubBtn.textContent = `Browse (${blogDocs.length})`;
+    hubBtn.onclick = (e) => {
+      e.stopPropagation();
+      hub.classList.toggle('open');
+      if(hub.classList.contains('open')){
+        const input = hub.querySelector('.nav-popover-search');
+        if(input){ input.focus(); input.select(); }
       }
-    }catch(_){ /* switcher is optional */ }
+    };
 
-    // Point the download button at the same doc
-    const dl = document.getElementById('btn-download');
-    dl.href = '/api/playbook/download' + (doc === 'playbook' ? '' : '?doc=' + encodeURIComponent(doc));
+    const pop = document.createElement('div');
+    pop.className = 'nav-popover';
+    pop.innerHTML = '<input class="nav-popover-search" type="search" placeholder="Search wisdom posts..." /><div class="nav-popover-list"></div>';
+    const popInput = pop.querySelector('.nav-popover-search');
+    const popList = pop.querySelector('.nav-popover-list');
 
-    const r = await fetch('/api/playbook/markdown' + (doc === 'playbook' ? '' : '?doc=' + encodeURIComponent(doc)), {cache:'no-store'});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const md = await r.text();
+    const renderPop = (q = '') => {
+      const needle = q.trim().toLowerCase();
+      const rows = blogDocs.filter(d => !needle || `${d.title} ${d.dek || ''}`.toLowerCase().includes(needle));
+      popList.innerHTML = '';
+      if(!rows.length){
+        popList.innerHTML = '<div class="nav-popover-empty">No matching posts.</div>';
+        return;
+      }
+      rows.forEach(d => {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'nav-popover-item' + (d.key === activeKey ? ' active' : '');
+        row.textContent = `${d.icon || '📄'} ${d.title}`;
+        row.title = d.dek || '';
+        row.onclick = () => navigate(d.key);
+        popList.appendChild(row);
+      });
+    };
+
+    pop.onclick = (e) => e.stopPropagation();
+    popInput.oninput = () => renderPop(popInput.value);
+    renderPop();
+
+    hub.appendChild(hubBtn);
+    hub.appendChild(pop);
+    blogEl.appendChild(hub);
+  } else {
+    divider.style.display = 'none';
+  }
+}
+
+// ── Build blog-card panel in sidebar ──────────────────────────────────────
+function buildBlogPanel(docs, activeKey) {
+  const blogDocs = docs.filter(d => d.category === 'blog');
+  const panel    = document.getElementById('blog-panel');
+  const filter   = document.getElementById('blog-filter');
+  const moreBtn  = document.getElementById('blog-more');
+  const container = document.getElementById('blog-cards');
+  container.innerHTML = '';
+  if(!blogDocs.length){ panel.style.display = 'none'; return; }
+
+  if(!filter.dataset.bound){
+    filter.dataset.bound = '1';
+    filter.addEventListener('input', () => {
+      blogPanelState.query = filter.value;
+      blogPanelState.expanded = false;
+      buildBlogPanel(allDocs, activeDoc);
+    });
+  }
+  if(!moreBtn.dataset.bound){
+    moreBtn.dataset.bound = '1';
+    moreBtn.addEventListener('click', () => {
+      blogPanelState.expanded = !blogPanelState.expanded;
+      buildBlogPanel(allDocs, activeDoc);
+    });
+  }
+  if(filter.value !== blogPanelState.query) filter.value = blogPanelState.query;
+
+  panel.style.display = '';
+  const needle = (blogPanelState.query || '').trim().toLowerCase();
+  const filtered = blogDocs.filter(d => !needle || `${d.title} ${d.dek || ''}`.toLowerCase().includes(needle));
+  const visible = blogPanelState.expanded ? filtered : filtered.slice(0, BLOG_INLINE_LIMIT);
+  visible.forEach(d => {
+    const card = document.createElement('div');
+    card.className = 'blog-card' + (d.key === activeKey ? ' active-card' : '');
+    card.innerHTML = `<div class="blog-card-icon">${d.icon || '📄'}</div>
+      <div class="blog-card-body">
+        <div class="blog-card-title">${d.title}</div>
+        <div class="blog-card-dek">${d.dek}</div>
+      </div>`;
+    card.onclick = () => navigate(d.key);
+    container.appendChild(card);
+  });
+
+  if(filtered.length > BLOG_INLINE_LIMIT){
+    moreBtn.style.display = '';
+    moreBtn.textContent = blogPanelState.expanded ? 'Show less' : `Show all (${filtered.length})`;
+  } else {
+    moreBtn.style.display = 'none';
+  }
+}
+
+// ── Navigate to a different doc ────────────────────────────────────────────
+function navigate(key) {
+  const u = new URL(window.location.href);
+  if(key === 'playbook') u.searchParams.delete('doc');
+  else u.searchParams.set('doc', key);
+  window.location.href = u.toString();
+}
+
+// ── Update masthead dynamically from meta ──────────────────────────────────
+function updateMasthead(doc) {
+  const titleEl = document.getElementById('masthead-title');
+  const dekEl   = document.getElementById('masthead-dek');
+  const badge   = document.getElementById('cat-badge');
+  const srcEl   = document.getElementById('footer-src');
+  const tocHdr  = document.getElementById('toc-header');
+
+  titleEl.textContent = doc.title;
+  dekEl.textContent   = doc.dek;
+  document.title      = doc.title + ' | SETUPS';
+
+  if(doc.category === 'blog'){
+    badge.style.display = 'inline-flex';
+    badge.textContent   = (doc.icon || '📄') + '  Wisdom Blog';
+    tocHdr.innerHTML    = '<span>In this post</span>';
+  } else {
+    badge.style.display = 'none';
+    tocHdr.innerHTML    = '<span>In this playbook</span>';
+  }
+  // update download link
+  const dl = document.getElementById('btn-download');
+  dl.href  = '/api/playbook/download' + (doc.key === 'playbook' ? '' : '?doc=' + encodeURIComponent(doc.key));
+  dl.setAttribute('download', '');
+  // footer source file — lookup table; future docs auto-follow KEY.toUpperCase()+'.md'
+  if(srcEl){
+    const knownSrc = {
+      playbook:  'TRADING_PLAYBOOK.md',
+      evidence:  'TRADING_PLAYBOOK_EVIDENCE.md',
+      livermore: 'JESSE_LIVERMORE_WISDOM.md',
+    };
+    srcEl.textContent = 'docs/' + (knownSrc[doc.key] || doc.key.replace(/-/g,'_').toUpperCase() + '.md');
+  }
+}
+
+// ── Main loader ────────────────────────────────────────────────────────────
+async function loadPlaybook(){
+  const params   = new URLSearchParams(window.location.search);
+  const docKey   = params.get('doc') || 'playbook';
+  activeDoc      = docKey;
+
+  // Fetch meta first so we can build nav & cards
+  // Static fallback list — shown immediately so the switcher is never blank.
+  // Matches _PLAYBOOK_DOCS in main.py; add new entries here too when offline.
+  const STATIC_DOCS = [
+    {key:'playbook',  title:'Trading Playbook',          icon:'📖', dek:'',  category:'core', order:1},
+    {key:'evidence',  title:'Trading Playbook · Evidence', icon:'🔬', dek:'',  category:'core', order:2},
+    {key:'livermore', title:'Jesse Livermore — The Complete Wisdom', icon:'🎯', dek:'Time-tested principles, entries, exits, sizing, psychology, checklists & 50 quotes.', category:'blog', order:1},
+    {key:'impulse-control-trading', title:'The Anti-Impulse Trading Protocol', icon:'🧠', dek:'A professional guide to avoiding immediate buys, greedy entries, panic selling, phone-driven over-monitoring, and emotion-led rule breaks.', category:'blog', order:2},
+    {key:'chart-pattern-trade-plans', title:'Chart Patterns & Trade Plans', icon:'📈', dek:'A daily price-action and volume playbook covering bull flags, triangles, cup-and-handle, VCP, double bottoms, reversals, trade plans, stops, targets, and invalidation.', category:'blog', order:3},
+  ];
+  allDocs = STATIC_DOCS;
+  // Render static list right away so buttons show before the API responds
+  buildSwitcher(STATIC_DOCS, docKey);
+  buildBlogPanel(STATIC_DOCS, docKey);
+
+  try{
+    const metaRes = await fetch('/api/playbook/meta');
+    if(metaRes.ok){
+      const { docs: liveDocs } = await metaRes.json();
+      // Merge: start from static list (has category/icon/order),
+      // overlay any richer live fields, then append live-only extras.
+      // This keeps the blog section visible even when the server hasn't been
+      // restarted yet and still returns the old meta without category.
+      const merged = STATIC_DOCS.map(s => {
+        const live = liveDocs.find(l => l.key === s.key);
+        if(!live) return s;
+        return {
+          ...s,
+          ...live,
+          category: live.category || s.category,
+          icon:     live.icon     || s.icon,
+          order:    live.order    != null ? live.order : s.order,
+        };
+      });
+      liveDocs.forEach(l => {
+        if(!merged.find(m => m.key === l.key)) merged.push(l);
+      });
+      allDocs = merged;
+      buildSwitcher(merged, docKey);
+      buildBlogPanel(merged, docKey);
+      const activeMeta = merged.find(d => d.key === docKey);
+      if(activeMeta) updateMasthead(activeMeta);
+    }
+  }catch(_){ /* meta unavailable — static fallback already shown above */ }
+
+  // Load markdown content
+  try{
+    const r = await fetch('/api/playbook/markdown' + (docKey === 'playbook' ? '' : '?doc=' + encodeURIComponent(docKey)), {cache:'no-store'});
+    if(r.status === 400 || r.status === 404){
+      // Server hasn't been restarted yet and doesn't know this doc key.
+      document.getElementById('content').innerHTML =
+        `<div style="padding:28px 24px;background:rgba(245,183,72,.06);border:1px solid rgba(245,183,72,.3);border-radius:12px;font-family:var(--sans)">
+          <div style="font-size:1.8rem;margin-bottom:12px">📖</div>
+          <strong style="color:var(--accent);font-size:1rem">Server needs a restart to serve new docs</strong>
+          <p style="color:var(--ink-dim);margin:10px 0 16px;font-size:.9rem">
+            The <code>${docKey}</code> document was added to <code>docs/</code> and registered in
+            <code>main.py</code>, but the running server was started <em>before</em> these changes.<br><br>
+            Stop and restart the server with <code>./run_web.sh</code> — then reload this page.
+          </p>
+          <code style="display:block;background:var(--bg2);border:1px solid var(--rule);border-radius:8px;padding:12px 16px;font-size:.82rem;color:#f5e6c3">
+            # stop the server with Ctrl+C, then:<br>./run_web.sh
+          </code>
+        </div>`;
+      document.getElementById('content').classList.remove('skeleton');
+      buildTOC(); return;
+    }
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const md   = await r.text();
     const html = marked.parse(md);
-    // Strip the first H1 — we already show the masthead
-    const c = document.getElementById('content');
+    const c    = document.getElementById('content');
     c.classList.remove('skeleton');
     c.innerHTML = html.replace(/^<h1[^>]*>[^<]*<\/h1>/i, '');
-    // Patch the masthead title to match the active doc
-    const firstH1 = (md.match(/^\s*#\s+(.+?)\s*$/m) || [,'The Trading Playbook'])[1];
-    document.querySelector('.masthead h1').textContent = firstH1;
-    document.title = firstH1 + ' | SETUPS';
-    // Word count
+
+    // If meta didn't update the title, fall back to first H1 in the markdown
+    if(!allDocs.length){
+      const firstH1 = (md.match(/^\s*#\s+(.+?)\s*$/m) || [,'The Trading Playbook'])[1];
+      document.querySelector('.masthead h1').textContent = firstH1;
+      document.title = firstH1 + ' | SETUPS';
+    }
+
+    // Stats
     const words = md.replace(/[`*#>|\-]/g,' ').split(/\s+/).filter(Boolean).length;
     document.getElementById('word-count').textContent = words.toLocaleString() + ' words';
+    const secs = document.querySelectorAll('#content h2').length;
+    document.getElementById('section-count').textContent = secs + ' section' + (secs !== 1 ? 's':'');
+    const mins = Math.max(1, Math.round(words / 200));
+    document.getElementById('read-time').textContent = '~' + mins + ' min read';
+
     buildTOC();
     wireScrollSpy();
     wireShortcuts();
   }catch(err){
     document.getElementById('content').innerHTML =
-      '<div style="padding:24px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.4);border-radius:10px;color:#fca5a5;font-family:var(--sans)"><strong>Could not load the playbook.</strong><br/>'+ err.message +
-      '<br/><br/>Make sure <code>docs/TRADING_PLAYBOOK.md</code> is present in the repo. If you are serving this page directly from the filesystem, use the FastAPI server (<code>./run_web.sh</code>) so the API endpoint is reachable.</div>';
+      '<div style="padding:24px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.4);border-radius:10px;color:#fca5a5;font-family:var(--sans)"><strong>Could not load the document.</strong><br/>'+ err.message +
+      '<br/><br/>Make sure the source .md file is present in <code>docs/</code> and the FastAPI server is running (<code>./run_web.sh</code>).</div>';
   }
 }
 
 function buildTOC(){
   const heads = document.querySelectorAll('#content h2');
-  const list = document.getElementById('toc-list');
+  const list  = document.getElementById('toc-list');
   list.innerHTML = '';
-  heads.forEach((h, i) => {
+  if(!heads.length){ list.innerHTML = '<li style="padding:8px 10px;color:var(--muted);font-size:12px">No sections found.</li>'; return; }
+  heads.forEach(h => {
     const label = h.textContent.replace(/^\d+\.\s*/,'').replace(/#$/,'').trim();
-    const li = document.createElement('li');
+    const li    = document.createElement('li');
     li.innerHTML = `<a href="#${h.id}" data-target="${h.id}">${label}</a>`;
     list.appendChild(li);
   });
@@ -325,7 +647,6 @@ function wireScrollSpy(){
   }, { rootMargin:'-30% 0px -60% 0px', threshold:0 });
   heads.forEach(h => io.observe(h));
 
-  // top progress bar
   const progress = document.getElementById('progress');
   window.addEventListener('scroll', () => {
     const h = document.documentElement;
@@ -359,13 +680,12 @@ function wireShortcuts(){
 }
 
 function runSearch(){
-  const q = prompt('Find in playbook:');
+  const q = prompt('Find in document:');
   if(!q) return;
   const needle = q.toLowerCase();
-  const heads = [...document.querySelectorAll('#content h1, #content h2, #content h3')];
-  const hit = heads.find(h => h.textContent.toLowerCase().includes(needle));
+  const heads  = [...document.querySelectorAll('#content h1, #content h2, #content h3')];
+  const hit    = heads.find(h => h.textContent.toLowerCase().includes(needle));
   if(hit){ hit.scrollIntoView({behavior:'smooth', block:'start'}); return; }
-  // fall back to full-text — use browser's built-in find
   window.find && window.find(q);
 }
 
