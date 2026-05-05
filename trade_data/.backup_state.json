@@ -1,5 +1,5 @@
 {
-  "last_backup": "2026-05-04T20:42:35",
+  "last_backup": "2026-05-05T21:03:12",
   "method": "icloud+telegram",
   "icloud_status": "success",
   "telegram_status": "success",
@@ -19,6 +19,6 @@
     "vpn_config.json",
     "watchlist.json"
   ],
-  "size_kb": 197.9,
-  "backup_path": "/Users/yeshwantha/Library/Mobile Documents/com~apple~CloudDocs/SETUPS_Backups/SETUPS_backup_2026-05-04_2042.zip"
+  "size_kb": 135.5,
+  "backup_path": "/Users/yeshwantha/Library/Mobile Documents/com~apple~CloudDocs/SETUPS_Backups/SETUPS_backup_2026-05-05_2103.zip"
 }

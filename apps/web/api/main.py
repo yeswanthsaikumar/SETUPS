@@ -1217,6 +1217,28 @@ _PLAYBOOK_DOCS: dict[str, dict] = {
         "icon":     "📈",
         "order":    3,
     },
+    "event-pivot-gap-risk": {
+        "path":     ROOT / "docs" / "EVENT_PIVOT_GAP_RISK.md",
+        "title":    "Event Pivot Gap Risk Playbook",
+        "dek":      "How to survive earnings, RBI, policy, and close-open gap shocks "
+                    "that can bypass normal stop-loss behavior, with practical pre-event "
+                    "de-risk and capital-protection frameworks.",
+        "file":     "Event_Pivot_Gap_Risk.html",
+        "category": "blog",
+        "icon":     "⚠️",
+        "order":    4,
+    },
+    "trailing-winners-action-plan": {
+        "path":     ROOT / "docs" / "TRAILING_WINNERS_ACTION_PLAN.md",
+        "title":    "Trailing Winners — The Complete Action Plan",
+        "dek":      "A five-stage system for holding big trades through their full "
+                    "potential: break-even triggers, structure trails, MA trails, "
+                    "climax recognition, and the psychology blockers that kill great trades.",
+        "file":     "Trailing_Winners_Action_Plan.html",
+        "category": "blog",
+        "icon":     "🚀",
+        "order":    5,
+    },
 }
 
 

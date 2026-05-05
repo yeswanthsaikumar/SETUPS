@@ -48,3 +48,40 @@ class TestPlaybookDownload:
         assert "<table>" in r.text
         assert "<th>" in r.text
 
+
+class TestPlaybookBlogMeta:
+    def test_event_gap_risk_doc_is_exposed_in_meta(self, api_client):
+        r = api_client.get("/api/playbook/meta")
+        assert r.status_code == 200
+        docs = r.json().get("docs", [])
+        keys = {d.get("key") for d in docs}
+        assert "event-pivot-gap-risk" in keys
+
+    def test_event_gap_risk_markdown_is_served(self, api_client):
+        r = api_client.get("/api/playbook/markdown?doc=event-pivot-gap-risk")
+        assert r.status_code == 200
+        assert "Event Pivot Gap Risk Playbook" in r.text
+        assert "Why Stops Fail During Gaps" in r.text
+
+
+class TestTrailingWinnersBlog:
+    def test_trailing_winners_in_meta(self, api_client):
+        r = api_client.get("/api/playbook/meta")
+        assert r.status_code == 200
+        keys = {d.get("key") for d in r.json().get("docs", [])}
+        assert "trailing-winners-action-plan" in keys
+
+    def test_trailing_winners_markdown_served(self, api_client):
+        r = api_client.get("/api/playbook/markdown?doc=trailing-winners-action-plan")
+        assert r.status_code == 200
+        assert "Trailing Winners" in r.text
+        assert "Five-Stage Trailing System" in r.text or "five-stage" in r.text.lower()
+
+    def test_trailing_winners_download_renders_html(self, api_client):
+        r = api_client.get("/api/playbook/download?doc=trailing-winners-action-plan")
+        assert r.status_code == 200
+        assert "text/html" in r.headers.get("content-type", "")
+        assert "Trailing Winners" in r.text
+        assert "<table>" in r.text  # Stage reference table must render
+
+
