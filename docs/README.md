@@ -169,4 +169,5 @@ python3 apps/python/cli/search_symbol.py RELIANCE.NS
 | `docs/runbooks/BACKTEST_RUNBOOK.md` | Backtest engine guide — how it works, parameters, interpreting results |
 | `docs/runbooks/TROUBLESHOOTING.md` | Error recovery, diagnostics |
 | `docs/GETTING_STARTED.md` | First-time setup and first run |
+| `docs/studies/past_winners/README.md` | Dedicated study section for past winner patterns and execution memory |
 | `docs/INDEX.md` | Full documentation map |

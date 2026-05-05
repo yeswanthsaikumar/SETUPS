@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="title desc">
+  <title id="title">Double Bottom candlestick example</title>
+  <desc id="desc">Dark-theme candlestick chart with W structure, undercut-and-reclaim, and midpoint breakout.</desc>
+  <rect width="1400" height="760" fill="#070d18"/>
+  <g stroke="#172338" stroke-width="1">
+    <path d="M80 70H1320M80 140H1320M80 210H1320M80 280H1320M80 350H1320M80 420H1320M80 490H1320M80 560H1320"/>
+    <path d="M120 60V580M220 60V580M320 60V580M420 60V580M520 60V580M620 60V580M720 60V580M820 60V580M920 60V580M1020 60V580M1120 60V580M1220 60V580"/>
+  </g>
+
+  <g stroke-width="2">
+    <path d="M90 500 L220 495 L330 480 L440 430 L550 390 L660 340 L770 300 L890 260 L1020 225 L1180 185" fill="none" stroke="#ff8c00"/>
+    <path d="M90 535 L220 530 L330 520 L440 480 L550 440 L660 395 L770 350 L890 305 L1020 270 L1180 230" fill="none" stroke="#00c2ff"/>
+    <path d="M90 565 L220 560 L330 552 L440 520 L550 490 L660 455 L770 415 L890 375 L1020 338 L1180 300" fill="none" stroke="#39c467"/>
+  </g>
+
+  <g>
+    <line x1="220" y1="300" x2="220" y2="240" stroke="#ff5a6e"/><rect x="212" y="250" width="16" height="40" fill="#ff5a6e"/>
+    <line x1="260" y1="335" x2="260" y2="275" stroke="#ff5a6e"/><rect x="252" y="285" width="16" height="40" fill="#ff5a6e"/>
+    <line x1="300" y1="360" x2="300" y2="300" stroke="#ff5a6e"/><rect x="292" y="312" width="16" height="40" fill="#ff5a6e"/>
+    <line x1="340" y1="330" x2="340" y2="280" stroke="#2ecc71"/><rect x="332" y="290" width="16" height="34" fill="#2ecc71"/>
+    <line x1="380" y1="300" x2="380" y2="250" stroke="#2ecc71"/><rect x="372" y="260" width="16" height="34" fill="#2ecc71"/>
+    <line x1="420" y1="285" x2="420" y2="235" stroke="#2ecc71"/><rect x="412" y="244" width="16" height="34" fill="#2ecc71"/>
+
+    <line x1="460" y1="320" x2="460" y2="260" stroke="#ff5a6e"/><rect x="452" y="272" width="16" height="38" fill="#ff5a6e"/>
+    <line x1="500" y1="350" x2="500" y2="290" stroke="#ff5a6e"/><rect x="492" y="302" width="16" height="40" fill="#ff5a6e"/>
+    <line x1="540" y1="375" x2="540" y2="315" stroke="#ff5a6e"/><rect x="532" y="325" width="16" height="44" fill="#ff5a6e"/>
+    <line x1="580" y1="350" x2="580" y2="300" stroke="#2ecc71"/><rect x="572" y="312" width="16" height="34" fill="#2ecc71"/>
+    <line x1="620" y1="320" x2="620" y2="270" stroke="#2ecc71"/><rect x="612" y="280" width="16" height="34" fill="#2ecc71"/>
+    <line x1="660" y1="292" x2="660" y2="240" stroke="#2ecc71"/><rect x="652" y="248" width="16" height="36" fill="#2ecc71"/>
+
+    <line x1="700" y1="280" x2="700" y2="210" stroke="#2ecc71"/><rect x="692" y="220" width="16" height="52" fill="#2ecc71"/>
+    <line x1="740" y1="228" x2="740" y2="190" stroke="#2ecc71"/><rect x="732" y="198" width="16" height="24" fill="#2ecc71"/>
+    <line x1="780" y1="208" x2="780" y2="170" stroke="#2ecc71"/><rect x="772" y="178" width="16" height="24" fill="#2ecc71"/>
+  </g>
+
+  <line x1="340" y1="238" x2="690" y2="238" stroke="#f87171" stroke-width="2" stroke-dasharray="8 7"/>
+  <line x1="555" y1="376" x2="555" y2="560" stroke="#93c5fd" stroke-dasharray="7 7"/>
+  <line x1="700" y1="238" x2="1320" y2="238" stroke="#7dd3fc" stroke-dasharray="6 6"/>
+  <line x1="540" y1="376" x2="1320" y2="376" stroke="#f87171" stroke-dasharray="6 6"/>
+
+  <g>
+    <rect x="210" y="615" width="24" height="75" fill="#6e3745"/>
+    <rect x="250" y="630" width="24" height="60" fill="#6e3745"/>
+    <rect x="290" y="650" width="24" height="40" fill="#6e3745"/>
+    <rect x="330" y="642" width="24" height="48" fill="#2f6f49"/>
+    <rect x="370" y="632" width="24" height="58" fill="#2f6f49"/>
+    <rect x="410" y="620" width="24" height="70" fill="#2f6f49"/>
+    <rect x="450" y="640" width="24" height="50" fill="#6e3745"/>
+    <rect x="490" y="620" width="24" height="70" fill="#6e3745"/>
+    <rect x="530" y="600" width="24" height="90" fill="#6e3745"/>
+    <rect x="570" y="640" width="24" height="50" fill="#2f6f49"/>
+    <rect x="610" y="628" width="24" height="62" fill="#2f6f49"/>
+    <rect x="650" y="610" width="24" height="80" fill="#2f6f49"/>
+    <rect x="690" y="568" width="24" height="122" fill="#2f6f49"/>
+    <rect x="730" y="540" width="24" height="150" fill="#2f6f49"/>
+    <rect x="770" y="515" width="24" height="175" fill="#2f6f49"/>
+  </g>
+
+  <text x="90" y="42" fill="#e5edf8" font-size="28" font-family="Arial, sans-serif">Double Bottom (Dark Theme): undercut, reclaim, and midpoint breakout</text>
+  <text x="700" y="232" fill="#dbeafe" font-size="16" font-family="Arial, sans-serif">Entry above midpoint pivot</text>
+  <text x="960" y="372" fill="#fca5a5" font-size="16" font-family="Arial, sans-serif">Stop below second low</text>
+  <text x="84" y="590" fill="#9eb1c7" font-size="16" font-family="Arial, sans-serif">Second low should show less selling damage and fast reclaim behavior</text>
+</svg>

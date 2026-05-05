@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="title desc">
+  <title id="title">Cup with Handle candlestick example</title>
+  <desc id="desc">Dark-theme candlestick chart showing a rounded cup, upper-half handle, and pivot breakout.</desc>
+  <rect width="1400" height="760" fill="#070d18"/>
+  <g stroke="#172338" stroke-width="1">
+    <path d="M80 70H1320M80 140H1320M80 210H1320M80 280H1320M80 350H1320M80 420H1320M80 490H1320M80 560H1320"/>
+    <path d="M120 60V580M220 60V580M320 60V580M420 60V580M520 60V580M620 60V580M720 60V580M820 60V580M920 60V580M1020 60V580M1120 60V580M1220 60V580"/>
+  </g>
+
+  <g stroke-width="2">
+    <path d="M90 490 L220 500 L330 505 L440 500 L550 485 L660 460 L770 420 L880 360 L990 300 L1120 230" fill="none" stroke="#ff8c00"/>
+    <path d="M90 530 L220 540 L330 542 L440 535 L550 520 L660 500 L770 465 L880 410 L990 350 L1120 285" fill="none" stroke="#00c2ff"/>
+    <path d="M90 560 L220 568 L330 570 L440 565 L550 555 L660 542 L770 520 L880 488 L990 445 L1120 390" fill="none" stroke="#39c467"/>
+  </g>
+
+  <g>
+    <line x1="220" y1="420" x2="220" y2="360" stroke="#ff5a6e"/><rect x="212" y="372" width="16" height="40" fill="#ff5a6e"/>
+    <line x1="260" y1="440" x2="260" y2="380" stroke="#ff5a6e"/><rect x="252" y="392" width="16" height="40" fill="#ff5a6e"/>
+    <line x1="300" y1="460" x2="300" y2="400" stroke="#ff5a6e"/><rect x="292" y="412" width="16" height="40" fill="#ff5a6e"/>
+    <line x1="340" y1="478" x2="340" y2="425" stroke="#ff5a6e"/><rect x="332" y="435" width="16" height="36" fill="#ff5a6e"/>
+    <line x1="380" y1="490" x2="380" y2="440" stroke="#2ecc71"/><rect x="372" y="450" width="16" height="34" fill="#2ecc71"/>
+    <line x1="420" y1="495" x2="420" y2="448" stroke="#2ecc71"/><rect x="412" y="458" width="16" height="32" fill="#2ecc71"/>
+    <line x1="460" y1="490" x2="460" y2="440" stroke="#2ecc71"/><rect x="452" y="450" width="16" height="34" fill="#2ecc71"/>
+    <line x1="500" y1="480" x2="500" y2="430" stroke="#2ecc71"/><rect x="492" y="438" width="16" height="34" fill="#2ecc71"/>
+    <line x1="540" y1="468" x2="540" y2="414" stroke="#2ecc71"/><rect x="532" y="422" width="16" height="36" fill="#2ecc71"/>
+    <line x1="580" y1="448" x2="580" y2="388" stroke="#2ecc71"/><rect x="572" y="398" width="16" height="40" fill="#2ecc71"/>
+    <line x1="620" y1="426" x2="620" y2="366" stroke="#2ecc71"/><rect x="612" y="376" width="16" height="40" fill="#2ecc71"/>
+    <line x1="660" y1="400" x2="660" y2="340" stroke="#2ecc71"/><rect x="652" y="350" width="16" height="40" fill="#2ecc71"/>
+    <line x1="700" y1="370" x2="700" y2="315" stroke="#2ecc71"/><rect x="692" y="324" width="16" height="38" fill="#2ecc71"/>
+
+    <line x1="740" y1="350" x2="740" y2="300" stroke="#ff5a6e"/><rect x="732" y="312" width="16" height="32" fill="#ff5a6e"/>
+    <line x1="780" y1="362" x2="780" y2="316" stroke="#ff5a6e"/><rect x="772" y="324" width="16" height="30" fill="#ff5a6e"/>
+    <line x1="820" y1="354" x2="820" y2="310" stroke="#2ecc71"/><rect x="812" y="320" width="16" height="26" fill="#2ecc71"/>
+    <line x1="860" y1="344" x2="860" y2="296" stroke="#2ecc71"/><rect x="852" y="306" width="16" height="30" fill="#2ecc71"/>
+
+    <line x1="900" y1="340" x2="900" y2="262" stroke="#2ecc71"/><rect x="892" y="274" width="16" height="56" fill="#2ecc71"/>
+    <line x1="940" y1="280" x2="940" y2="230" stroke="#2ecc71"/><rect x="932" y="240" width="16" height="34" fill="#2ecc71"/>
+    <line x1="980" y1="255" x2="980" y2="205" stroke="#2ecc71"/><rect x="972" y="214" width="16" height="34" fill="#2ecc71"/>
+  </g>
+
+  <line x1="720" y1="300" x2="890" y2="300" stroke="#f87171" stroke-width="2" stroke-dasharray="8 7"/>
+  <line x1="900" y1="300" x2="1320" y2="300" stroke="#7dd3fc" stroke-dasharray="6 6"/>
+  <line x1="740" y1="362" x2="1320" y2="362" stroke="#f87171" stroke-dasharray="6 6"/>
+
+  <g>
+    <rect x="210" y="620" width="24" height="60" fill="#6e3745"/>
+    <rect x="250" y="635" width="24" height="45" fill="#6e3745"/>
+    <rect x="290" y="648" width="24" height="32" fill="#6e3745"/>
+    <rect x="330" y="658" width="24" height="22" fill="#6e3745"/>
+    <rect x="370" y="668" width="24" height="12" fill="#2f6f49"/>
+    <rect x="410" y="670" width="24" height="10" fill="#2f6f49"/>
+    <rect x="450" y="668" width="24" height="12" fill="#2f6f49"/>
+    <rect x="490" y="665" width="24" height="15" fill="#2f6f49"/>
+    <rect x="530" y="660" width="24" height="20" fill="#2f6f49"/>
+    <rect x="570" y="650" width="24" height="30" fill="#2f6f49"/>
+    <rect x="610" y="640" width="24" height="40" fill="#2f6f49"/>
+    <rect x="650" y="628" width="24" height="52" fill="#2f6f49"/>
+    <rect x="690" y="615" width="24" height="65" fill="#2f6f49"/>
+    <rect x="730" y="670" width="24" height="10" fill="#6e3745"/>
+    <rect x="770" y="672" width="24" height="8" fill="#6e3745"/>
+    <rect x="810" y="671" width="24" height="9" fill="#2f6f49"/>
+    <rect x="850" y="668" width="24" height="12" fill="#2f6f49"/>
+    <rect x="890" y="620" width="24" height="60" fill="#2f6f49"/>
+    <rect x="930" y="588" width="24" height="92" fill="#2f6f49"/>
+    <rect x="970" y="560" width="24" height="120" fill="#2f6f49"/>
+  </g>
+
+  <text x="90" y="42" fill="#e5edf8" font-size="28" font-family="Arial, sans-serif">Cup with Handle (Dark Theme): rounded base, tight handle, pivot breakout</text>
+  <text x="900" y="296" fill="#dbeafe" font-size="16" font-family="Arial, sans-serif">Entry through handle pivot</text>
+  <text x="1040" y="358" fill="#fca5a5" font-size="16" font-family="Arial, sans-serif">Stop below handle low</text>
+  <text x="84" y="604" fill="#9eb1c7" font-size="16" font-family="Arial, sans-serif">Handle should stay quiet; breakout should show clean volume expansion</text>
+</svg>
+

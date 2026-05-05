@@ -63,6 +63,18 @@ Opens `output/index.html` — the hub linking all 4 HTML dashboards.
 
 ---
 
+## Study Lab (Past Winners)
+
+| Doc | Purpose |
+|-----|---------|
+| `docs/studies/past_winners/README.md` | Hub for studying and saving historical winner patterns |
+| `docs/studies/past_winners/WINNER_ENTRY_TEMPLATE.md` | Structured template: pattern, entry/exit, R:R, sizing, context |
+| `docs/studies/past_winners/DAILY_REVIEW_LOOP.md` | Daily and weekly process to build pattern memory |
+| `trade_data/past_winners/catalog.json` | Persistent winner catalogue data |
+| `trade_data/past_winners/glossary.json` | Pattern wisdom glossary and stats |
+
+---
+
 ## Scripts Reference
 
 | Script | Command | Time |

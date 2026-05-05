@@ -43,6 +43,8 @@ TRADE_DATA_DIR = Path(_TD_ENV) if _TD_ENV else ROOT / "trade_data"
 TRADE_BOARD_JSON = TRADE_DATA_DIR / "positions.json"
 TRADE_JOURNAL_JSON = TRADE_DATA_DIR / "journal.json"
 TRADE_WATCHLIST_JSON = TRADE_DATA_DIR / "watchlist.json"
+TRADE_PAST_WINNERS_JSON = TRADE_DATA_DIR / "past_winners" / "catalog.json"
+TRADE_PAST_WINNERS_GLOSSARY_JSON = TRADE_DATA_DIR / "past_winners" / "glossary.json"
 TRADE_BOARD_JSON_LEGACY = OUTPUT_DIR / "trade_board.json"  # kept for migration only
 _CD_ENV = os.environ.get("SETUPS_CACHE_DIR", "").strip()
 CACHE_DIR = Path(_CD_ENV) if _CD_ENV else ROOT / "cache"
@@ -156,6 +158,71 @@ class TradeBoardUpdate(BaseModel):
     entry: Optional[float] = None
     quantity: Optional[int] = None
     notes: Optional[str] = None
+    tags: Optional[list[str]] = None
+
+
+class PastWinnerEntry(BaseModel):
+    id: Optional[str] = None
+    symbol: str
+    name: str = ""
+    market: Literal["india", "us"] = "india"
+    timeframe: str = "daily"
+    pattern: str = ""
+    variation: str = ""
+    market_regime: str = ""
+    breakout_date: Optional[str] = None
+    exit_date: Optional[str] = None
+    entry_price: Optional[float] = None
+    stop_price: Optional[float] = None
+    exit_price: Optional[float] = None
+    realized_r: Optional[float] = None
+    risk_reward: str = ""
+    position_sizing: str = ""
+    trade_plan: str = ""
+    entry_logic: str = ""
+    exit_logic: str = ""
+    rs_rank: Optional[float] = None
+    adr_pct: Optional[float] = None
+    breakout_volume_vs20d: Optional[float] = None
+    eps_growth_yoy: Optional[float] = None
+    sales_growth_yoy: Optional[float] = None
+    roe_percent: Optional[float] = None
+    debt_to_equity: Optional[float] = None
+    story: str = ""
+    notes: str = ""
+    image_paths: dict = Field(default_factory=dict)
+    tags: list[str] = Field(default_factory=list)
+
+
+class PastWinnerUpdate(BaseModel):
+    symbol: Optional[str] = None
+    name: Optional[str] = None
+    market: Optional[Literal["india", "us"]] = None
+    timeframe: Optional[str] = None
+    pattern: Optional[str] = None
+    variation: Optional[str] = None
+    market_regime: Optional[str] = None
+    breakout_date: Optional[str] = None
+    exit_date: Optional[str] = None
+    entry_price: Optional[float] = None
+    stop_price: Optional[float] = None
+    exit_price: Optional[float] = None
+    realized_r: Optional[float] = None
+    risk_reward: Optional[str] = None
+    position_sizing: Optional[str] = None
+    trade_plan: Optional[str] = None
+    entry_logic: Optional[str] = None
+    exit_logic: Optional[str] = None
+    rs_rank: Optional[float] = None
+    adr_pct: Optional[float] = None
+    breakout_volume_vs20d: Optional[float] = None
+    eps_growth_yoy: Optional[float] = None
+    sales_growth_yoy: Optional[float] = None
+    roe_percent: Optional[float] = None
+    debt_to_equity: Optional[float] = None
+    story: Optional[str] = None
+    notes: Optional[str] = None
+    image_paths: Optional[dict] = None
     tags: Optional[list[str]] = None
 
 
@@ -946,6 +1013,16 @@ _UI_DIR = TRADE_BOARD_UI.parent
 if _UI_DIR.exists():
     app.mount("/ui", StaticFiles(directory=str(_UI_DIR)), name="ui")
 
+# Serve markdown-linked visual assets (for example docs/assets/chart-patterns/*.svg)
+# so playbook/blog images render correctly in the web reader.
+_DOCS_ASSETS_DIR = ROOT / "docs" / "assets"
+if _DOCS_ASSETS_DIR.exists():
+    app.mount(
+        "/playbook-assets",
+        StaticFiles(directory=str(_DOCS_ASSETS_DIR)),
+        name="playbook-assets",
+    )
+
 
 def _ensure_parent_dir(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1221,6 +1298,17 @@ def playbook_download(doc: str = "playbook") -> Response:
 
     def _inline(s: str) -> str:
         s = _html.escape(s)
+        # images ![alt](url)
+        def _img_sub(m):
+            alt = m.group(1)
+            url = m.group(2).strip()
+            if url.startswith("./assets/"):
+                url = "/playbook-assets/" + url[len("./assets/"):]
+            elif url.startswith("assets/"):
+                url = "/playbook-assets/" + url[len("assets/"):]
+            return f'<img src="{url}" alt="{alt}" loading="lazy"/>'
+
+        s = _re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", _img_sub, s)
         # code spans first (protect them from further subs)
         s = _re.sub(r"`([^`]+)`", r"<code>\1</code>", s)
         # bold, italic
@@ -1372,6 +1460,7 @@ def playbook_download(doc: str = "playbook") -> Response:
     font-size:.9em;page-break-inside:avoid}}
   th,td{{border:1px solid #d9d6cc;padding:6pt 8pt;text-align:left;vertical-align:top}}
   th{{background:#f5f2ea;color:#8a5a00;font-weight:700;text-transform:uppercase;font-size:.85em;letter-spacing:.4px}}
+  img{{max-width:100%;height:auto;display:block;margin:10pt auto;border:1px solid #e5e1d7;border-radius:6pt;page-break-inside:avoid}}
   hr{{border:0;border-top:1px solid #d9d6cc;margin:18pt 0}}
   a{{color:#1d4ed8;text-decoration:none}}
   .cover{{text-align:center;margin:0 0 26pt;padding:0 0 20pt;border-bottom:1px solid #d9d6cc}}
@@ -5643,6 +5732,220 @@ def export_journal():
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=trading_journal_export.csv"}
     )
+
+
+# ── Past Winners Study Lab ─────────────────────────────────────────────────────
+
+_past_winners_lock = threading.Lock()
+
+
+def _default_past_winners_store() -> dict:
+    return {
+        "version": 1,
+        "updatedAt": datetime.now().strftime("%Y-%m-%d"),
+        "entries": [],
+    }
+
+
+def _load_past_winners_store() -> dict:
+    if not TRADE_PAST_WINNERS_JSON.exists():
+        return _default_past_winners_store()
+    try:
+        data = json.loads(TRADE_PAST_WINNERS_JSON.read_text(encoding="utf-8"))
+    except Exception:
+        return _default_past_winners_store()
+    if not isinstance(data, dict):
+        return _default_past_winners_store()
+    data.setdefault("version", 1)
+    data.setdefault("updatedAt", datetime.now().strftime("%Y-%m-%d"))
+    entries = data.get("entries")
+    if not isinstance(entries, list):
+        data["entries"] = []
+    return data
+
+
+def _save_past_winners_store(data: dict) -> None:
+    TRADE_PAST_WINNERS_JSON.parent.mkdir(parents=True, exist_ok=True)
+    data["updatedAt"] = datetime.now().strftime("%Y-%m-%d")
+    TRADE_PAST_WINNERS_JSON.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+
+def _safe_float(v) -> Optional[float]:
+    if v is None or v == "":
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+@app.get("/api/past-winners")
+def past_winners_list(
+    pattern: str = "",
+    regime: str = "",
+    min_realized_r: Optional[float] = None,
+    q: str = "",
+) -> dict:
+    with _past_winners_lock:
+        store = _load_past_winners_store()
+    entries = list(store.get("entries", []))
+
+    pat = pattern.strip().lower()
+    reg = regime.strip().lower()
+    qq = q.strip().lower()
+    out = []
+    for e in entries:
+        if pat and pat not in str(e.get("pattern", "")).lower():
+            continue
+        if reg and reg not in str(e.get("market_regime", "")).lower():
+            continue
+        rr = _safe_float(e.get("realized_r"))
+        if min_realized_r is not None and (rr is None or rr < min_realized_r):
+            continue
+        if qq:
+            hay = " ".join([
+                str(e.get("symbol", "")),
+                str(e.get("name", "")),
+                str(e.get("pattern", "")),
+                str(e.get("variation", "")),
+                str(e.get("story", "")),
+                str(e.get("notes", "")),
+                " ".join(e.get("tags", []) or []),
+            ]).lower()
+            if qq not in hay:
+                continue
+        out.append(e)
+
+    out.sort(
+        key=lambda x: (
+            str(x.get("breakout_date") or ""),
+            str(x.get("updated_at") or ""),
+            str(x.get("created_at") or ""),
+        ),
+        reverse=True,
+    )
+    return {
+        "entries": out,
+        "count": len(out),
+        "updatedAt": store.get("updatedAt"),
+    }
+
+
+@app.post("/api/past-winners")
+def past_winners_create(entry: PastWinnerEntry) -> dict:
+    now = datetime.now().isoformat(timespec="seconds")
+    rec = entry.model_dump()
+    rec["id"] = rec.get("id") or str(uuid.uuid4())[:8]
+    rec["created_at"] = now
+    rec["updated_at"] = now
+
+    with _past_winners_lock:
+        store = _load_past_winners_store()
+        rows = store.get("entries", [])
+        rows.append(rec)
+        store["entries"] = rows
+        _save_past_winners_store(store)
+    return {"ok": True, "entry": rec}
+
+
+@app.put("/api/past-winners/{entry_id}")
+def past_winners_update(entry_id: str, update: PastWinnerUpdate) -> dict:
+    with _past_winners_lock:
+        store = _load_past_winners_store()
+        rows = store.get("entries", [])
+        for i, e in enumerate(rows):
+            if str(e.get("id")) != entry_id:
+                continue
+            upd = update.model_dump(exclude_unset=True)
+            rows[i].update(upd)
+            rows[i]["updated_at"] = datetime.now().isoformat(timespec="seconds")
+            store["entries"] = rows
+            _save_past_winners_store(store)
+            return {"ok": True, "entry": rows[i]}
+    raise HTTPException(status_code=404, detail=f"Past winner not found: {entry_id}")
+
+
+@app.delete("/api/past-winners/{entry_id}")
+def past_winners_delete(entry_id: str) -> dict:
+    with _past_winners_lock:
+        store = _load_past_winners_store()
+        rows = store.get("entries", [])
+        new_rows = [e for e in rows if str(e.get("id")) != entry_id]
+        if len(new_rows) == len(rows):
+            raise HTTPException(status_code=404, detail=f"Past winner not found: {entry_id}")
+        store["entries"] = new_rows
+        _save_past_winners_store(store)
+    return {"ok": True, "deleted": entry_id}
+
+
+@app.get("/api/past-winners/glossary")
+def past_winners_glossary() -> dict:
+    if not TRADE_PAST_WINNERS_GLOSSARY_JSON.exists():
+        return {"version": 1, "patterns": [], "tradingWisdom": []}
+    try:
+        data = json.loads(TRADE_PAST_WINNERS_GLOSSARY_JSON.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            return data
+    except Exception:
+        pass
+    return {"version": 1, "patterns": [], "tradingWisdom": []}
+
+
+@app.get("/api/past-winners/prefill")
+def past_winners_prefill(symbol: str, market: Literal["india", "us"] = "india") -> dict:
+    sym = (symbol or "").strip().upper()
+    if not sym:
+        raise HTTPException(status_code=400, detail="symbol is required")
+
+    # Pattern engine deep-dive (RS/fundamentals/story hints)
+    analysis = _wpe.analyze_single_stock(
+        symbol=sym,
+        market=market,
+        include_news=False,
+        include_fundamentals=True,
+        include_mf=True,
+    )
+
+    # Local OHLCV-driven metrics (ADR/volume extension etc.)
+    quick = {"symbol": sym, "market": market}
+    _enrich_position_metrics(quick)
+
+    fundamentals = analysis.get("fundamentals") if isinstance(analysis.get("fundamentals"), dict) else {}
+    rs_block = analysis.get("rs") if isinstance(analysis.get("rs"), dict) else {}
+
+    prefill = {
+        "symbol": sym,
+        "name": analysis.get("name") or sym,
+        "market": market,
+        "timeframe": "daily",
+        "market_regime": analysis.get("regime") or analysis.get("regime_state") or "",
+        "rs_rank": _safe_float(rs_block.get("score") or analysis.get("rs_score") or analysis.get("rsScore")),
+        "adr_pct": _safe_float(quick.get("adrPct") or analysis.get("adr_pct") or analysis.get("adrPct")),
+        "breakout_volume_vs20d": _safe_float(quick.get("volRatio") or analysis.get("volume_ratio") or analysis.get("volumeRatio")),
+        "eps_growth_yoy": _safe_float(fundamentals.get("epsGrowthYoY") or fundamentals.get("eps_growth_yoy")),
+        "sales_growth_yoy": _safe_float(fundamentals.get("salesGrowthYoY") or fundamentals.get("sales_growth_yoy")),
+        "roe_percent": _safe_float(fundamentals.get("roe") or fundamentals.get("roePercent") or fundamentals.get("roe_percent")),
+        "debt_to_equity": _safe_float(fundamentals.get("debtToEquity") or fundamentals.get("debt_to_equity")),
+        "story_hint": analysis.get("thesis") or analysis.get("summary") or "",
+        "trade_plan_hint": analysis.get("entry_instruction") or analysis.get("entryInstruction") or "",
+    }
+
+    return {
+        "ok": True,
+        "prefill": prefill,
+        "analysis": analysis,
+        "quickMetrics": {
+            "ema20ext": quick.get("ema20ext"),
+            "volRatio": quick.get("volRatio"),
+            "rsi": quick.get("rsi"),
+            "aboveSma200": quick.get("aboveSma200"),
+            "accumDays": quick.get("accumDays"),
+            "distDays": quick.get("distDays"),
+        },
+    }
 
 
 # ── Trade Watchlist 2.0 ────────────────────────────────────────────────────────

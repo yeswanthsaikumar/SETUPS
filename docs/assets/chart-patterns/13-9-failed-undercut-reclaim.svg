@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="title desc">
+  <title id="title">Failed Undercut Reclaim candlestick example</title>
+  <desc id="desc">Dark-theme candlestick chart showing an undercut reclaim attempt that fails and resumes downside.</desc>
+  <rect width="1400" height="760" fill="#070d18"/>
+  <g stroke="#172338" stroke-width="1">
+    <path d="M80 70H1320M80 140H1320M80 210H1320M80 280H1320M80 350H1320M80 420H1320M80 490H1320M80 560H1320"/>
+    <path d="M120 60V580M220 60V580M320 60V580M420 60V580M520 60V580M620 60V580M720 60V580M820 60V580M920 60V580M1020 60V580M1120 60V580M1220 60V580"/>
+  </g>
+
+  <line x1="260" y1="250" x2="1040" y2="250" stroke="#f87171" stroke-width="2" stroke-dasharray="8 7"/>
+
+  <g>
+    <line x1="260" y1="228" x2="260" y2="275" stroke="#ff5a6e"/><rect x="252" y="236" width="16" height="32" fill="#ff5a6e"/>
+    <line x1="300" y1="244" x2="300" y2="292" stroke="#ff5a6e"/><rect x="292" y="252" width="16" height="34" fill="#ff5a6e"/>
+    <line x1="340" y1="262" x2="340" y2="312" stroke="#ff5a6e"/><rect x="332" y="270" width="16" height="36" fill="#ff5a6e"/>
+    <line x1="380" y1="284" x2="380" y2="334" stroke="#ff5a6e"/><rect x="372" y="292" width="16" height="36" fill="#ff5a6e"/>
+
+    <line x1="420" y1="300" x2="420" y2="355" stroke="#ff5a6e"/><rect x="412" y="308" width="16" height="40" fill="#ff5a6e"/>
+    <line x1="460" y1="340" x2="460" y2="390" stroke="#ff5a6e"/><rect x="452" y="348" width="16" height="36" fill="#ff5a6e"/>
+
+    <line x1="500" y1="396" x2="500" y2="300" stroke="#2ecc71"/><rect x="492" y="312" width="16" height="64" fill="#2ecc71"/>
+    <line x1="540" y1="320" x2="540" y2="250" stroke="#2ecc71"/><rect x="532" y="258" width="16" height="50" fill="#2ecc71"/>
+
+    <line x1="580" y1="250" x2="580" y2="305" stroke="#ff5a6e"/><rect x="572" y="258" width="16" height="38" fill="#ff5a6e"/>
+    <line x1="620" y1="274" x2="620" y2="326" stroke="#ff5a6e"/><rect x="612" y="282" width="16" height="36" fill="#ff5a6e"/>
+    <line x1="660" y1="300" x2="660" y2="356" stroke="#ff5a6e"/><rect x="652" y="308" width="16" height="40" fill="#ff5a6e"/>
+    <line x1="700" y1="326" x2="700" y2="384" stroke="#ff5a6e"/><rect x="692" y="334" width="16" height="42" fill="#ff5a6e"/>
+    <line x1="740" y1="350" x2="740" y2="414" stroke="#ff5a6e"/><rect x="732" y="360" width="16" height="44" fill="#ff5a6e"/>
+    <line x1="780" y1="376" x2="780" y2="446" stroke="#ff5a6e"/><rect x="772" y="386" width="16" height="46" fill="#ff5a6e"/>
+  </g>
+
+  <line x1="582" y1="250" x2="1320" y2="250" stroke="#fda4af" stroke-dasharray="6 6"/>
+  <line x1="620" y1="320" x2="1320" y2="320" stroke="#f87171" stroke-dasharray="6 6"/>
+
+  <text x="498" y="420" fill="#93c5fd" font-size="14" font-family="Arial, sans-serif">Undercut</text>
+  <text x="546" y="244" fill="#dbeafe" font-size="14" font-family="Arial, sans-serif">Reclaim</text>
+  <text x="740" y="318" fill="#fca5a5" font-size="14" font-family="Arial, sans-serif">Fails reclaim</text>
+
+  <g>
+    <rect x="250" y="650" width="24" height="40" fill="#6e3745"/>
+    <rect x="290" y="645" width="24" height="45" fill="#6e3745"/>
+    <rect x="330" y="640" width="24" height="50" fill="#6e3745"/>
+    <rect x="370" y="634" width="24" height="56" fill="#6e3745"/>
+    <rect x="410" y="628" width="24" height="62" fill="#6e3745"/>
+    <rect x="450" y="622" width="24" height="68" fill="#6e3745"/>
+    <rect x="490" y="560" width="24" height="130" fill="#2f6f49"/>
+    <rect x="530" y="540" width="24" height="150" fill="#2f6f49"/>
+    <rect x="570" y="610" width="24" height="80" fill="#6e3745"/>
+    <rect x="610" y="596" width="24" height="94" fill="#6e3745"/>
+    <rect x="650" y="582" width="24" height="108" fill="#6e3745"/>
+    <rect x="690" y="566" width="24" height="124" fill="#6e3745"/>
+    <rect x="730" y="548" width="24" height="142" fill="#6e3745"/>
+    <rect x="770" y="528" width="24" height="162" fill="#6e3745"/>
+  </g>
+
+  <g stroke-width="2">
+    <path d="M90 520 L210 525 L320 530 L430 538 L540 520 L650 525 L760 540 L890 560 L1020 578 L1180 592" fill="none" stroke="#ff8c00"/>
+    <path d="M90 550 L220 555 L330 560 L440 565 L550 550 L660 558 L770 570 L900 585 L1020 600 L1180 612" fill="none" stroke="#00c2ff"/>
+    <path d="M90 575 L220 580 L330 585 L440 590 L550 580 L660 588 L770 598 L900 610 L1020 622 L1180 632" fill="none" stroke="#39c467"/>
+  </g>
+
+  <text x="90" y="42" fill="#e5edf8" font-size="28" font-family="Arial, sans-serif">Failure C (Dark Theme): undercut reclaim fails and resumes downside</text>
+  <text x="1005" y="246" fill="#fda4af" font-size="16" font-family="Arial, sans-serif">Reclaimed level</text>
+  <text x="1005" y="316" fill="#fca5a5" font-size="16" font-family="Arial, sans-serif">Exit on failed close</text>
+  <text x="84" y="600" fill="#9eb1c7" font-size="16" font-family="Arial, sans-serif">If reclaim fails, flatten quickly and wait for a complete rebuild</text>
+</svg>

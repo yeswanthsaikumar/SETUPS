@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="title desc">
+  <title id="title">Inverse Head and Shoulders candlestick example</title>
+  <desc id="desc">Dark-theme candlestick chart with left shoulder, head, right shoulder, neckline breakout, and volume confirmation.</desc>
+  <rect width="1400" height="760" fill="#070d18"/>
+  <g stroke="#172338" stroke-width="1">
+    <path d="M80 70H1320M80 140H1320M80 210H1320M80 280H1320M80 350H1320M80 420H1320M80 490H1320M80 560H1320"/>
+    <path d="M120 60V580M220 60V580M320 60V580M420 60V580M520 60V580M620 60V580M720 60V580M820 60V580M920 60V580M1020 60V580M1120 60V580M1220 60V580"/>
+  </g>
+
+  <g stroke-width="2">
+    <path d="M90 470 L220 450 L330 430 L440 410 L550 380 L660 350 L770 318 L900 272 L1040 225 L1180 190" fill="none" stroke="#ff8c00"/>
+    <path d="M90 505 L220 488 L330 472 L440 455 L550 430 L660 402 L770 370 L900 325 L1040 278 L1180 245" fill="none" stroke="#00c2ff"/>
+    <path d="M90 548 L220 535 L330 522 L440 510 L550 490 L660 465 L770 438 L900 402 L1040 364 L1180 330" fill="none" stroke="#39c467"/>
+  </g>
+
+  <g>
+    <line x1="220" y1="305" x2="220" y2="250" stroke="#ff5a6e"/><rect x="212" y="260" width="16" height="38" fill="#ff5a6e"/>
+    <line x1="260" y1="332" x2="260" y2="275" stroke="#ff5a6e"/><rect x="252" y="285" width="16" height="40" fill="#ff5a6e"/>
+    <line x1="300" y1="300" x2="300" y2="245" stroke="#2ecc71"/><rect x="292" y="254" width="16" height="38" fill="#2ecc71"/>
+    <line x1="340" y1="280" x2="340" y2="230" stroke="#2ecc71"/><rect x="332" y="238" width="16" height="36" fill="#2ecc71"/>
+
+    <line x1="400" y1="330" x2="400" y2="270" stroke="#ff5a6e"/><rect x="392" y="282" width="16" height="40" fill="#ff5a6e"/>
+    <line x1="440" y1="368" x2="440" y2="305" stroke="#ff5a6e"/><rect x="432" y="315" width="16" height="45" fill="#ff5a6e"/>
+    <line x1="480" y1="392" x2="480" y2="328" stroke="#ff5a6e"/><rect x="472" y="338" width="16" height="46" fill="#ff5a6e"/>
+    <line x1="520" y1="360" x2="520" y2="305" stroke="#2ecc71"/><rect x="512" y="314" width="16" height="40" fill="#2ecc71"/>
+    <line x1="560" y1="330" x2="560" y2="280" stroke="#2ecc71"/><rect x="552" y="288" width="16" height="36" fill="#2ecc71"/>
+
+    <line x1="620" y1="310" x2="620" y2="262" stroke="#ff5a6e"/><rect x="612" y="272" width="16" height="32" fill="#ff5a6e"/>
+    <line x1="660" y1="322" x2="660" y2="272" stroke="#ff5a6e"/><rect x="652" y="282" width="16" height="34" fill="#ff5a6e"/>
+    <line x1="700" y1="304" x2="700" y2="256" stroke="#2ecc71"/><rect x="692" y="266" width="16" height="32" fill="#2ecc71"/>
+    <line x1="740" y1="286" x2="740" y2="240" stroke="#2ecc71"/><rect x="732" y="248" width="16" height="32" fill="#2ecc71"/>
+
+    <line x1="800" y1="280" x2="800" y2="210" stroke="#2ecc71"/><rect x="792" y="220" width="16" height="52" fill="#2ecc71"/>
+    <line x1="840" y1="225" x2="840" y2="185" stroke="#2ecc71"/><rect x="832" y="192" width="16" height="28" fill="#2ecc71"/>
+    <line x1="880" y1="205" x2="880" y2="165" stroke="#2ecc71"/><rect x="872" y="172" width="16" height="28" fill="#2ecc71"/>
+  </g>
+
+  <line x1="330" y1="235" x2="760" y2="235" stroke="#f87171" stroke-width="2" stroke-dasharray="8 7"/>
+  <line x1="790" y1="235" x2="1320" y2="235" stroke="#7dd3fc" stroke-dasharray="6 6"/>
+  <line x1="660" y1="322" x2="1320" y2="322" stroke="#f87171" stroke-dasharray="6 6"/>
+
+  <text x="232" y="344" fill="#93c5fd" font-size="14" font-family="Arial, sans-serif">Left shoulder</text>
+  <text x="455" y="412" fill="#93c5fd" font-size="14" font-family="Arial, sans-serif">Head</text>
+  <text x="615" y="340" fill="#93c5fd" font-size="14" font-family="Arial, sans-serif">Right shoulder</text>
+
+  <g>
+    <rect x="210" y="615" width="24" height="75" fill="#6e3745"/>
+    <rect x="250" y="625" width="24" height="65" fill="#6e3745"/>
+    <rect x="290" y="640" width="24" height="50" fill="#2f6f49"/>
+    <rect x="330" y="655" width="24" height="35" fill="#2f6f49"/>
+    <rect x="390" y="620" width="24" height="70" fill="#6e3745"/>
+    <rect x="430" y="590" width="24" height="100" fill="#6e3745"/>
+    <rect x="470" y="565" width="24" height="125" fill="#6e3745"/>
+    <rect x="510" y="610" width="24" height="80" fill="#2f6f49"/>
+    <rect x="550" y="630" width="24" height="60" fill="#2f6f49"/>
+    <rect x="610" y="650" width="24" height="40" fill="#6e3745"/>
+    <rect x="650" y="642" width="24" height="48" fill="#6e3745"/>
+    <rect x="690" y="655" width="24" height="35" fill="#2f6f49"/>
+    <rect x="730" y="665" width="24" height="25" fill="#2f6f49"/>
+    <rect x="790" y="620" width="24" height="70" fill="#2f6f49"/>
+    <rect x="830" y="585" width="24" height="105" fill="#2f6f49"/>
+    <rect x="870" y="552" width="24" height="138" fill="#2f6f49"/>
+  </g>
+
+  <text x="90" y="42" fill="#e5edf8" font-size="28" font-family="Arial, sans-serif">Inverse Head and Shoulders (Dark Theme): neckline break confirms reversal</text>
+  <text x="798" y="228" fill="#dbeafe" font-size="16" font-family="Arial, sans-serif">Entry above neckline</text>
+  <text x="980" y="318" fill="#fca5a5" font-size="16" font-family="Arial, sans-serif">Stop below right shoulder</text>
+  <text x="84" y="590" fill="#9eb1c7" font-size="16" font-family="Arial, sans-serif">Best setups show weaker selling into right shoulder and stronger breakout participation</text>
+</svg>
+

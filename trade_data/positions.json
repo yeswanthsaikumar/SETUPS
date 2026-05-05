@@ -1131,12 +1131,40 @@
       "tags": [],
       "partial_exits": [],
       "original_sl": null,
-      "cmp": 6457.1,
-      "lastPriceDate": "2026-04-30",
-      "dayChangePct": 14.15,
-      "dayChangeAmt": 79259.41
+      "cmp": 6127.5,
+      "lastPriceDate": "2026-05-05",
+      "dayChangePct": -5.1,
+      "dayChangeAmt": -32630.4
+    },
+    {
+      "id": "c8b081fa",
+      "symbol": "SGMART",
+      "name": "sgmart",
+      "entry": 587.64,
+      "quantity": 1284,
+      "remaining_quantity": 0,
+      "sl": 562.26,
+      "t1": 0.0,
+      "t2": 0.0,
+      "t3": 0.0,
+      "setup": "BULL_FLAG",
+      "rating": "A",
+      "notes": "",
+      "entry_date": "2026-05-04",
+      "status": "SL_HIT",
+      "exit_price": 558.35,
+      "exit_date": "2026-05-05",
+      "tags": [],
+      "partial_exits": [],
+      "original_sl": 560.0,
+      "cmp": 558.35,
+      "lastPriceDate": "2026-05-05",
+      "dayChangePct": -2.22,
+      "dayChangeAmt": -16242.6,
+      "sl_armed": true,
+      "realized_pl": -37608.36
     }
   ],
   "created": "2026-04-14T11:55:48.601550",
-  "lastUpdated": "2026-05-01T14:44:07.901432"
+  "lastUpdated": "2026-05-05T00:45:18.948669"
 }

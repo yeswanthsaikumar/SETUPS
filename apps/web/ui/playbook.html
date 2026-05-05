@@ -597,6 +597,20 @@ async function loadPlaybook(){
     c.classList.remove('skeleton');
     c.innerHTML = html.replace(/^<h1[^>]*>[^<]*<\/h1>/i, '');
 
+    // Resolve markdown-local image paths (assets/...) to FastAPI static route.
+    c.querySelectorAll('img').forEach(img => {
+      const src = (img.getAttribute('src') || '').trim();
+      if(!src) return;
+      if(/^(https?:|data:|\/)/i.test(src)) return;
+      if(src.startsWith('assets/')){
+        img.setAttribute('src', '/playbook-assets/' + src.slice('assets/'.length));
+        return;
+      }
+      if(src.startsWith('./assets/')){
+        img.setAttribute('src', '/playbook-assets/' + src.slice('./assets/'.length));
+      }
+    });
+
     // If meta didn't update the title, fall back to first H1 in the markdown
     if(!allDocs.length){
       const firstH1 = (md.match(/^\s*#\s+(.+?)\s*$/m) || [,'The Trading Playbook'])[1];
