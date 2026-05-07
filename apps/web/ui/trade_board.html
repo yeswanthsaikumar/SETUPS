@@ -374,8 +374,9 @@
       .j-read-quote{font-size:20px}
     }
     /* WATCHLIST */
-    .wl-wrap{flex:1;overflow-y:auto;padding:14px}
-    .wl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:14px;margin-top:10px}
+    .wl-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column}
+    .wl-header-area{padding:14px 14px 0;flex-shrink:0}
+    .wl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:14px;padding:14px}
     /* Watchlist 2.0 — market-health strip, toolbar, bucket tabs */
     .wl-health-strip{background:linear-gradient(90deg,#0c1324,#0f1c35);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
     .wlh-verdict{font-size:13px;font-weight:800;letter-spacing:-.2px}
@@ -387,15 +388,40 @@
     .wl-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
     .wl-count{font-size:10px;background:var(--bg3);color:var(--muted);border:1px solid var(--border);padding:2px 8px;border-radius:10px}
     .wl-bucket-tabs{display:flex;gap:4px;overflow-x:auto;padding:4px 0;border-bottom:1px solid var(--border);margin-bottom:4px}
-    .wl-bucket-tab{flex-shrink:0;background:transparent;border:1px solid transparent;color:var(--muted);font-size:11px;font-weight:700;padding:6px 11px;border-radius:7px 7px 0 0;cursor:pointer;transition:all .15s;white-space:nowrap}
-    .wl-bucket-tab:hover{background:var(--bg3);color:var(--text)}
-    .wl-bucket-tab.active{background:var(--bg2);border-color:var(--border2);border-bottom-color:var(--bg2);color:var(--cyan);position:relative;top:1px}
-    .wl-bucket-tab .wb-count{display:inline-block;margin-left:6px;font-size:9px;background:var(--bg);color:var(--muted);padding:1px 5px;border-radius:6px;font-weight:700}
-    .wl-bucket-tab.active .wb-count{background:#0891b255;color:var(--cyan)}
-    /* Card additions */
-    .wl-bucket-pill{display:inline-flex;align-items:center;gap:3px;font-size:9.5px;font-weight:700;background:#1e293b;color:#cbd5e1;border:1px solid #334155;padding:1px 6px;border-radius:5px}
+     .wl-bucket-tab{flex-shrink:0;background:transparent;border:1px solid transparent;color:var(--muted);font-size:11.5px;font-weight:700;padding:7px 14px;border-radius:7px 7px 0 0;cursor:pointer;transition:all .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+     .wl-bucket-tab:hover{background:var(--bg3);color:var(--text)}
+     .wl-bucket-tab.active{background:var(--bg2);border-color:var(--border2);border-bottom-color:var(--bg2);color:var(--cyan);position:relative;top:1px}
+     .wl-bucket-tab .wb-count{font-size:9px;background:var(--bg);color:var(--muted);padding:1px 5px;border-radius:6px;font-weight:700}
+     .wl-bucket-tab.active .wb-count{background:#0891b255;color:var(--cyan)}
+     .wl-bucket-tab .wl-hint{display:none;font-size:9px;color:var(--muted);font-weight:500;margin-left:2px}
+     .wl-bucket-tab.active .wl-hint{display:inline}
+     /* Card additions */
+     .wl-bucket-pill{display:inline-flex;align-items:center;gap:3px;font-size:9.5px;font-weight:700;background:#1e293b;color:#cbd5e1;border:1px solid #334155;padding:1px 6px;border-radius:5px}
+     /* Multi-bucket checkbox chips in modal */
+     .wl-bk-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:5px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--bg);color:var(--muted);cursor:pointer;transition:all .15s;user-select:none}
+     .wl-bk-chip:hover{border-color:var(--blue);color:var(--text)}
+     .wl-bk-chip.checked{background:#1e3a5f;border-color:#3b82f6;color:#93c5fd}
+     .wl-bk-chip input{display:none}
+     /* Quick bucket-toggle strip on each card */
+     .wl-bk-strip{display:flex;flex-wrap:wrap;gap:4px;padding:6px 12px;border-top:1px solid var(--border);background:#080f1a}
+     .wl-bk-tog{font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
+     .wl-bk-tog:hover{border-color:#3b82f6;color:#93c5fd}
+     .wl-bk-tog.on{background:#1e3a5f;border-color:#3b82f6;color:#93c5fd;font-weight:800}
     .rs-view-btn{font-size:10px!important;padding:2px 8px!important;transition:all .2s}
     .rs-view-btn.active{background:#1e3a5f!important;color:#60a5fa!important;border-color:#3b82f6!important}
+    .wlViewBtn.active,.wlQuickBtn.active,.wlDensityBtn.active{background:#1e3a5f!important;color:#60a5fa!important;border-color:#3b82f6!important}
+    .wl-group-hdr{padding:7px 14px 4px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);border-top:1px solid var(--border);margin-top:4px;grid-column:1/-1}
+    /* Row / table density layout */
+    .wl-table{width:100%;border-collapse:collapse;font-size:11.5px}
+    .wl-table th{background:var(--bg3);padding:5px 10px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);border-bottom:1px solid var(--border);font-weight:700;white-space:nowrap;position:sticky;top:0;z-index:2}
+    .wl-table td{padding:6px 10px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap}
+    .wl-table tr:hover td{background:var(--bg3);cursor:pointer}
+    .wl-table .wl-row-sym{font-weight:900;font-size:12px;color:var(--text)}
+    .wl-table .wl-row-name{font-size:9.5px;color:var(--muted);display:block;margin-top:1px;max-width:120px;overflow:hidden;text-overflow:ellipsis}
+    .wl-table .wl-row-bk{display:flex;flex-wrap:wrap;gap:3px}
+    .wl-row-bk-chip{font-size:8.5px;font-weight:700;padding:1px 5px;border-radius:4px;background:#1e293b;color:#94a3b8;border:1px solid #334155;white-space:nowrap}
+    .wl-row-bk-chip.on{background:#1e3a5f;color:#93c5fd;border-color:#3b82f666}
+    .wl-table-wrap{overflow-x:auto;overflow-y:auto;flex:1}
     .rs-sector-hdr{cursor:pointer;background:#0f1729;border:1px solid #1e293b;border-radius:6px;padding:8px 12px;margin:6px 0 2px;display:flex;align-items:center;gap:8px;transition:background .2s}
     .rs-sector-hdr:hover{background:#162033}
     .rs-sector-hdr .rs-sec-icon{font-size:14px}
@@ -473,8 +499,7 @@
     .empty-st{text-align:center;padding:45px 20px;color:var(--muted)}
     .empty-ttl{font-size:.95em;font-weight:700;margin-bottom:6px;color:var(--text)}
     .empty-sub{font-size:11.5px;line-height:1.6}
-    @media(max-width:768px){.sidebar{display:none}.pos-grid{grid-template-columns:1fr}.wl-grid{grid-template-columns:1fr}}
-    /* IFRAME EMBED PAGE */
+    @media(max-width:768px){.sidebar{display:none}.pos-grid{grid-template-columns:1fr}.wl-grid{grid-template-columns:1fr}}    /* IFRAME EMBED PAGE */
     .iframe-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative}
     .iframe-bar{display:flex;align-items:center;gap:8px;padding:5px 12px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
     .iframe-bar-title{font-weight:800;font-size:.85em;color:var(--text)}
@@ -1073,6 +1098,7 @@
     <!-- WATCHLIST PAGE (Watchlist 2.0) -->
     <div class="page" id="page-watchlist">
       <div class="wl-wrap">
+        <div class="wl-header-area">
         <!-- Market-health strip on top -->
         <div id="wlHealthStrip" class="wl-health-strip">
           <div class="wlh-verdict" id="wlhVerdict">⏳ Loading market health…</div>
@@ -1088,7 +1114,7 @@
         <!-- Header + filters -->
         <div class="wl-toolbar">
           <div style="display:flex;align-items:center;gap:10px">
-            <span class="sec-hdr" style="margin-bottom:0">⭐ Watchlist 2.0</span>
+            <span class="sec-hdr" style="margin-bottom:0">⭐ Watchlist</span>
             <span class="wl-count" id="wlTotalCount">0</span>
           </div>
           <div style="flex:1"></div>
@@ -1122,12 +1148,43 @@
           <button class="btn btn-outline btn-sm" onclick="wlAutoRsPreview()" title="Rank all cached NSE stocks vs Nifty (IBD-style RS) and preview the top 35" style="border-color:#facc1555;color:#facc15">⚡ Auto RS-35</button>
           <button class="btn btn-primary btn-sm" onclick="openWLModal()">+ Add</button>
         </div>
+        </div><!-- /wl-header-area -->
 
         <!-- Bucket tabs -->
         <div class="wl-bucket-tabs" id="wlBucketTabs"></div>
 
-        <!-- Grid -->
-        <div class="wl-grid" id="wlGrid"></div>
+        <!-- Quick date filter + View mode strip -->
+        <div style="display:flex;gap:4px;align-items:center;padding:5px 14px;flex-wrap:wrap;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0">
+          <span style="font-size:10px;color:var(--muted);margin-right:4px">Quick:</span>
+          <button class="btn btn-outline btn-xs wlQuickBtn" data-period="1w" onclick="wlQuickFilter('1w')">1W ago</button>
+          <button class="btn btn-outline btn-xs wlQuickBtn" data-period="2w" onclick="wlQuickFilter('2w')">2W ago</button>
+          <button class="btn btn-outline btn-xs wlQuickBtn" data-period="1m" onclick="wlQuickFilter('1m')">1M ago</button>
+          <button class="btn btn-outline btn-xs wlQuickBtn" data-period="3m" onclick="wlQuickFilter('3m')">3M ago</button>
+          <button class="btn btn-outline btn-xs wlQuickBtn" data-period="6m" onclick="wlQuickFilter('6m')">6M ago</button>
+          <button class="btn btn-outline btn-xs wlQuickBtn" data-period="1y" onclick="wlQuickFilter('1y')">1Y ago</button>
+          <span style="width:1px;height:14px;background:var(--border2);margin:0 6px;flex-shrink:0"></span>
+          <span style="font-size:10px;color:var(--muted);margin-right:2px">View:</span>
+          <button class="btn btn-outline btn-xs wlViewBtn active" data-view="flat" onclick="wlSetView('flat')">📋 Flat</button>
+          <button class="btn btn-outline btn-xs wlViewBtn" data-view="sector" onclick="wlSetView('sector')">🏭 Sector</button>
+          <button class="btn btn-outline btn-xs wlViewBtn" data-view="rs" onclick="wlSetView('rs')">💪 RS Tier</button>
+          <button class="btn btn-outline btn-xs wlViewBtn" data-view="return" onclick="wlSetView('return')">📈 By Return</button>
+          <span style="width:1px;height:14px;background:var(--border2);margin:0 6px;flex-shrink:0"></span>
+          <span style="font-size:10px;color:var(--muted);margin-right:2px">Layout:</span>
+          <button class="btn btn-outline btn-xs wlDensityBtn active" id="wlDensityCard" onclick="wlSetDensity('card')" title="Rich cards with mini chart">🃏 Cards</button>
+          <button class="btn btn-outline btn-xs wlDensityBtn" id="wlDensityRow" onclick="wlSetDensity('row')" title="Compact table rows — see more at once">☰ Rows</button>
+          <span id="wlQuickLabel" style="font-size:10px;color:var(--cyan);margin-left:8px;display:none"></span>
+        </div>
+
+        <!-- Performance Analytics Panel -->
+        <div id="wlPerfPanel" style="display:none;flex-direction:column;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0">
+          <div id="wlPerfCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px"></div>
+          <div id="wlPerfSectors" style="min-height:20px;display:flex;flex-wrap:wrap;gap:2px"></div>
+        </div>
+
+        <!-- Grid / Table — replaced by renderWatchlist() -->
+        <div id="wlGridWrap" style="flex:1;overflow-y:auto;overflow-x:hidden">
+          <div id="wlGrid"></div>
+        </div>
       </div>
     </div>
 
@@ -1838,10 +1895,11 @@
         </div>
       </div>
       <div class="fg"><label class="ml">Name</label><input class="mi" id="wlName" placeholder="Company name"></div>
+      <div class="fg">
+        <label class="ml">Watchlists <span style="color:var(--muted);font-weight:400">(tick all that apply)</span></label>
+        <div id="wlBucketChecks" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px"></div>
+      </div>
       <div class="fr">
-        <div class="fg"><label class="ml">Bucket *</label>
-          <select class="mi" id="wlBucket"></select>
-        </div>
         <div class="fg"><label class="ml">Setup</label>
           <select class="mi" id="wlSetup"></select>
         </div>
@@ -4990,6 +5048,109 @@ function _dashCard(title, value, sub, color) {
 // ── Watchlist 2.0 state ───────────────────────────────────────────────
 let wlBuckets = [], wlSetupsVocab = [], wlAdrHints = {};
 let wlActiveBucket = 'ALL';
+let wlQuickPeriod = null;   // null = no date filter
+let wlViewMode = 'flat';    // 'flat' | 'sector' | 'rs' | 'return'
+let wlDensity = 'card';     // 'card' | 'row'
+
+function wlSetDensity(mode) {
+  wlDensity = mode;
+  document.querySelectorAll('.wlDensityBtn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('wlDensity' + (mode === 'card' ? 'Card' : 'Row'));
+  if (btn) btn.classList.add('active');
+  renderWatchlist();
+}
+
+function wlQuickFilter(period) {
+  wlQuickPeriod = (wlQuickPeriod === period) ? null : period; // toggle off if same
+  document.querySelectorAll('.wlQuickBtn').forEach(b => b.classList.remove('active'));
+  const lbl = document.getElementById('wlQuickLabel');
+  if (wlQuickPeriod) {
+    const btn = document.querySelector('.wlQuickBtn[data-period="' + wlQuickPeriod + '"]');
+    if (btn) btn.classList.add('active');
+    const names = {'1w':'1 Week','2w':'2 Weeks','1m':'1 Month','3m':'3 Months','6m':'6 Months','1y':'1 Year'};
+    if (lbl) { lbl.textContent = '— added in last ' + (names[wlQuickPeriod] || wlQuickPeriod); lbl.style.display = ''; }
+  } else {
+    if (lbl) lbl.style.display = 'none';
+  }
+  renderWatchlist();
+}
+
+function wlSetView(mode) {
+  wlViewMode = mode;
+  document.querySelectorAll('.wlViewBtn').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector('.wlViewBtn[data-view="' + mode + '"]');
+  if (btn) btn.classList.add('active');
+  renderWatchlist();
+}
+
+// ── Watchlist Performance Analytics ─────────────────────────────────────
+let _wlPerfSectorFilter = '';
+
+function computeWlPerf(list) {
+  const items = list.filter(it => it.returnSinceAddPct != null);
+  if (!items.length) return null;
+  const rets = items.map(it => Number(it.returnSinceAddPct));
+  const winners = rets.filter(r => r > 0);
+  const losers = rets.filter(r => r < 0);
+  const avg = rets.reduce((a,b)=>a+b,0) / rets.length;
+  const sorted = [...rets].sort((a,b)=>a-b);
+  const mid = Math.floor(sorted.length/2);
+  const median = sorted.length%2===0 ? (sorted[mid-1]+sorted[mid])/2 : sorted[mid];
+  const winRate = Math.round(winners.length/rets.length*100);
+  const avgWinner = winners.length ? winners.reduce((a,b)=>a+b,0)/winners.length : 0;
+  const avgLoser = losers.length ? losers.reduce((a,b)=>a+b,0)/losers.length : 0;
+  const secCounts={}, secRs={};
+  list.forEach(it => {
+    const s = it.sector||'Other';
+    secCounts[s]=(secCounts[s]||0)+1;
+    secRs[s]=secRs[s]||[];
+    if(it.rs_score!=null) secRs[s].push(Number(it.rs_score));
+  });
+  return { total:list.length, withReturn:items.length, winRate,
+    avgReturn:+avg.toFixed(2), medianReturn:+median.toFixed(2),
+    avgWinner:+avgWinner.toFixed(2), avgLoser:+avgLoser.toFixed(2),
+    winners:winners.length, losers:losers.length, secCounts, secRs };
+}
+
+function renderWlPerfPanel(list) {
+  const panel = document.getElementById('wlPerfPanel');
+  if (!panel) return;
+  const perf = computeWlPerf(list);
+  if (!perf) { panel.style.display='none'; return; }
+  panel.style.display = 'flex';
+  const s = perf;
+  const cards = [
+    {l:'Win Rate',      v:s.winRate+'%',                                  c:s.winRate>=50?'pos-color':'neg-color'},
+    {l:'Avg Return',    v:(s.avgReturn>=0?'+':'')+s.avgReturn+'%',        c:s.avgReturn>=0?'pos-color':'neg-color'},
+    {l:'Median Return', v:(s.medianReturn>=0?'+':'')+s.medianReturn+'%',  c:s.medianReturn>=0?'pos-color':'neg-color'},
+    {l:'Avg Winner',    v:'+'+s.avgWinner+'%',                            c:'pos-color'},
+    {l:'Avg Loser',     v:s.avgLoser+'%',                                 c:'neg-color'},
+    {l:'Winners',       v:s.winners+' / '+s.total,                        c:'pos-color'},
+    {l:'Losers',        v:s.losers+' / '+s.total,                         c:'neg-color'},
+  ];
+  document.getElementById('wlPerfCards').innerHTML = cards.map(c=>`
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 10px">
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.4px">${c.l}</div>
+      <div style="font-size:1.25em;font-weight:900;margin-top:2px" class="${c.c}">${c.v}</div>
+    </div>`).join('');
+  const secOrder = Object.keys(perf.secCounts).sort((a,b)=>perf.secCounts[b]-perf.secCounts[a]);
+  document.getElementById('wlPerfSectors').innerHTML = secOrder.map(sec => {
+    const cnt = perf.secCounts[sec];
+    const rsArr = perf.secRs[sec]||[];
+    const avgRS = rsArr.length ? Math.round(rsArr.reduce((a,b)=>a+b,0)/rsArr.length) : null;
+    const col = _ASOF_SEC_COLORS[sec]||'#64748b';
+    const isActive = _wlPerfSectorFilter === sec;
+    const border = isActive ? col : col+'44';
+    const bg = isActive ? col+'22' : 'transparent';
+    const fw = isActive ? 'font-weight:800;' : '';
+    const secSafe = sec.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<span style="display:inline-flex;gap:3px;align-items:center;padding:2px 8px;border-radius:12px;border:1px solid ${border};margin:2px;font-size:10px;cursor:pointer;color:${col};background:${bg};${fw}"
+      onclick="_wlPerfSectorFilter=(_wlPerfSectorFilter==='${secSafe}'?'':'${secSafe}');renderWatchlist()"
+      title="${sec}: ${cnt} stocks${avgRS?' · avg RS '+avgRS:''}">`
+      + `<span style="font-weight:800">${cnt}</span>&nbsp;${sec.length>18?sec.slice(0,16)+'…':sec}${avgRS?`&nbsp;<span style="opacity:.6">RS${avgRS}</span>`:''}
+    </span>`;
+  }).join('');
+}
 
 async function loadWatchlist() {
   try {
@@ -5101,14 +5262,16 @@ function renderWlBucketTabs(counts) {
   const tabs = document.getElementById('wlBucketTabs');
   if (!tabs) return;
   const allCount = watchlistItems.length;
-  const entries = [{slug: 'ALL', label: '📋 All', icon: '', _cnt: allCount}]
+  const entries = [{slug: 'ALL', label: 'All', icon: '📋', hint: '', _cnt: allCount}]
     .concat(wlBuckets.map(b => ({...b, _cnt: counts[b.slug] || 0})));
   tabs.innerHTML = entries.map(b => {
-    const cls = (wlActiveBucket === b.slug) ? 'wl-bucket-tab active' : 'wl-bucket-tab';
-    const hidden = (b.slug !== 'ALL' && b._cnt === 0) ? 'style="opacity:.45"' : '';
-    const lbl = b.slug === 'ALL' ? b.label : ((b.icon || '') + ' ' + b.label);
-    return '<button class="'+cls+'" '+hidden+' onclick="setWlBucket(\''+b.slug+'\')">'+lbl+
-           '<span class="wb-count">'+b._cnt+'</span></button>';
+    const isActive = wlActiveBucket === b.slug;
+    const cls = isActive ? 'wl-bucket-tab active' : 'wl-bucket-tab';
+    const dim = (b.slug !== 'ALL' && b._cnt === 0) ? ' style="opacity:.4"' : '';
+    const hint = b.hint ? '<span class="wl-hint">— '+b.hint+'</span>' : '';
+    return '<button class="'+cls+'"'+dim+' title="'+(b.hint||'')+'" onclick="setWlBucket(\''+b.slug+'\')">'
+      + (b.icon||'') + ' ' + b.label + hint
+      + '<span class="wb-count">'+b._cnt+'</span></button>';
   }).join('');
 }
 
@@ -5117,6 +5280,14 @@ function setWlBucket(slug) { wlActiveBucket = slug; renderWatchlist(); }
 function renderWatchlist() {
   const g = document.getElementById('wlGrid');
   if (!g) return;
+  // Set correct class for card vs row density
+  if (wlDensity === 'card') {
+    g.className = 'wl-grid';
+    g.style.padding = '';
+  } else {
+    g.className = '';
+    g.style.padding = '0';
+  }
   // Destroy prior chart instances
   Object.keys(wlMiniInst).forEach(k => { try { wlMiniInst[k].remove(); } catch(e) {} delete wlMiniInst[k]; });
   // Populate filter selects (once)
@@ -5134,9 +5305,12 @@ function renderWatchlist() {
       if (curVal) sectorSel.value = curVal;
     }
   }
-  // Counts per bucket
+  // Counts per bucket — a stock in multiple buckets counts in each
   const counts = {};
-  watchlistItems.forEach(it => { const b = it.bucket || 'watching'; counts[b] = (counts[b] || 0) + 1; });
+  watchlistItems.forEach(it => {
+    const bs = Array.isArray(it.buckets) ? it.buckets : [it.bucket || 'watching'];
+    bs.forEach(b => { counts[b] = (counts[b] || 0) + 1; });
+  });
   renderWlBucketTabs(counts);
   // Also populate modal bucket/setup selects if open or for next open
   _ensureWlModalSelects();
@@ -5146,13 +5320,14 @@ function renderWatchlist() {
   const sectorF = document.getElementById('wlSectorFilter')?.value || '';
   const prioF = document.getElementById('wlPriorityFilter')?.value || '';
   const sortBy = document.getElementById('wlSortBy')?.value || 'smart';
-  let list = watchlistItems.filter(it => {
-    if (wlActiveBucket !== 'ALL' && (it.bucket || 'watching') !== wlActiveBucket) return false;
+  let baseList = watchlistItems.filter(it => {
+    const itBuckets = Array.isArray(it.buckets) ? it.buckets : [it.bucket || 'watching'];
+    if (wlActiveBucket !== 'ALL' && !itBuckets.includes(wlActiveBucket)) return false;
     if (setupF && (it.setup || '').toLowerCase() !== setupF.toLowerCase() && (it.scanSetup || '').toLowerCase() !== setupF.toLowerCase()) return false;
     if (sectorF && (it.sector || '') !== sectorF) return false;
     if (prioF && (it.priority || 'P3') !== prioF) return false;
     if (q) {
-      const hay = [it.symbol, it.name, (it.tags||[]).join(' '), it.notes, it.setup, it.bucket, it.sector, it.industry, it.basicIndustry, it.priority].join(' ').toLowerCase();
+      const hay = [it.symbol, it.name, (it.tags||[]).join(' '), it.notes, it.setup, itBuckets.join(' '), it.sector, it.industry, it.basicIndustry, it.priority].join(' ').toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;
@@ -5207,14 +5382,202 @@ function renderWatchlist() {
     recent_add_desc: (a,b) => (_dt(b.date_added || b.created_at) - _dt(a.date_added || a.created_at))
       || (_num(b.returnSinceAddPct) - _num(a.returnSinceAddPct)),
   };
-  list.sort((_comparators[sortBy] || _smartSort));
+  // Apply Quick period filter (by date_added)
+  if (wlQuickPeriod) {
+    const periodDays = {'1w':7,'2w':14,'1m':30,'3m':90,'6m':180,'1y':365};
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - (periodDays[wlQuickPeriod] || 0));
+    baseList = baseList.filter(it => {
+      const added = it.date_added || it.add_date || it.created_at;
+      if (!added) return false;
+      return new Date(added) >= cutoff;
+    });
+  }
+  // Override sort for 'return' view mode
+  const effectiveSort = (wlViewMode === 'return') ? 'since_add_desc' : sortBy;
+  baseList.sort((_comparators[effectiveSort] || _smartSort));
+  // Render performance analytics panel (uses full baseList, not sector-chip-filtered)
+  renderWlPerfPanel(baseList);
+  // Apply sector chip filter from perf panel (only affects the grid, not panel stats)
+  let list = _wlPerfSectorFilter
+    ? baseList.filter(it => (it.sector||'Other') === _wlPerfSectorFilter)
+    : baseList;
   document.getElementById('wlTotalCount').textContent = list.length + ' / ' + watchlistItems.length;
   if (!list.length) {
     g.innerHTML = '<div class="empty-st"><div class="empty-ttl">Nothing here</div><div class="empty-sub">Add stocks with the &ldquo;+ Add&rdquo; button, or switch bucket.</div></div>';
     return;
   }
-  g.innerHTML = list.map(buildWlCard).join('');
+
+  // ── ROW DENSITY: compact table ───────────────────────────────────────
+  if (wlDensity === 'row') {
+    const groupFn = wlViewMode === 'sector'
+      ? it => it.sector || 'Other'
+      : wlViewMode === 'rs'
+      ? it => it.priority || 'P3'
+      : null;
+
+    const renderTableSection = (items, label) => {
+      const hdrRow = label
+        ? '<tr><td colspan="14" style="background:#0a1324;color:var(--muted);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;padding:5px 10px;border-bottom:1px solid var(--border)">' + label + ' <span style="font-weight:400">(' + items.length + ')</span></td></tr>'
+        : '';
+      return hdrRow + items.map(buildWlRow).join('');
+    };
+
+    let tableBody = '';
+    if (wlViewMode === 'sector') {
+      const groups = {};
+      list.forEach(it => { const k = it.sector || 'Other'; (groups[k] = groups[k]||[]).push(it); });
+      const sortedKeys = Object.keys(groups).sort((a,b) => a==='Other'?1:b==='Other'?-1:a.localeCompare(b));
+      tableBody = sortedKeys.map(k => renderTableSection(groups[k], '🏭 '+k)).join('');
+    } else if (wlViewMode === 'rs') {
+      const tierLabels = {'P1':'🔥 P1 — RS Leaders','P2':'👀 P2 — Watching Closely','P3':'📋 P3 — On Radar'};
+      const groups = {};
+      list.forEach(it => { const k = it.priority || 'P3'; (groups[k] = groups[k]||[]).push(it); });
+      tableBody = ['P1','P2','P3'].filter(t => groups[t]).map(t => renderTableSection(groups[t], tierLabels[t]||t)).join('');
+    } else if (wlViewMode === 'return') {
+      const retBuckets = [
+        {key:'🚀 +20% & above',  fn: it => it.returnSinceAddPct!=null && it.returnSinceAddPct>=20},
+        {key:'📈 +10% to +20%',  fn: it => it.returnSinceAddPct!=null && it.returnSinceAddPct>=10 && it.returnSinceAddPct<20},
+        {key:'✅ 0% to +10%',    fn: it => it.returnSinceAddPct!=null && it.returnSinceAddPct>=0  && it.returnSinceAddPct<10},
+        {key:'⚠️ -10% to 0%',   fn: it => it.returnSinceAddPct!=null && it.returnSinceAddPct>=-10 && it.returnSinceAddPct<0},
+        {key:'❌ Below -10%',    fn: it => it.returnSinceAddPct!=null && it.returnSinceAddPct<-10},
+        {key:'— No Return Data', fn: it => it.returnSinceAddPct==null},
+      ];
+      retBuckets.forEach(b => {
+        const grp = list.filter(b.fn);
+        if (grp.length) tableBody += renderTableSection(grp, b.key);
+      });
+    } else {
+      tableBody = renderTableSection(list, null);
+    }
+
+    g.innerHTML = '<div class="wl-table-wrap"><table class="wl-table">' +
+      '<thead><tr>' +
+        '<th>Symbol</th>' +
+        '<th>CMP</th>' +
+        '<th>Day %</th>' +
+        '<th>Since Add</th>' +
+        '<th>Prio</th>' +
+        '<th>RS</th>' +
+        '<th>ADR %</th>' +
+        '<th>Swing</th>' +
+        '<th>Setup</th>' +
+        '<th>20EMA%</th>' +
+        '<th>RSI</th>' +
+        '<th>52W %</th>' +
+        '<th>Buckets</th>' +
+        '<th>Actions</th>' +
+      '</tr></thead>' +
+      '<tbody>' + tableBody + '</tbody>' +
+      '</table></div>';
+    return;
+  }
+
+  // ── CARD DENSITY: rich grid ──────────────────────────────────────────
+  if (wlViewMode === 'sector') {
+    const groups = {};
+    list.forEach(it => { const k = it.sector || 'Other'; (groups[k] = groups[k]||[]).push(it); });
+    const sortedKeys = Object.keys(groups).sort((a,b) => a === 'Other' ? 1 : b === 'Other' ? -1 : a.localeCompare(b));
+    g.innerHTML = sortedKeys.map(sec => {
+      const items = groups[sec];
+      return '<div class="wl-group-hdr">🏭 ' + sec + ' <span style="color:var(--muted);font-weight:400">(' + items.length + ')</span></div>'
+        + items.map(buildWlCard).join('');
+    }).join('');
+  } else if (wlViewMode === 'rs') {
+    const tierOrder = ['P1','P2','P3'];
+    const tierLabels = {'P1':'🔥 P1 — RS Leaders','P2':'👀 P2 — Watching Closely','P3':'📋 P3 — On Radar'};
+    const groups = {};
+    list.forEach(it => { const k = it.priority || 'P3'; (groups[k] = groups[k]||[]).push(it); });
+    g.innerHTML = tierOrder.filter(t => groups[t]).map(tier => {
+      const items = groups[tier];
+      return '<div class="wl-group-hdr">' + (tierLabels[tier]||tier) + ' <span style="color:var(--muted);font-weight:400">(' + items.length + ')</span></div>'
+        + items.map(buildWlCard).join('');
+    }).join('');
+  } else if (wlViewMode === 'return') {
+    const retBuckets = [
+      {key:'🚀 +20% & above',  col:'#22c55e', fn: it => it.returnSinceAddPct!=null && it.returnSinceAddPct>=20},
+      {key:'📈 +10% to +20%',  col:'#4ade80', fn: it => it.returnSinceAddPct!=null && it.returnSinceAddPct>=10 && it.returnSinceAddPct<20},
+      {key:'✅ 0% to +10%',    col:'#86efac', fn: it => it.returnSinceAddPct!=null && it.returnSinceAddPct>=0  && it.returnSinceAddPct<10},
+      {key:'⚠️ -10% to 0%',   col:'#f59e0b', fn: it => it.returnSinceAddPct!=null && it.returnSinceAddPct>=-10 && it.returnSinceAddPct<0},
+      {key:'❌ Below -10%',    col:'#ef4444', fn: it => it.returnSinceAddPct!=null && it.returnSinceAddPct<-10},
+      {key:'— No Return Data', col:'#475569', fn: it => it.returnSinceAddPct==null},
+    ];
+    g.innerHTML = retBuckets.map(b => {
+      const items = list.filter(b.fn);
+      if (!items.length) return '';
+      return '<div class="wl-group-hdr" style="color:'+b.col+'">'
+        + b.key + ' <span style="color:var(--muted);font-weight:400">('+items.length+')</span></div>'
+        + items.map(buildWlCard).join('');
+    }).join('');
+  } else {
+    g.innerHTML = list.map(buildWlCard).join('');
+  }
   requestAnimationFrame(() => { requestAnimationFrame(() => { list.forEach(item => initWlMini(item)); }); });
+}
+
+function buildWlRow(item) {
+  const _num = v => (v == null || isNaN(Number(v))) ? null : Number(v);
+  const cmp = _num(item.cmp);
+  const dayPct = _num(item.dayChangePct);
+  const retPct = _num(item.returnSinceAddPct);
+  const rs = _num(item.rs_score || item.rsScore);
+  const adr = _num(item.adr_pct || item.adrPct);
+  const swing = _num(item.swing_score);
+  const ema20ext = _num(item.ema20ext);
+  const rsi = _num(item.rsi);
+  const w52 = _num(item.pctFrom52wHigh);
+  const priceIsStale = cmp && item.lastPriceDate && _isPriceStale(item.lastPriceDate);
+
+  const _fmtPct = (v, decs=1) => v == null ? '<span style="color:var(--muted)">—</span>'
+    : '<span style="color:' + (v > 0 ? 'var(--green)' : v < 0 ? 'var(--red)' : 'var(--muted)') + ';font-weight:700">'
+      + (v > 0 ? '+' : '') + v.toFixed(decs) + '%</span>';
+  const _fmtNum = (v, decs=1, suffix='') => v == null ? '<span style="color:var(--muted)">—</span>'
+    : '<span style="font-weight:700">' + v.toFixed(decs) + suffix + '</span>';
+
+  const _prio = item.priority || 'P3';
+  const _prioClr = _prio === 'P1' ? '#ffd700' : _prio === 'P2' ? '#60a5fa' : '#64748b';
+  const _prioIcon = _prio === 'P1' ? '🔥' : _prio === 'P2' ? '👀' : '📋';
+
+  const mktFlag = item.market === 'us' ? '🇺🇸' : '🇮🇳';
+  const _itemBuckets = Array.isArray(item.buckets) ? item.buckets : (item.bucket ? [item.bucket] : []);
+  const bucketChips = wlBuckets.map(b => {
+    const on = _itemBuckets.includes(b.slug);
+    return '<span class="wl-row-bk-chip' + (on ? ' on' : '') + '" '
+      + 'style="cursor:pointer" title="' + (on ? 'Remove from ' : 'Add to ') + b.label + '" '
+      + 'onclick="event.stopPropagation();toggleWlBucket(\'' + item.id + '\',\'' + b.slug + '\')">'
+      + (b.icon||'') + ' ' + b.label + '</span>';
+  }).join('');
+
+  const nearBadge = item.nearEntry
+    ? ' <span style="font-size:8.5px;font-weight:800;color:#a3e635;background:#1a2400;border:1px solid #a3e63544;padding:1px 4px;border-radius:3px" title="Within 2% of scan entry">🎯 ' + (item.entryDistPct != null ? (item.entryDistPct>=0?'+':'')+item.entryDistPct.toFixed(1)+'%' : 'NEAR') + '</span>' : '';
+
+  const ema20Clr = ema20ext == null ? 'var(--muted)' : ema20ext > 10 ? '#f87171' : ema20ext > 5 ? '#f59e0b' : ema20ext >= 0 ? '#4ade80' : '#7dd3fc';
+  const rsiClr = rsi == null ? 'var(--muted)' : rsi >= 70 ? '#f87171' : rsi >= 50 ? '#4ade80' : '#f59e0b';
+  const swingClr = swing == null ? 'var(--muted)' : swing >= 70 ? '#ffd700' : swing >= 55 ? '#4ade80' : '#7dd3fc';
+
+  return '<tr onclick="openWlDetail(\'' + item.id + '\')">' +
+    '<td><span class="wl-row-sym">' + mktFlag + ' ' + item.symbol + nearBadge + '</span>'
+      + (item.name ? '<span class="wl-row-name">' + item.name + '</span>' : '')
+      + '</td>' +
+    '<td style="font-weight:800;color:' + (priceIsStale ? '#f59e0b' : 'var(--text)') + ';text-align:right">'
+      + (cmp != null ? (item.market==='us'?'$':'₹') + cmp.toLocaleString('en-IN') : '—') + '</td>' +
+    '<td style="text-align:right">' + _fmtPct(dayPct) + '</td>' +
+    '<td style="text-align:right">' + _fmtPct(retPct) + '</td>' +
+    '<td style="text-align:center"><span style="font-size:9px;font-weight:800;color:' + _prioClr + '">' + _prioIcon + ' ' + _prio + '</span></td>' +
+    '<td style="text-align:right">' + (rs != null ? '<span style="color:#a5b4fc;font-weight:700">' + rs.toFixed(0) + '</span>' : '—') + '</td>' +
+    '<td style="text-align:right">' + (adr != null ? '<span style="color:#f59e0b;font-weight:700">' + adr.toFixed(1) + '%</span>' : '—') + '</td>' +
+    '<td style="text-align:right"><span style="color:' + swingClr + ';font-weight:700">' + (swing != null ? swing.toFixed(0) : '—') + '</span></td>' +
+    '<td>' + (item.scanSetup || item.setup ? '<span style="font-size:9px;font-weight:700;background:#1e293b;color:#7dd3fc;padding:1px 5px;border-radius:3px">' + (item.scanSetup || item.setup) + '</span>' : '—') + '</td>' +
+    '<td style="text-align:right"><span style="color:' + ema20Clr + ';font-weight:700">' + (ema20ext != null ? (ema20ext>=0?'+':'')+ema20ext.toFixed(1)+'%' : '—') + '</span></td>' +
+    '<td style="text-align:right"><span style="color:' + rsiClr + ';font-weight:700">' + (rsi != null ? rsi.toFixed(0) : '—') + '</span></td>' +
+    '<td style="text-align:right">' + (w52 != null ? '<span style="color:' + (w52 > -5 ? '#4ade80' : w52 > -15 ? '#f59e0b' : '#f87171') + ';font-weight:700">' + w52.toFixed(0) + '%</span>' : '—') + '</td>' +
+    '<td><div class="wl-row-bk">' + bucketChips + '</div></td>' +
+    '<td style="white-space:nowrap">' +
+      '<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();editWL(\'' + item.id + '\')" title="Edit">✎</button> ' +
+      '<button class="btn btn-green btn-xs" onclick="event.stopPropagation();importFromWL(\'' + item.id + '\')" title="→ Trade">→</button> ' +
+      '<button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();rmWL(\'' + item.id + '\')" title="Remove" style="color:var(--red)">✕</button>' +
+    '</td>' +
+  '</tr>';
 }
 
 function buildWlCard(item) {
@@ -5224,8 +5587,9 @@ function buildWlCard(item) {
   const priceDate = item.lastPriceDate || null;
   const priceIsStale = cmp && priceDate && _isPriceStale(priceDate);
 
-  // v2 specific badges
-  const bucketLbl = item.bucket ? '<span class="wl-bucket-pill">' + _bucketLabel(item.bucket) + '</span>' : '';
+  // v2 specific badges — support multi-bucket
+  const _itemBuckets = Array.isArray(item.buckets) ? item.buckets : (item.bucket ? [item.bucket] : []);
+  const bucketLbl = _itemBuckets.map(slug => '<span class="wl-bucket-pill">' + _bucketLabel(slug) + '</span>').join('');
   // Priority badge
   const _prio = item.priority || 'P3';
   const _prioBg = _prio === 'P1' ? '#2a1a00' : _prio === 'P2' ? '#0a1a30' : '#1a1a1a';
@@ -5292,6 +5656,15 @@ function buildWlCard(item) {
     pairRow = '<div class="wl-pair-row"><span class="wp-lbl">↔ Pair</span><span class="wp-sym">' + pMktFlag + ' ' + p.symbol + '</span><span class="wp-cmp">' + pCmpStr + '</span>' + pDayStr + '</div>';
   }
 
+  // Bucket quick-toggle strip — one chip per bucket, active if stock is in it
+  const _bucketStrip = '<div class="wl-bk-strip" onclick="event.stopPropagation()">' +
+    wlBuckets.map(b => {
+      const on = _itemBuckets.includes(b.slug);
+      return '<button class="wl-bk-tog'+(on?' on':'')+'" title="'+(on?'Remove from ':'Add to ')+b.label+'" '
+        + 'onclick="toggleWlBucket(\''+item.id+'\',\''+b.slug+'\')">'
+        + (b.icon||'') + ' ' + b.label + '</button>';
+    }).join('') + '</div>';
+
   return '<div class="wl-card' + inScanCls + '" onclick="openWlDetail(\'' + item.id + '\')">' +
     '<button class="wl-del" onclick="event.stopPropagation();rmWL(\'' + item.id + '\')">✕</button>' +
     '<div class="card-hdr"><div>' +
@@ -5312,6 +5685,7 @@ function buildWlCard(item) {
     tagsHtml +
     (item.notes ? '<div style="padding:4px 12px;font-size:10.5px;color:var(--muted);line-height:1.5">' + item.notes + '</div>' : '') +
     (item.entryInstruction ? '<div style="padding:2px 12px 4px;font-size:9px;color:var(--cyan);line-height:1.4">' + item.entryInstruction + '</div>' : '') +
+    _bucketStrip +
     '<div class="card-foot">' +
       '<span class="hold-d">' + (item.add_date ? '⭐ Since ' + item.add_date + (item.add_price ? ' @ ' + (item.market==='us'?'$':'₹') + item.add_price : '') : '⭐ Watching') + '</span>' +
       '<div class="card-acts">' +
@@ -5319,6 +5693,40 @@ function buildWlCard(item) {
         '<button class="btn btn-green btn-xs" onclick="event.stopPropagation();importFromWL(\'' + item.id + '\')">→ Trade</button>' +
       '</div>' +
     '</div></div>';
+}
+
+async function toggleWlBucket(id, slug) {
+  const item = watchlistItems.find(x => x.id === id);
+  if (!item) return;
+  let bks = Array.isArray(item.buckets) ? [...item.buckets] : (item.bucket ? [item.bucket] : ['watching']);
+  if (bks.includes(slug)) {
+    // Remove — but always keep at least one bucket
+    bks = bks.filter(b => b !== slug);
+    if (bks.length === 0) bks = ['watching'];
+  } else {
+    bks.push(slug);
+  }
+  try {
+    const r = await fetch(API + '/api/trade-board/watchlist/' + id, {
+      method: 'PATCH', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({buckets: bks})
+    });
+    if (!r.ok) throw new Error((await r.json()).detail || 'Error');
+    item.buckets = bks;          // optimistic update — no full reload needed
+    delete item.bucket;
+    // Re-render just this card in-place
+    const card = document.querySelector('.wl-card [onclick*="'+id+'"]')?.closest('.wl-card');
+    if (card) card.outerHTML = buildWlCard(item);
+    // Re-render count tabs
+    const counts = {};
+    watchlistItems.forEach(it => {
+      (Array.isArray(it.buckets) ? it.buckets : [it.bucket||'watching']).forEach(b => { counts[b] = (counts[b]||0)+1; });
+    });
+    renderWlBucketTabs(counts);
+    // Init mini chart on the newly rendered card
+    requestAnimationFrame(() => initWlMini(item));
+    toast((bks.includes(slug) ? '+ ' : '− ') + _bucketLabel(slug) + ' · ' + item.symbol, 'success');
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 async function initWlMini(item) {
@@ -5433,14 +5841,41 @@ async function initWlMini(item) {
 }
 
 function _ensureWlModalSelects() {
-  const b = document.getElementById('wlBucket');
-  if (b && b.options.length === 0 && wlBuckets.length) {
-    b.innerHTML = wlBuckets.map(x => '<option value="'+x.slug+'">'+(x.icon||'')+' '+x.label+'</option>').join('');
+  const bc = document.getElementById('wlBucketChecks');
+  if (bc && bc.children.length === 0 && wlBuckets.length) {
+    bc.innerHTML = wlBuckets.map(x =>
+      '<label class="wl-bk-chip" id="wlbk-'+x.slug+'" title="'+x.hint+'">'
+      + '<input type="checkbox" value="'+x.slug+'" onchange="_syncBucketChip(this)">'
+      + (x.icon||'') + ' ' + x.label + '</label>'
+    ).join('');
   }
   const s = document.getElementById('wlSetup');
   if (s && s.options.length === 0 && wlSetupsVocab.length) {
     s.innerHTML = '<option value="">—</option>' + wlSetupsVocab.map(x=>'<option>'+x+'</option>').join('');
   }
+}
+
+function _syncBucketChip(cb) {
+  const lbl = cb.closest('.wl-bk-chip');
+  if (lbl) lbl.classList.toggle('checked', cb.checked);
+}
+
+// Return checked bucket slugs from the modal checkbox group
+function _getCheckedBuckets() {
+  const bc = document.getElementById('wlBucketChecks');
+  if (!bc) return ['watching'];
+  const checked = [...bc.querySelectorAll('input:checked')].map(i => i.value);
+  return checked.length ? checked : ['watching'];
+}
+
+// Set checked state of bucket checkboxes from a slugs array
+function _setCheckedBuckets(slugs) {
+  const bc = document.getElementById('wlBucketChecks');
+  if (!bc) return;
+  bc.querySelectorAll('input').forEach(cb => {
+    cb.checked = slugs.includes(cb.value);
+    _syncBucketChip(cb);
+  });
 }
 
 function wlAutoSuggestPair() {
@@ -5458,11 +5893,10 @@ function openWLModal() {
   document.getElementById('wlEditId').value = '';
   document.getElementById('wlModalTitle').textContent = '⭐ Add to Watchlist';
   document.getElementById('wlSubmitBtn').textContent = 'Add';
-  loadWlCategories().then(_ensureWlModalSelects);
+  loadWlCategories().then(() => { _ensureWlModalSelects(); _setCheckedBuckets(['watching']); });
   // Reset fields
   ['wlSym','wlName','wlNotes','wlAlert','wlAddPrice','wlPairSym','wlTags'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('wlMarket').value = 'india';
-  document.getElementById('wlBucket').value = 'watching';
   document.getElementById('wlSetup').value = '';
   document.getElementById('wlConv').value = '3';
   document.getElementById('wlPairMkt').value = '';
@@ -5484,7 +5918,9 @@ function editWL(id) {
     document.getElementById('wlMarket').value = item.market || 'india';
     document.getElementById('wlMarket').disabled = true;
     document.getElementById('wlName').value = item.name || '';
-    document.getElementById('wlBucket').value = item.bucket || 'watching';
+    // Multi-bucket: prefer new buckets[], fall back to old bucket string
+    const bks = Array.isArray(item.buckets) ? item.buckets : (item.bucket ? [item.bucket] : ['watching']);
+    _setCheckedBuckets(bks);
     document.getElementById('wlSetup').value = item.setup || '';
     document.getElementById('wlAddPrice').value = item.add_price || '';
     document.getElementById('wlAddDate').value = item.add_date || '';
@@ -5508,7 +5944,7 @@ async function submitWL() {
     symbol: sym,
     name: document.getElementById('wlName').value,
     market: document.getElementById('wlMarket').value || 'india',
-    bucket: document.getElementById('wlBucket').value || 'watching',
+    buckets: _getCheckedBuckets(),
     setup: document.getElementById('wlSetup').value,
     alert_price: parseFloat(document.getElementById('wlAlert').value) || null,
     add_price:   parseFloat(document.getElementById('wlAddPrice').value) || null,

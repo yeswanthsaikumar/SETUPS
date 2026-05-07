@@ -1,9 +1,9 @@
 {
-  "last_backup": "2026-05-06T22:17:56",
+  "last_backup": "2026-05-07T22:33:38",
   "method": "icloud+telegram",
   "icloud_status": "success",
-  "telegram_status": "error",
-  "telegram_reason": "RuntimeError: Network access blocked in unit test: attempted ('149.154.166.110', 443). Mark the test with @pytest.mark.network to allow, or mock the call (recommended).",
+  "telegram_status": "success",
+  "telegram_reason": "",
   "files_count": 12,
   "files": [
     "breakout_alert_backtest.json",
@@ -19,6 +19,6 @@
     "vpn_config.json",
     "watchlist.json"
   ],
-  "size_kb": 138.8,
-  "backup_path": "/Users/yeshwantha/Library/Mobile Documents/com~apple~CloudDocs/SETUPS_Backups/SETUPS_backup_2026-05-06_2217.zip"
+  "size_kb": 189.7,
+  "backup_path": "/Users/yeshwantha/Library/Mobile Documents/com~apple~CloudDocs/SETUPS_Backups/SETUPS_backup_2026-05-07_2233.zip"
 }

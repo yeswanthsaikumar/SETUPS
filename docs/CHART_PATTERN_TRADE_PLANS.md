@@ -1,5 +1,7 @@
 # Chart Patterns & Trade Plans — The Daily Price Action + Volume Playbook
 
+> **This is a picture-first manual.** Every pattern is shown as a chart with **Entry, Stop, Trigger, Targets (T1/T2), Trail line, and Max-gain logic** marked directly on the visual. Read the pictures first; the bullets are just reinforcement.
+
 ## The Pattern Collector's Mistake
 
 Every beginner trader makes the same mistake.
@@ -41,6 +43,29 @@ The goal is not to memorize 50 patterns or become a pattern expert.
 
 ---
 
+## How To Read Every Chart In This Guide
+
+Every annotated chart uses the same legend so you can read it in seconds:
+
+| Color | Meaning |
+|---|---|
+| 🟢 **Green dashed line** | **Entry** — the actual trigger price |
+| 🔴 **Red dashed line** | **Stop** — invalidation. If price closes here, the trade is wrong. |
+| 🔵 **Light blue dashed line** | **Target 1 (T1)** — first profit-take, usually +2R |
+| 🔷 **Blue dashed line** | **Target 2 / Max-gain projection** — measured move or trail target |
+| 🟠 **Amber dashed line** | **Trail line** — moving stop after T1 (under higher lows or 10/21 EMA) |
+| 🟡 **Yellow** | **Pivot / key level** (resistance, neckline, base top) |
+| **Volume bars** | Green = up-day volume, dark red = down-day volume |
+
+**Read order on every chart:**
+1. Where is the **trigger** (entry)?
+2. Where is the **stop** (invalidation)?
+3. What does **volume** need to do at the trigger?
+4. Where do **T1 and T2/max** fall — is reward worth the risk?
+5. How will you **trail** after T1?
+
+---
+
 ## 1. The Core Rule: Pattern First, Trade Plan Second
 
 A beautiful pattern without:
@@ -65,83 +90,43 @@ If you cannot answer all five, you are not ready to trade it.
 
 ---
 
-## Reading Price Action Like You're Reading a Story (Not a Textbook)
+## 2. Reading Price Action Like You're Reading a Story
 
-Before you even draw a pattern, learn to read the raw price behavior.
+### Stock strength on the chart
+Higher highs, higher lows. Closes near highs. Shallow, fast pullbacks. Red days quickly recovered. Price respects short-term moving averages and pivots.
+**Meaning:** institutions are still accumulating. Path of least resistance is up.
 
-### When Stock Strength Shows Up on the Chart
+### Stock weakness on the chart
+Lower highs after breakout attempts. Wide-range red candles near support. Repeated rejection from resistance. Closes in the lower half of range. Bounces on weak volume.
+**Meaning:** institutions are leaving. Path of least resistance is down or sideways.
 
-Strong price action looks like this:
-
-The stock makes higher highs and higher lows. Each rally reaches higher than the one before. Each pullback holds above the last support. The closes are tight and near the highs (not near the lows). Pullbacks are shallow and quick — weak hands can't shake out the strong players. When red days appear, they're quickly recovered from. Price respects the short-term moving averages or key pivots, bouncing off them instead of crashing through.
-
-**What this means:** You're looking at a stock where institutions are still accumulating. Weak holders are gone. The path of least resistance is up.
-
-### When Stock Weakness Shows Up on the Chart
-
-Weak price action is the opposite:
-
-The stock makes lower highs after breakout attempts (failed followthrough). Red candles are wide-range and appear near support levels. There's repeated rejection from resistance (price pokes up but gets smashed back down). Most candles close in the lower half of their range — not a sign of strength. Bounces happen on weak, thin volume. Volatility expands without actual progress in any direction.
-
-**What this means:** Institutions are leaving. Weak buyers keep trying to start moves but get overwhelmed. The path of least resistance is down or sideways.
-
-### Why Tightness Before a Breakout Matters
-
-Here's an insight most traders miss: **Tight trading before a breakout is often more powerful than dramatic movement.**
-
-Why? Because tightness (small candles, narrow range) usually means:
-
-- Supply is drying up (sellers have mostly given up at these levels)
-- Weak holders are gone (they exited during the base)
-- Institutions are not rushing to sell (if they were, there would be big range candles and breakdowns)
-- The next move can expand quickly once demand arrives
-
-When you see price coiling tighter and tighter into a smaller and smaller range, your radar should light up. That's often the moment before a big acceleration.
+### Why tightness before a breakout matters
+Tight trading (small candles, narrow range) usually means **supply has dried up**. Weak holders are gone. Institutions are not rushing to sell. The next move can expand quickly once demand arrives. **When you see the range coiling tighter and tighter, your radar should light up.**
 
 ---
 
-## Reading Volume: The Institutional Fingerprints
+## 3. Reading Volume: The Institutional Fingerprints
 
-Volume tells you something the price chart alone can't: **whether institutions are actually participating or just retail is moving the needle.**
+### Healthy volume
+Volume dries up during the base/pullback. Volume explodes on bullish breakouts. Down-volume stays lower than up-volume. Support bounces with rising participation.
+**Meaning:** the smart money is backing the move.
 
-### What Healthy Volume Looks Like
+### Dangerous volume — skip the trade
+Breakout on weak volume. Pullbacks on rising heavy volume. Price up but volume shrinking. Repeated heavy red candles inside the base. Failed breakout followed by the largest volume bar in the entire pattern.
+**Meaning:** retail enthusiasm or institutional dumping. Stand aside.
 
-In a proper setup:
-- Volume dries up during the base or pullback (weak holders are leaving quietly, strong holders are holding)
-- Volume explodes on bullish breakouts (institutions are buying)
-- Down-volume stays lower than up-volume during consolidation (selling is happening, but not dominating)
-- Support bounces happen with rising participation (demand is real, not desperate)
-- The breakout day closes strong *with* visible volume confirmation
+### The classic accumulation signature
+1. **Quiet pullback volume** during consolidation.
+2. **Tight price structure** as volatility contracts.
+3. **Aggressive expansion on breakout.**
 
-**What this means:** The setup has institutional support. This isn't retail chasing. This is the smart money backing the move.
-
-### What Dangerous Volume Looks Like
-
-When you see this, skip the trade:
-
-- Breakout happens on weak volume (no one important is buying)
-- Pullbacks happen on rising heavy volume (smart money is taking profits or exiting)
-- Price moves up but volume shrinks each day (wrong kind of demand — weak hands buying, not institutions)
-- Repeated heavy red candles inside the base (selling is aggressive, not passive)
-- Failed breakout is followed by the single largest volume in the entire pattern (capitulation selling, or institutions dumping)
-
-**What this means:** This isn't a real institutional move. This is either a false breakout or people selling into enthusiasm. Dangerous. Skip it.
-
-### The Classic Accumulation Signature
-
-The best patterns almost always show this sequence:
-
-1. **Quiet pullback volume** during the consolidation (weak hands leaving, strong hands just sitting)
-2. **Tight price structure** as volatility contracts (supply is drying up)
-3. **Aggressive expansion on breakout** (institutions finally starting to buy)
-
-This is the classic signature of accumulation. When you see it, you've found a pattern worth trading.
+When you see this sequence, you've found a pattern worth trading.
 
 ---
 
 ## 4. Universal Pattern Checklist
 
-Before taking any pattern, check all of these:
+Before taking any pattern:
 
 - [ ] Is the broader market supportive?
 - [ ] Is the stock in a Stage 2 / primary uptrend if going long?
@@ -150,7 +135,7 @@ Before taking any pattern, check all of these:
 - [ ] Has volume contracted during the setup?
 - [ ] Is there a clear breakout / trigger point?
 - [ ] Is the stop placement logical and tight enough?
-- [ ] Is risk-reward at least acceptable?
+- [ ] Is risk-reward at least acceptable (≥ 2R to T1, ≥ 3R to max)?
 - [ ] Am I buying early strength or chasing extension?
 - [ ] If this fails, will I exit without hesitation?
 
@@ -162,176 +147,88 @@ If three or more answers are weak, skip the trade.
 
 These patterns work best when the stock is already strong.
 
-### Practical examples (candles + price + volume)
-- **Bull Flag example:** stock runs from 420 to 462 in 5 sessions with 1.8x average volume, then pulls back to 452 over 4 small red candles with lower volume each day; trigger is a break above 462 with a strong close near high and volume above the flag-day average.
-- **Pennant example:** after a sharp move from 980 to 1,045, candles compress into higher lows (1,012, 1,020, 1,028) and lower highs (1,042, 1,038, 1,034) while volume dries up; breakout above 1,045 should print expansion volume and hold above the broken trendline.
-- **Ascending Triangle example:** resistance stays near 765 while lows rise from 731 to 742 to 751 with repeated upper-level tests; valid breakout candle closes above 765 with wider range and visibly higher turnover than prior 5-10 sessions.
-- **High Tight Flag example:** stock surges from 210 to 405 in 6 weeks on very high volume, then forms a tight 5-8 session shelf between 386 and 402 on quiet volume; continuation trigger is a decisive move through 405 with fresh participation, not a weak drift.
+### 5.1 Bull Flag
+
+**Structure:** strong impulse (the pole), short pullback or sideways drift (the flag), continuation through flag high.
+
+#### Structure visual
+![Bull Flag structure](assets/chart-patterns/13-1-bull-flag.svg)
+
+#### Trade plan — Entry, Stop, Targets, Trail, Max gain
+![Bull Flag trade plan](assets/chart-patterns/tp-bull-flag.svg)
+
+- **Entry:** break above flag high on volume expansion.
+- **Stop:** below flag low (or last tight pivot inside the flag).
+- **Trigger:** strong-close breakout candle with volume above the flag-day average.
+- **T1:** prior swing extension or +2R — trim 1/3.
+- **T2 / max gain:** pole height projected from breakout (typical max +20–35%).
+- **Trail:** under each new higher low; under the 10/21 EMA once trend resumes.
+- **Invalidate:** heavy-volume breakdown through flag low; breakout fails and closes back inside flag.
+
+#### Variations — which to take, which to skip
+![Bull Flag variations](assets/chart-patterns/var-bull-flag.svg)
+
+- **Tight / shallow flag** — strongest. Take it.
+- **Sideways flag with dry volume** — also strong. Take it.
+- **Deep flag (> 50% pullback of pole)** — lower quality. Caution.
+- **Wide & loose flag with rising sell volume** — distribution. Avoid.
 
 ---
 
-## 5.1 Bull Flag
+### 5.2 Pennant / Symmetrical Triangle
 
-### Structure
-A strong impulse move higher (the pole), followed by a short downward or sideways pause (the flag), followed by continuation.
+**Structure:** sharp impulse, then converging trendlines (lower highs + higher lows) into a tight coil.
 
-### Price action signature
-- strong sharp advance,
-- controlled pullback rather than collapse,
-- pullback stays orderly,
-- breakout occurs before the structure gets too long and sloppy.
+![Pennant structure & trade plan](assets/chart-patterns/5-2-pennant.svg)
 
-### Volume signature
-- high volume on the pole,
-- lower volume during the flag,
-- renewed volume expansion on breakout.
+- **Entry:** decisive close above the upper boundary / triangle apex.
+- **Stop:** below the last higher low inside the triangle.
+- **Trigger:** breakout candle expands range with visible volume vs the coil days.
+- **T1:** prior impulse extension or +2R.
+- **T2 / max gain:** measured move from the widest part of the triangle (typical max +20–28%).
+- **Trail:** under higher lows once trend resumes.
+- **Invalidate:** breakout fails to follow through within 1–2 sessions, or the lower boundary breaks on heavy volume.
 
-### Entry plan
-- buy on break of the flag high,
-- or buy on break of the upper trendline if structure is clear,
-- aggressive traders may buy near lower half of flag only if broader context is excellent.
-
-### Stop placement
-- below flag low,
-- or below last tight pivot inside the flag,
-- or ATR-adjusted if the stock is high volatility.
-
-### Target logic
-- first target: prior measured range,
-- main target: measured move from pole projected upward,
-- partials can be taken into strength if the stock becomes extended quickly.
-
-### Invalidation
-- heavy-volume breakdown through the lower flag,
-- breakout fails and closes back inside flag,
-- pullback becomes too deep and starts looking like distribution.
-
-### Variations
-- **tight bull flag** — higher quality,
-- **shallow flag** — strongest,
-- **sideways flag** — excellent if volume dries up,
-- **deep flag** — lower quality, needs caution.
+**Variations:** symmetrical triangle = neutral until break · bull pennant = tighter, faster · expanding triangle = lower quality, emotional, often fails.
 
 ---
 
-## 5.2 Pennant / Symmetrical Triangle Continuation
+### 5.3 Ascending Triangle
 
-### Structure
-After a directional impulse, price coils into converging trendlines.
+**Structure:** flat resistance overhead, rising lows underneath. Sellers keep defending one level while buyers raise the floor.
 
-### Price action signature
-- lower highs and higher lows,
-- compressing range,
-- price energy building,
-- continuation bias if trend before the pattern was strong.
+#### Structure visual
+![Ascending Triangle structure](assets/chart-patterns/13-2-ascending-triangle.svg)
 
-### Volume signature
-- steady dry-up as triangle narrows,
-- breakout should expand with conviction.
+#### Trade plan
+![Ascending Triangle trade plan](assets/chart-patterns/tp-ascending-triangle.svg)
 
-### Entry plan
-- buy on break above the upper boundary,
-- conservative entry: wait for close above triangle plus follow-through,
-- aggressive entry: early inside the coil near support only if risk is very tight.
+- **Entry:** breakout above horizontal resistance with volume expansion.
+- **Stop:** below the last rising swing low.
+- **Trigger:** wide-range breakout candle that closes near its high.
+- **T1:** +2R or first prior resistance.
+- **T2 / max gain:** triangle height projected upward (typical max +20–27%).
+- **Trail:** under each new higher low, never lower the original stop after entry.
+- **Invalidate:** decisive break below the rising trendline; multiple failed breakout attempts on heavy upper wicks.
 
-### Stop placement
-- below last higher low inside the triangle,
-- or below triangle low for wider swing stop.
-
-### Target logic
-- measured move from widest part of triangle,
-- or prior impulse extension.
-
-### Invalidation
-- breakout with no follow-through,
-- downside break on heavy volume,
-- pattern drifts too long and loses energy.
-
-### Variations
-- **symmetrical triangle** — neutral until break,
-- **bull pennant** — smaller/tighter version with continuation bias,
-- **expanding triangle** — generally lower quality, more emotional and less controlled.
+**Variations:** tight ascending triangle = very powerful · multiple resistance taps with rising support = valid · too many failed touches = pattern weakening.
 
 ---
 
-## 5.3 Ascending Triangle
+### 5.4 High Tight Flag (HTF)
 
-### Structure
-Flat resistance on top, rising lows underneath.
+**Structure:** near-vertical move (often +90–100% in weeks), followed by a tight, shallow rest. One of the rarest and most explosive setups.
 
-### Price action signature
-- each dip gets bought earlier,
-- sellers keep defending one level,
-- pressure builds into resistance.
+![High Tight Flag](assets/chart-patterns/5-4-high-tight-flag.svg)
 
-### Volume signature
-- often dries up as price presses higher,
-- breakout should show obvious participation.
+- **Entry:** clean break of flag high (no gap chase).
+- **Stop:** below the lower end of the flag (~3–6% from entry); if more than that, skip — the math doesn't work.
+- **Trigger:** breakout day prints fresh institutional volume above flag-day averages.
+- **T1:** +2R partial.
+- **T2 / max gain:** **don't anchor to a measured move** — HTFs can run +50–100% if regime supports. Trail under 10/21 EMA.
+- **Invalidate:** breakdown through flag low; wide sloppy ranges or red volume spikes inside the flag.
 
-### Entry plan
-- buy the breakout above horizontal resistance,
-- aggressive traders can enter near support line if price action stays tight.
-
-### Stop placement
-- below the last rising swing low,
-- or below trendline support if structure is clean.
-
-### Target logic
-- measure height of the triangle and project upward,
-- or use next resistance zone.
-
-### Invalidation
-- decisive break below rising support,
-- repeated failed breakout attempts,
-- resistance rejection on heavy volume.
-
-### Variations
-- **tight ascending triangle** — very powerful,
-- **multiple resistance taps** — valid if support keeps rising,
-- **too many failed touches** — often weakening, not strengthening.
-
----
-
-## 5.4 High Tight Flag
-
-### Structure
-A nearly vertical move (often 90% to 100%+) followed by a tight shallow rest.
-
-### Why it matters
-This is one of the rarest and most explosive continuation patterns.
-
-### Price action signature
-- massive prior run,
-- unusually tight post-run pause,
-- no meaningful giveback,
-- price acts like institutions refuse to distribute.
-
-### Volume signature
-- huge participation on the run,
-- major contraction during the pause,
-- renewed expansion on breakout.
-
-### Entry plan
-- breakout above flag high,
-- no chasing if the breakout gaps too far above a logical stop.
-
-### Stop placement
-- below lower end of flag,
-- or below the tightest pivot in the pause.
-
-### Target logic
-- partials into expansion,
-- then trail — these can become monster moves if market regime is strong.
-
-### Invalidation
-- breakdown through flag low,
-- wide, sloppy ranges appear during pause,
-- volume spikes on red bars inside the flag.
-
-### Variations
-- **classic HTF** — strongest,
-- **mini high-tight flag** — useful but lower magnitude,
-- **false HTF** — too deep a pullback; no longer a real HTF.
+**Variations:** classic HTF = strongest · mini-HTF = useful but smaller magnitude · "false HTF" with deep pullback = no longer an HTF, treat as standard base.
 
 ---
 
@@ -339,336 +236,215 @@ This is one of the rarest and most explosive continuation patterns.
 
 These are the patterns most traders should specialize in.
 
-### Practical examples (candles + price + volume)
-- **Cup with Handle example:** stock declines from 1,120 to 940 and rounds back to 1,105 over several weeks, then forms a handle between 1,070 and 1,100 with small candle bodies; breakout above 1,100 should close strong with clear volume expansion versus handle days.
-- **Flat Base example:** after a prior up-leg, stock moves sideways between 522 and 545 for 4 weeks with tight closes and shrinking daily range; trigger is a close above 545 on a wide bullish candle and participation that stands out versus the base average.
-- **Double Bottom example:** first low prints near 288, rebound reaches midpoint 324, second low undercuts to 282 and quickly reclaims 288; confirmation is a break above 324 with stronger volume than the rebound leg.
-- **VCP example:** pullbacks contract from 12% to 8% to 4% (for example, 640 to 563, then 622 to 572, then 610 to 586) while volume fades each contraction; entry is through the final pivot near 610 with urgent breakout volume.
+### 6.1 Cup with Handle
+
+**Structure:** rounded U-shaped base, then a short, calm handle in the upper half/third of the cup.
+
+#### Structure visual
+![Cup with Handle structure](assets/chart-patterns/13-3-cup-handle.svg)
+
+#### Trade plan
+![Cup with Handle trade plan](assets/chart-patterns/tp-cup-handle.svg)
+
+- **Entry:** above the handle high / pivot.
+- **Stop:** below the handle low (or below breakout candle low if very tight).
+- **Trigger:** wide bullish breakout candle, close near high, volume well above handle-day average.
+- **T1:** +2R partial.
+- **T2 / max gain:** cup depth projected up from the pivot (typical max +25–40%).
+- **Trail:** under 10/21 EMA after breakout, or under each higher low for swing trades.
+- **Invalidate:** handle breaks down on volume; breakout fails and closes back below pivot.
+
+#### Variations
+![Cup with Handle variations](assets/chart-patterns/var-cup-handle.svg)
+
+- **Classic U-shape with calm handle** — highest quality.
+- **V-shaped cup** — sharp drop and rip; weak hands not flushed. Caution.
+- **Deep cup (> 35%)** — only with very strong context. Caution.
+- **Loose / wide handle in lower half** — supply not absorbed. Avoid.
 
 ---
 
-## 6.1 Cup with Handle
+### 6.2 Flat Base
 
-### Structure
-Rounded cup, then a short light handle in the upper half/upper third.
+**Structure:** shallow sideways consolidation after a prior advance, typically 4–6 weeks of tight range.
 
-### Price action signature
-- rounded base instead of jagged collapse,
-- right side builds constructively,
-- handle drifts down calmly,
-- breakout happens from a strong position near highs.
+![Flat Base](assets/chart-patterns/6-2-flat-base.svg)
 
-### Volume signature
-- lower volume near bottom of cup,
-- improving volume on right side advance,
-- dry volume in the handle,
-- breakout day should show real demand.
+- **Entry:** close above the flat top / pivot.
+- **Stop:** below the lower end of the base.
+- **Trigger:** wide breakout candle with volume that visibly stands out vs base-day volume.
+- **T1:** +2R or prior swing high.
+- **T2 / max gain:** continuation of prior impulse (typical max +20–25%).
+- **Trail:** under most recent support pivot or 21 EMA.
+- **Invalidate:** deep crack through the base, failed breakout on volume, multiple distribution upper-wicks during base.
 
-### Entry plan
-- buy above the handle high / pivot,
-- avoid buying too low inside the cup unless you have a separate early-entry system.
-
-### Stop placement
-- below handle low,
-- or below breakout candle low if very tight,
-- or 7–8% style stop for position trading depending on framework.
-
-### Target logic
-- measured move from cup depth,
-- prior resistance zones,
-- partial at 2R / 3R and trail balance.
-
-### Invalidation
-- handle breaks down on volume,
-- breakout fails and closes back below pivot,
-- cup is too deep and loose.
-
-### Variations
-- **classic cup with handle** — highest quality,
-- **cup without handle** — can work, but breakout often more volatile,
-- **deep cup** — lower quality unless market context supports it,
-- **V-shaped cup** — lower quality than a rounded U.
+**Variations:** first-stage flat base = good · second-stage = often excellent · late-stage = more failure-prone, requires bigger market support.
 
 ---
 
-## 6.2 Flat Base
+### 6.3 Double Bottom
 
-### Structure
-A relatively shallow sideways consolidation after an advance.
+**Structure:** W-shape where the second low often undercuts the first to shake out weak hands, then snaps back through the midpoint pivot.
 
-### Price action signature
-- tight range,
-- repeated support holds,
-- no deep retracement,
-- efficient rest after prior move.
+#### Structure visual
+![Double Bottom structure](assets/chart-patterns/13-5-double-bottom.svg)
 
-### Volume signature
-- declining volume throughout the base,
-- breakout volume should stand out clearly.
+#### Trade plan
+![Double Bottom trade plan](assets/chart-patterns/tp-double-bottom.svg)
 
-### Entry plan
-- buy on break of the flat top / pivot,
-- or buy a pullback after breakout to pivot if one appears cleanly.
+- **Entry:** break of midpoint pivot.
+- **Stop:** below second low.
+- **Trigger:** breakout candle through midpoint with volume expansion vs the rebound leg.
+- **T1:** +2R partial.
+- **T2 / max gain:** base height projected from midpoint (typical max +20–35%).
+- **Trail:** under higher lows after the breakout.
+- **Invalidate:** second low keeps breaking without reclaim; midpoint breakout fails immediately.
 
-### Stop placement
-- below the lower end of the flat base,
-- or below most recent support pivot.
+#### Variations
+![Double Bottom variations](assets/chart-patterns/var-double-bottom.svg)
 
-### Target logic
-- next expansion leg,
-- measured from prior impulse,
-- use trend continuation rather than rigid capped targets.
-
-### Invalidation
-- deep crack through the base,
-- failed breakout on volume,
-- multiple upper wicks showing distribution.
-
-### Variations
-- **first-stage flat base** — good,
-- **second-stage flat base** — often excellent,
-- **late-stage flat base** — more failure-prone.
+- **Clean W (equal lows)** — strongest.
+- **Undercut & reclaim** — most powerful variant; trap energy fuels the move.
+- **Higher second low** — acceptable.
+- **Second low much lower with no reclaim** — failure. Avoid.
 
 ---
 
-## 6.3 Double Bottom
+### 6.4 Volatility Contraction Pattern (VCP)
 
-### Structure
-W-shaped base where second low often undercuts first low to shake out weak hands.
+**Structure:** a series of pullbacks where each contraction is smaller than the previous one (e.g., 12% → 8% → 4%) while volume dries up.
 
-### Price action signature
-- first decline stabilizes,
-- recovery to midpoint,
-- second decline undercuts or matches prior low,
-- price quickly reclaims support and moves toward midpoint.
+#### Structure visual
+![VCP structure](assets/chart-patterns/13-4-vcp.svg)
 
-### Volume signature
-- second low ideally comes on less destructive volume,
-- breakout through midpoint should expand strongly.
+#### Trade plan with contraction markers
+![VCP trade plan](assets/chart-patterns/tp-vcp.svg)
 
-### Entry plan
-- buy through the midpoint pivot,
-- aggressive traders may buy reversal off second low only if there is very strong confirmation.
+- **Entry:** break of pivot above the **final tight contraction**.
+- **Stop:** below final contraction low (typically 4–7% risk).
+- **Trigger:** breakout candle expands sharply on urgent volume.
+- **T1:** +2R / +3R partial.
+- **T2 / max gain:** trail aggressively — VCPs commonly run +30–50% in trending regimes.
+- **Trail:** under 10 EMA on daily; under 21 EMA on weekly.
+- **Invalidate:** contractions widen instead of tighten; volume expands on downside inside the pattern.
 
-### Stop placement
-- below second low,
-- or below reversal candle at second low for aggressive entry.
+#### Variations
+![VCP variations](assets/chart-patterns/var-vcp.svg)
 
-### Target logic
-- base height projection,
-- next resistance zone.
-
-### Invalidation
-- second low keeps breaking without reclaim,
-- midpoint breakout fails immediately,
-- structure becomes messy and wide.
-
-### Variations
-- **clean W** — strongest,
-- **undercut-and-reclaim** — very powerful,
-- **equal lows** — acceptable,
-- **triple bottom** — can work but often slower and more failure-prone if too obvious.
-
----
-
-## 6.4 Volatility Contraction Pattern (VCP)
-
-### Structure
-A series of pullbacks where each contraction becomes smaller than the previous one.
-
-### Price action signature
-- pullbacks go from wide to tight,
-- volatility visibly contracts,
-- price starts to trade in a very small range near highs,
-- supply appears exhausted.
-
-### Volume signature
-- volume drops with each contraction,
-- final contraction often feels unusually quiet,
-- breakout should expand sharply.
-
-### Entry plan
-- buy through pivot above the final tight contraction,
-- or on a pocket-pivot style thrust if your framework supports early entry.
-
-### Stop placement
-- below final contraction low,
-- or below the nearest tight pivot.
-
-### Target logic
-- often best traded with trailing logic,
-- first target at 2R / 3R,
-- then trail under higher lows or moving average.
-
-### Invalidation
-- contraction widens instead of tightens,
-- volume expands on downside inside the pattern,
-- breakout lacks urgency.
-
-### Variations
-- **2-contraction VCP** — acceptable,
-- **3-contraction VCP** — classic,
-- **4-contraction VCP** — excellent if still tight,
-- **too many contractions** — may lose power and become over-observed.
+- **2-contraction VCP** — acceptable in strong context.
+- **3-contraction VCP** — classic, highest probability.
+- **4-contraction VCP** — excellent if still tight.
+- **Widening contractions** — broken pattern. Avoid.
 
 ---
 
 ## 7. Reversal Patterns — Trade Smaller, Trade Cleaner
 
-Reversal patterns can work well, but they generally demand more patience and more selectivity.
+Reversal patterns can work well, but they demand more patience and selectivity.
 
-### Practical examples (candles + price + volume)
-- **Inverse H&S example:** left shoulder forms near 410, head near 382, right shoulder near 398, with neckline around 432; stronger setup shows fewer wide red candles on the right shoulder and a neckline breakout candle that closes near its high with improved volume.
-- **Rounding Bottom example:** stock trends down from 760 to 590, spends weeks stabilizing with smaller candle spreads, then climbs back toward 740; breakout above 740 is stronger when volume gradually improves into the breakout rather than spiking only on one day.
-- **Undercut & Reclaim example:** support at 250 breaks intraday to 242 on a flush, but price closes back above 250 with a long lower wick and higher relative volume; confirmation is follow-through above the reclaim candle high, and failure is a close back below 250.
+### 7.1 Inverse Head & Shoulders
 
----
+**Structure:** three troughs — left shoulder, deeper head (capitulation), higher right shoulder — with a flat neckline as the trigger.
 
-## 7.1 Inverse Head and Shoulders
+#### Structure visual
+![Inverse H&S structure](assets/chart-patterns/13-6-inverse-hs.svg)
 
-### Structure
-Three troughs, with the middle low deeper than the other two, followed by neckline breakout.
+#### Trade plan
+![Inverse H&S trade plan](assets/chart-patterns/tp-inverse-hs.svg)
 
-### Price action signature
-- selling pressure weakens into right shoulder,
-- reclaim attempts start holding,
-- price compresses under neckline before release.
+- **Entry:** break above the neckline (or constructive retest hold).
+- **Stop:** below the right shoulder low.
+- **Trigger:** breakout candle with strong close + volume expansion vs the right-shoulder days.
+- **T1:** +2R partial.
+- **T2 / max gain:** head-to-neckline distance projected upward (typical max +20–30%).
+- **Trail:** under 21 EMA or each higher low.
+- **Invalidate:** neckline breakout fails immediately; right shoulder breaks down before neckline triggers.
 
-### Volume signature
-- volume often highest near capitulation low,
-- breakout above neckline should attract clear participation.
+#### Variations
+![Inverse H&S variations](assets/chart-patterns/var-inverse-hs.svg)
 
-### Entry plan
-- buy neckline breakout,
-- or buy neckline retest if it occurs constructively.
-
-### Stop placement
-- below right shoulder low,
-- or below neckline retest low.
-
-### Target logic
-- head-to-neckline distance projected upward.
-
-### Invalidation
-- neckline breakout fails,
-- right shoulder breaks down,
-- weak volume on all reclaim attempts.
+- **Classic IHS** — head deepest, right shoulder lighter and shallower. Take it.
+- **Symmetric shoulders** — acceptable.
+- **Right shoulder lower than left shoulder** — pattern weakening. Caution.
+- **Failed neckline break** — avoid; structure is broken.
 
 ---
 
-## 7.2 Rounding Bottom / Saucer
+### 7.2 Rounding Bottom / Saucer
 
-### Structure
-A slow transition from decline to accumulation to breakout.
+**Structure:** slow, multi-week U-shape transitioning from decline to accumulation to breakout. No violent rejection at the lows.
 
-### Price action signature
-- gradual flattening of trend,
-- no violent rejection at the lows,
-- slow institutional accumulation feel,
-- breakout from long range can start major trend.
+![Rounding Bottom](assets/chart-patterns/7-2-rounding-bottom.svg)
 
-### Volume signature
-- often quiet at the bottom,
-- improves gradually as price turns up,
-- breakout should still show expansion.
-
-### Entry plan
-- buy on break of the saucer pivot,
-- or buy first constructive pullback after breakout.
-
-### Stop placement
-- below breakout level,
-- or below last higher low.
-
-### Target logic
-- measured move from depth of structure,
-- or multi-month swing hold if broader trend is changing.
-
-### Invalidation
-- breakout fails and sinks back into base,
-- structure is too loose and erratic.
+- **Entry:** break of saucer pivot, or the first constructive pullback after breakout.
+- **Stop:** below the breakout candle low or last higher low.
+- **Trigger:** breakout candle with volume that finally expands after weeks of dry volume.
+- **T1:** +2R partial.
+- **T2 / max gain:** depth of saucer projected upward; these often start **multi-month trends**, so consider trailing rather than capping targets.
+- **Trail:** under 50/200 SMA for position trades.
+- **Invalidate:** breakout fails and price sinks back into the base; structure is too erratic.
 
 ---
 
-## 7.3 Failed Breakdown / Undercut & Reclaim
+### 7.3 Failed Breakdown / Undercut & Reclaim
 
-### Structure
-Price breaks support, traps weak holders and shorts, then snaps back above the level.
+**Structure:** price breaks support, traps weak holders and shorts, then snaps back above the level on the same session or next day.
 
-### Price action signature
-- sharp reclaim after undercut,
-- closes back above key level,
-- trap energy often fuels the next move.
+![Undercut & Reclaim](assets/chart-patterns/7-3-undercut-reclaim.svg)
 
-### Volume signature
-- can show climactic volume at the undercut,
-- reclaim day often improves significantly.
-
-### Entry plan
-- buy on reclaim close or next confirmation bar,
-- especially strong when reclaim happens at prior major low or base low.
-
-### Stop placement
-- below reclaim low.
-
-### Target logic
-- first target at midpoint of the range,
-- second target at prior resistance.
-
-### Invalidation
-- reclaim fails immediately,
-- price closes back below reclaimed level.
+- **Entry:** reclaim close back above support, with follow-through above the reclaim candle high.
+- **Stop:** below the undercut low.
+- **Trigger:** climactic volume at the undercut, then visibly higher relative volume on the reclaim.
+- **T1:** midpoint of prior range.
+- **T2 / max gain:** prior resistance (typical max +20–30%).
+- **Trail:** under reclaim low first, then under each higher low.
+- **Invalidate:** **reclaim fails — close back below the reclaimed level → exit immediately.** Never debate a failed reclaim.
 
 ---
 
 ## 8. Intraday Patterns Worth Keeping Simple
 
-For daily review, these are enough.
+For daily review, these are enough. Apply the same Entry / Stop / Trigger / Targets / Trail discipline.
 
-### 8.1 Opening Range Breakout (ORB)
-- define the first 5 / 15 / 30-minute range,
-- trade break with volume and market alignment,
-- best on gap + news + RS names.
-
-### 8.2 First Pullback After Breakout
-- stock breaks out strongly,
-- then gives first clean pullback to VWAP / 9 EMA / pivot,
-- continuation often cleaner than chasing initial burst.
-
-### 8.3 Inside Bar Break
-- small compression after an impulse,
-- break of inside-bar high or low gives low-risk continuation or reversal trigger.
-
-These should still be traded with the same logic:
-entry, stop, target, invalidation, and no emotional improvisation.
+- **Opening Range Breakout (ORB)** — define the first 5/15/30-minute range, trade break with volume + market alignment, best on gap + news + RS names.
+- **First Pullback After Breakout** — initial burst is followed by a clean pullback to VWAP / 9 EMA / pivot; entry on bounce confirmation.
+- **Inside Bar Break** — small compression after an impulse; break of inside-bar high or low gives low-risk continuation or reversal trigger.
 
 ---
 
-## 9. Pattern Failure Signs — What to Watch Every Day
+## 9. Pattern Failure Drills — What to Avoid
 
-These signs matter more than the pattern label.
+Failed patterns matter as much as winning ones. **Reading failure prevents 80% of bad trades.**
 
-A setup is weaker when:
-- breakout volume is below average,
-- price closes weak on breakout day,
-- follow-through disappears immediately,
-- red candles inside the setup expand in range and volume,
-- the stock is already extended from the pivot,
-- market index is under pressure,
-- leadership is deteriorating,
-- the pattern is too obvious and too late in trend stage.
+### 9.1 Failure A — Weak-Volume Breakout Failure
+![Weak-volume breakout failure](assets/chart-patterns/13-7-weak-breakout-failure.svg)
 
-A professional trader must be as skilled at reading **failed patterns** as successful ones.
+- **Tell:** breakout candle closes off highs, next day inside or down close. Breakout volume **below** pattern average.
+- **Action now:** exit on close back below pivot; do not add.
+- **Re-entry:** only after a new tight base with real volume.
+- **Avoid:** averaging down while price stays under failed pivot.
 
-Because often the best loss prevention happens before entry.
+### 9.2 Failure B — Late-Stage Extended Breakout Trap
+![Late-stage breakout trap](assets/chart-patterns/13-8-late-stage-breakout-trap.svg)
+
+- **Tell:** wide green candle into resistance after multi-leg run; long upper wick; high volume but poor close (distribution risk).
+- **Action now:** skip the chase; protect open gains.
+- **Re-entry:** first tight pullback to support with calm volume.
+- **Avoid:** fresh buys 4–8% extended above the pivot into resistance.
+
+### 9.3 Failure C — Undercut Reclaim That Fails
+![Failed undercut reclaim](assets/chart-patterns/13-9-failed-undercut-reclaim.svg)
+
+- **Tell:** reclaim candle prints, then next session closes back below the reclaimed level. Reclaim has no follow-through.
+- **Action now:** close position on the failed reclaim close.
+- **Re-entry:** only after a second valid reclaim plus follow-through.
+- **Avoid:** holding because of the first reclaim narrative.
 
 ---
 
 ## 10. Trade Plan Templates by Pattern
 
-Use this exact structure.
-
-Tip: model your notes after the practical examples in Sections 5, 6, and 7 so each plan includes concrete candle behavior, price levels, and volume expectations.
+Use this exact structure. Every plan should match a chart in this guide.
 
 ### Template A — Breakout Trade
 - **Pattern:**
@@ -678,8 +454,9 @@ Tip: model your notes after the practical examples in Sections 5, 6, and 7 so ea
 - **Stop location:**
 - **Risk per share:**
 - **Position size:**
-- **First target:**
-- **Main target / trail logic:**
+- **First target (T1, +2R):**
+- **Main target / max-gain logic (T2):**
+- **Trail rule:**
 - **Invalidation condition:**
 - **What volume must do:**
 
@@ -690,6 +467,7 @@ Tip: model your notes after the practical examples in Sections 5, 6, and 7 so ea
 - **Bounce trigger:**
 - **Stop:**
 - **Target:**
+- **Trail rule:**
 - **Invalidation:**
 
 ### Template C — Reversal Trade
@@ -698,7 +476,8 @@ Tip: model your notes after the practical examples in Sections 5, 6, and 7 so ea
 - **What confirms reclaim:**
 - **Entry:**
 - **Stop:**
-- **Target:**
+- **T1 / T2:**
+- **Trail rule:**
 - **Why this is not just a random bounce:**
 
 ---
@@ -706,207 +485,95 @@ Tip: model your notes after the practical examples in Sections 5, 6, and 7 so ea
 ## 11. Daily Pattern Review Routine
 
 ### Before market open
-Look for:
-- stocks near pivots,
-- bases with drying volume,
-- bull flags after strong earnings moves,
-- tight handles,
-- VCP-like contractions,
-- clean support retests,
-- relative strength leaders.
+Mark watchlist names matching:
+- bull flags after strong earnings moves
+- tight handles
+- VCP-like contractions (3+ contractions, drying volume)
+- clean support retests / undercut-reclaim setups
+- relative strength leaders
 
 ### During market hours
 Focus only on:
-- price at level,
-- volume relative to average,
-- quality of breakout candle,
-- whether the setup is extending too far from risk.
+- price at level
+- volume vs average
+- quality of breakout candle
+- whether the setup is extending too far from risk
 
 ### After market close
-Review:
-- which breakouts worked,
-- which failed,
-- whether volume confirmed,
-- whether your entry was early, clean, or emotional,
-- whether you respected the actual trade plan.
-
-This is how patterns stop being theory and become intuition.
+Score:
+- which breakouts worked
+- which failed
+- whether volume confirmed
+- whether your entry was early, clean, or emotional
+- whether you respected the actual trade plan
 
 ---
 
-## 12. The Daily “No Trade” List
+## 12. The Daily "No Trade" List
 
 Do **not** trade the pattern when:
-- the market is weak and the stock is trying to fight alone,
+- the market is weak and the stock is fighting alone,
 - volume is missing,
-- the entry is too extended,
-- stop placement is too wide,
+- the entry is too extended (4–8% above the pivot),
+- stop placement is too wide (R-multiple to T1 below 2),
 - structure is loose and obvious in a bad way,
 - you are emotionally urgent,
-- you are taking the trade because the pattern looks pretty but the plan is weak.
+- the pattern looks pretty but the plan is weak.
 
-Beautiful charts do not pay.
-Well-executed trade plans do.
+Beautiful charts do not pay. Well-executed trade plans do.
 
 ---
 
-## 13. Visual Pattern Examples Drill (Candles + Structure + Volume + Trade Plan)
+## 13. Visual Comparison — A-Grade vs Failure (60-second pre-trade filter)
 
-Use this as a **10-minute daily rehearsal** before market open.
-Read each pattern once, then mark watchlist names that match the same behavior.
+Use these picture-first comparisons as the final filter before entry.
 
-### 13.0 Quick Visual Index (Dark Theme)
+### Continuation: take the tight setup, skip the weak breakout
 
-| Continuation | Base Pattern | Reversal Pattern |
-|---|---|---|
-| [![Bull Flag](assets/chart-patterns/13-1-bull-flag.svg)](#131-bull-flag-continuation) | [![Cup with Handle](assets/chart-patterns/13-3-cup-handle.svg)](#133-cup-with-handle-base-breakout) | [![Inverse H&S](assets/chart-patterns/13-6-inverse-hs.svg)](#136-inverse-head-and-shoulders-reversal) |
-| [![Ascending Triangle](assets/chart-patterns/13-2-ascending-triangle.svg)](#132-ascending-triangle-continuation) | [![VCP](assets/chart-patterns/13-4-vcp.svg)](#134-volatility-contraction-pattern-vcp) | [![Double Bottom](assets/chart-patterns/13-5-double-bottom.svg)](#135-double-bottom-reversal-to-breakout) |
-| [![Failure A](assets/chart-patterns/13-7-weak-breakout-failure.svg)](#137-failure-drill-a---weak-volume-breakout-failure) | [![Failure B](assets/chart-patterns/13-8-late-stage-breakout-trap.svg)](#138-failure-drill-b---late-stage-extended-breakout-trap) | [![Failure C](assets/chart-patterns/13-9-failed-undercut-reclaim.svg)](#139-failure-drill-c---undercut-reclaim-that-fails) |
+| A-grade continuation | Failure to avoid |
+|---|---|
+| ![Bull Flag](assets/chart-patterns/13-1-bull-flag.svg) | ![Weak-volume breakout failure](assets/chart-patterns/13-7-weak-breakout-failure.svg) |
+| **Tight pullback + dry volume + expansion through pivot.** | **Weak volume + poor close + fast loss of pivot.** |
 
-**How to use the grid:** pick one setup from row 1/2 for offense and one failure from row 3 for defense before the open.
+### Base breakout: buy the pivot, do not chase extension
 
-### 13.1 Bull Flag (Continuation)
+| Proper base breakout | Late-stage trap |
+|---|---|
+| ![Cup with Handle](assets/chart-patterns/13-3-cup-handle.svg) | ![Late-stage breakout trap](assets/chart-patterns/13-8-late-stage-breakout-trap.svg) |
+| **Rounded base + calm handle + demand at the pivot.** | **Wide candle into resistance after a long run = bad location.** |
 
-![Bull Flag visual example](assets/chart-patterns/13-1-bull-flag.svg)
+### Reversal: confirm reclaim strength, reject failed narratives
 
-- **Candles:** 4-8 candle pullback, small real bodies, limited upper-wick rejection.
-- **Price structure:** strong impulse, then orderly downward/sideways channel above key support.
-- **Volume behavior:** high on impulse, dry-up during flag, expansion on breakout candle.
-- **Trade plan:** buy above flag high; stop below flag low; first target 2R or prior swing extension; invalidate on heavy close back inside flag.
-- **Variation action map:** aggressive = early inside flag near support after reclaim; standard = breakout close above flag high; conservative = breakout + next-day hold/retest; avoid = deep flag with rising sell volume.
-
-### 13.2 Ascending Triangle (Continuation)
-
-![Ascending Triangle visual example](assets/chart-patterns/13-2-ascending-triangle.svg)
-
-- **Candles:** repeated tests near resistance with tighter pullbacks.
-- **Price structure:** flat top + rising lows, pressure builds into pivot.
-- **Volume behavior:** generally contracts into apex, expands at resistance break.
-- **Trade plan:** enter on decisive close above resistance; stop below last higher low; target measured triangle height; invalidate on breakdown below rising trendline.
-- **Variation action map:** aggressive = buy near rising trendline after bullish reversal candle; standard = breakout through flat top with expansion volume; conservative = wait for breakout retest hold; avoid = too many failed top-side breaks with heavy upper wicks.
-
-### 13.3 Cup with Handle (Base Breakout)
-
-![Cup with Handle visual example](assets/chart-patterns/13-3-cup-handle.svg)
-
-- **Candles:** rounded base candles, then short handle with calm drift.
-- **Price structure:** U-shaped recovery, handle in upper half, pivot near prior highs.
-- **Volume behavior:** quiet near cup bottom, improves on right side, dries in handle, surges on pivot break.
-- **Trade plan:** buy through handle high; stop below handle low; partial at 2R then trail; invalidate if breakout closes back below pivot.
-- **Variation action map:** aggressive = tight handle support bounce with very small risk; standard = pivot breakout through handle high; conservative = breakout plus follow-through day; avoid = deep/loose handle with repeated distribution bars.
-
-### 13.4 Volatility Contraction Pattern (VCP)
-
-![Volatility Contraction Pattern visual example](assets/chart-patterns/13-4-vcp.svg)
-
-- **Candles:** pullbacks shrink in depth/range (for example, 10% -> 6% -> 3%).
-- **Price structure:** progressively tighter swings near highs, supply-exhaustion feel.
-- **Volume behavior:** contracts with each pullback, breakout should show urgency.
-- **Trade plan:** enter through final tight pivot; stop below last contraction low; target 2R/3R then trail; invalidate if volatility expands down before breakout.
-- **Variation action map:** aggressive = pocket-pivot style thrust before final pivot; standard = clear break of final contraction pivot; conservative = breakout hold and first tight inside-day continuation; avoid = contraction sequence widens or downside range expands.
-
-### 13.5 Double Bottom (Reversal to Breakout)
-
-![Double Bottom visual example](assets/chart-patterns/13-5-double-bottom.svg)
-
-- **Candles:** first low bounce, second low undercut/reclaim candle preferred.
-- **Price structure:** W-shape with midpoint pivot as trigger.
-- **Volume behavior:** selling pressure lighter on second leg, stronger volume through midpoint.
-- **Trade plan:** buy above midpoint pivot; stop below second low; target base-height projection; invalidate on failed midpoint breakout.
-- **Variation action map:** aggressive = buy undercut-and-reclaim candle close with tight stop; standard = midpoint pivot breakout entry; conservative = breakout + pullback hold above midpoint; avoid = second low breaks and fails to reclaim quickly.
-
-### 13.6 Inverse Head and Shoulders (Reversal)
-
-![Inverse Head and Shoulders visual example](assets/chart-patterns/13-6-inverse-hs.svg)
-
-- **Candles:** left shoulder, deeper head, higher-quality right shoulder with less spread.
-- **Price structure:** neckline defines trigger; right shoulder should hold cleaner.
-- **Volume behavior:** capitulation near head, participation rises on neckline break.
-- **Trade plan:** buy neckline breakout/retest hold; stop below right shoulder; target head-to-neckline projection; invalidate if price loses neckline quickly.
-- **Variation action map:** aggressive = right-shoulder reversal candle near support; standard = neckline breakout with volume; conservative = neckline retest hold; avoid = right shoulder forms with expanding red range and weak closes.
-
-### 13.7 Failure Drill A - Weak-Volume Breakout Failure
-
-![Weak-volume breakout failure visual example](assets/chart-patterns/13-7-weak-breakout-failure.svg)
-
-- **Candles:** breakout candle closes off highs, next day inside/down close.
-- **Price structure:** brief pivot break with no range expansion follow-through.
-- **Volume behavior:** breakout volume below pattern average.
-- **Trade plan:** avoid new entry; if already in, cut on close back below pivot; no re-entry until fresh tight setup appears.
-- **Variation action map:** act now = exit on failed close below pivot; re-entry = only after new tight base with real volume; avoid = averaging down while price remains under failed pivot.
-
-### 13.8 Failure Drill B - Late-Stage Extended Breakout Trap
-
-![Late-stage breakout trap visual example](assets/chart-patterns/13-8-late-stage-breakout-trap.svg)
-
-- **Candles:** wide green candle into resistance after multi-leg run, long upper wick appears.
-- **Price structure:** breakout attempt occurs far above logical support/risk point.
-- **Volume behavior:** high volume but poor close quality (distribution risk).
-- **Trade plan:** do not chase; wait for constructive pullback; invalidate bull case on follow-through red expansion.
-- **Variation action map:** act now = skip the chase and protect open gains; re-entry = first tight pullback to support with calm volume; avoid = fresh buys 4-8% above pivot into resistance.
-
-### 13.9 Failure Drill C - Undercut Reclaim That Fails
-
-![Failed undercut reclaim visual example](assets/chart-patterns/13-9-failed-undercut-reclaim.svg)
-
-- **Candles:** reclaim candle prints, then next session closes back below reclaimed level.
-- **Price structure:** failed trap reversal, support flips back to resistance.
-- **Volume behavior:** reclaim is not supported by sustained demand.
-- **Trade plan:** exit immediately on failed reclaim close; stand aside until base rebuilds; bearish bias is valid below failed level.
-- **Variation action map:** act now = close position on failed reclaim close; re-entry = only after a second valid reclaim plus follow-through; avoid = holding because of the first reclaim narrative.
-
-Use this drill daily:
-- **Pre-open:** mark watchlist names matching one to two live structures.
-- **Intraday:** trade only if price + volume match the drill.
-- **Post-close:** score execution quality, not just P&L.
+| Reversal with confirmation | Reclaim that fails |
+|---|---|
+| ![Inverse H&S](assets/chart-patterns/13-6-inverse-hs.svg) | ![Failed undercut reclaim](assets/chart-patterns/13-9-failed-undercut-reclaim.svg) |
+| **Cleaner right side + neckline break + real participation.** | **Support reclaimed, then lost — exit, don't hope.** |
 
 ---
 
 ## 14. The One-Page Summary
 
 ### Best continuation patterns
-- Bull flag
-- Pennant
-- Ascending triangle
-- High tight flag
-- VCP
+- Bull flag · Pennant · Ascending triangle · High tight flag · VCP
 
 ### Best structured base patterns
-- Cup with handle
-- Flat base
-- Double bottom
+- Cup with handle · Flat base · Double bottom
 
 ### Best reversal patterns
-- Inverse H&S
-- Rounding bottom
-- Undercut & reclaim
+- Inverse H&S · Rounding bottom · Undercut & reclaim
 
 ### What price should do
-- stay tight,
-- pull back orderly,
-- reclaim quickly,
-- close strong,
-- hold pivots.
+Stay tight · pull back orderly · reclaim quickly · close strong · hold pivots.
 
 ### What volume should do
-- dry up in the pattern,
-- expand on breakout,
-- stay lower on pullbacks,
-- avoid heavy red distribution inside the setup.
+Dry up in the pattern · expand on breakout · stay lower on pullbacks · avoid heavy red distribution inside the setup.
 
-### Entry logic
-- buy at the actual trigger,
-- not in the middle of nowhere,
-- not after emotional extension.
-
-### Stop logic
-- place stop where the idea is invalid,
-- not where it merely feels uncomfortable.
-
-### Target logic
-- use measured moves,
-- resistance zones,
-- or trailing logic when trend is strong.
+### Entry / Stop / Targets / Trail logic
+- **Entry:** at the actual trigger, never in the middle of nowhere.
+- **Stop:** where the idea is invalid, not where it merely feels uncomfortable.
+- **T1:** +2R partial — funds the trade.
+- **T2 / max gain:** measured-move projection, prior resistance, or trail logic when trend is strong.
+- **Trail:** under each new higher low or under 10/21/50 EMA depending on horizon.
 
 ### Final rule
 > **If the pattern is clear but the trade plan is weak, pass.**

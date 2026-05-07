@@ -1267,6 +1267,19 @@ _PLAYBOOK_DOCS: dict[str, dict] = {
         "icon":     "🔭",
         "order":    6,
     },
+    "swing-trader-risk-management": {
+        "path":     ROOT / "docs" / "SWING_TRADER_RISK_MANAGEMENT.md",
+        "title":    "The Professional Swing Trader's Risk Management Playbook",
+        "dek":      "The complete five-layer risk framework: open risk (portfolio floor), "
+                    "market-based risk (regime adjustment), per-trade risk (1% rule), "
+                    "situation-based risk (time/earnings/streaks), and setup-based risk "
+                    "(pattern confidence). Position sizing tables, decision trees, real examples, "
+                    "and psychology—everything separating professionals from account-blowers.",
+        "file":     "Swing_Trader_Risk_Management.html",
+        "category": "blog",
+        "icon":     "🛡️",
+        "order":    7,
+    },
 }
 
 
@@ -6224,23 +6237,11 @@ def past_winners_prefill(symbol: str, market: Literal["india", "us"] = "india") 
 _watchlist_lock = threading.Lock()
 
 WATCHLIST_BUCKETS: list[dict] = [
-    {"slug": "rs_leaders",      "label": "RS Leaders",         "icon": "🏆", "hint": "Outperformers holding up vs market"},
-    {"slug": "adr_pairs",       "label": "ADR Pairs",          "icon": "🌐", "hint": "Indian stock ↔ US ADR cross-listing"},
-    {"slug": "long_term",       "label": "Long-term / SIP",    "icon": "🏛️", "hint": "Multi-year compounders"},
-    {"slug": "sector_rotators", "label": "Sector Rotators",    "icon": "🔄", "hint": "Rotation candidates"},
-    {"slug": "macro_hedge",     "label": "Macro / Hedge",      "icon": "🛡️", "hint": "Gold, defensives, yields"},
-    {"slug": "setup_vcp",       "label": "Setup · VCP",        "icon": "🧲", "hint": "Volatility Contraction"},
-    {"slug": "setup_pullback",  "label": "Setup · Pullback",   "icon": "⤵️", "hint": "Buy on orderly retrace"},
-    {"slug": "setup_breakout",  "label": "Setup · Breakout",   "icon": "🚀", "hint": "Range high break + volume"},
-    {"slug": "setup_range_exp", "label": "Setup · Range Exp.", "icon": "📐", "hint": "Range expansion / trend day"},
-    {"slug": "setup_mean_rev",  "label": "Setup · Mean Rev.",  "icon": "↩️", "hint": "Oversold bounce"},
-    {"slug": "setup_bull_flag", "label": "Setup · Bull Flag",  "icon": "🏁", "hint": "Flag / pennant"},
-    {"slug": "setup_ema_pb",    "label": "Setup · EMA Pullback", "icon": "📉", "hint": "Pullback to rising EMA (5/10/20/50)"},
-    {"slug": "setup_base_bo",   "label": "Setup · Base Breakout", "icon": "📦", "hint": "Flat base / cup breakout on volume"},
-    {"slug": "setup_ftd",       "label": "Setup · Follow-Through", "icon": "📈", "hint": "Follow-through day after correction"},
-    {"slug": "setup_earnings",  "label": "Setup · Earnings",   "icon": "💼", "hint": "Pre / post earnings swing"},
-    {"slug": "setup_ipo_base",  "label": "Setup · IPO Base",   "icon": "🆕", "hint": "First base after listing"},
-    {"slug": "watching",        "label": "Just Watching",      "icon": "👀", "hint": "No setup yet, monitoring"},
+    {"slug": "rs_leaders",    "label": "RS Leaders",   "icon": "🏆", "hint": "High relative-strength leaders (IBD-RS ≥ 70). Your core universe."},
+    {"slug": "breakouts",     "label": "Breakouts",    "icon": "🚀", "hint": "Range high break on volume — entry trigger hit or very near."},
+    {"slug": "pullbacks",     "label": "Pullbacks",    "icon": "⤵️", "hint": "Healthy retrace to rising MA / support in a Stage 2 stock."},
+    {"slug": "ipo_bases",     "label": "IPO Bases",    "icon": "🆕", "hint": "First base after listing — tight, low-volume consolidation."},
+    {"slug": "watching",      "label": "Watching",     "icon": "👀", "hint": "On radar, no setup yet — just monitoring."},
 ]
 
 WATCHLIST_SETUPS: list[str] = [
@@ -6271,7 +6272,6 @@ ADR_HINTS: dict[str, dict] = {
 
 def _migrate_watchlist_item(raw: dict) -> dict:
     """Upgrade a v1 watchlist entry to v2+ schema (idempotent)."""
-    raw.setdefault("bucket",      "watching")
     raw.setdefault("market",      "india")
     raw.setdefault("setup",       raw.get("setup", ""))
     raw.setdefault("conviction",  3)
@@ -6280,8 +6280,48 @@ def _migrate_watchlist_item(raw: dict) -> dict:
     raw.setdefault("add_date",    (raw.get("added_at") or "")[:10] or None)
     raw.setdefault("pair_symbol", None)
     raw.setdefault("pair_market", None)
-    raw.setdefault("source",      "manual")   # "manual" | "auto_rs"
-    raw.setdefault("priority",    None)        # P1 / P2 / P3 (auto-computed)
+    raw.setdefault("source",      "manual")
+    raw.setdefault("priority",    None)
+
+    # ── Migrate single "bucket" string → "buckets" list ──────────────────────
+    _BUCKET_MIGRATION: dict[str, str] = {
+        # RS family
+        "rs_tier_1": "rs_leaders", "rs_tier_2": "rs_leaders", "rs_tier_3": "rs_leaders",
+        # Breakout family
+        "setup_breakout": "breakouts", "setup_base_bo": "breakouts",
+        "setup_ftd": "breakouts", "setup_range_exp": "breakouts",
+        "setup_bull_flag": "breakouts",
+        "day_breakouts": "breakouts", "day_scalps": "breakouts",
+        "today": "breakouts",
+        # Pullback family
+        "setup_pullback": "pullbacks", "setup_ema_pb": "pullbacks",
+        "setup_mean_rev": "pullbacks", "day_reversals": "pullbacks",
+        "setup_vcp": "pullbacks",
+        # IPO family
+        "setup_ipo_base": "ipo_bases",
+        # Everything else → watching
+        "ready": "watching", "parked": "watching",
+        "setup_earnings": "watching",
+        "adr_pairs": "watching", "filter_adr": "watching",
+        "long_term": "watching", "filter_long_term": "watching",
+        "filter_dividend": "watching", "filter_turnarounds": "watching",
+        "filter_defensives": "watching", "sector_rotators": "watching",
+        "macro_hedge": "watching", "day_sector_lead": "watching",
+    }
+    _VALID_SLUGS = {"rs_leaders", "breakouts", "pullbacks", "ipo_bases", "watching"}
+
+    # If old single "bucket" field exists, convert to list then drop the key
+    if "bucket" in raw and "buckets" not in raw:
+        old = raw.pop("bucket", "watching")
+        mapped = _BUCKET_MIGRATION.get(old, old)
+        raw["buckets"] = [mapped] if mapped in _VALID_SLUGS else ["watching"]
+
+    # Ensure "buckets" exists and contains only valid slugs
+    raw.setdefault("buckets", ["watching"])
+    if not isinstance(raw["buckets"], list):
+        raw["buckets"] = ["watching"]
+    raw["buckets"] = [b for b in raw["buckets"] if b in _VALID_SLUGS] or ["watching"]
+
     return raw
 
 
@@ -6309,15 +6349,15 @@ class WatchlistItem(BaseModel):
     setup: str = ""
     # ── v2 additions ──
     market: Literal["india", "us"] = "india"
-    bucket: str = "watching"
+    buckets: list[str] = Field(default_factory=lambda: ["watching"])  # multi-bucket
     conviction: int = Field(default=3, ge=1, le=5)
     tags: list[str] = Field(default_factory=list)
-    add_price: Optional[float] = None       # anchor price captured at add-time
-    add_date: Optional[str] = None          # YYYY-MM-DD (auto → today)
-    pair_symbol: Optional[str] = None       # cross-market pair (e.g. ADR)
+    add_price: Optional[float] = None
+    add_date: Optional[str] = None
+    pair_symbol: Optional[str] = None
     pair_market: Optional[Literal["india", "us"]] = None
-    source: Literal["manual", "auto_rs"] = "manual"  # provenance flag
-    priority: Optional[str] = None          # P1 / P2 / P3 (auto-computed)
+    source: Literal["manual", "auto_rs"] = "manual"
+    priority: Optional[str] = None
 
 
 class WatchlistItemUpdate(BaseModel):
@@ -6325,7 +6365,7 @@ class WatchlistItemUpdate(BaseModel):
     notes: Optional[str] = None
     alert_price: Optional[float] = None
     setup: Optional[str] = None
-    bucket: Optional[str] = None
+    buckets: Optional[list[str]] = None   # replaces old single bucket field
     conviction: Optional[int] = None
     tags: Optional[list[str]] = None
     add_price: Optional[float] = None
@@ -7047,12 +7087,8 @@ def rs_leaders_auto_add(req: Optional[RsLeaderAutoAddRequest] = None) -> dict:
             scan_rating = (sig.get("rating", "") if sig else "")
             in_scan = bool(sig)
 
-            # Smart bucket: prefer setup_* bucket from scan signal, else rs_leaders
-            best_bucket = _resolve_best_bucket(
-                scan_setup, is_ipo=row.get("is_ipo", False),
-                rs_score=row.get("rs_score", 0),
-            )
-            # Derive friendly setup name from scan
+            # Auto RS-35 stocks always land in rs_leaders only.
+            # Users can manually tick additional buckets (Breakouts, Pullbacks…) via the UI.
             best_setup = scan_setup.replace("_", " ").title() if scan_setup else ""
             # Compute conviction + priority
             _conviction = max(3, min(5, int((row["rs_score"] or 50) / 20)))
@@ -7067,10 +7103,11 @@ def rs_leaders_auto_add(req: Optional[RsLeaderAutoAddRequest] = None) -> dict:
                 if existing.get("source") == "manual":
                     skipped_manual.append(sym_u)
                     continue
-                # It's an auto entry we kept — refresh rank, bucket, priority
+                # It's an auto entry we kept — refresh rank, buckets, priority
                 existing["conviction"] = _conviction
                 existing["priority"] = _priority
-                existing["bucket"] = best_bucket
+                existing["buckets"] = ["rs_leaders"]  # always rs_leaders; user adds more via UI
+                existing.pop("bucket", None)  # remove legacy field
                 existing["setup"] = best_setup or existing.get("setup", "")
                 _tags = {"rs_leader", f"rs{row['rs_score']}", f"rank{row['rank']}"}
                 if row.get("is_ipo"):
@@ -7101,7 +7138,7 @@ def rs_leaders_auto_add(req: Optional[RsLeaderAutoAddRequest] = None) -> dict:
                 "symbol":      sym_u,
                 "market":      "india",
                 "name":        "",
-                "bucket":      best_bucket,
+                "buckets":     ["rs_leaders"],
                 "setup":       best_setup,
                 "conviction":  _conviction,
                 "tags":        _tags,
