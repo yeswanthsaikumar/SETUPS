@@ -1161,20 +1161,26 @@
         </div>
 
         <div style="display:grid;grid-template-columns:minmax(360px,420px) 1fr;gap:12px;align-items:start">
-          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px">
+          <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;max-height:calc(100vh - 140px);overflow-y:auto">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
               <b id="pwFormTitle" style="font-size:12px">New Winner Entry</b>
-              <span style="margin-left:auto;font-size:10px;color:var(--muted)">Trigger + Invalidation + Size first</span>
+              <span style="margin-left:auto;font-size:10px;color:var(--muted)">Snapshot · Logic · Lessons</span>
             </div>
             <input type="hidden" id="pwId">
+
+            <!-- ═════ IDENTITY ═════ -->
+            <div style="font-size:10px;font-weight:700;color:#0ea5e9;text-transform:uppercase;letter-spacing:.5px;margin:6px 0 4px">📌 Identity</div>
             <div class="j-form-row">
               <div class="j-fg"><span class="fl">Symbol *</span><input id="pwSymbol" class="fi" placeholder="MCX.NS"></div>
               <div class="j-fg"><span class="fl">Name</span><input id="pwName" class="fi" placeholder="MCX"></div>
             </div>
             <div class="j-form-row">
               <div class="j-fg"><span class="fl">Market</span><select id="pwMarket" class="fi"><option value="india">India</option><option value="us">US</option></select></div>
-              <div class="j-fg"><span class="fl">Timeframe</span><select id="pwTimeframe" class="fi"><option value="daily">Daily</option><option value="weekly">Weekly</option></select></div>
+              <div class="j-fg"><span class="fl">Timeframe</span><select id="pwTimeframe" class="fi"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="hourly">Hourly</option></select></div>
             </div>
+
+            <!-- ═════ SETUP ═════ -->
+            <div style="font-size:10px;font-weight:700;color:#0ea5e9;text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px">📐 Setup</div>
             <div class="j-form-row">
               <div class="j-fg"><span class="fl">Pattern</span><input id="pwPattern" class="fi" placeholder="bull_flag"></div>
               <div class="j-fg"><span class="fl">Variation</span><input id="pwVariation" class="fi" placeholder="tight"></div>
@@ -1183,41 +1189,127 @@
             <div class="j-form-row">
               <div class="j-fg"><span class="fl">Breakout Date</span><input id="pwBreakoutDate" class="fi" type="date"></div>
               <div class="j-fg"><span class="fl">Exit Date</span><input id="pwExitDate" class="fi" type="date"></div>
-              <div class="j-fg"><span class="fl">Realized R</span><input id="pwRealizedR" class="fi" type="number" step="0.1" placeholder="2.4"></div>
+              <div class="j-fg"><span class="fl">Grade</span><select id="pwGrade" class="fi"><option value="">—</option><option value="A+">A+</option><option value="A">A</option><option value="A-">A-</option><option value="B+">B+</option><option value="B">B</option><option value="C">C</option></select></div>
             </div>
+
+            <!-- ═════ PATTERN ANATOMY ═════ -->
+            <div style="font-size:10px;font-weight:700;color:#0ea5e9;text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px">🕯️ Pattern Anatomy</div>
+            <div class="j-fg" style="margin-bottom:8px"><span class="fl">Candle Structure (wicks, body, color)</span><textarea id="pwCandleStructure" class="fi" rows="3" placeholder="e.g. Breakout candle: tall green body 75%, tiny upper wick, no lower wick. Prior 12 sessions: small dojis, lower wicks holding 21EMA."></textarea></div>
+            <div class="j-fg" style="margin-bottom:8px"><span class="fl">Key Levels (pivot, stop, EMAs, targets)</span><textarea id="pwKeyLevels" class="fi" rows="2" placeholder="Pivot: 380. Stop: 348. 10EMA: 372. T1: 432. T2: 490."></textarea></div>
+            <div class="j-fg" style="margin-bottom:8px"><span class="fl">Confluence Factors</span><textarea id="pwConfluence" class="fi" rows="2" placeholder="Daily flag + Weekly cup + Monthly stage-2 + Sector leadership + Volume contraction"></textarea></div>
+
+            <!-- ═════ TRADE MATH ═════ -->
+            <div style="font-size:10px;font-weight:700;color:#0ea5e9;text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px">💰 Trade Math</div>
             <div class="j-form-row">
               <div class="j-fg"><span class="fl">Entry</span><input id="pwEntry" class="fi" type="number" step="0.01"></div>
               <div class="j-fg"><span class="fl">Stop</span><input id="pwStop" class="fi" type="number" step="0.01"></div>
               <div class="j-fg"><span class="fl">Exit</span><input id="pwExit" class="fi" type="number" step="0.01"></div>
+              <div class="j-fg"><span class="fl">Realized R</span><input id="pwRealizedR" class="fi" type="number" step="0.1" placeholder="2.4"></div>
             </div>
             <div class="j-form-row">
               <div class="j-fg"><span class="fl">RS Rank</span><input id="pwRsRank" class="fi" type="number" step="0.1"></div>
               <div class="j-fg"><span class="fl">ADR %</span><input id="pwAdr" class="fi" type="number" step="0.1"></div>
               <div class="j-fg"><span class="fl">Breakout Vol vs 20D</span><input id="pwBreakoutVol" class="fi" type="number" step="0.1"></div>
             </div>
+
+            <!-- ═════ FUNDAMENTALS ═════ -->
+            <div style="font-size:10px;font-weight:700;color:#0ea5e9;text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px">📊 Fundamentals</div>
             <div class="j-form-row">
               <div class="j-fg"><span class="fl">EPS YoY</span><input id="pwEps" class="fi" type="number" step="0.1"></div>
               <div class="j-fg"><span class="fl">Sales YoY</span><input id="pwSales" class="fi" type="number" step="0.1"></div>
               <div class="j-fg"><span class="fl">ROE %</span><input id="pwRoe" class="fi" type="number" step="0.1"></div>
               <div class="j-fg"><span class="fl">Debt/Equity</span><input id="pwDebt" class="fi" type="number" step="0.1"></div>
             </div>
-            <div class="j-fg" style="margin-bottom:8px"><span class="fl">Risk:Reward Logic</span><input id="pwRiskReward" class="fi" placeholder="1:3 to T2, trail for runner"></div>
-            <div class="j-fg" style="margin-bottom:8px"><span class="fl">Position Sizing Logic</span><input id="pwPositionSizing" class="fi" placeholder="Risk 0.75R, max 8% position"></div>
-            <div class="j-fg" style="margin-bottom:8px"><span class="fl">Entry Logic</span><textarea id="pwEntryLogic" class="fi" rows="2" placeholder="Breakout close above pivot with volume expansion"></textarea></div>
-            <div class="j-fg" style="margin-bottom:8px"><span class="fl">Exit Logic</span><textarea id="pwExitLogic" class="fi" rows="2" placeholder="Partial at 2R, trail below 10EMA"></textarea></div>
-            <div class="j-fg" style="margin-bottom:8px"><span class="fl">Trade Plan Notes</span><textarea id="pwTradePlan" class="fi" rows="2" placeholder="Setup + invalidation + management"></textarea></div>
-            <div class="j-fg" style="margin-bottom:8px"><span class="fl">Stock Story</span><textarea id="pwStory" class="fi" rows="2" placeholder="Catalyst and why trend could sustain"></textarea></div>
-            <div class="j-fg" style="margin-bottom:8px"><span class="fl">Study Notes</span><textarea id="pwNotes" class="fi" rows="2" placeholder="Lessons and pattern memory cues"></textarea></div>
+
+            <!-- ═════ TRADE LOGIC ═════ -->
+            <div style="font-size:10px;font-weight:700;color:#10b981;text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px">🎯 Trade Logic</div>
+            <div class="j-fg" style="margin-bottom:8px"><span class="fl">Entry Logic (when & how to enter)</span><textarea id="pwEntryLogic" class="fi" rows="2" placeholder="Buy on close above pivot with volume > 1.5x avg by 11:30 AM. Skip if breakout candle has > 30% upper wick."></textarea></div>
+            <div class="j-fg" style="margin-bottom:8px"><span class="fl">Exit Logic (when & how to exit)</span><textarea id="pwExitLogic" class="fi" rows="2" placeholder="Partial 25% at T1 (1.5R). Trail rest. Final exit on close below 10EMA on volume."></textarea></div>
+            <div class="j-fg" style="margin-bottom:8px"><span class="fl">🔥 Trailing Logic (stage-by-stage)</span><textarea id="pwTrailLogic" class="fi" rows="3" placeholder="Stage 1 (entry → 1R): hard stop, do not move. Stage 2 (1R → 2R): stop to break-even. Stage 3 (2R+): trail under prior swing low or 10EMA."></textarea></div>
+            <div class="j-fg" style="margin-bottom:8px"><span class="fl">🚀 Pyramid Logic (when & how to add)</span><textarea id="pwPyramidLogic" class="fi" rows="3" placeholder="Add #1 at next 3-day flag, 50% of initial size, stop under flag low. Add #2 on pocket-pivot, 25% of initial. No 3rd add if > 12% above 10EMA."></textarea></div>
+            <div class="j-fg" style="margin-bottom:8px"><span class="fl">Position Sizing Logic</span><textarea id="pwPositionSizing" class="fi" rows="2" placeholder="Risk 0.75% per trade. Stop distance × shares = risk budget. Cap 8% portfolio per name."></textarea></div>
+            <div class="j-fg" style="margin-bottom:8px"><span class="fl">Risk:Reward Plan</span><input id="pwRiskReward" class="fi" placeholder="1:3 to T2, trail for runner"></div>
+            <div class="j-fg" style="margin-bottom:8px"><span class="fl">Full Trade Plan</span><textarea id="pwTradePlan" class="fi" rows="2" placeholder="Buy X. Stop Y. T1 partial. Trail under EMA. Invalidation: ..."></textarea></div>
+
+            <!-- ═════ STORY & LESSONS ═════ -->
+            <div style="font-size:10px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px">📖 Story & Lessons</div>
+            <div class="j-fg" style="margin-bottom:8px"><span class="fl">Stock Story (catalyst & thesis)</span><textarea id="pwStory" class="fi" rows="3" placeholder="Why this name was working: catalyst, sector, fundamentals, narrative."></textarea></div>
+            <div class="j-fg" style="margin-bottom:8px"><span class="fl">⚠️ Mistakes to Avoid</span><textarea id="pwMistakes" class="fi" rows="2" placeholder="Don't chase entries above X. Don't exit on first red day. Don't add when extended."></textarea></div>
+            <div class="j-fg" style="margin-bottom:8px"><span class="fl">💡 Lessons Learned</span><textarea id="pwLessons" class="fi" rows="2" placeholder="What worked: ... What I'd do differently: ..."></textarea></div>
+            <div class="j-fg" style="margin-bottom:8px"><span class="fl">Pattern Memory Notes</span><textarea id="pwNotes" class="fi" rows="2" placeholder="Pattern memory cues for future recall."></textarea></div>
+
+            <!-- ═════ SNAPSHOTS ═════ -->
+            <div style="font-size:10px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px">📸 Snapshots (Paste/Drop Screenshots)</div>
+            <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Click a box then paste (<b>Cmd+V</b>) or drag/drop image files. Optional: keep using URL/path below each image.</div>
+
+            <input id="pwBeforeImg" type="hidden">
+            <input id="pwBreakoutImg" type="hidden">
+            <input id="pwExitImg" type="hidden">
+            <input id="pwAnnotatedImg" type="hidden">
+
             <div class="j-form-row">
-              <div class="j-fg"><span class="fl">Before Img Path</span><input id="pwBeforeImg" class="fi" placeholder="docs/assets/past-winners/MCX-20250502-before.png"></div>
-              <div class="j-fg"><span class="fl">Breakout Img Path</span><input id="pwBreakoutImg" class="fi" placeholder="docs/assets/past-winners/MCX-20250502-breakout.png"></div>
+              <div class="j-fg">
+                <span class="fl">Before (base)</span>
+                <div id="pwBeforeDrop" tabindex="0" style="border:1px dashed var(--border2);border-radius:8px;padding:8px;cursor:pointer;background:var(--bg3)">
+                  <img id="pwBeforePreview" alt="Before snapshot preview" style="display:none;width:100%;max-height:130px;object-fit:contain;border-radius:6px;background:#000">
+                  <div id="pwBeforeHint" style="font-size:10px;color:var(--muted);text-align:center;padding:10px 4px">Paste / Drop / Click to upload</div>
+                </div>
+                <input id="pwBeforeFile" type="file" accept="image/*" style="display:none">
+                <div style="display:flex;gap:6px;margin-top:6px">
+                  <button type="button" class="btn btn-outline btn-xs" onclick="pwPickImage('before')">Upload</button>
+                  <button type="button" class="btn btn-ghost btn-xs" onclick="pwClearImage('before')">Clear</button>
+                </div>
+                <input id="pwBeforeSource" class="fi" placeholder="Optional: /playbook-assets/... or https://..." style="margin-top:6px" onchange="pwSetImageSource('before')">
+              </div>
+
+              <div class="j-fg">
+                <span class="fl">Breakout</span>
+                <div id="pwBreakoutDrop" tabindex="0" style="border:1px dashed var(--border2);border-radius:8px;padding:8px;cursor:pointer;background:var(--bg3)">
+                  <img id="pwBreakoutPreview" alt="Breakout snapshot preview" style="display:none;width:100%;max-height:130px;object-fit:contain;border-radius:6px;background:#000">
+                  <div id="pwBreakoutHint" style="font-size:10px;color:var(--muted);text-align:center;padding:10px 4px">Paste / Drop / Click to upload</div>
+                </div>
+                <input id="pwBreakoutFile" type="file" accept="image/*" style="display:none">
+                <div style="display:flex;gap:6px;margin-top:6px">
+                  <button type="button" class="btn btn-outline btn-xs" onclick="pwPickImage('breakout')">Upload</button>
+                  <button type="button" class="btn btn-ghost btn-xs" onclick="pwClearImage('breakout')">Clear</button>
+                </div>
+                <input id="pwBreakoutSource" class="fi" placeholder="Optional: /playbook-assets/... or https://..." style="margin-top:6px" onchange="pwSetImageSource('breakout')">
+              </div>
             </div>
+
             <div class="j-form-row">
-              <div class="j-fg"><span class="fl">Exit Img Path</span><input id="pwExitImg" class="fi" placeholder="docs/assets/past-winners/MCX-20250502-exit.png"></div>
-              <div class="j-fg"><span class="fl">Annotated Img Path</span><input id="pwAnnotatedImg" class="fi" placeholder="docs/assets/past-winners/MCX-20250502-annotated.png"></div>
+              <div class="j-fg">
+                <span class="fl">Exit</span>
+                <div id="pwExitDrop" tabindex="0" style="border:1px dashed var(--border2);border-radius:8px;padding:8px;cursor:pointer;background:var(--bg3)">
+                  <img id="pwExitPreview" alt="Exit snapshot preview" style="display:none;width:100%;max-height:130px;object-fit:contain;border-radius:6px;background:#000">
+                  <div id="pwExitHint" style="font-size:10px;color:var(--muted);text-align:center;padding:10px 4px">Paste / Drop / Click to upload</div>
+                </div>
+                <input id="pwExitFile" type="file" accept="image/*" style="display:none">
+                <div style="display:flex;gap:6px;margin-top:6px">
+                  <button type="button" class="btn btn-outline btn-xs" onclick="pwPickImage('exit')">Upload</button>
+                  <button type="button" class="btn btn-ghost btn-xs" onclick="pwClearImage('exit')">Clear</button>
+                </div>
+                <input id="pwExitSource" class="fi" placeholder="Optional: /playbook-assets/... or https://..." style="margin-top:6px" onchange="pwSetImageSource('exit')">
+              </div>
+
+              <div class="j-fg">
+                <span class="fl">Annotated</span>
+                <div id="pwAnnotatedDrop" tabindex="0" style="border:1px dashed var(--border2);border-radius:8px;padding:8px;cursor:pointer;background:var(--bg3)">
+                  <img id="pwAnnotatedPreview" alt="Annotated snapshot preview" style="display:none;width:100%;max-height:130px;object-fit:contain;border-radius:6px;background:#000">
+                  <div id="pwAnnotatedHint" style="font-size:10px;color:var(--muted);text-align:center;padding:10px 4px">Paste / Drop / Click to upload</div>
+                </div>
+                <input id="pwAnnotatedFile" type="file" accept="image/*" style="display:none">
+                <div style="display:flex;gap:6px;margin-top:6px">
+                  <button type="button" class="btn btn-outline btn-xs" onclick="pwPickImage('annotated')">Upload</button>
+                  <button type="button" class="btn btn-ghost btn-xs" onclick="pwClearImage('annotated')">Clear</button>
+                </div>
+                <input id="pwAnnotatedSource" class="fi" placeholder="Optional: /playbook-assets/... or https://..." style="margin-top:6px" onchange="pwSetImageSource('annotated')">
+              </div>
             </div>
             <div class="j-fg" style="margin-bottom:8px"><span class="fl">Tags (comma separated)</span><input id="pwTags" class="fi" placeholder="vcp, rs-leader, stage-2"></div>
-            <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:10px">
+
+            <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" onclick="seedSampleWinners()" title="Load sample winners">🌱 Load Samples</button>
               <button class="btn btn-outline btn-sm" onclick="prefillPastWinner()">⚡ Auto Prefill</button>
               <button class="btn btn-primary btn-sm" onclick="savePastWinner()">💾 Save Winner</button>
             </div>
@@ -1234,6 +1326,23 @@
             </table>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- ═════ PAST WINNER DETAIL VIEWER MODAL ═════ -->
+    <div id="pwDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;overflow-y:auto" onclick="if(event.target===this)closePwDetail()">
+      <div style="max-width:1100px;margin:30px auto;background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:0 20px 80px rgba(0,0,0,.6)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:10px">
+          <div>
+            <div id="pwDetTitle" style="font-size:20px;font-weight:800"></div>
+            <div id="pwDetSubtitle" style="font-size:11px;color:var(--muted);margin-top:2px"></div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-outline btn-sm" onclick="editPastWinnerFromDetail()">✏ Edit</button>
+            <button class="btn btn-ghost btn-sm" onclick="closePwDetail()">✕ Close</button>
+          </div>
+        </div>
+        <div id="pwDetBody"></div>
       </div>
     </div>
 
@@ -2116,9 +2225,10 @@ function renderPastWinners() {
     const storyShort = story.length > 88 ? story.slice(0, 88) + '…' : story;
     const safeStory = storyShort.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const safeStoryTitle = story.replace(/"/g, '&quot;');
-    const timeframeTag = e.timeframe ? '<span style="font-size:9px;color:var(--muted);margin-left:4px">[' + e.timeframe + ']</span>' : '';
-    return '<tr>' +
-      '<td><b>' + (e.symbol || '—') + '</b>' + timeframeTag + '<div style="font-size:10px;color:var(--muted)">' + (e.name || '') + '</div></td>' +
+    const tfBadge = e.timeframe ? '<span style="font-size:9px;color:var(--muted);margin-left:4px">[' + e.timeframe + ']</span>' : '';
+    const gradeBadge = e.grade ? '<span style="font-size:9px;font-weight:700;color:#10b981;margin-left:4px;background:#10b98122;padding:1px 5px;border-radius:3px">' + e.grade + '</span>' : '';
+    return '<tr style="cursor:pointer" ondblclick="viewPastWinner(\'' + e.id + '\')">' +
+      '<td><b>' + (e.symbol || '—') + '</b>' + tfBadge + gradeBadge + '<div style="font-size:10px;color:var(--muted)">' + (e.name || '') + '</div></td>' +
       '<td>' + (e.pattern || '—') + '</td>' +
       '<td>' + (e.variation || '—') + '</td>' +
       '<td>' + (e.market_regime || '—') + '</td>' +
@@ -2128,8 +2238,9 @@ function renderPastWinners() {
       '<td>' + (e.breakout_date || '—') + '</td>' +
       '<td title="' + safeStoryTitle + '">' + safeStory + '</td>' +
       '<td style="white-space:nowrap">' +
-        '<button class="btn btn-outline btn-xs" onclick="editPastWinner(\'' + e.id + '\')">Edit</button> ' +
-        '<button class="btn btn-red btn-xs" onclick="deletePastWinner(\'' + e.id + '\')">Delete</button>' +
+        '<button class="btn btn-primary btn-xs" onclick="event.stopPropagation();viewPastWinner(\'' + e.id + '\')" title="View full snapshot">👁 View</button> ' +
+        '<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();editPastWinner(\'' + e.id + '\')">Edit</button> ' +
+        '<button class="btn btn-red btn-xs" onclick="event.stopPropagation();deletePastWinner(\'' + e.id + '\')">Delete</button>' +
       '</td>' +
     '</tr>';
   }).join('');
@@ -2139,12 +2250,14 @@ function clearPastWinnerForm() {
   const ids = [
     'pwId','pwSymbol','pwName','pwPattern','pwVariation','pwRegime','pwBreakoutDate','pwExitDate','pwRealizedR',
     'pwEntry','pwStop','pwExit','pwRsRank','pwAdr','pwBreakoutVol','pwEps','pwSales','pwRoe','pwDebt','pwRiskReward',
-    'pwPositionSizing','pwEntryLogic','pwExitLogic','pwTradePlan','pwStory','pwNotes','pwBeforeImg','pwBreakoutImg',
+    'pwPositionSizing','pwEntryLogic','pwExitLogic','pwTrailLogic','pwPyramidLogic','pwCandleStructure','pwKeyLevels',
+    'pwConfluence','pwMistakes','pwLessons','pwGrade','pwTradePlan','pwStory','pwNotes','pwBeforeImg','pwBreakoutImg',
     'pwExitImg','pwAnnotatedImg','pwTags'
   ];
   ids.forEach(id => _pwSet(id, ''));
   _pwSet('pwMarket', 'india');
   _pwSet('pwTimeframe', 'daily');
+  _pwRefreshAllImageSlots();
   const title = document.getElementById('pwFormTitle');
   if (title) title.textContent = 'New Winner Entry';
 }
@@ -2160,6 +2273,7 @@ function editPastWinner(id) {
   _pwSet('pwPattern', e.pattern || '');
   _pwSet('pwVariation', e.variation || '');
   _pwSet('pwRegime', e.market_regime || '');
+  _pwSet('pwGrade', e.grade || '');
   _pwSet('pwBreakoutDate', e.breakout_date || '');
   _pwSet('pwExitDate', e.exit_date || '');
   _pwSet('pwRealizedR', e.realized_r ?? '');
@@ -2170,6 +2284,13 @@ function editPastWinner(id) {
   _pwSet('pwPositionSizing', e.position_sizing || '');
   _pwSet('pwEntryLogic', e.entry_logic || '');
   _pwSet('pwExitLogic', e.exit_logic || '');
+  _pwSet('pwTrailLogic', e.trail_logic || '');
+  _pwSet('pwPyramidLogic', e.pyramid_logic || '');
+  _pwSet('pwCandleStructure', e.candle_structure || '');
+  _pwSet('pwKeyLevels', e.key_levels || '');
+  _pwSet('pwConfluence', e.confluence_factors || '');
+  _pwSet('pwMistakes', e.mistakes_to_avoid || '');
+  _pwSet('pwLessons', e.lessons_learned || '');
   _pwSet('pwTradePlan', e.trade_plan || '');
   _pwSet('pwRsRank', e.rs_rank ?? '');
   _pwSet('pwAdr', e.adr_pct ?? '');
@@ -2178,15 +2299,19 @@ function editPastWinner(id) {
   _pwSet('pwSales', e.sales_growth_yoy ?? '');
   _pwSet('pwRoe', e.roe_percent ?? '');
   _pwSet('pwDebt', e.debt_to_equity ?? '');
-  _pwSet('pwStory', e.story || '');
+  _pwSet('pwStory', typeof e.story === 'string' ? e.story : '');
   _pwSet('pwNotes', e.notes || '');
   _pwSet('pwBeforeImg', e.image_paths?.before || '');
   _pwSet('pwBreakoutImg', e.image_paths?.breakout || '');
   _pwSet('pwExitImg', e.image_paths?.exit || '');
   _pwSet('pwAnnotatedImg', e.image_paths?.annotated || '');
+  _pwRefreshAllImageSlots();
   _pwSet('pwTags', (e.tags || []).join(', '));
   const title = document.getElementById('pwFormTitle');
   if (title) title.textContent = 'Edit Winner: ' + (e.symbol || '');
+  // Scroll form to top so user sees what's being edited
+  const formCol = document.querySelector('#page-winners [style*="max-height"]');
+  if (formCol) formCol.scrollTop = 0;
 }
 
 async function savePastWinner() {
@@ -2204,6 +2329,7 @@ async function savePastWinner() {
     pattern: _pwText('pwPattern'),
     variation: _pwText('pwVariation'),
     market_regime: _pwText('pwRegime'),
+    grade: _pwText('pwGrade'),
     breakout_date: _pwText('pwBreakoutDate') || null,
     exit_date: _pwText('pwExitDate') || null,
     entry_price: _pwNum('pwEntry'),
@@ -2215,6 +2341,13 @@ async function savePastWinner() {
     trade_plan: _pwText('pwTradePlan'),
     entry_logic: _pwText('pwEntryLogic'),
     exit_logic: _pwText('pwExitLogic'),
+    trail_logic: _pwText('pwTrailLogic'),
+    pyramid_logic: _pwText('pwPyramidLogic'),
+    candle_structure: _pwText('pwCandleStructure'),
+    key_levels: _pwText('pwKeyLevels'),
+    confluence_factors: _pwText('pwConfluence'),
+    mistakes_to_avoid: _pwText('pwMistakes'),
+    lessons_learned: _pwText('pwLessons'),
     rs_rank: _pwNum('pwRsRank'),
     adr_pct: _pwNum('pwAdr'),
     breakout_volume_vs20d: _pwNum('pwBreakoutVol'),
@@ -2292,6 +2425,303 @@ async function prefillPastWinner() {
     toast('Prefill complete for ' + symbol, 'ok');
   } catch (e) {
     toast('Prefill failed: ' + e.message, 'error');
+  }
+}
+
+// ── Winner Detail Snapshot Viewer ─────────────────────────────────────────
+let _pwViewingId = null;
+
+function _pwEsc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function _pwAssetUrl(path) {
+  const raw = String(path || '').trim();
+  if (!raw) return '';
+  if (/^(https?:)?\/\//i.test(raw) || raw.startsWith('data:')) return raw;
+  if (raw.startsWith('/playbook-assets/') || raw.startsWith('/ui/') || raw.startsWith('/reports/')) return raw;
+  if (raw.startsWith('docs/assets/')) return '/playbook-assets/' + raw.slice('docs/assets/'.length);
+  if (raw.startsWith('/docs/assets/')) return '/playbook-assets/' + raw.slice('/docs/assets/'.length);
+  if (raw.startsWith('./assets/')) return '/playbook-assets/' + raw.slice('./assets/'.length);
+  if (raw.startsWith('assets/')) return '/playbook-assets/' + raw.slice('assets/'.length);
+  if (raw.startsWith('past-winners/')) return '/playbook-assets/' + raw;
+  return raw.startsWith('/') ? raw : '/' + raw;
+}
+
+const _PW_IMG_SLOT_MAP = {
+  before:    {field: 'pwBeforeImg',    source: 'pwBeforeSource',    file: 'pwBeforeFile',    drop: 'pwBeforeDrop',    preview: 'pwBeforePreview',    hint: 'pwBeforeHint'},
+  breakout:  {field: 'pwBreakoutImg',  source: 'pwBreakoutSource',  file: 'pwBreakoutFile',  drop: 'pwBreakoutDrop',  preview: 'pwBreakoutPreview',  hint: 'pwBreakoutHint'},
+  exit:      {field: 'pwExitImg',      source: 'pwExitSource',      file: 'pwExitFile',      drop: 'pwExitDrop',      preview: 'pwExitPreview',      hint: 'pwExitHint'},
+  annotated: {field: 'pwAnnotatedImg', source: 'pwAnnotatedSource', file: 'pwAnnotatedFile', drop: 'pwAnnotatedDrop', preview: 'pwAnnotatedPreview', hint: 'pwAnnotatedHint'},
+};
+
+function _pwGetImgCfg(slot) {
+  return _PW_IMG_SLOT_MAP[String(slot || '').toLowerCase()] || null;
+}
+
+function _pwSetImgValue(slot, val) {
+  const cfg = _pwGetImgCfg(slot); if (!cfg) return;
+  _pwSet(cfg.field, val || '');
+}
+
+function _pwGetImgValue(slot) {
+  const cfg = _pwGetImgCfg(slot); if (!cfg) return '';
+  return _pwText(cfg.field);
+}
+
+function _pwRefreshImageSlot(slot) {
+  const cfg = _pwGetImgCfg(slot); if (!cfg) return;
+  const raw = _pwGetImgValue(slot);
+  const preview = document.getElementById(cfg.preview);
+  const hint = document.getElementById(cfg.hint);
+  const sourceInput = document.getElementById(cfg.source);
+  if (!preview || !hint) return;
+
+  if (!raw) {
+    preview.style.display = 'none';
+    preview.removeAttribute('src');
+    hint.style.display = 'block';
+    hint.textContent = 'Paste / Drop / Click to upload';
+    if (sourceInput) sourceInput.value = '';
+    return;
+  }
+
+  const src = _pwAssetUrl(raw);
+  preview.src = src;
+  preview.style.display = 'block';
+  hint.style.display = 'none';
+  if (sourceInput && !raw.startsWith('data:')) sourceInput.value = raw;
+  if (sourceInput && raw.startsWith('data:')) sourceInput.value = '';
+}
+
+function _pwRefreshAllImageSlots() {
+  Object.keys(_PW_IMG_SLOT_MAP).forEach(_pwRefreshImageSlot);
+}
+
+function _pwReadImageAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Could not read image'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function _pwAttachImageFile(slot, file) {
+  if (!file) return;
+  if (!String(file.type || '').startsWith('image/')) {
+    toast('Please choose an image file', 'error');
+    return;
+  }
+  // Keep JSON payload manageable while still allowing direct screenshot paste.
+  if (file.size > 8 * 1024 * 1024) {
+    toast('Image too large (>8MB). Use a smaller screenshot.', 'error');
+    return;
+  }
+  try {
+    const dataUrl = await _pwReadImageAsDataUrl(file);
+    _pwSetImgValue(slot, dataUrl);
+    _pwRefreshImageSlot(slot);
+    toast('Image attached to ' + slot, 'ok');
+  } catch (e) {
+    toast('Failed to attach image: ' + e.message, 'error');
+  }
+}
+
+function pwPickImage(slot) {
+  const cfg = _pwGetImgCfg(slot); if (!cfg) return;
+  const fileInput = document.getElementById(cfg.file);
+  if (fileInput) fileInput.click();
+}
+
+function pwClearImage(slot) {
+  const cfg = _pwGetImgCfg(slot); if (!cfg) return;
+  _pwSet(cfg.field, '');
+  const f = document.getElementById(cfg.file);
+  if (f) f.value = '';
+  _pwRefreshImageSlot(slot);
+}
+
+function pwSetImageSource(slot) {
+  const cfg = _pwGetImgCfg(slot); if (!cfg) return;
+  const srcInput = document.getElementById(cfg.source);
+  _pwSet(cfg.field, (srcInput?.value || '').trim());
+  _pwRefreshImageSlot(slot);
+}
+
+function _pwWireImageSlot(slot) {
+  const cfg = _pwGetImgCfg(slot); if (!cfg) return;
+  const drop = document.getElementById(cfg.drop);
+  const fileInput = document.getElementById(cfg.file);
+  if (!drop || !fileInput) return;
+
+  drop.addEventListener('click', () => fileInput.click());
+  drop.addEventListener('dragover', e => {
+    e.preventDefault();
+    drop.style.borderColor = 'var(--cyan)';
+    drop.style.background = '#08334433';
+  });
+  drop.addEventListener('dragleave', () => {
+    drop.style.borderColor = 'var(--border2)';
+    drop.style.background = 'var(--bg3)';
+  });
+  drop.addEventListener('drop', e => {
+    e.preventDefault();
+    drop.style.borderColor = 'var(--border2)';
+    drop.style.background = 'var(--bg3)';
+    const file = e.dataTransfer?.files?.[0];
+    if (file) _pwAttachImageFile(slot, file);
+  });
+  drop.addEventListener('paste', e => {
+    const items = e.clipboardData?.items || [];
+    for (const it of items) {
+      if (String(it.type || '').startsWith('image/')) {
+        const file = it.getAsFile();
+        if (file) {
+          e.preventDefault();
+          _pwAttachImageFile(slot, file);
+          break;
+        }
+      }
+    }
+  });
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files?.[0];
+    if (file) _pwAttachImageFile(slot, file);
+  });
+}
+
+function _pwInitImageSlots() {
+  Object.keys(_PW_IMG_SLOT_MAP).forEach(_pwWireImageSlot);
+  _pwRefreshAllImageSlots();
+}
+
+function _pwImgBlock(label, path) {
+  if (!path) return '';
+  const original = String(path || '');
+  const src = _pwAssetUrl(original);
+  const safe = _pwEsc(original);
+  const safeSrc = _pwEsc(src);
+  return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px">' +
+         '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">' + label + '</div>' +
+         '<a href="' + safeSrc + '" target="_blank" title="Open full size">' +
+         '<img src="' + safeSrc + '" alt="' + _pwEsc(label + ' snapshot') + '" style="width:100%;border-radius:6px;display:block;max-height:280px;object-fit:contain;background:#000" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">' +
+         '<div style="display:none;color:var(--muted);font-size:10px;padding:30px;text-align:center;background:var(--bg3);border-radius:6px">📷 ' + safe + '<br><span style="font-size:9px">(image not found)</span></div>' +
+         '</a></div>';
+}
+
+function _pwTextBlock(label, text, color) {
+  if (!text) return '';
+  const c = color || 'var(--text)';
+  return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">' +
+         '<div style="font-size:10px;font-weight:700;color:' + c + ';text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">' + label + '</div>' +
+         '<div style="font-size:12px;line-height:1.55;color:var(--text);white-space:pre-wrap">' + _pwEsc(text) + '</div>' +
+         '</div>';
+}
+
+function _pwStat(label, value, color) {
+  const c = color || 'var(--text)';
+  return '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;min-width:90px">' +
+         '<div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">' + label + '</div>' +
+         '<div style="font-size:14px;font-weight:800;color:' + c + ';margin-top:2px">' + (value != null && value !== '' ? value : '—') + '</div>' +
+         '</div>';
+}
+
+function viewPastWinner(id) {
+  const e = pastWinners.find(x => String(x.id) === String(id));
+  if (!e) { toast('Entry not found', 'error'); return; }
+  _pwViewingId = id;
+
+  const title = (e.symbol || '—') + (e.name ? ' · ' + e.name : '');
+  const subtitleBits = [];
+  if (e.timeframe) subtitleBits.push(e.timeframe.toUpperCase());
+  if (e.pattern) subtitleBits.push(e.pattern + (e.variation ? ' (' + e.variation + ')' : ''));
+  if (e.market_regime) subtitleBits.push(e.market_regime);
+  if (e.breakout_date) subtitleBits.push('Entered ' + e.breakout_date);
+  if (e.exit_date) subtitleBits.push('Exited ' + e.exit_date);
+  if (e.grade) subtitleBits.push('Grade ' + e.grade);
+  document.getElementById('pwDetTitle').textContent = title;
+  document.getElementById('pwDetSubtitle').textContent = subtitleBits.join(' · ');
+
+  const rrColor = (e.realized_r || 0) >= 2 ? '#10b981' : (e.realized_r || 0) >= 1 ? '#f59e0b' : 'var(--red)';
+  const stats =
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">' +
+      _pwStat('Entry', e.entry_price != null ? e.entry_price : '—') +
+      _pwStat('Stop', e.stop_price != null ? e.stop_price : '—', '#f87171') +
+      _pwStat('Exit', e.exit_price != null ? e.exit_price : '—') +
+      _pwStat('Realized R', e.realized_r != null ? e.realized_r.toFixed(2) + 'R' : '—', rrColor) +
+      _pwStat('RS Rank', e.rs_rank != null ? e.rs_rank : '—') +
+      _pwStat('ADR %', e.adr_pct != null ? e.adr_pct + '%' : '—') +
+      _pwStat('Vol vs 20D', e.breakout_volume_vs20d != null ? e.breakout_volume_vs20d + 'x' : '—') +
+      _pwStat('EPS YoY', e.eps_growth_yoy != null ? e.eps_growth_yoy + '%' : '—') +
+      _pwStat('Sales YoY', e.sales_growth_yoy != null ? e.sales_growth_yoy + '%' : '—') +
+      _pwStat('ROE %', e.roe_percent != null ? e.roe_percent + '%' : '—') +
+      _pwStat('D/E', e.debt_to_equity != null ? e.debt_to_equity : '—') +
+    '</div>';
+
+  const imgs = e.image_paths || {};
+  const hasImages = imgs.before || imgs.breakout || imgs.exit || imgs.annotated;
+  const imgBlock = hasImages ? (
+    '<div style="margin-bottom:14px">' +
+    '<div style="font-size:11px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📸 Pattern Snapshots</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px">' +
+      _pwImgBlock('Before / Base', imgs.before) +
+      _pwImgBlock('Breakout', imgs.breakout) +
+      _pwImgBlock('Exit', imgs.exit) +
+      _pwImgBlock('Annotated', imgs.annotated) +
+    '</div></div>'
+  ) : '';
+
+  const story = typeof e.story === 'string' ? e.story : '';
+  const tagsHtml = (e.tags && e.tags.length) ?
+    '<div style="margin-bottom:12px">' + e.tags.map(t => '<span style="display:inline-block;background:#0ea5e922;color:#0ea5e9;padding:3px 8px;border-radius:4px;font-size:10px;margin:2px 4px 2px 0;font-weight:600">#' + _pwEsc(t) + '</span>').join('') + '</div>'
+    : '';
+
+  const sections =
+    _pwTextBlock('🎯 Entry Logic', e.entry_logic, '#10b981') +
+    _pwTextBlock('🚪 Exit Logic', e.exit_logic, '#10b981') +
+    _pwTextBlock('🔥 Trailing Logic', e.trail_logic, '#f59e0b') +
+    _pwTextBlock('🚀 Pyramid Logic', e.pyramid_logic, '#a78bfa') +
+    _pwTextBlock('💰 Position Sizing', e.position_sizing, '#0ea5e9') +
+    _pwTextBlock('⚖️ Risk:Reward', e.risk_reward, '#0ea5e9') +
+    _pwTextBlock('📐 Full Trade Plan', e.trade_plan, '#0ea5e9') +
+    _pwTextBlock('🕯️ Candle Structure', e.candle_structure) +
+    _pwTextBlock('📍 Key Levels', e.key_levels) +
+    _pwTextBlock('🔗 Confluence Factors', e.confluence_factors) +
+    _pwTextBlock('📖 Stock Story', story, '#f59e0b') +
+    _pwTextBlock('⚠️ Mistakes to Avoid', e.mistakes_to_avoid, '#f87171') +
+    _pwTextBlock('💡 Lessons Learned', e.lessons_learned, '#10b981') +
+    _pwTextBlock('📝 Pattern Memory Notes', e.notes);
+
+  document.getElementById('pwDetBody').innerHTML = stats + imgBlock + tagsHtml + sections;
+  document.getElementById('pwDetailModal').style.display = 'block';
+}
+
+function closePwDetail() {
+  document.getElementById('pwDetailModal').style.display = 'none';
+  _pwViewingId = null;
+}
+
+function editPastWinnerFromDetail() {
+  if (!_pwViewingId) return;
+  const id = _pwViewingId;
+  closePwDetail();
+  editPastWinner(id);
+}
+
+async function seedSampleWinners() {
+  if (!confirm('Load 4 sample winners (MTAR, NVDA, TATAPOWER, MCX)?\n\nExisting entries are kept. Already-seeded samples are skipped.')) return;
+  try {
+    const r = await fetch(API + '/api/past-winners/seed-samples', {method: 'POST'});
+    const data = await r.json();
+    if (!r.ok || !data.ok) throw new Error(data.detail || ('HTTP ' + r.status));
+    const added = (data.added || []).length;
+    const skipped = (data.skipped || []).length;
+    toast('Samples loaded: ' + added + ' added' + (skipped ? ', ' + skipped + ' already existed' : ''), 'ok');
+    await loadPastWinners();
+  } catch (e) {
+    toast('Failed to load samples: ' + e.message, 'error');
   }
 }
 
@@ -4094,10 +4524,11 @@ function openSSLightbox(i) {
   if (lb && img && _jScreenshots[i]) { img.src = _jScreenshots[i]; lb.classList.add('open'); }
 }
 
-// Drag & drop support
+// Drag & drop & paste support for journal screenshots
 document.addEventListener('DOMContentLoaded', () => {
   const area = document.getElementById('jScreenshotArea');
   if (!area) return;
+
   area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('dragover'); });
   area.addEventListener('dragleave', () => area.classList.remove('dragover'));
   area.addEventListener('drop', e => {
@@ -4110,6 +4541,29 @@ document.addEventListener('DOMContentLoaded', () => {
       reader.readAsDataURL(file);
     });
   });
+
+  // ── Paste support for journal screenshots (Cmd+V / Ctrl+V) ──
+  area.addEventListener('paste', e => {
+    e.preventDefault();
+    const items = e.clipboardData?.items;
+    if (!items) { toast('No image in clipboard', 'warn'); return; }
+
+    let foundImage = false;
+    Array.from(items).forEach(item => {
+      if (item.type.startsWith('image/')) {
+        foundImage = true;
+        const file = item.getAsFile();
+        if (file.size > 5*1024*1024) { toast('Image too large (max 5MB)', 'error'); return; }
+        const reader = new FileReader();
+        reader.onload = ev => { _jScreenshots.push(ev.target.result); _updateSSUI(); toast('Screenshot added ✓', 'success'); };
+        reader.readAsDataURL(file);
+      }
+    });
+    if (!foundImage) toast('No image found in clipboard', 'warn');
+  });
+
+  // Make the area focusable for keyboard events
+  area.setAttribute('tabindex', '0');
 });
 
 // ── Templates ──
@@ -5549,10 +6003,11 @@ document.addEventListener('DOMContentLoaded', () => {
   startAutoRefresh();
   startCacheStatusPoller();
   document.getElementById('jDate').value = new Date().toISOString().slice(0, 10);
+  _pwInitImageSlots();
 });
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeDetail(); closeAddModal(); closeUpdateModal(); closeWLModal(); closePeModal(); }
+  if (e.key === 'Escape') { closeDetail(); closeAddModal(); closeUpdateModal(); closeWLModal(); closePeModal(); closePwDetail(); }
   if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openAddModal(); }
 });
 
@@ -7318,8 +7773,156 @@ function renderEduResources() {
       + '<button onclick="event.stopPropagation();if(confirm(\'Remove this resource?\'))deleteEduResource(\'' + r.id + '\')" style="background:transparent;border:1px solid #ef444444;color:#f87171;cursor:pointer;font-size:10px;padding:3px 8px;border-radius:5px;font-weight:600;" title="Delete">🗑</button>'
       + '</div>'
       + '</div>';
-  }).join('');
+   }).join('');
 }
+
+// ── Playbook Past Winner: Screenshot paste & drop handling ──
+function setupPlaybookImagePaste() {
+  const areas = ['pwBefore', 'pwBreakout', 'pwExit', 'pwAnnotated'];
+
+  areas.forEach(prefix => {
+    const dropZone = document.getElementById(prefix + 'Drop');
+    const fileInput = document.getElementById(prefix + 'File');
+    const preview = document.getElementById(prefix + 'Preview');
+    const hint = document.getElementById(prefix + 'Hint');
+    const imgInput = document.getElementById(prefix + 'Img');
+
+    if (!dropZone || !fileInput || !preview || !hint || !imgInput) return;
+
+    // ── Paste handler: Ctrl+V / Cmd+V ──
+    dropZone.addEventListener('paste', async (e) => {
+      e.preventDefault();
+      const items = e.clipboardData?.items || [];
+      for (let item of items) {
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            await processImageFile(file, prefix);
+            return;
+          }
+        }
+      }
+      toast('No image found in clipboard', 'warn');
+    });
+
+    // ── Drag & drop handler ──
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.style.background = 'var(--border2)';
+      dropZone.style.borderColor = 'var(--cyan)';
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.style.background = 'var(--bg3)';
+      dropZone.style.borderColor = 'var(--border2)';
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.style.background = 'var(--bg3)';
+      dropZone.style.borderColor = 'var(--border2)';
+
+      const files = e.dataTransfer?.files || [];
+      for (let file of files) {
+        if (file.type.startsWith('image/')) {
+          processImageFile(file, prefix);
+          return;
+        }
+      }
+      toast('Please drop an image file', 'warn');
+    });
+
+    // ── Click to open file picker ──
+    dropZone.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    // ── File input change handler ──
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files && fileInput.files[0]) {
+        processImageFile(fileInput.files[0], prefix);
+      }
+    });
+  });
+}
+
+async function processImageFile(file, prefix) {
+  if (!file.type.startsWith('image/')) {
+    toast('Please select an image file', 'warn');
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    toast('Image too large (max 5MB)', 'error');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    const preview = document.getElementById(prefix + 'Preview');
+    const hint = document.getElementById(prefix + 'Hint');
+    const imgInput = document.getElementById(prefix + 'Img');
+
+    if (preview && hint && imgInput) {
+      preview.src = dataUrl;
+      preview.style.display = 'block';
+      hint.style.display = 'none';
+      imgInput.value = dataUrl;
+      toast('Image added ✓', 'success');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function pwPickImage(type) {
+  const fileInput = document.getElementById('pw' + type.charAt(0).toUpperCase() + type.slice(1) + 'File');
+  if (fileInput) fileInput.click();
+}
+
+function pwClearImage(type) {
+  const prefix = 'pw' + type.charAt(0).toUpperCase() + type.slice(1);
+  const preview = document.getElementById(prefix + 'Preview');
+  const hint = document.getElementById(prefix + 'Hint');
+  const imgInput = document.getElementById(prefix + 'Img');
+  const fileInput = document.getElementById(prefix + 'File');
+
+  if (preview) { preview.src = ''; preview.style.display = 'none'; }
+  if (hint) hint.style.display = 'block';
+  if (imgInput) imgInput.value = '';
+  if (fileInput) fileInput.value = '';
+  toast('Image cleared', 'info');
+}
+
+function pwSetImageSource(type) {
+  // This allows setting image from URL in the input field below each image
+  const prefix = 'pw' + type.charAt(0).toUpperCase() + type.slice(1);
+  const sourceInput = document.getElementById(prefix + 'Source');
+  const preview = document.getElementById(prefix + 'Preview');
+  const hint = document.getElementById(prefix + 'Hint');
+  const imgInput = document.getElementById(prefix + 'Img');
+
+  if (!sourceInput || !preview) return;
+
+  const url = sourceInput.value.trim();
+  if (!url) {
+    // If cleared, remove the image
+    preview.style.display = 'none';
+    hint.style.display = 'block';
+    imgInput.value = '';
+    return;
+  }
+
+  preview.src = url;
+  preview.style.display = 'block';
+  hint.style.display = 'none';
+  imgInput.value = url;
+}
+
+// Initialize paste handlers on DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+  setupPlaybookImagePaste();
+});
 
 </script>
 <!-- Always-on wisdom/reminder layer: QOTD banner + page-contextual nudges -->

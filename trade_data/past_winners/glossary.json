@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-02",
+  "patterns": [
+    {
+      "key": "bull_flag",
+      "name": "Bull Flag",
+      "thesis": "Strong impulse, controlled pullback, then continuation.",
+      "bestConditions": [
+        "Stage 2 uptrend",
+        "Volume dry-up in flag",
+        "Market and sector both supportive"
+      ],
+      "avoidConditions": [
+        "Deep pullback with heavy sell volume",
+        "Late-stage extended name",
+        "Weak benchmark breadth"
+      ],
+      "entryRule": "Break flag high with relative volume expansion.",
+      "stopRule": "Below flag low or last tight pivot.",
+      "reviewFields": [
+        "RS rank",
+        "ADR",
+        "Breakout volume vs 20D",
+        "Close quality"
+      ],
+      "stats": {
+        "samples": 0,
+        "winRatePercent": 0.0,
+        "avgR": 0.0,
+        "medianHoldDays": 0
+      }
+    },
+    {
+      "key": "ascending_triangle",
+      "name": "Ascending Triangle",
+      "thesis": "Repeated demand at higher lows breaks static resistance.",
+      "bestConditions": [
+        "Clean flat resistance",
+        "Higher lows with tighter ranges",
+        "Rising RS line"
+      ],
+      "avoidConditions": [
+        "Too many failed top-side breaks",
+        "Upper wick distribution",
+        "Weak volume breakout"
+      ],
+      "entryRule": "Break and hold above resistance pivot.",
+      "stopRule": "Below last higher low.",
+      "reviewFields": [
+        "Pivot tests count",
+        "RS vs benchmark",
+        "Volume compression",
+        "Follow-through day"
+      ],
+      "stats": {
+        "samples": 0,
+        "winRatePercent": 0.0,
+        "avgR": 0.0,
+        "medianHoldDays": 0
+      }
+    },
+    {
+      "key": "cup_handle",
+      "name": "Cup with Handle",
+      "thesis": "Rounded base + tight handle resolves into trend continuation.",
+      "bestConditions": [
+        "Handle in upper half",
+        "Dry handle volume",
+        "Strong earnings/fundamental trend"
+      ],
+      "avoidConditions": [
+        "Loose deep handle",
+        "Weak right-side advance",
+        "No volume at pivot"
+      ],
+      "entryRule": "Break above handle pivot with conviction.",
+      "stopRule": "Below handle low.",
+      "reviewFields": [
+        "Cup depth",
+        "Handle depth",
+        "Volume dry-up",
+        "EPS and sales trend"
+      ],
+      "stats": {
+        "samples": 0,
+        "winRatePercent": 0.0,
+        "avgR": 0.0,
+        "medianHoldDays": 0
+      }
+    },
+    {
+      "key": "vcp",
+      "name": "Volatility Contraction Pattern",
+      "thesis": "Supply exhaustion through smaller pullbacks before expansion.",
+      "bestConditions": [
+        "Contractions become progressively smaller",
+        "Volume contracts each leg",
+        "Leader in strong market tape"
+      ],
+      "avoidConditions": [
+        "Contractions widen",
+        "Downside volume spikes",
+        "No urgency at trigger"
+      ],
+      "entryRule": "Break final contraction pivot.",
+      "stopRule": "Below final contraction low.",
+      "reviewFields": [
+        "Contraction sequence",
+        "ADR compression",
+        "RS trend",
+        "Breakout close"
+      ],
+      "stats": {
+        "samples": 0,
+        "winRatePercent": 0.0,
+        "avgR": 0.0,
+        "medianHoldDays": 0
+      }
+    }
+  ],
+  "tradingWisdom": [
+    {
+      "rule": "No trigger, no trade",
+      "why": "Patterns are context, trigger is execution"
+    },
+    {
+      "rule": "Volume is confirmation, not decoration",
+      "why": "Strong breakouts need participation"
+    },
+    {
+      "rule": "Write invalidation before entry",
+      "why": "Decision quality beats emotional reaction"
+    }
+  ]
+}
+

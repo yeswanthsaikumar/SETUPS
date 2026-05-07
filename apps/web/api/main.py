@@ -181,6 +181,14 @@ class PastWinnerEntry(BaseModel):
     trade_plan: str = ""
     entry_logic: str = ""
     exit_logic: str = ""
+    trail_logic: str = ""
+    pyramid_logic: str = ""
+    candle_structure: str = ""
+    key_levels: str = ""
+    confluence_factors: str = ""
+    mistakes_to_avoid: str = ""
+    lessons_learned: str = ""
+    grade: str = ""
     rs_rank: Optional[float] = None
     adr_pct: Optional[float] = None
     breakout_volume_vs20d: Optional[float] = None
@@ -213,6 +221,14 @@ class PastWinnerUpdate(BaseModel):
     trade_plan: Optional[str] = None
     entry_logic: Optional[str] = None
     exit_logic: Optional[str] = None
+    trail_logic: Optional[str] = None
+    pyramid_logic: Optional[str] = None
+    candle_structure: Optional[str] = None
+    key_levels: Optional[str] = None
+    confluence_factors: Optional[str] = None
+    mistakes_to_avoid: Optional[str] = None
+    lessons_learned: Optional[str] = None
+    grade: Optional[str] = None
     rs_rank: Optional[float] = None
     adr_pct: Optional[float] = None
     breakout_volume_vs20d: Optional[float] = None
@@ -5916,6 +5932,222 @@ def past_winners_delete(entry_id: str) -> dict:
         store["entries"] = new_rows
         _save_past_winners_store(store)
     return {"ok": True, "deleted": entry_id}
+
+
+# ── Sample winners library ────────────────────────────────────────────────────
+# Production-quality reference snapshots a trader can study and copy.
+_PAST_WINNER_SAMPLES: list[dict] = [
+    {
+        "id": "sample-mtar",
+        "symbol": "MTAR.NS",
+        "name": "MTAR Technologies",
+        "market": "india",
+        "timeframe": "daily",
+        "pattern": "bull_flag",
+        "variation": "tight 3-week consolidation above pivot",
+        "market_regime": "uptrend",
+        "grade": "A",
+        "breakout_date": "2026-04-15",
+        "exit_date": "2026-05-02",
+        "entry_price": 385.50,
+        "stop_price": 350.00,
+        "exit_price": 470.00,
+        "realized_r": 2.4,
+        "rs_rank": 92.0,
+        "adr_pct": 5.2,
+        "breakout_volume_vs20d": 2.8,
+        "eps_growth_yoy": 45.2,
+        "sales_growth_yoy": 32.5,
+        "roe_percent": 18.4,
+        "debt_to_equity": 0.42,
+        "candle_structure": "Breakout candle: tall green body (~75% of range), tiny upper wick, no lower wick — pure demand. Prior 12 sessions: small-bodied dojis with overlapping ranges, lower wicks holding 21EMA. Three pocket pivots inside the base.",
+        "key_levels": "Pivot: 380 (base high). Setup low / hard stop: 348. 10EMA: 372. 21EMA: 365. T1 (1.5R): 432. T2 (3R): 490. Prior structure resistance: 405 (cleared on volume).",
+        "confluence_factors": "Daily bull flag at 52-week high + Weekly cup-and-handle base completing + Monthly stage-2 advance + Sector (capital goods) leading market + Volume contraction during base + Pocket pivots inside flag",
+        "entry_logic": "Buy on 5-min close above 380 with cumulative volume already 1.5x average by 11:30 IST. Skip if breakout candle has > 30% upper wick (sellers). Confirmed entry at 385.50 with closing 5-min volume 3.2x avg.",
+        "exit_logic": "Sold 33% at 432 (1.5R, T1). Trailed remainder under daily 10EMA. Final exit 470 when stock closed below 10EMA on rising volume — distribution signal.",
+        "trail_logic": "Stage 1 (entry → 1R): hard stop at 350, do not move. Stage 2 (1R → 2R): move stop to break-even (385). Stage 3 (2R+): trail under prior swing low or daily 10EMA, whichever is higher. Never trail tighter than 21EMA in healthy daily uptrend.",
+        "pyramid_logic": "Initial: 100 units at 385 (1R risk). Add #1 (50 units) on first 3-day flag inside trend at 412, stop under that flag low at 398. Add #2 (25 units) on next tight 5-day base at 445, stop 432. Total exposure peaks at 175 units; 1st add reduces blended risk because initial is in 1.5R+ profit before adding.",
+        "position_sizing": "Risk 0.75% of portfolio per trade. With 35.5 stop distance per share and ₹25,000 risk budget → ~700 shares initial. Max 8% portfolio allocation to single name.",
+        "risk_reward": "1:1.5 to T1 (partial), 1:3 to T2, runner trailed open. Realized blended R = 2.4.",
+        "trade_plan": "Buy 380 breakout. Stop 348. T1 partial 33% at 432. Trail 10EMA on rest. Invalidation: close back below 372 (10EMA) on heavy volume, or two consecutive lower lows on daily.",
+        "story": "MTAR is a precision components leader supplying ISRO, defense, and clean-energy sectors. Q4 results showed 45% EPS growth, strong order book of ₹1,200cr, and management guided 30%+ growth for FY27. Stock had been consolidating after a 60% run; the flag was textbook with volume drying up. Capital-goods sector was rotating into leadership.",
+        "mistakes_to_avoid": "Do NOT chase entries above 388 — the pivot moves with each candle but tight base means tight stop. Do NOT exit on first red day; wait for 10EMA close break. Do NOT add on extended day (> 3% above 10EMA).",
+        "lessons_learned": "Volume contraction inside a base is the single best tell of an imminent breakout. The first 30 minutes of breakout day usually decides — heavy early volume = real, weak volume = fade. Trailing under 10EMA captured 80% of the move while skipping shakeouts.",
+        "image_paths": {
+            "before": "/playbook-assets/past-winners/MTAR-20260415-before.svg",
+            "breakout": "/playbook-assets/past-winners/MTAR-20260415-breakout.svg",
+            "exit": "/playbook-assets/past-winners/MTAR-20260502-exit.svg",
+            "annotated": "/playbook-assets/past-winners/MTAR-20260502-annotated.svg",
+        },
+        "notes": "Pattern memory cue: 'Tight green-body breakout from a quiet flag, sector leadership, fundamentals already strong before move.' Hold this picture in mind for similar setups.",
+        "tags": ["bull_flag", "rs-leader", "capital-goods", "tight-base", "stage-2", "india"],
+    },
+    {
+        "id": "sample-nvda",
+        "symbol": "NVDA",
+        "name": "NVIDIA Corporation",
+        "market": "us",
+        "timeframe": "weekly",
+        "pattern": "vcp",
+        "variation": "5-week VCP, 3 contractions",
+        "market_regime": "uptrend",
+        "grade": "A+",
+        "breakout_date": "2026-02-10",
+        "exit_date": "2026-04-28",
+        "entry_price": 138.50,
+        "stop_price": 128.00,
+        "exit_price": 188.00,
+        "realized_r": 4.7,
+        "rs_rank": 98.0,
+        "adr_pct": 3.4,
+        "breakout_volume_vs20d": 2.1,
+        "eps_growth_yoy": 168.0,
+        "sales_growth_yoy": 122.0,
+        "roe_percent": 91.0,
+        "debt_to_equity": 0.18,
+        "candle_structure": "Weekly breakout candle: large green body, no upper wick — closed at week's high. Three prior weekly contractions: 12% → 6% → 3% (textbook VCP). Final week pre-breakout: tight inside-bar with shrinking range, volume 40% below 10-week avg (supply gone).",
+        "key_levels": "Pivot: 138 (3rd contraction high). Hard stop: 127.50 (final-tightening low). 10WMA: 125. 30WMA: 108. T1 (1.5R): 154. T2 (3R): 170. Round-number magnets: 140, 150, 175.",
+        "confluence_factors": "Weekly VCP + Earnings catalyst (beat & raise) + AI-cycle leader + RS line at new high before price + QQQ uptrend + Volume dry-up in last contraction + No overhead resistance for 25%",
+        "entry_logic": "Buy on weekly close above 138 with weekly volume > 1.5x 10-week avg. Took entry on Tuesday intraday breakout at 138.50 once daily volume pace projected 2x — paid up slightly for early position.",
+        "exit_logic": "Sold 25% at 154 (T1, +1.5R). Held core through earnings (defendable: stop at 142 = breakeven). Trailed weekly 10MA on remaining. Final exit 188 when stock had 3 weeks of distribution + closed below 10WMA.",
+        "trail_logic": "Below first 1R: original 127.50 hard stop, never moved. After +1R: stop to entry. After +2R: trail under each new weekly higher-low pivot. After 3+ months in trade: trail under 10WMA only on weekly closes, never intraweek.",
+        "pyramid_logic": "Initial: 100 shares at 138.50 (full 1R). Add #1 (50 shares) at first 3-week flag at 158, stop 152 (below flag low). Add #2 (25 shares) on weekly pocket pivot at 175, stop 168. No 3rd add — extension risk too high after 25%+ move.",
+        "position_sizing": "Risk 1% of account per trade. Stop distance 10.50 per share, $5,000 risk budget → 475 shares initial. Cap at 12% of equity in a single name.",
+        "risk_reward": "Plan: 1:3 to T2, runner trail. Realized: 4.7R blended (held weekly trail patiently).",
+        "trade_plan": "Buy 138 weekly breakout. Stop 127.50. T1 25% at 154. Hold core through Q1 earnings. Trail weekly 10MA after +2R. Invalidation: weekly close below 128 OR weekly close below 10WMA after 6+ weeks in trade.",
+        "story": "NVIDIA was the undisputed leader of the AI infrastructure cycle. Datacenter revenue compounding 100%+ YoY, Blackwell chip ramp in full swing, hyperscaler capex commitments through 2027 already signed. The stock's RS line broke out before price — institutional accumulation was visible weeks before the formal breakout.",
+        "mistakes_to_avoid": "Do NOT exit on first 5% pullback after entry — Stage-2 leaders shake weak hands constantly. Do NOT hold through earnings without partial profits booked. Do NOT add on extended weeks (> 8% from 10WMA).",
+        "lessons_learned": "Weekly VCP + leader status + RS line at highs = highest-probability setup in any market. The 'boring' final-week contraction with dry volume is the single most reliable tell. Held the runner via weekly trail and captured 36% in 11 weeks — the daily noise would have shaken me out.",
+        "image_paths": {
+            "before": "/playbook-assets/past-winners/NVDA-20260210-before.svg",
+            "breakout": "/playbook-assets/past-winners/NVDA-20260210-breakout.svg",
+            "exit": "/playbook-assets/past-winners/NVDA-20260428-exit.svg",
+            "annotated": "/playbook-assets/past-winners/NVDA-20260428-annotated.svg",
+        },
+        "notes": "Pattern memory cue: 'Three contractions, third tightest, RS line at highs, breakout on Tuesday with closing volume confirming — hold weekly.'",
+        "tags": ["vcp", "weekly", "ai-leader", "rs-line-high", "stage-2", "us", "earnings-catalyst"],
+    },
+    {
+        "id": "sample-tatapower",
+        "symbol": "TATAPOWER.NS",
+        "name": "Tata Power Company",
+        "market": "india",
+        "timeframe": "weekly",
+        "pattern": "cup_handle",
+        "variation": "deep cup, 22-week base, 4-week handle",
+        "market_regime": "range",
+        "grade": "B+",
+        "breakout_date": "2025-11-12",
+        "exit_date": "2026-03-20",
+        "entry_price": 412.00,
+        "stop_price": 388.00,
+        "exit_price": 548.00,
+        "realized_r": 5.7,
+        "rs_rank": 78.0,
+        "adr_pct": 4.1,
+        "breakout_volume_vs20d": 1.9,
+        "eps_growth_yoy": 28.5,
+        "sales_growth_yoy": 18.0,
+        "roe_percent": 12.8,
+        "debt_to_equity": 1.45,
+        "candle_structure": "Breakout week: solid green candle, 65% body, small wick on top. Handle (4 weeks): all small green/red bodies overlapping — classic shakeout pattern with lower wicks on the dip-week (smart money buying). Cup low to pivot retraced 38% Fibonacci.",
+        "key_levels": "Cup pivot: 410. Handle low: 388 (hard stop). 10WMA: 395. 30WMA: 360. Cup left lip: 410. Cup low: 320. T1 (1R): 432. T2 (3R): 478. Cup-depth measured target: 500.",
+        "confluence_factors": "Weekly cup-and-handle + Renewable energy capex theme + Govt policy tailwind (PLI, transition) + Sector breadth improving + Handle low held 30WMA + Volume 60% below avg in handle (supply dry)",
+        "entry_logic": "Buy on weekly close above 410 with weekly volume > 1.5x 10-week avg. Triggered Nov-12 weekly close at 412 with 1.9x volume — confirmed. Skipped daily-chart noise since this was a weekly setup.",
+        "exit_logic": "Sold 30% at 478 (T2, +3R) when 13/34 EMA spread peaked. Trailed remainder under weekly 10MA. Final exit 548 when weekly closed below 10MA after distribution signs (3 down weeks on rising volume).",
+        "trail_logic": "Pre-1R: stop at 388 (handle low). Post-1R: stop to break-even 412. Post-2R: trail to last weekly higher-low (425, then 458). Late-stage: trail strictly under weekly 10MA. NO daily-chart trailing — would have shaken out 3 times.",
+        "pyramid_logic": "Initial: 200 shares at 412 (full 1R). Add #1 (100 shares) at 458 on a 3-week tight base, stop 442. Add #2 (50 shares) on pocket-pivot week at 502, stop 488. Total 350 shares. Each add fully covered by initial profits.",
+        "position_sizing": "Risk 1% of portfolio. Stop distance 24 per share, ₹40,000 risk budget → ~1,650 shares initial cap. Took 200 only because regime was range (not full uptrend) — sized down 50%.",
+        "risk_reward": "Plan: 1:3 to T2, runner trail. Realized: 5.7R (full cup-depth target hit and trailed).",
+        "trade_plan": "Buy 410 weekly breakout. Stop 388 (handle low). T1 30% at 478. Trail weekly 10MA on rest. Invalidation: weekly close below 395 OR break of handle low.",
+        "story": "Tata Power was undergoing a structural transformation — pivoting from thermal to renewables, with 5GW solar pipeline and EV charging leadership. The cup-and-handle was 22 weeks deep, signaling massive accumulation by institutions. India's renewable capex theme was just starting; Tata Power was the cleanest large-cap proxy. Government PLI scheme for solar manufacturing was a direct catalyst.",
+        "mistakes_to_avoid": "Do NOT trade this on daily chart — weekly setups need weekly conviction. Do NOT exit on 8% intraweek drawdown; it's normal in deep cups. Do NOT add when stock is > 12% above 10WMA.",
+        "lessons_learned": "Range-market setups still produce huge winners IF the relative strength is at new highs vs. index. Sized down to 50% of normal due to regime — preserved capital but still captured 5.7R. The key was patience: 18 weeks in trade, mostly boring, ending with a 33% gain.",
+        "image_paths": {
+            "before": "/playbook-assets/past-winners/TATAPOWER-20251112-before.svg",
+            "breakout": "/playbook-assets/past-winners/TATAPOWER-20251112-breakout.svg",
+            "exit": "/playbook-assets/past-winners/TATAPOWER-20260320-exit.svg",
+            "annotated": "/playbook-assets/past-winners/TATAPOWER-20260320-annotated.svg",
+        },
+        "notes": "Pattern memory cue: 'Deep cup, tight handle on lower volume, weekly trail through entire move.' Don't size up just because the move is big — let the trail capture it.",
+        "tags": ["cup_handle", "weekly", "renewables", "policy-tailwind", "range-market", "india"],
+    },
+    {
+        "id": "sample-mcx",
+        "symbol": "MCX.NS",
+        "name": "Multi Commodity Exchange",
+        "market": "india",
+        "timeframe": "daily",
+        "pattern": "ascending_triangle",
+        "variation": "flat resistance at 1670, rising lows over 6 weeks",
+        "market_regime": "uptrend",
+        "grade": "A-",
+        "breakout_date": "2025-10-08",
+        "exit_date": "2026-02-01",
+        "entry_price": 1670.00,
+        "stop_price": 1599.00,
+        "exit_price": 2470.00,
+        "realized_r": 11.3,
+        "rs_rank": 88.0,
+        "adr_pct": 3.5,
+        "breakout_volume_vs20d": 2.0,
+        "eps_growth_yoy": 75.0,
+        "sales_growth_yoy": 38.0,
+        "roe_percent": 22.0,
+        "debt_to_equity": 0.05,
+        "candle_structure": "Breakout candle: large green marubozu (no wicks), closed at high of day. 6 weeks of rising lows touched perfect trendline; resistance at 1670 tested 4 times before clean break. Volume on breakout day: 2x average, biggest green volume bar in 3 months.",
+        "key_levels": "Pivot/horizontal resistance: 1670. Setup stop: 1599 (last swing low + ATR cushion). 10EMA: 1620. 21EMA: 1580. Measured-move target: 1900 (triangle height). T1 (1.5R): 1776. T2 (3R): 1883. Round magnets: 1700, 1800, 2000.",
+        "confluence_factors": "Daily ascending triangle + 6-week base + Options-volume tailwind (regulatory clarity) + Monopoly business model + RS at new high + Volume dry-up on each lower retest of resistance + Stage-2 advance",
+        "entry_logic": "Buy on 5-min close above 1670 with cumulative day volume > 70% of avg 20D by 12:00 IST. Confirmed entry at 1670; full-day closing volume 2.0x. Did NOT chase above 1685 — waited for clean trigger.",
+        "exit_logic": "Sold 25% at 1776 (T1). Sold another 25% at 2000 (round-number profit). Trailed last 50% under daily 21EMA (extended trend). Final exit 2470 on first weekly close below 10WMA after 16 weeks in trade.",
+        "trail_logic": "Hard stop 1599 until +1R. Then move to 1670 (entry). Then trail under 10EMA daily. After +5R, switch to 21EMA daily trail. After 3 months in trade, switch to 10WMA weekly trail (avoids daily shakeouts in extended trends).",
+        "pyramid_logic": "Initial: 60 shares at 1670 (1R risk). Add #1 (30 shares) at 1820 after first 5-day tight base, stop 1750. Add #2 (15 shares) at 2050 after pocket pivot, stop 1980. Total 105 shares. NO add after 2200 — extension > 12% above 10EMA.",
+        "position_sizing": "Risk 0.75% portfolio. Stop distance ₹71/share, ₹40,000 risk budget → 56 shares ≈ 60 initial. Capped at 7% portfolio because of low-float/options-volume risk.",
+        "risk_reward": "Plan: 1:3 to T2, trail. Realized: 11.3R blended — biggest winner of FY26.",
+        "trade_plan": "Buy 1670 breakout. Stop 1599. T1 25% at 1776. T2 25% at 1883. Trail 21EMA on rest. Hold for measured-move + extension. Invalidation: daily close back below 1620 (10EMA) on heavy volume.",
+        "story": "MCX had a near-monopoly on commodity-options trading in India. Q1 results: option premium turnover up 250% YoY, EPS up 75%. SEBI's regulatory clarity removed a key overhang. The 6-week ascending triangle showed institutions accumulating at 1670 every time price dipped — clear demand zone. Stock was a stage-2 advance from a 2-year base.",
+        "mistakes_to_avoid": "Did NOT exit on 8% pullback at 1900 — it was healthy consolidation. Did NOT add too aggressively — kept pyramid disciplined. Almost trailed too tight on daily 10EMA in week 8; switched to weekly trail saved the runner.",
+        "lessons_learned": "Monopoly businesses with regulatory clarity and earnings momentum are the most explosive winners. Switching from daily to weekly trail after the first 3 months captured the second 50% of the move. 11R is rare — but only happens if you let the trail do the work.",
+        "image_paths": {
+            "before": "/playbook-assets/past-winners/MCX-20251008-before.svg",
+            "breakout": "/playbook-assets/past-winners/MCX-20251008-breakout.svg",
+            "exit": "/playbook-assets/past-winners/MCX-20260201-exit.svg",
+            "annotated": "/playbook-assets/past-winners/MCX-20260201-annotated.svg",
+        },
+        "notes": "Pattern memory cue: 'Flat top, rising lows, big volume green marubozu breakout, monopoly biz, hold weekly.' This is the template for 10R+ winners.",
+        "tags": ["ascending_triangle", "monopoly", "options-tailwind", "stage-2", "10R-club", "india"],
+    },
+]
+
+
+@app.post("/api/past-winners/seed-samples")
+def past_winners_seed_samples(replace: bool = False) -> dict:
+    """Seed the catalog with high-quality reference winners. Idempotent.
+
+    Query params:
+      replace=true → wipes existing samples (id starts with 'sample-') first
+    """
+    now = datetime.now().isoformat(timespec="seconds")
+    added: list[str] = []
+    skipped: list[str] = []
+    with _past_winners_lock:
+        store = _load_past_winners_store()
+        rows = store.get("entries", [])
+        if replace:
+            rows = [e for e in rows if not str(e.get("id", "")).startswith("sample-")]
+        existing_ids = {str(e.get("id")) for e in rows}
+        for s in _PAST_WINNER_SAMPLES:
+            if s["id"] in existing_ids:
+                skipped.append(s["id"])
+                continue
+            rec = dict(s)
+            rec.setdefault("created_at", now)
+            rec.setdefault("updated_at", now)
+            rows.append(rec)
+            added.append(s["id"])
+        store["entries"] = rows
+        _save_past_winners_store(store)
+    return {"ok": True, "added": added, "skipped": skipped, "total": len(rows)}
 
 
 @app.get("/api/past-winners/glossary")
