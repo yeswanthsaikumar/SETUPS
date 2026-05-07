@@ -41,21 +41,27 @@ PY0, PY1 = 60, 560        # price area (top-bottom, top is small y)
 VY0, VY1 = 600, 720       # volume area
 
 
+def _esc(s: str) -> str:
+    """XML-escape a string for use inside attribute values or text content."""
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+
+
 def header(title: str, subtitle: str = "") -> str:
+    et, es = _esc(title), _esc(subtitle or title)
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-labelledby="t d">',
-        f'<title id="t">{title}</title>',
-        f'<desc id="d">{subtitle or title}</desc>',
+        f'<title id="t">{et}</title>',
+        f'<desc id="d">{es}</desc>',
         f'<rect width="{W}" height="{H}" fill="{BG}"/>',
         # grid
         '<g stroke="{g}" stroke-width="1">'.format(g=GRID),
         '<path d="M80 70H1320M80 140H1320M80 210H1320M80 280H1320M80 350H1320M80 420H1320M80 490H1320M80 560H1320"/>',
         '<path d="M120 60V580M220 60V580M320 60V580M420 60V580M520 60V580M620 60V580M720 60V580M820 60V580M920 60V580M1020 60V580M1120 60V580M1220 60V580"/>',
         '</g>',
-        f'<text x="90" y="42" fill="{TEXT}" font-size="26" font-family="Arial, sans-serif" font-weight="600">{title}</text>',
+        f'<text x="90" y="42" fill="{TEXT}" font-size="26" font-family="Arial, sans-serif" font-weight="600">{et}</text>',
     ]
     if subtitle:
-        parts.append(f'<text x="90" y="64" fill="{MUTED}" font-size="14" font-family="Arial, sans-serif">{subtitle}</text>')
+        parts.append(f'<text x="90" y="64" fill="{MUTED}" font-size="14" font-family="Arial, sans-serif">{es}</text>')
     return "\n".join(parts)
 
 
@@ -112,7 +118,7 @@ def vline(x: float, color: str, dash: str = "5 5", y0: int = PY0, y1: int = PY1,
 
 
 def label(x: float, y: float, txt: str, color: str = TEXT, size: int = 14, weight: int = 400) -> str:
-    return f'<text x="{x}" y="{y:.1f}" fill="{color}" font-size="{size}" font-family="Arial, sans-serif" font-weight="{weight}">{txt}</text>'
+    return f'<text x="{x}" y="{y:.1f}" fill="{color}" font-size="{size}" font-family="Arial, sans-serif" font-weight="{weight}">{_esc(txt)}</text>'
 
 
 def arrow(x1: float, y1: float, x2: float, y2: float, color: str = TEXT) -> str:
@@ -638,12 +644,13 @@ def make_undercut_reclaim() -> None:
 
 def variations_grid(filename: str, title: str, panels: List[Tuple[str, str, Callable[[float, float], str]]]):
     """panels: [(panel_title, verdict, draw_fn)] where draw_fn(x_origin, y_origin) returns svg snippet drawing in 600x300 area."""
+    et = _esc(title)
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-labelledby="t d">',
-        f'<title id="t">{title}</title>',
-        f'<desc id="d">{title}</desc>',
+        f'<title id="t">{et}</title>',
+        f'<desc id="d">{et}</desc>',
         f'<rect width="{W}" height="{H}" fill="{BG}"/>',
-        f'<text x="40" y="40" fill="{TEXT}" font-size="24" font-family="Arial, sans-serif" font-weight="700">{title}</text>',
+        f'<text x="40" y="40" fill="{TEXT}" font-size="24" font-family="Arial, sans-serif" font-weight="700">{et}</text>',
     ]
     cols = 2
     panel_w = (W - 80) // cols
@@ -654,8 +661,8 @@ def variations_grid(filename: str, title: str, panels: List[Tuple[str, str, Call
         # frame
         verdict_color = GREEN if verdict.startswith("Take") else (RED if verdict.startswith("Avoid") else PIVOT)
         parts.append(f'<rect x="{ox}" y="{oy}" width="{panel_w-20}" height="{panel_h-20}" rx="10" fill="#0d1626" stroke="{GRID}"/>')
-        parts.append(f'<text x="{ox+16}" y="{oy+26}" fill="{TEXT}" font-size="16" font-family="Arial, sans-serif" font-weight="600">{ptitle}</text>')
-        parts.append(f'<text x="{ox+16}" y="{oy+46}" fill="{verdict_color}" font-size="13" font-family="Arial, sans-serif">{verdict}</text>')
+        parts.append(f'<text x="{ox+16}" y="{oy+26}" fill="{TEXT}" font-size="16" font-family="Arial, sans-serif" font-weight="600">{_esc(ptitle)}</text>')
+        parts.append(f'<text x="{ox+16}" y="{oy+46}" fill="{verdict_color}" font-size="13" font-family="Arial, sans-serif">{_esc(verdict)}</text>')
         parts.append(fn(ox + 16, oy + 60))
     parts.append("</svg>\n")
     (OUT / filename).write_text("\n".join(parts))

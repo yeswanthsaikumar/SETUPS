@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="t d">
+<title id="t">High Tight Flag — Continuation</title>
+<desc id="d">Vertical run, tight shelf, breakout — trail aggressively</desc>
+<rect width="1400" height="760" fill="#070d18"/>
+<g stroke="#172338" stroke-width="1">
+<path d="M80 70H1320M80 140H1320M80 210H1320M80 280H1320M80 350H1320M80 420H1320M80 490H1320M80 560H1320"/>
+<path d="M120 60V580M220 60V580M320 60V580M420 60V580M520 60V580M620 60V580M720 60V580M820 60V580M920 60V580M1020 60V580M1120 60V580M1220 60V580"/>
+</g>
+<text x="90" y="42" fill="#e5edf8" font-size="26" font-family="Arial, sans-serif" font-weight="600">High Tight Flag — Continuation</text>
+<text x="90" y="64" fill="#9eb1c7" font-size="14" font-family="Arial, sans-serif">Vertical run, tight shelf, breakout — trail aggressively</text>
+<path d="M120.0 507.4 L180.0 460.0 L240.0 407.4 L300.0 354.7 L360.0 302.1 L420.0 254.7 L460.0 244.2 L500.0 254.7 L540.0 265.3 L580.0 270.5 L620.0 265.3 L660.0 254.7 L700.0 249.5 L740.0 228.4 L800.0 191.6 L860.0 154.7 L920.0 133.7 L980.0 117.9" fill="none" stroke="#4da3ff" stroke-width="2.5"/>
+<line x1="80" y1="244.2" x2="1320" y2="244.2" stroke="#22c55e" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1100" y="238.2" fill="#22c55e" font-size="13" font-family="Arial, sans-serif" font-weight="600">Entry: clean break &gt; 200 (no gap chase)</text>
+<line x1="80" y1="275.8" x2="1320" y2="275.8" stroke="#ef4444" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1100" y="269.8" fill="#ef4444" font-size="13" font-family="Arial, sans-serif" font-weight="600">Stop: &lt; shelf low 188 (~6%)</text>
+<line x1="80" y1="170.5" x2="1320" y2="170.5" stroke="#7dd3fc" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1100" y="164.5" fill="#7dd3fc" font-size="13" font-family="Arial, sans-serif" font-weight="600">T1: +2R partial (≈ +14%)</text>
+<line x1="80" y1="86.3" x2="1320" y2="86.3" stroke="#60a5fa" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1100" y="80.3" fill="#60a5fa" font-size="13" font-family="Arial, sans-serif" font-weight="600">T2: trail — HTF can run +50-100%</text>
+<rect x="108" y="660.0" width="24" height="60.0" fill="#2f6f49"/>
+<rect x="168" y="648.0" width="24" height="72.0" fill="#2f6f49"/>
+<rect x="228" y="636.0" width="24" height="84.0" fill="#2f6f49"/>
+<rect x="288" y="624.0" width="24" height="96.0" fill="#2f6f49"/>
+<rect x="348" y="612.0" width="24" height="108.0" fill="#2f6f49"/>
+<rect x="408" y="600.0" width="24" height="120.0" fill="#2f6f49"/>
+<rect x="488" y="695.0" width="24" height="25.0" fill="#6e3745"/>
+<rect x="528" y="696.8" width="24" height="23.2" fill="#6e3745"/>
+<rect x="568" y="698.6" width="24" height="21.4" fill="#6e3745"/>
+<rect x="608" y="700.5" width="24" height="19.5" fill="#6e3745"/>
+<rect x="648" y="702.3" width="24" height="17.7" fill="#6e3745"/>
+<rect x="688" y="704.1" width="24" height="15.9" fill="#6e3745"/>
+<rect x="728" y="635.0" width="24" height="85.0" fill="#2f6f49"/>
+<rect x="788" y="625.0" width="24" height="95.0" fill="#2f6f49"/>
+<rect x="848" y="615.0" width="24" height="105.0" fill="#2f6f49"/>
+<rect x="908" y="605.0" width="24" height="115.0" fill="#2f6f49"/>
+<rect x="968" y="595.0" width="24" height="125.0" fill="#2f6f49"/>
+<text x="90" y="592.0" fill="#9eb1c7" font-size="13" font-family="Arial, sans-serif" font-weight="400">Volume</text>
+<text x="140" y="88.0" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif" font-weight="600">Vertical run (90-100%+)</text>
+<text x="520" y="88.0" fill="#9eb1c7" font-size="13" font-family="Arial, sans-serif" font-weight="600">Tight shelf, no distribution</text>
+<text x="760" y="88.0" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif" font-weight="600">Explosion through pivot</text>
+<text x="90" y="590.0" fill="#fbbf24" font-size="13" font-family="Arial, sans-serif" font-weight="600">HTF max-gain logic: don't anchor to a measured move. Trail under 21EMA / shelf.</text>
+<rect x="1010" y="62" width="280" height="120" rx="8" fill="#0d1626" stroke="#172338"/>
+<line x1="1020" y1="80" x2="1050" y2="80" stroke="#22c55e" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1060" y="84.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Entry</text>
+<line x1="1020" y1="102" x2="1050" y2="102" stroke="#ef4444" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1060" y="106.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Stop</text>
+<line x1="1020" y1="124" x2="1050" y2="124" stroke="#7dd3fc" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1060" y="128.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Target 1</text>
+<line x1="1020" y1="146" x2="1050" y2="146" stroke="#60a5fa" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1060" y="150.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Target 2 / Max</text>
+<line x1="1020" y1="168" x2="1050" y2="168" stroke="#f59e0b" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1060" y="172.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Trail line</text>
+</svg>

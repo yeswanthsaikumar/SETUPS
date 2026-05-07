@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="t d">
+<title id="t">Cup with Handle — Trade Plan</title>
+<desc id="d">Pivot above handle high, stop below handle low, target = cup depth projection</desc>
+<rect width="1400" height="760" fill="#070d18"/>
+<g stroke="#172338" stroke-width="1">
+<path d="M80 70H1320M80 140H1320M80 210H1320M80 280H1320M80 350H1320M80 420H1320M80 490H1320M80 560H1320"/>
+<path d="M120 60V580M220 60V580M320 60V580M420 60V580M520 60V580M620 60V580M720 60V580M820 60V580M920 60V580M1020 60V580M1120 60V580M1220 60V580"/>
+</g>
+<text x="90" y="42" fill="#e5edf8" font-size="26" font-family="Arial, sans-serif" font-weight="600">Cup with Handle — Trade Plan</text>
+<text x="90" y="64" fill="#9eb1c7" font-size="14" font-family="Arial, sans-serif">Pivot above handle high, stop below handle low, target = cup depth projection</text>
+<path d="M120.0 310.0 L180.0 345.7 L240.0 388.6 L300.0 431.4 L360.0 460.0 L420.0 481.4 L480.0 488.6 L540.0 474.3 L600.0 438.6 L660.0 395.7 L720.0 360.0 L780.0 331.4 L820.0 317.1 L840.0 324.3 L880.0 338.6 L920.0 345.7 L960.0 338.6 L1000.0 324.3 L1020.0 317.1 L1060.0 288.6 L1100.0 245.7 L1160.0 202.9 L1220.0 160.0" fill="none" stroke="#4da3ff" stroke-width="2.5"/>
+<line x1="80" y1="317.1" x2="1320" y2="317.1" stroke="#22c55e" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1100" y="311.1" fill="#22c55e" font-size="13" font-family="Arial, sans-serif" font-weight="600">Entry: break &gt; handle high 148</text>
+<line x1="80" y1="352.9" x2="1320" y2="352.9" stroke="#ef4444" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1100" y="346.9" fill="#ef4444" font-size="13" font-family="Arial, sans-serif" font-weight="600">Stop: &lt; handle low 138 (≈ 7%)</text>
+<line x1="80" y1="220.7" x2="1320" y2="220.7" stroke="#7dd3fc" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1100" y="214.7" fill="#7dd3fc" font-size="13" font-family="Arial, sans-serif" font-weight="600">T1: +2R partial</text>
+<line x1="80" y1="131.4" x2="1320" y2="131.4" stroke="#60a5fa" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1100" y="125.4" fill="#60a5fa" font-size="13" font-family="Arial, sans-serif" font-weight="600">T2: cup depth projection (max ≈ +35%)</text>
+<rect x="108" y="635.0" width="24" height="85.0" fill="#6e3745"/>
+<rect x="168" y="650.0" width="24" height="70.0" fill="#6e3745"/>
+<rect x="228" y="665.0" width="24" height="55.0" fill="#6e3745"/>
+<rect x="288" y="680.0" width="24" height="40.0" fill="#6e3745"/>
+<rect x="348" y="690.0" width="24" height="30.0" fill="#6e3745"/>
+<rect x="408" y="698.0" width="24" height="22.0" fill="#6e3745"/>
+<rect x="468" y="700.0" width="24" height="20.0" fill="#6e3745"/>
+<rect x="528" y="690.0" width="24" height="30.0" fill="#2f6f49"/>
+<rect x="588" y="680.0" width="24" height="40.0" fill="#2f6f49"/>
+<rect x="648" y="670.0" width="24" height="50.0" fill="#2f6f49"/>
+<rect x="708" y="660.0" width="24" height="60.0" fill="#2f6f49"/>
+<rect x="768" y="655.0" width="24" height="65.0" fill="#2f6f49"/>
+<rect x="808" y="665.0" width="24" height="55.0" fill="#2f6f49"/>
+<rect x="848" y="695.0" width="24" height="25.0" fill="#6e3745"/>
+<rect x="888" y="700.0" width="24" height="20.0" fill="#6e3745"/>
+<rect x="928" y="702.0" width="24" height="18.0" fill="#6e3745"/>
+<rect x="968" y="700.0" width="24" height="20.0" fill="#6e3745"/>
+<rect x="1008" y="698.0" width="24" height="22.0" fill="#2f6f49"/>
+<rect x="1068" y="625.0" width="24" height="95.0" fill="#2f6f49"/>
+<rect x="1128" y="615.0" width="24" height="105.0" fill="#2f6f49"/>
+<rect x="1188" y="610.0" width="24" height="110.0" fill="#2f6f49"/>
+<text x="90" y="592.0" fill="#9eb1c7" font-size="13" font-family="Arial, sans-serif" font-weight="400">Volume</text>
+<text x="140" y="88.0" fill="#ff5a6e" font-size="13" font-family="Arial, sans-serif" font-weight="600">Cup decline (panic, heavy vol)</text>
+<text x="540" y="88.0" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif" font-weight="600">Right-side rebuild (vol improving)</text>
+<text x="840" y="88.0" fill="#9eb1c7" font-size="13" font-family="Arial, sans-serif" font-weight="600">Handle (calm drift, quiet)</text>
+<text x="1080" y="88.0" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif" font-weight="600">Breakout &gt; pivot</text>
+<text x="90" y="590.0" fill="#fbbf24" font-size="13" font-family="Arial, sans-serif" font-weight="600">Max gain target = cup depth projected from pivot. Trail under 10/21 EMA.</text>
+<rect x="1010" y="62" width="280" height="120" rx="8" fill="#0d1626" stroke="#172338"/>
+<line x1="1020" y1="80" x2="1050" y2="80" stroke="#22c55e" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1060" y="84.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Entry</text>
+<line x1="1020" y1="102" x2="1050" y2="102" stroke="#ef4444" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1060" y="106.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Stop</text>
+<line x1="1020" y1="124" x2="1050" y2="124" stroke="#7dd3fc" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1060" y="128.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Target 1</text>
+<line x1="1020" y1="146" x2="1050" y2="146" stroke="#60a5fa" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1060" y="150.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Target 2 / Max</text>
+<line x1="1020" y1="168" x2="1050" y2="168" stroke="#f59e0b" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1060" y="172.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Trail line</text>
+</svg>
