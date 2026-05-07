@@ -85,3 +85,25 @@ class TestTrailingWinnersBlog:
         assert "<table>" in r.text  # Stage reference table must render
 
 
+class TestTimeframeAnalysisBlog:
+    def test_timeframe_analysis_in_meta(self, api_client):
+        r = api_client.get("/api/playbook/meta")
+        assert r.status_code == 200
+        keys = {d.get("key") for d in r.json().get("docs", [])}
+        assert "timeframe-analysis-top-down" in keys
+
+    def test_timeframe_analysis_markdown_served(self, api_client):
+        r = api_client.get("/api/playbook/markdown?doc=timeframe-analysis-top-down")
+        assert r.status_code == 200
+        assert "Top-Down Timeframe Analysis" in r.text
+        assert "monthly" in r.text.lower()
+        assert "weekly" in r.text.lower()
+
+    def test_timeframe_analysis_download_renders_html(self, api_client):
+        r = api_client.get("/api/playbook/download?doc=timeframe-analysis-top-down")
+        assert r.status_code == 200
+        assert "text/html" in r.headers.get("content-type", "")
+        assert "Top-Down Timeframe Analysis" in r.text
+        assert "<table>" in r.text  # Cheat sheet tables must render
+
+

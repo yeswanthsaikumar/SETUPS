@@ -1239,6 +1239,18 @@ _PLAYBOOK_DOCS: dict[str, dict] = {
         "icon":     "🚀",
         "order":    5,
     },
+    "timeframe-analysis-top-down": {
+        "path":     ROOT / "docs" / "TIMEFRAME_ANALYSIS_TOP_DOWN.md",
+        "title":    "Top-Down Timeframe Analysis",
+        "dek":      "The professional trader's complete framework for multi-timeframe "
+                    "confluence — monthly thesis, weekly structure, daily trigger, hourly "
+                    "execution — with pattern strength scoring, watchlist protocol, entry "
+                    "confirmation, pyramid rules, and the full exit hierarchy.",
+        "file":     "Timeframe_Analysis_Top_Down.html",
+        "category": "blog",
+        "icon":     "🔭",
+        "order":    6,
+    },
 }
 
 
@@ -5820,6 +5832,9 @@ def past_winners_list(
     qq = q.strip().lower()
     out = []
     for e in entries:
+        # Skip structural template/placeholder entries — they are not real trades
+        if str(e.get("status", "")).lower() in ("template", "placeholder", "example"):
+            continue
         if pat and pat not in str(e.get("pattern", "")).lower():
             continue
         if reg and reg not in str(e.get("market_regime", "")).lower():

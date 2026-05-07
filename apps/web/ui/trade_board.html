@@ -2045,6 +2045,7 @@ async function refreshData(auto = false) {
 }
 
 
+
 function _pwNum(id) {
   const v = document.getElementById(id)?.value;
   if (v === '' || v == null) return null;
@@ -2110,11 +2111,14 @@ function renderPastWinners() {
     const rr = e.realized_r != null ? Number(e.realized_r).toFixed(2) : '—';
     const rs = e.rs_rank != null ? Number(e.rs_rank).toFixed(1) : '—';
     const adr = e.adr_pct != null ? Number(e.adr_pct).toFixed(1) : '—';
-    const story = (e.story || '').toString();
+    // Safely stringify story — it could be an object in malformed entries
+    const story = (typeof e.story === 'string' ? e.story : (e.story ? JSON.stringify(e.story) : ''));
     const storyShort = story.length > 88 ? story.slice(0, 88) + '…' : story;
     const safeStory = storyShort.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const safeStoryTitle = story.replace(/"/g, '&quot;');
+    const timeframeTag = e.timeframe ? '<span style="font-size:9px;color:var(--muted);margin-left:4px">[' + e.timeframe + ']</span>' : '';
     return '<tr>' +
-      '<td><b>' + (e.symbol || '—') + '</b><div style="font-size:10px;color:var(--muted)">' + (e.name || '') + '</div></td>' +
+      '<td><b>' + (e.symbol || '—') + '</b>' + timeframeTag + '<div style="font-size:10px;color:var(--muted)">' + (e.name || '') + '</div></td>' +
       '<td>' + (e.pattern || '—') + '</td>' +
       '<td>' + (e.variation || '—') + '</td>' +
       '<td>' + (e.market_regime || '—') + '</td>' +
@@ -2122,7 +2126,7 @@ function renderPastWinners() {
       '<td>' + rs + '</td>' +
       '<td>' + adr + '</td>' +
       '<td>' + (e.breakout_date || '—') + '</td>' +
-      '<td title="' + (e.story || '').replace(/"/g, '&quot;') + '">' + safeStory + '</td>' +
+      '<td title="' + safeStoryTitle + '">' + safeStory + '</td>' +
       '<td style="white-space:nowrap">' +
         '<button class="btn btn-outline btn-xs" onclick="editPastWinner(\'' + e.id + '\')">Edit</button> ' +
         '<button class="btn btn-red btn-xs" onclick="deletePastWinner(\'' + e.id + '\')">Delete</button>' +
@@ -5539,8 +5543,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // Load winners count and initial table cache for the study lab.
     loadPastWinners();
-    // Initialize sample MTAR Tech entry
-    initializeSampleMTAREntry();
     // Now upgrade to enriched data (live prices, EMA ext, volume records)
     refreshData(true);
   })();
@@ -7322,289 +7324,6 @@ function renderEduResources() {
 </script>
 <!-- Always-on wisdom/reminder layer: QOTD banner + page-contextual nudges -->
 <script defer src="/ui/wisdom.js"></script>
-<script>
-// ═══════════════════════════════════════════════════════════════════════════════
-// ── PAST WINNERS STUDY LAB ──────────────────────────────────────────────────────
-// ═══════════════════════════════════════════════════════════════════════════════
-
-let pastWinners = [];
-let _pwFilterSearch = '';
-let _pwFilterPattern = '';
-let _pwFilterRegime = '';
-let _pwMinR = 0;
-
-const _PW_STORAGE_KEY = 'setups_past_winners';
-
-function _loadPastWinnersFromStorage() {
-  try {
-    pastWinners = JSON.parse(localStorage.getItem(_PW_STORAGE_KEY) || '[]');
-  } catch(e) {
-    pastWinners = [];
-  }
-}
-
-function _savePastWinnersToStorage() {
-  try {
-    localStorage.setItem(_PW_STORAGE_KEY, JSON.stringify(pastWinners));
-  } catch(e) {
-    toast('Failed to save past winners to storage', 'error');
-  }
-}
-
-async function loadPastWinners() {
-  _loadPastWinnersFromStorage();
-  document.getElementById('pwCount').textContent = pastWinners.length;
-  renderPastWinners();
-
-  // Also try to load from API if available
-  try {
-    const r = await fetch(API + '/api/trade-board/past-winners');
-    if (r.ok) {
-      const d = await r.json();
-      if (d.winners && Array.isArray(d.winners)) {
-        pastWinners = d.winners;
-        _savePastWinnersToStorage();
-        document.getElementById('pwCount').textContent = pastWinners.length;
-        renderPastWinners();
-      }
-    }
-  } catch(e) {
-    // Silent fail - use localStorage only
-  }
-}
-
-function renderPastWinners() {
-  _pwFilterSearch = (document.getElementById('pwSearch')?.value || '').toLowerCase();
-  _pwFilterPattern = document.getElementById('pwPatternFilter')?.value || '';
-  _pwFilterRegime = document.getElementById('pwRegimeFilter')?.value || '';
-  _pwMinR = parseFloat(document.getElementById('pwMinR')?.value) || 0;
-
-  let filtered = pastWinners.filter(p => {
-    if (_pwFilterSearch && !((p.symbol || '').toLowerCase().includes(_pwFilterSearch) ||
-        (p.pattern || '').toLowerCase().includes(_pwFilterSearch) ||
-        (p.story || '').toLowerCase().includes(_pwFilterSearch))) return false;
-    if (_pwFilterPattern && p.pattern !== _pwFilterPattern) return false;
-    if (_pwFilterRegime && p.regime !== _pwFilterRegime) return false;
-    if (_pwMinR && (p.realized_r || 0) < _pwMinR) return false;
-    return true;
-  });
-
-  const tbody = document.getElementById('pwTableBody');
-  if (!tbody) return;
-
-  if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:20px;">No winners found. Add your first winner to get started!</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = filtered.map(p => {
-    const rColor = (p.realized_r || 0) >= 2 ? 'color:#4ade80' : (p.realized_r || 0) >= 1 ? 'color:#f59e0b' : 'color:#f87171';
-    const storyPreview = (p.story || '').substring(0, 50) + ((p.story || '').length > 50 ? '…' : '');
-    return `<tr style="border-bottom:1px solid var(--border);">
-      <td style="font-weight:700;padding:8px 6px;">${p.symbol || '—'}</td>
-      <td style="font-size:10px;">${p.pattern || '—'}</td>
-      <td style="font-size:10px;">${p.variation || '—'}</td>
-      <td style="font-size:10px;">${p.regime || '—'}</td>
-      <td style="${rColor};font-weight:700;">${(p.realized_r || 0).toFixed(1)}R</td>
-      <td style="font-size:10px;">${p.rs_rank ? p.rs_rank.toFixed(0) : '—'}</td>
-      <td style="font-size:10px;">${p.adr ? p.adr.toFixed(1) + '%' : '—'}</td>
-      <td style="font-size:10px;color:var(--muted);">${p.breakout_date || '—'}</td>
-      <td style="font-size:9px;color:var(--dim);max-width:180px;overflow:hidden;text-overflow:ellipsis;" title="${p.story || ''}">${storyPreview}</td>
-      <td style="display:flex;gap:4px;font-size:10px;">
-        <button class="btn btn-ghost btn-xs" onclick="editPastWinner('${p.id}')">✏</button>
-        <button class="btn btn-ghost btn-xs" onclick="deletePastWinner('${p.id}')" style="color:var(--red);">🗑</button>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-function clearPastWinnerForm() {
-  document.getElementById('pwId').value = '';
-  document.getElementById('pwFormTitle').textContent = 'New Winner Entry';
-  ['pwSymbol','pwName','pwPattern','pwVariation','pwRegime','pwBreakoutDate','pwExitDate','pwRealizedR',
-   'pwEntry','pwStop','pwExit','pwRsRank','pwAdr','pwBreakoutVol','pwEps','pwSales','pwRoe','pwDebt',
-   'pwRiskReward','pwPositionSizing','pwEntryLogic','pwExitLogic','pwTradePlan','pwStory','pwNotes',
-   'pwBeforeImg','pwBreakoutImg','pwExitImg','pwAnnotatedImg','pwTags'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  document.getElementById('pwMarket').value = 'india';
-  document.getElementById('pwTimeframe').value = 'daily';
-}
-
-function editPastWinner(id) {
-  const winner = pastWinners.find(p => p.id === id);
-  if (!winner) return;
-  document.getElementById('pwId').value = winner.id;
-  document.getElementById('pwFormTitle').textContent = 'Edit: ' + winner.symbol;
-  document.getElementById('pwSymbol').value = winner.symbol || '';
-  document.getElementById('pwName').value = winner.name || '';
-  document.getElementById('pwMarket').value = winner.market || 'india';
-  document.getElementById('pwTimeframe').value = winner.timeframe || 'daily';
-  document.getElementById('pwPattern').value = winner.pattern || '';
-  document.getElementById('pwVariation').value = winner.variation || '';
-  document.getElementById('pwRegime').value = winner.regime || '';
-  document.getElementById('pwBreakoutDate').value = winner.breakout_date || '';
-  document.getElementById('pwExitDate').value = winner.exit_date || '';
-  document.getElementById('pwRealizedR').value = winner.realized_r || '';
-  document.getElementById('pwEntry').value = winner.entry || '';
-  document.getElementById('pwStop').value = winner.stop || '';
-  document.getElementById('pwExit').value = winner.exit || '';
-  document.getElementById('pwRsRank').value = winner.rs_rank || '';
-  document.getElementById('pwAdr').value = winner.adr || '';
-  document.getElementById('pwBreakoutVol').value = winner.breakout_vol || '';
-  document.getElementById('pwEps').value = winner.eps || '';
-  document.getElementById('pwSales').value = winner.sales || '';
-  document.getElementById('pwRoe').value = winner.roe || '';
-  document.getElementById('pwDebt').value = winner.debt || '';
-  document.getElementById('pwRiskReward').value = winner.risk_reward_logic || '';
-  document.getElementById('pwPositionSizing').value = winner.position_sizing_logic || '';
-  document.getElementById('pwEntryLogic').value = winner.entry_logic || '';
-  document.getElementById('pwExitLogic').value = winner.exit_logic || '';
-  document.getElementById('pwTradePlan').value = winner.trade_plan_notes || '';
-  document.getElementById('pwStory').value = winner.story || '';
-  document.getElementById('pwNotes').value = winner.notes || '';
-  document.getElementById('pwBeforeImg').value = winner.before_img_path || '';
-  document.getElementById('pwBreakoutImg').value = winner.breakout_img_path || '';
-  document.getElementById('pwExitImg').value = winner.exit_img_path || '';
-  document.getElementById('pwAnnotatedImg').value = winner.annotated_img_path || '';
-  document.getElementById('pwTags').value = (winner.tags || []).join(', ');
-}
-
-function savePastWinner() {
-  const id = document.getElementById('pwId').value;
-  const symbol = document.getElementById('pwSymbol').value.trim().toUpperCase();
-
-  if (!symbol) {
-    toast('Symbol is required', 'error');
-    return;
-  }
-
-  const tags = document.getElementById('pwTags').value.split(',').map(t => t.trim()).filter(Boolean);
-
-  const winner = {
-    id: id || 'pw_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    symbol,
-    name: document.getElementById('pwName').value,
-    market: document.getElementById('pwMarket').value,
-    timeframe: document.getElementById('pwTimeframe').value,
-    pattern: document.getElementById('pwPattern').value,
-    variation: document.getElementById('pwVariation').value,
-    regime: document.getElementById('pwRegime').value,
-    breakout_date: document.getElementById('pwBreakoutDate').value,
-    exit_date: document.getElementById('pwExitDate').value,
-    realized_r: parseFloat(document.getElementById('pwRealizedR').value) || 0,
-    entry: parseFloat(document.getElementById('pwEntry').value) || 0,
-    stop: parseFloat(document.getElementById('pwStop').value) || 0,
-    exit: parseFloat(document.getElementById('pwExit').value) || 0,
-    rs_rank: parseFloat(document.getElementById('pwRsRank').value) || 0,
-    adr: parseFloat(document.getElementById('pwAdr').value) || 0,
-    breakout_vol: parseFloat(document.getElementById('pwBreakoutVol').value) || 0,
-    eps: parseFloat(document.getElementById('pwEps').value) || 0,
-    sales: parseFloat(document.getElementById('pwSales').value) || 0,
-    roe: parseFloat(document.getElementById('pwRoe').value) || 0,
-    debt: parseFloat(document.getElementById('pwDebt').value) || 0,
-    risk_reward_logic: document.getElementById('pwRiskReward').value,
-    position_sizing_logic: document.getElementById('pwPositionSizing').value,
-    entry_logic: document.getElementById('pwEntryLogic').value,
-    exit_logic: document.getElementById('pwExitLogic').value,
-    trade_plan_notes: document.getElementById('pwTradePlan').value,
-    story: document.getElementById('pwStory').value,
-    notes: document.getElementById('pwNotes').value,
-    before_img_path: document.getElementById('pwBeforeImg').value,
-    breakout_img_path: document.getElementById('pwBreakoutImg').value,
-    exit_img_path: document.getElementById('pwExitImg').value,
-    annotated_img_path: document.getElementById('pwAnnotatedImg').value,
-    tags: tags,
-    saved_at: new Date().toISOString().slice(0, 10)
-  };
-
-  if (id) {
-    const idx = pastWinners.findIndex(p => p.id === id);
-    if (idx !== -1) {
-      pastWinners[idx] = winner;
-      toast(symbol + ' updated ✓', 'success');
-    }
-  } else {
-    pastWinners.unshift(winner);
-    toast(symbol + ' added ✓', 'success');
-  }
-
-  _savePastWinnersToStorage();
-  clearPastWinnerForm();
-  renderPastWinners();
-  document.getElementById('pwCount').textContent = pastWinners.length;
-}
-
-function deletePastWinner(id) {
-  const winner = pastWinners.find(p => p.id === id);
-  if (!winner || !confirm('Delete ' + winner.symbol + ' from past winners?')) return;
-  pastWinners = pastWinners.filter(p => p.id !== id);
-  _savePastWinnersToStorage();
-  renderPastWinners();
-  document.getElementById('pwCount').textContent = pastWinners.length;
-  toast('Deleted ✓', 'info');
-}
-
-function prefillPastWinner() {
-  const sym = document.getElementById('pwSymbol').value.trim().toUpperCase();
-  if (!sym) {
-    toast('Enter symbol first', 'warn');
-    return;
-  }
-  // Auto-fill today's date
-  document.getElementById('pwBreakoutDate').value = new Date().toISOString().slice(0, 10);
-./  toast("Form prefilled with today's date", 'info');
-}
-
-// Initialize sample MTAR Tech entry
-function initializeSampleMTAREntry() {
-  // Only add if not already present
-  if (pastWinners.some(p => p.symbol === 'MTAR.NS')) return;
-
-  const mtarEntry = {
-    id: 'pw_mtar_' + Date.now().toString(36),
-    symbol: 'MTAR.NS',
-    name: 'Mtar Technologies',
-    market: 'india',
-    timeframe: 'daily',
-    pattern: 'bull_flag',
-    variation: 'tight consolidation',
-    regime: 'uptrend',
-    breakout_date: '2026-04-15',
-    exit_date: '2026-05-02',
-    realized_r: 2.4,
-    entry: 385.50,
-    stop: 350.00,
-    exit: 470.00,
-    rs_rank: 92,
-    adr: 5.2,
-    breakout_vol: 2.8,
-    eps: 45.2,
-    sales: 32.5,
-    roe: 18.4,
-    debt: 0.42,
-    risk_reward_logic: '1:3 to T2, trail SL at 20EMA for runner',
-    position_sizing_logic: 'Risk 0.75R per unit, max 3 units across portfolio',
-    entry_logic: 'Close above 380 with volume > 2x average, above 20EMA',
-    exit_logic: 'Partial at 420 (1R), trail SL to 10EMA after break to new highs, final exit at 470 or below 10EMA',
-    trade_plan_notes: 'Strong RS leader after sector rotation. Volume confirms breakout. Hold for swing extension.',
-    story: 'MTAR broke out after 3-week consolidation above previous resistance. Strong order book momentum, analyst upgrades noted.',
-    notes: 'Pattern: Tight bull flag. Setup quality: High. Market regime: Favorable for tech breakouts. Risk well-defined.',
-    before_img_path: 'docs/assets/past-winners/MTAR-20260415-before.png',
-    breakout_img_path: 'docs/assets/past-winners/MTAR-20260415-breakout.png',
-    exit_img_path: 'docs/assets/past-winners/MTAR-20260502-exit.png',
-    annotated_img_path: 'docs/assets/past-winners/MTAR-20260502-annotated.png',
-    tags: ['bull_flag', 'rs-leader', 'strong-returns', 'tight-base', 'tech-sector'],
-    saved_at: new Date().toISOString().slice(0, 10)
-  };
-
-  pastWinners.unshift(mtarEntry);
-  _savePastWinnersToStorage();
-  document.getElementById('pwCount').textContent = pastWinners.length;
-}
-
-</script>
 </body>
 </html>
 
