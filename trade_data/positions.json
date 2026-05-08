@@ -1131,10 +1131,10 @@
       "tags": [],
       "partial_exits": [],
       "original_sl": null,
-      "cmp": 6677.0,
+      "cmp": 6286.5,
       "lastPriceDate": "2026-05-08",
-      "dayChangePct": 6.21,
-      "dayChangeAmt": 38659.5
+      "dayChangePct": 0.0,
+      "dayChangeAmt": 0.0
     },
     {
       "id": "c8b081fa",
@@ -1185,10 +1185,10 @@
       "tags": [],
       "partial_exits": [],
       "original_sl": 136.0,
-      "cmp": 141.78,
+      "cmp": 145.67,
       "lastPriceDate": "2026-05-08",
-      "dayChangePct": -2.67,
-      "dayChangeAmt": -23340.0,
+      "dayChangePct": 0.0,
+      "dayChangeAmt": 0.01,
       "sl_armed": true
     },
     {
@@ -1212,10 +1212,10 @@
       "tags": [],
       "partial_exits": [],
       "original_sl": 376.0,
-      "cmp": 431.8,
+      "cmp": 440.3,
       "lastPriceDate": "2026-05-08",
-      "dayChangePct": -1.93,
-      "dayChangeAmt": -12579.98,
+      "dayChangePct": 0.0,
+      "dayChangeAmt": 0.02,
       "sl_armed": true
     },
     {
@@ -1251,7 +1251,7 @@
       "name": "kshintl",
       "entry": 619.37,
       "quantity": 483,
-      "remaining_quantity": 483,
+      "remaining_quantity": 0,
       "sl": 619.37,
       "t1": 0.0,
       "t2": 0.0,
@@ -1260,17 +1260,18 @@
       "rating": "A+",
       "notes": "",
       "entry_date": "2026-05-07",
-      "status": "OPEN",
-      "exit_price": null,
-      "exit_date": null,
+      "status": "SL_HIT",
+      "exit_price": 584.1,
+      "exit_date": "2026-05-08",
       "tags": [],
       "partial_exits": [],
       "original_sl": 596.0,
-      "cmp": 630.0,
+      "cmp": 584.1,
       "lastPriceDate": "2026-05-08",
-      "dayChangePct": 7.86,
-      "dayChangeAmt": 22169.7,
-      "sl_armed": true
+      "dayChangePct": 0.0,
+      "dayChangeAmt": 0.01,
+      "sl_armed": true,
+      "realized_pl": -17035.41
     },
     {
       "id": "8f1ca655",
@@ -1294,9 +1295,9 @@
       "partial_exits": [],
       "original_sl": 470.0,
       "cmp": 521.35,
-      "lastPriceDate": "2026-05-08",
+      "lastPriceDate": "2026-05-07",
       "dayChangePct": 6.37,
-      "dayChangeAmt": 16317.6,
+      "dayChangeAmt": 16317.59,
       "sl_armed": true
     },
     {
@@ -1327,10 +1328,10 @@
         }
       ],
       "original_sl": 892.0,
-      "cmp": 897.55,
-      "lastPriceDate": "2026-05-08",
-      "dayChangePct": 0.0,
-      "dayChangeAmt": 0.01,
+      "cmp": 907.2,
+      "lastPriceDate": "2026-05-07",
+      "dayChangePct": 1.08,
+      "dayChangeAmt": 6031.27,
       "sl_armed": true,
       "realized_pl": -10875.0
     },
@@ -1365,5 +1366,5 @@
     }
   ],
   "created": "2026-04-14T11:55:48.601550",
-  "lastUpdated": "2026-05-08T01:23:35.927006"
+  "lastUpdated": "2026-05-08T02:43:41.768327"
 }

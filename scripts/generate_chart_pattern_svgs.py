@@ -42,13 +42,35 @@ VY0, VY1 = 600, 720       # volume area
 
 
 def _esc(s: str) -> str:
-    """XML-escape a string for use inside attribute values or text content."""
+    """XML-escape and ASCII-only-ify a string for SVG text/attribute content.
+
+    Browsers that load SVG via <img> with content-type image/svg+xml (no
+    charset) can silently fail to render if the file contains raw multi-byte
+    UTF-8 sequences.  Replace every problematic Unicode character with safe
+    ASCII equivalents before escaping.
+    """
+    # Unicode → ASCII substitutions
+    s = (s
+         .replace("\u2014", "-")    # em dash  —  -> -
+         .replace("\u2013", "-")    # en dash  –  -> -
+         .replace("\u2192", "->")   # arrow    →  -> ->
+         .replace("\u2248", "~")    # approx   ≈  -> ~
+         .replace("\u2265", ">=")   # >=       ≥  -> >=
+         .replace("\u2264", "<=")   # <=       ≤  -> <=
+         .replace("\u00d7", "x")    # multiply ×  -> x
+         .replace("\u2026", "...")  # ellipsis …  -> ...
+         .replace("\u2018", "'")    # left sq quote
+         .replace("\u2019", "'")    # right sq quote
+         .replace("\u201c", '"')    # left dq quote
+         .replace("\u201d", '"')    # right dq quote
+    )
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
 
 def header(title: str, subtitle: str = "") -> str:
     et, es = _esc(title), _esc(subtitle or title)
     parts = [
+        '<?xml version="1.0" encoding="utf-8"?>',   # ← charset declaration so browsers parse ASCII-safe text
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-labelledby="t d">',
         f'<title id="t">{et}</title>',
         f'<desc id="d">{es}</desc>',
@@ -646,6 +668,7 @@ def variations_grid(filename: str, title: str, panels: List[Tuple[str, str, Call
     """panels: [(panel_title, verdict, draw_fn)] where draw_fn(x_origin, y_origin) returns svg snippet drawing in 600x300 area."""
     et = _esc(title)
     parts = [
+        '<?xml version="1.0" encoding="utf-8"?>',
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-labelledby="t d">',
         f'<title id="t">{et}</title>',
         f'<desc id="d">{et}</desc>',
@@ -800,6 +823,275 @@ def make_var_inverse_hs():
     variations_grid("var-inverse-hs.svg", "Inverse Head & Shoulders — Variations & Verdict", panels)
 
 
+# ============================================================
+# Missing variation grids
+# ============================================================
+
+def make_var_pennant():
+    """Pennant / Symmetrical Triangle variation grid."""
+    impulse = [(0,100),(20,112),(40,125),(60,138),(80,150),(100,156)]
+    def coil(upper_slope, lower_slope, n=6):
+        """Converging highs and lows after impulse."""
+        pts = []
+        for i in range(n):
+            x = 120 + i*18
+            pts.append((x, 156 + upper_slope*i))
+        for i in range(n-1, -1, -1):
+            x = 120 + i*18
+            pts.append((x, 148 + lower_slope*i))
+        return pts[:n]  # just the upper boundary half
+
+    def tight_pennant():  # converging, breaks up
+        return impulse + [(120,154),(138,152),(156,150),(174,149),(192,148),(210,149),
+                          (230,156),(250,166),(270,178),(290,188)]
+
+    def symm_triangle():  # wider, slower
+        return impulse + [(120,156),(145,153),(170,151),(195,150),(220,149),(245,148),
+                          (260,153),(275,163),(295,176),(315,187)]
+
+    def expanding():  # lower highs AND lower lows, then fails
+        return impulse + [(120,158),(145,160),(170,157),(195,163),(220,155),(245,162),
+                          (265,148),(280,145),(295,142),(310,140)]
+
+    def failed():  # breaks down on volume
+        return impulse + [(120,154),(138,152),(156,150),(174,149),(192,148),
+                          (210,140),(230,130),(250,120),(270,115),(290,112)]
+
+    panels = [
+        ("Bull Pennant - tight coil, fast (A-grade)", "Take it: impulse + coil + expansion",
+         lambda ox,oy: mini_path(ox,oy,600,240, tight_pennant(), 90,200, GREEN)),
+        ("Symmetrical Triangle - wider, multi-week (good)", "Take it: patience needed, vol confirms",
+         lambda ox,oy: mini_path(ox,oy,600,240, symm_triangle(), 90,200, GREEN)),
+        ("Expanding Triangle - widening range (avoid)", "Avoid: distribution pattern, no controlled coil",
+         lambda ox,oy: mini_path(ox,oy,600,240, expanding(), 88,170, RED)),
+        ("Failed Pennant - breaks lower on volume", "Avoid: lower boundary fails = trend reversal risk",
+         lambda ox,oy: mini_path(ox,oy,600,240, failed(), 90,200, RED)),
+    ]
+    variations_grid("var-pennant.svg", "Pennant / Symmetrical Triangle - Variations and Verdict", panels)
+
+
+def make_var_ascending_triangle():
+    """Ascending Triangle variation grid."""
+    def asc_base(n_swings=3, early_fail=False):
+        pts = [(0,100),(20,112),(40,125),(60,136),(80,144),(100,150)]
+        # rising lows: each dip gets bought higher
+        lows = [138, 141, 144, 145]
+        highs = [150, 150, 150, 150]
+        for i in range(n_swings):
+            top_x = 110 + i*40
+            pts.append((top_x, highs[i]))
+            dip_x = top_x + 20
+            pts.append((dip_x, lows[i] if not early_fail else lows[i] - i*4))
+        return pts
+
+    def breakout_up():
+        pts = asc_base(3)
+        pts += [(210,152),(230,160),(250,170),(270,180),(290,188)]
+        return pts
+
+    def tight_multi_test():  # 5 tests, very tight
+        pts = [(0,100),(30,120),(60,138),(80,148),(100,150)]
+        lows = [139,141,143,144,145]
+        for i in range(5):
+            pts.append((110+i*30, 150))
+            pts.append((125+i*30, lows[i]))
+        pts += [(275,152),(295,163),(315,175),(335,185)]
+        return pts
+
+    def too_many_fails():  # keeps getting rejected, range expands
+        pts = [(0,100),(30,120),(60,138),(80,150)]
+        for i in range(7):
+            pts.append((90+i*20, 150))
+            pts.append((100+i*20, 147 - i*0.5))
+        pts += [(250,148),(265,144),(278,141)]
+        return pts
+
+    def support_breaks():  # rising support fails, breakdown
+        pts = asc_base(3)
+        pts += [(210,142),(225,134),(240,126),(255,120),(270,116)]
+        return pts
+
+    panels = [
+        ("Tight ascending triangle - 3-4 tests (A-grade)", "Take it: dip bought higher each time, clean",
+         lambda ox,oy: mini_path(ox,oy,600,240, breakout_up(), 90,200, GREEN)),
+        ("Multi-test with tightening range (strong)", "Take it: 5+ tests with higher lows = pressure",
+         lambda ox,oy: mini_path(ox,oy,600,240, tight_multi_test(), 90,200, GREEN)),
+        ("Too many failed upper touches (weakening)", "Caution: if highs not advancing = distribution risk",
+         lambda ox,oy: mini_path(ox,oy,600,240, too_many_fails(), 88,160, PIVOT)),
+        ("Rising support breaks - trend change signal", "Avoid: trendline failure invalidates the setup",
+         lambda ox,oy: mini_path(ox,oy,600,240, support_breaks(), 90,200, RED)),
+    ]
+    variations_grid("var-ascending-triangle.svg", "Ascending Triangle - Variations and Verdict", panels)
+
+
+def make_var_htf():
+    """High Tight Flag variation grid."""
+    def classic_htf():  # 90%+ run, tight shelf 4-8 bars, breakout
+        run = [(0,100),(15,114),(30,130),(45,147),(60,166),(75,183),(90,196),(105,200)]
+        shelf = [(120,198),(135,195),(150,192),(165,194),(180,196),(195,199),(210,200)]
+        bo = [(225,208),(240,220),(255,232),(270,242),(285,250)]
+        return run + shelf + bo
+
+    def mini_htf():  # smaller run (+50%), tight shelf, still valid
+        run = [(0,100),(20,112),(40,126),(60,140),(75,148),(90,150)]
+        shelf = [(105,148),(120,146),(135,144),(150,146),(165,148),(180,150)]
+        bo = [(195,156),(210,166),(225,176),(240,184)]
+        return run + shelf + bo
+
+    def false_htf():  # deep pullback, no longer HTF
+        run = [(0,100),(20,116),(40,134),(60,150),(75,162),(90,168),(105,170)]
+        # deep pullback > 20%
+        deep = [(120,162),(140,150),(160,140),(180,136),(200,138),(220,142),(240,148),(260,155)]
+        return run + deep
+
+    def htf_vol_spikes():  # volume spikes on red bars = distribution
+        run = [(0,100),(20,116),(40,134),(60,152),(75,164),(90,168),(100,170)]
+        # choppy flag with big red bars (simulated by price variance)
+        choppy = [(115,166),(130,158),(145,164),(160,154),(175,162),(190,155),(205,158),(220,150)]
+        return run + choppy
+
+    panels = [
+        ("Classic HTF - 90%+ run, 5-8 bar tight shelf (A-grade)", "Take it: rare, explosive, trail aggressively",
+         lambda ox,oy: mini_path(ox,oy,600,240, classic_htf(), 90,270, GREEN)),
+        ("Mini-HTF - 40-60% run, still tight shelf (good)", "Take it: smaller magnitude, same logic applies",
+         lambda ox,oy: mini_path(ox,oy,600,240, mini_htf(), 90,200, GREEN)),
+        ("False HTF - pullback > 20% (caution)", "Caution: too deep, treat as standard base breakout",
+         lambda ox,oy: mini_path(ox,oy,600,240, false_htf(), 90,185, PIVOT)),
+        ("HTF with vol spikes in flag (avoid)", "Avoid: distribution bars inside flag = no longer tight",
+         lambda ox,oy: mini_path(ox,oy,600,240, htf_vol_spikes(), 90,185, RED)),
+    ]
+    variations_grid("var-htf.svg", "High Tight Flag - Variations and Verdict", panels)
+
+
+def make_var_flat_base():
+    """Flat Base variation grid."""
+    def stage2_flat():  # tight, declining vol, breaks out
+        rise = [(0,100),(20,112),(40,124),(60,134),(80,142),(100,148),(120,150)]
+        base = [(140,150),(165,149),(190,148),(215,149),(240,148),(265,149),(290,150)]
+        bo = [(310,153),(330,160),(350,170),(370,180),(390,188)]
+        return rise + base + bo
+
+    def second_stage():  # second base after first breakout and run
+        first_move = [(0,100),(20,115),(40,132),(60,148),(70,150)]
+        b1 = [(85,149),(100,148),(115,149),(130,148),(145,150)]
+        second_move = [(160,154),(175,165),(190,174),(200,178),(210,180)]
+        b2 = [(225,179),(240,178),(255,179),(270,178),(285,180)]
+        bo2 = [(300,184),(320,194),(340,204),(360,212)]
+        return first_move + b1 + second_move + b2 + bo2
+
+    def late_stage_loose():  # late stage, wide range, multiple upper wicks
+        rise = [(0,100),(20,120),(40,140),(60,158),(80,172),(100,182),(120,188),(140,190)]
+        loose = [(160,192),(180,184),(200,190),(220,182),(240,188),(260,180),(280,186),(300,190)]
+        fail = [(320,188),(340,178),(360,170),(380,164)]
+        return rise + loose + fail
+
+    def failed_flat():  # breaks through base on volume
+        rise = [(0,100),(20,112),(40,124),(60,132),(80,138),(100,142),(120,144)]
+        base = [(135,143),(150,142),(165,141),(180,142),(195,141)]
+        fail = [(210,138),(225,132),(240,124),(255,118),(270,114)]
+        return rise + base + fail
+
+    panels = [
+        ("1st or 2nd stage flat base - tight, dry vol (A-grade)", "Take it: best risk-reward in trending market",
+         lambda ox,oy: mini_path(ox,oy,600,240, stage2_flat(), 90,200, GREEN)),
+        ("Second-stage flat base after prior breakout (strong)", "Take it: institutions re-accumulating",
+         lambda ox,oy: mini_path(ox,oy,600,240, second_stage(), 90,220, GREEN)),
+        ("Late-stage loose base - wide range, upper wicks (caution)", "Caution: late in trend, distribution risk",
+         lambda ox,oy: mini_path(ox,oy,600,240, late_stage_loose(), 90,200, PIVOT)),
+        ("Base fails - breaks down through support on vol", "Avoid: close below base low = exit immediately",
+         lambda ox,oy: mini_path(ox,oy,600,240, failed_flat(), 90,160, RED)),
+    ]
+    variations_grid("var-flat-base.svg", "Flat Base - Variations and Verdict", panels)
+
+
+def make_var_rounding_bottom():
+    """Rounding Bottom / Saucer variation grid."""
+    def smooth_u():
+        pts = []
+        for i in range(25):
+            x = i * 22
+            p = 108 + (42.0 * (i - 12) ** 2) / 144
+            pts.append((x, min(p, 152)))
+        return pts
+
+    def saucer_with_handle():  # U-shape then small handle then breakout
+        base = []
+        for i in range(20):
+            x = i*20
+            p = 108 + (42.0*(i-10)**2)/100
+            base.append((x, min(p, 150)))
+        handle = [(420,148),(440,146),(460,144),(480,145),(500,147),(520,148)]
+        bo = [(540,152),(560,160),(580,170),(600,180)]
+        return base + handle + bo
+
+    def v_shape():  # sharp V not rounding
+        down = [(0,160),(30,140),(60,120),(90,106),(110,102),(120,100)]
+        up = [(135,108),(150,120),(165,134),(180,146),(195,156),(210,164)]
+        return down + up
+
+    def erratic_saucer():  # choppy bottom
+        pts = []
+        for i in range(25):
+            x = i*22
+            noise = (8 if i % 3 == 0 else -6 if i % 3 == 1 else 2)
+            p = 108 + (42.0*(i-12)**2)/144 + noise
+            pts.append((x, min(p, 162)))
+        return pts
+
+    panels = [
+        ("Clean U-shaped saucer - gradual accumulation (A-grade)", "Take it: smooth curve = orderly institutional buying",
+         lambda ox,oy: mini_path(ox,oy,600,240, smooth_u(), 90,165, GREEN)),
+        ("Saucer with handle before breakout (strongest variant)", "Take it: handle dries vol before final push",
+         lambda ox,oy: mini_path(ox,oy,600,240, saucer_with_handle(), 90,195, GREEN)),
+        ("V-shaped bottom (caution)", "Caution: sharp snap-back, weak hands still in, more volatile",
+         lambda ox,oy: mini_path(ox,oy,600,240, v_shape(), 90,175, PIVOT)),
+        ("Erratic choppy saucer (avoid)", "Avoid: no clean accumulation signal, structure unclear",
+         lambda ox,oy: mini_path(ox,oy,600,240, erratic_saucer(), 90,175, RED)),
+    ]
+    variations_grid("var-rounding-bottom.svg", "Rounding Bottom / Saucer - Variations and Verdict", panels)
+
+
+def make_var_undercut_reclaim():
+    """Undercut & Reclaim variation grid."""
+    support = 140  # key support level
+
+    def strong_reclaim():  # flush below, same-session reclaim, follow-through
+        pts = [(0,160),(20,155),(40,150),(60,146),(80,142),(100,140),
+               (115,132),(120,126),(125,122),  # undercut
+               (135,136),(145,142),(160,148),(178,154),(196,162),(214,170),(232,178)]
+        return pts
+
+    def vol_surge_reclaim():  # climactic vol at low, strong reclaim next day
+        pts = [(0,162),(20,158),(40,153),(60,148),(80,143),(100,140),
+               (115,134),(120,128),(126,124),   # deeper flush
+               (138,138),(150,143),(164,150),(180,158),(196,166),(212,174)]
+        return pts
+
+    def weak_reclaim():  # reclaim on thin vol, partial recovery only
+        pts = [(0,160),(20,155),(40,150),(60,146),(80,142),(100,140),
+               (115,133),(120,128),
+               (132,134),(144,138),(156,140),(168,139),(180,138),(192,136),(204,134)]
+        return pts
+
+    def failed_reclaim():  # reclaims 140, then falls back below it
+        pts = [(0,162),(20,158),(40,153),(60,148),(80,142),(100,140),
+               (112,134),(118,128),
+               (128,136),(138,141),(148,143),(158,140),(168,136),(178,131),(190,126),(202,122)]
+        return pts
+
+    panels = [
+        ("Strong undercut + same-session reclaim close (A-grade)", "Take it: trap reversal, follow-through confirms",
+         lambda ox,oy: mini_path(ox,oy,600,240, strong_reclaim(), 110,185, GREEN)),
+        ("Climactic vol flush + next-day reclaim (strongest variant)", "Take it: panic exhaustion = institutional buying",
+         lambda ox,oy: mini_path(ox,oy,600,240, vol_surge_reclaim(), 110,185, GREEN)),
+        ("Weak vol reclaim - price stalls under prior support (caution)", "Caution: lack of follow-through = lower quality",
+         lambda ox,oy: mini_path(ox,oy,600,240, weak_reclaim(), 110,175, PIVOT)),
+        ("Reclaim fails - closes back below support (avoid)", "Avoid: exit immediately on failed reclaim close",
+         lambda ox,oy: mini_path(ox,oy,600,240, failed_reclaim(), 108,175, RED)),
+    ]
+    variations_grid("var-undercut-reclaim.svg", "Undercut and Reclaim - Variations and Verdict", panels)
+
+
 # ----- master runner -----
 
 def main():
@@ -815,9 +1107,15 @@ def main():
     make_rounding_bottom()
     make_undercut_reclaim()
     make_var_bull_flag()
+    make_var_pennant()
+    make_var_ascending_triangle()
+    make_var_htf()
     make_var_cup_handle()
+    make_var_flat_base()
     make_var_vcp()
     make_var_double_bottom()
+    make_var_rounding_bottom()
+    make_var_undercut_reclaim()
     make_var_inverse_hs()
     files = sorted(p.name for p in OUT.glob("*.svg"))
     print(f"Generated {len(files)} SVGs in {OUT}")

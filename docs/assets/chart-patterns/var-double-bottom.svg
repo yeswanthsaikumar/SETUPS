@@ -1,11 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="t d">
-<title id="t">Double Bottom — Variations &amp; Verdict</title>
-<desc id="d">Double Bottom — Variations &amp; Verdict</desc>
+<title id="t">Double Bottom - Variations &amp; Verdict</title>
+<desc id="d">Double Bottom - Variations &amp; Verdict</desc>
 <rect width="1400" height="760" fill="#070d18"/>
-<text x="40" y="40" fill="#e5edf8" font-size="24" font-family="Arial, sans-serif" font-weight="700">Double Bottom — Variations &amp; Verdict</text>
+<text x="40" y="40" fill="#e5edf8" font-size="24" font-family="Arial, sans-serif" font-weight="700">Double Bottom - Variations &amp; Verdict</text>
 <rect x="40" y="70" width="640" height="320" rx="10" fill="#0d1626" stroke="#172338"/>
 <text x="56" y="96" fill="#e5edf8" font-size="16" font-family="Arial, sans-serif" font-weight="600">Clean W (equal lows)</text>
-<text x="56" y="116" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif">Take it: 2nd low ≈ 1st, vol lighter on 2nd</text>
+<text x="56" y="116" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif">Take it: 2nd low ~ 1st, vol lighter on 2nd</text>
 <rect x="56" y="130" width="600" height="240" fill="#0a1322" stroke="#172338"/>
 <path d="M56.0 150.0 L96.0 190.0 L136.0 230.0 L176.0 270.0 L216.0 310.0 L256.0 334.0 L296.0 294.0 L336.0 270.0 L376.0 254.0 L416.0 270.0 L456.0 302.0 L496.0 330.0 L536.0 294.0 L576.0 254.0 L616.0 230.0 L656.0 210.0" fill="none" stroke="#2ecc71" stroke-width="2"/>
 <rect x="700" y="70" width="640" height="320" rx="10" fill="#0d1626" stroke="#172338"/>

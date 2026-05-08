@@ -1,22 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="t d">
-<title id="t">Cup with Handle — Trade Plan</title>
+<title id="t">Cup with Handle - Trade Plan</title>
 <desc id="d">Pivot above handle high, stop below handle low, target = cup depth projection</desc>
 <rect width="1400" height="760" fill="#070d18"/>
 <g stroke="#172338" stroke-width="1">
 <path d="M80 70H1320M80 140H1320M80 210H1320M80 280H1320M80 350H1320M80 420H1320M80 490H1320M80 560H1320"/>
 <path d="M120 60V580M220 60V580M320 60V580M420 60V580M520 60V580M620 60V580M720 60V580M820 60V580M920 60V580M1020 60V580M1120 60V580M1220 60V580"/>
 </g>
-<text x="90" y="42" fill="#e5edf8" font-size="26" font-family="Arial, sans-serif" font-weight="600">Cup with Handle — Trade Plan</text>
+<text x="90" y="42" fill="#e5edf8" font-size="26" font-family="Arial, sans-serif" font-weight="600">Cup with Handle - Trade Plan</text>
 <text x="90" y="64" fill="#9eb1c7" font-size="14" font-family="Arial, sans-serif">Pivot above handle high, stop below handle low, target = cup depth projection</text>
 <path d="M120.0 310.0 L180.0 345.7 L240.0 388.6 L300.0 431.4 L360.0 460.0 L420.0 481.4 L480.0 488.6 L540.0 474.3 L600.0 438.6 L660.0 395.7 L720.0 360.0 L780.0 331.4 L820.0 317.1 L840.0 324.3 L880.0 338.6 L920.0 345.7 L960.0 338.6 L1000.0 324.3 L1020.0 317.1 L1060.0 288.6 L1100.0 245.7 L1160.0 202.9 L1220.0 160.0" fill="none" stroke="#4da3ff" stroke-width="2.5"/>
 <line x1="80" y1="317.1" x2="1320" y2="317.1" stroke="#22c55e" stroke-dasharray="6 6" stroke-width="2"/>
 <text x="1100" y="311.1" fill="#22c55e" font-size="13" font-family="Arial, sans-serif" font-weight="600">Entry: break &gt; handle high 148</text>
 <line x1="80" y1="352.9" x2="1320" y2="352.9" stroke="#ef4444" stroke-dasharray="6 6" stroke-width="2"/>
-<text x="1100" y="346.9" fill="#ef4444" font-size="13" font-family="Arial, sans-serif" font-weight="600">Stop: &lt; handle low 138 (≈ 7%)</text>
+<text x="1100" y="346.9" fill="#ef4444" font-size="13" font-family="Arial, sans-serif" font-weight="600">Stop: &lt; handle low 138 (~ 7%)</text>
 <line x1="80" y1="220.7" x2="1320" y2="220.7" stroke="#7dd3fc" stroke-dasharray="6 6" stroke-width="2"/>
 <text x="1100" y="214.7" fill="#7dd3fc" font-size="13" font-family="Arial, sans-serif" font-weight="600">T1: +2R partial</text>
 <line x1="80" y1="131.4" x2="1320" y2="131.4" stroke="#60a5fa" stroke-dasharray="6 6" stroke-width="2"/>
-<text x="1100" y="125.4" fill="#60a5fa" font-size="13" font-family="Arial, sans-serif" font-weight="600">T2: cup depth projection (max ≈ +35%)</text>
+<text x="1100" y="125.4" fill="#60a5fa" font-size="13" font-family="Arial, sans-serif" font-weight="600">T2: cup depth projection (max ~ +35%)</text>
 <rect x="108" y="635.0" width="24" height="85.0" fill="#6e3745"/>
 <rect x="168" y="650.0" width="24" height="70.0" fill="#6e3745"/>
 <rect x="228" y="665.0" width="24" height="55.0" fill="#6e3745"/>

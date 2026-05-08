@@ -1,12 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="t d">
-<title id="t">Undercut &amp; Reclaim — Reversal</title>
+<title id="t">Undercut &amp; Reclaim - Reversal</title>
 <desc id="d">Support flush + reclaim close + follow-through = trade</desc>
 <rect width="1400" height="760" fill="#070d18"/>
 <g stroke="#172338" stroke-width="1">
 <path d="M80 70H1320M80 140H1320M80 210H1320M80 280H1320M80 350H1320M80 420H1320M80 490H1320M80 560H1320"/>
 <path d="M120 60V580M220 60V580M320 60V580M420 60V580M520 60V580M620 60V580M720 60V580M820 60V580M920 60V580M1020 60V580M1120 60V580M1220 60V580"/>
 </g>
-<text x="90" y="42" fill="#e5edf8" font-size="26" font-family="Arial, sans-serif" font-weight="600">Undercut &amp; Reclaim — Reversal</text>
+<text x="90" y="42" fill="#e5edf8" font-size="26" font-family="Arial, sans-serif" font-weight="600">Undercut &amp; Reclaim - Reversal</text>
 <text x="90" y="64" fill="#9eb1c7" font-size="14" font-family="Arial, sans-serif">Support flush + reclaim close + follow-through = trade</text>
 <path d="M120.0 268.3 L180.0 285.0 L240.0 301.7 L300.0 318.3 L360.0 330.8 L420.0 343.3 L480.0 351.7 L540.0 360.0 L600.0 385.0 L660.0 426.7 L700.0 376.7 L740.0 335.0 L780.0 301.7 L820.0 285.0 L860.0 260.0 L920.0 226.7 L980.0 193.3 L1040.0 168.3 L1100.0 143.3" fill="none" stroke="#4da3ff" stroke-width="2.5"/>
 <line x1="80" y1="301.7" x2="1320" y2="301.7" stroke="#22c55e" stroke-dasharray="6 6" stroke-width="2"/>
@@ -16,7 +17,7 @@
 <line x1="80" y1="226.7" x2="1320" y2="226.7" stroke="#7dd3fc" stroke-dasharray="6 6" stroke-width="2"/>
 <text x="1100" y="220.7" fill="#7dd3fc" font-size="13" font-family="Arial, sans-serif" font-weight="600">T1: midpoint of prior range</text>
 <line x1="80" y1="122.5" x2="1320" y2="122.5" stroke="#60a5fa" stroke-dasharray="6 6" stroke-width="2"/>
-<text x="1100" y="116.5" fill="#60a5fa" font-size="13" font-family="Arial, sans-serif" font-weight="600">T2: prior resistance (max ≈ +28%)</text>
+<text x="1100" y="116.5" fill="#60a5fa" font-size="13" font-family="Arial, sans-serif" font-weight="600">T2: prior resistance (max ~ +28%)</text>
 <rect x="108" y="680.0" width="24" height="40.0" fill="#6e3745"/>
 <rect x="168" y="675.0" width="24" height="45.0" fill="#6e3745"/>
 <rect x="228" y="675.0" width="24" height="45.0" fill="#6e3745"/>
@@ -39,7 +40,7 @@
 <text x="110" y="88.0" fill="#9eb1c7" font-size="13" font-family="Arial, sans-serif" font-weight="600">Decline into key support</text>
 <text x="560" y="88.0" fill="#ff5a6e" font-size="13" font-family="Arial, sans-serif" font-weight="600">Undercut: panic flush (climactic vol)</text>
 <text x="760" y="88.0" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif" font-weight="600">Reclaim above support = trap reversal</text>
-<text x="90" y="590.0" fill="#ff5a6e" font-size="13" font-family="Arial, sans-serif" font-weight="600">Failure = close back below 140 → exit immediately. Never debate a failed reclaim.</text>
+<text x="90" y="590.0" fill="#ff5a6e" font-size="13" font-family="Arial, sans-serif" font-weight="600">Failure = close back below 140 -&gt; exit immediately. Never debate a failed reclaim.</text>
 <rect x="1010" y="62" width="280" height="120" rx="8" fill="#0d1626" stroke="#172338"/>
 <line x1="1020" y1="80" x2="1050" y2="80" stroke="#22c55e" stroke-dasharray="6 6" stroke-width="2"/>
 <text x="1060" y="84.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Entry</text>

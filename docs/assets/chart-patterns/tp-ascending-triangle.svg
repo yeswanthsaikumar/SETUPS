@@ -1,12 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="t d">
-<title id="t">Ascending Triangle — Trade Plan</title>
+<title id="t">Ascending Triangle - Trade Plan</title>
 <desc id="d">Flat top + rising lows; sized risk under last higher low</desc>
 <rect width="1400" height="760" fill="#070d18"/>
 <g stroke="#172338" stroke-width="1">
 <path d="M80 70H1320M80 140H1320M80 210H1320M80 280H1320M80 350H1320M80 420H1320M80 490H1320M80 560H1320"/>
 <path d="M120 60V580M220 60V580M320 60V580M420 60V580M520 60V580M620 60V580M720 60V580M820 60V580M920 60V580M1020 60V580M1120 60V580M1220 60V580"/>
 </g>
-<text x="90" y="42" fill="#e5edf8" font-size="26" font-family="Arial, sans-serif" font-weight="600">Ascending Triangle — Trade Plan</text>
+<text x="90" y="42" fill="#e5edf8" font-size="26" font-family="Arial, sans-serif" font-weight="600">Ascending Triangle - Trade Plan</text>
 <text x="90" y="64" fill="#9eb1c7" font-size="14" font-family="Arial, sans-serif">Flat top + rising lows; sized risk under last higher low</text>
 <path d="M120.0 518.3 L180.0 476.7 L240.0 435.0 L300.0 393.3 L360.0 351.7 L420.0 310.0 L480.0 360.0 L540.0 310.0 L600.0 343.3 L660.0 310.0 L720.0 326.7 L780.0 310.0 L820.0 285.0 L880.0 243.3 L940.0 201.7 L1000.0 168.3 L1060.0 143.3 L1120.0 122.5" fill="none" stroke="#4da3ff" stroke-width="2.5"/>
 <line x1="80" y1="310.0" x2="1320" y2="310.0" stroke="#22c55e" stroke-dasharray="6 6" stroke-width="2"/>
@@ -16,7 +17,7 @@
 <line x1="80" y1="218.3" x2="1320" y2="218.3" stroke="#7dd3fc" stroke-dasharray="6 6" stroke-width="2"/>
 <text x="1100" y="212.3" fill="#7dd3fc" font-size="13" font-family="Arial, sans-serif" font-weight="600">T1: +2R partial</text>
 <line x1="80" y1="143.3" x2="1320" y2="143.3" stroke="#60a5fa" stroke-dasharray="6 6" stroke-width="2"/>
-<text x="1100" y="137.3" fill="#60a5fa" font-size="13" font-family="Arial, sans-serif" font-weight="600">T2: triangle height projection (max ≈ +27%)</text>
+<text x="1100" y="137.3" fill="#60a5fa" font-size="13" font-family="Arial, sans-serif" font-weight="600">T2: triangle height projection (max ~ +27%)</text>
 <rect x="108" y="670.0" width="24" height="50.0" fill="#2f6f49"/>
 <rect x="168" y="670.0" width="24" height="50.0" fill="#2f6f49"/>
 <rect x="228" y="670.0" width="24" height="50.0" fill="#2f6f49"/>
@@ -37,7 +38,7 @@
 <rect x="1108" y="607.1" width="24" height="112.9" fill="#2f6f49"/>
 <text x="90" y="592.0" fill="#9eb1c7" font-size="13" font-family="Arial, sans-serif" font-weight="400">Volume</text>
 <text x="430" y="88.0" fill="#facc15" font-size="13" font-family="Arial, sans-serif" font-weight="600">Resistance defended (3-5 tests)</text>
-<text x="820" y="88.0" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif" font-weight="600">Breakout — fresh participation</text>
+<text x="820" y="88.0" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif" font-weight="600">Breakout - fresh participation</text>
 <text x="90" y="590.0" fill="#f59e0b" font-size="13" font-family="Arial, sans-serif" font-weight="600">Trail under each new higher low; do not lower stop after breakout.</text>
 <rect x="1010" y="62" width="280" height="120" rx="8" fill="#0d1626" stroke="#172338"/>
 <line x1="1020" y1="80" x2="1050" y2="80" stroke="#22c55e" stroke-dasharray="6 6" stroke-width="2"/>

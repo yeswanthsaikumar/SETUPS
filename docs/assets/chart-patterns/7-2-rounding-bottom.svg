@@ -1,12 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="t d">
-<title id="t">Rounding Bottom / Saucer — Reversal</title>
+<title id="t">Rounding Bottom / Saucer - Reversal</title>
 <desc id="d">Smooth U-turn, 6-12 weeks, accumulation signature, breakout starts trend</desc>
 <rect width="1400" height="760" fill="#070d18"/>
 <g stroke="#172338" stroke-width="1">
 <path d="M80 70H1320M80 140H1320M80 210H1320M80 280H1320M80 350H1320M80 420H1320M80 490H1320M80 560H1320"/>
 <path d="M120 60V580M220 60V580M320 60V580M420 60V580M520 60V580M620 60V580M720 60V580M820 60V580M920 60V580M1020 60V580M1120 60V580M1220 60V580"/>
 </g>
-<text x="90" y="42" fill="#e5edf8" font-size="26" font-family="Arial, sans-serif" font-weight="600">Rounding Bottom / Saucer — Reversal</text>
+<text x="90" y="42" fill="#e5edf8" font-size="26" font-family="Arial, sans-serif" font-weight="600">Rounding Bottom / Saucer - Reversal</text>
 <text x="90" y="64" fill="#9eb1c7" font-size="14" font-family="Arial, sans-serif">Smooth U-turn, 6-12 weeks, accumulation signature, breakout starts trend</text>
 <path d="M120.0 267.1 L150.0 292.2 L180.0 316.0 L210.0 338.5 L240.0 359.7 L270.0 379.6 L300.0 398.3 L330.0 415.6 L360.0 431.7 L390.0 446.5 L420.0 460.0 L450.0 472.2 L480.0 483.1 L510.0 492.8 L540.0 501.1 L570.0 508.2 L600.0 514.0 L630.0 518.5 L660.0 521.7 L690.0 523.6 L720.0 524.3 L750.0 523.6 L780.0 521.7 L810.0 518.5 L840.0 514.0 L870.0 508.2 L900.0 501.1 L930.0 492.8 L960.0 483.1 L990.0 472.2 L1020.0 460.0 L1050.0 446.5 L1080.0 431.7 L1110.0 415.6 L1140.0 398.3 L1170.0 379.6 L1200.0 359.7 L1230.0 338.5 L1280.0 210.0 L1320.0 167.1" fill="none" stroke="#4da3ff" stroke-width="2.5"/>
 <line x1="80" y1="238.6" x2="1320" y2="238.6" stroke="#22c55e" stroke-dasharray="6 6" stroke-width="2"/>

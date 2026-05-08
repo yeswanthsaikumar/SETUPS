@@ -1,12 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="t d">
-<title id="t">VCP — Trade Plan with Contraction Markers</title>
+<title id="t">VCP - Trade Plan with Contraction Markers</title>
 <desc id="d">Each pullback tighter; final pivot = trigger; trail below 10EMA</desc>
 <rect width="1400" height="760" fill="#070d18"/>
 <g stroke="#172338" stroke-width="1">
 <path d="M80 70H1320M80 140H1320M80 210H1320M80 280H1320M80 350H1320M80 420H1320M80 490H1320M80 560H1320"/>
 <path d="M120 60V580M220 60V580M320 60V580M420 60V580M520 60V580M620 60V580M720 60V580M820 60V580M920 60V580M1020 60V580M1120 60V580M1220 60V580"/>
 </g>
-<text x="90" y="42" fill="#e5edf8" font-size="26" font-family="Arial, sans-serif" font-weight="600">VCP — Trade Plan with Contraction Markers</text>
+<text x="90" y="42" fill="#e5edf8" font-size="26" font-family="Arial, sans-serif" font-weight="600">VCP - Trade Plan with Contraction Markers</text>
 <text x="90" y="64" fill="#9eb1c7" font-size="14" font-family="Arial, sans-serif">Each pullback tighter; final pivot = trigger; trail below 10EMA</text>
 <path d="M120.0 518.3 L180.0 451.7 L240.0 393.3 L300.0 343.3 L360.0 301.7 L420.0 285.0 L460.0 293.3 L500.0 326.7 L540.0 351.7 L580.0 364.2 L620.0 343.3 L660.0 310.0 L700.0 285.0 L740.0 293.3 L780.0 318.3 L820.0 335.0 L860.0 339.2 L900.0 318.3 L940.0 293.3 L980.0 285.0 L1000.0 293.3 L1020.0 301.7 L1040.0 310.0 L1060.0 301.7 L1080.0 293.3 L1100.0 285.0 L1140.0 251.7 L1180.0 210.0 L1220.0 168.3 L1260.0 135.0" fill="none" stroke="#4da3ff" stroke-width="2.5"/>
 <line x1="80" y1="285.0" x2="1320" y2="285.0" stroke="#22c55e" stroke-dasharray="6 6" stroke-width="2"/>
@@ -48,11 +49,11 @@
 <rect x="1208" y="609.0" width="24" height="111.0" fill="#2f6f49"/>
 <rect x="1248" y="601.0" width="24" height="119.0" fill="#2f6f49"/>
 <text x="90" y="592.0" fill="#9eb1c7" font-size="13" font-family="Arial, sans-serif" font-weight="400">Volume</text>
-<text x="470" y="88.0" fill="#9eb1c7" font-size="13" font-family="Arial, sans-serif" font-weight="600">C1 — 12% pullback</text>
-<text x="740" y="88.0" fill="#9eb1c7" font-size="13" font-family="Arial, sans-serif" font-weight="600">C2 — 8% (smaller)</text>
-<text x="1000" y="88.0" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif" font-weight="600">C3 — 4% (tightest)</text>
-<text x="1140" y="88.0" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif" font-weight="600">Breakout — vol urgency</text>
-<text x="90" y="590.0" fill="#ff5a6e" font-size="13" font-family="Arial, sans-serif" font-weight="600">If contractions WIDEN (10→14→18%), pattern is broken. Stand aside.</text>
+<text x="470" y="88.0" fill="#9eb1c7" font-size="13" font-family="Arial, sans-serif" font-weight="600">C1 - 12% pullback</text>
+<text x="740" y="88.0" fill="#9eb1c7" font-size="13" font-family="Arial, sans-serif" font-weight="600">C2 - 8% (smaller)</text>
+<text x="1000" y="88.0" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif" font-weight="600">C3 - 4% (tightest)</text>
+<text x="1140" y="88.0" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif" font-weight="600">Breakout - vol urgency</text>
+<text x="90" y="590.0" fill="#ff5a6e" font-size="13" font-family="Arial, sans-serif" font-weight="600">If contractions WIDEN (10-&gt;14-&gt;18%), pattern is broken. Stand aside.</text>
 <rect x="1010" y="62" width="280" height="120" rx="8" fill="#0d1626" stroke="#172338"/>
 <line x1="1020" y1="80" x2="1050" y2="80" stroke="#22c55e" stroke-dasharray="6 6" stroke-width="2"/>
 <text x="1060" y="84.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Entry</text>

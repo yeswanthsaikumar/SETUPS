@@ -189,7 +189,13 @@ These patterns work best when the stock is already strong.
 - **Trail:** under higher lows once trend resumes.
 - **Invalidate:** breakout fails to follow through within 1–2 sessions, or the lower boundary breaks on heavy volume.
 
-**Variations:** symmetrical triangle = neutral until break · bull pennant = tighter, faster · expanding triangle = lower quality, emotional, often fails.
+#### Variations — which to take, which to skip
+![Pennant variations](assets/chart-patterns/var-pennant.svg)
+
+- **Bull pennant (tight, fast coil)** — strongest. Take it.
+- **Symmetrical triangle (wider, multi-week)** — take it with patience.
+- **Expanding triangle (widening range)** — distribution risk. Avoid.
+- **Lower boundary breaks on volume** — setup failed. Avoid.
 
 ---
 
@@ -211,7 +217,13 @@ These patterns work best when the stock is already strong.
 - **Trail:** under each new higher low, never lower the original stop after entry.
 - **Invalidate:** decisive break below the rising trendline; multiple failed breakout attempts on heavy upper wicks.
 
-**Variations:** tight ascending triangle = very powerful · multiple resistance taps with rising support = valid · too many failed touches = pattern weakening.
+#### Variations
+![Ascending Triangle variations](assets/chart-patterns/var-ascending-triangle.svg)
+
+- **Tight 3-4 test ascending triangle** — strongest. Take it.
+- **Multi-test with tightening higher lows** — also strong. Take it.
+- **Too many failed upper touches** — resistance absorbing demand. Caution.
+- **Rising support breaks on volume** — setup invalidated. Avoid.
 
 ---
 
@@ -228,7 +240,13 @@ These patterns work best when the stock is already strong.
 - **T2 / max gain:** **don't anchor to a measured move** — HTFs can run +50–100% if regime supports. Trail under 10/21 EMA.
 - **Invalidate:** breakdown through flag low; wide sloppy ranges or red volume spikes inside the flag.
 
-**Variations:** classic HTF = strongest · mini-HTF = useful but smaller magnitude · "false HTF" with deep pullback = no longer an HTF, treat as standard base.
+#### Variations
+![High Tight Flag variations](assets/chart-patterns/var-htf.svg)
+
+- **Classic HTF (90%+ run, tight 5-8 bar shelf)** — rarest and most explosive. Take it.
+- **Mini-HTF (40-60% run, still tight)** — valid with same logic. Take it.
+- **False HTF (pullback > 20%)** — too deep; treat it as a standard base. Caution.
+- **HTF with volume spikes on red flag bars** — distribution inside flag. Avoid.
 
 ---
 
@@ -278,7 +296,13 @@ These are the patterns most traders should specialize in.
 - **Trail:** under most recent support pivot or 21 EMA.
 - **Invalidate:** deep crack through the base, failed breakout on volume, multiple distribution upper-wicks during base.
 
-**Variations:** first-stage flat base = good · second-stage = often excellent · late-stage = more failure-prone, requires bigger market support.
+#### Variations
+![Flat Base variations](assets/chart-patterns/var-flat-base.svg)
+
+- **1st or 2nd stage flat base — tight, dry volume** — highest quality. Take it.
+- **Second-stage base after prior breakout and run** — institutions re-accumulating. Take it.
+- **Late-stage loose base with upper wicks** — distribution risk. Caution.
+- **Base breaks down through support on volume** — exit immediately. Avoid.
 
 ---
 
@@ -384,6 +408,14 @@ Reversal patterns can work well, but they demand more patience and selectivity.
 - **Trail:** under 50/200 SMA for position trades.
 - **Invalidate:** breakout fails and price sinks back into the base; structure is too erratic.
 
+#### Variations
+![Rounding Bottom variations](assets/chart-patterns/var-rounding-bottom.svg)
+
+- **Clean U-shaped saucer — smooth gradual accumulation** — strongest. Take it.
+- **Saucer with handle before breakout** — most powerful variant; handle dries vol. Take it.
+- **V-shaped bottom (sharp snap-back)** — weak hands still in, more volatile. Caution.
+- **Erratic choppy saucer — no clean structure** — no institutional signature. Avoid.
+
 ---
 
 ### 7.3 Failed Breakdown / Undercut & Reclaim
@@ -399,6 +431,14 @@ Reversal patterns can work well, but they demand more patience and selectivity.
 - **T2 / max gain:** prior resistance (typical max +20–30%).
 - **Trail:** under reclaim low first, then under each higher low.
 - **Invalidate:** **reclaim fails — close back below the reclaimed level → exit immediately.** Never debate a failed reclaim.
+
+#### Variations
+![Undercut and Reclaim variations](assets/chart-patterns/var-undercut-reclaim.svg)
+
+- **Strong undercut + same-session reclaim close** — strongest. Take it.
+- **Climactic vol flush + next-day reclaim with follow-through** — most powerful variant. Take it.
+- **Weak-volume reclaim, price stalls under prior support** — lower quality. Caution.
+- **Reclaim closes back below support next session** — failed. Exit immediately. Avoid.
 
 ---
 

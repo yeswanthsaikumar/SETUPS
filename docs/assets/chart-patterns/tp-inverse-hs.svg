@@ -1,12 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="t d">
-<title id="t">Inverse Head &amp; Shoulders — Trade Plan</title>
+<title id="t">Inverse Head &amp; Shoulders - Trade Plan</title>
 <desc id="d">Neckline trigger, stop under right shoulder, target = head-to-neckline projection</desc>
 <rect width="1400" height="760" fill="#070d18"/>
 <g stroke="#172338" stroke-width="1">
 <path d="M80 70H1320M80 140H1320M80 210H1320M80 280H1320M80 350H1320M80 420H1320M80 490H1320M80 560H1320"/>
 <path d="M120 60V580M220 60V580M320 60V580M420 60V580M520 60V580M620 60V580M720 60V580M820 60V580M920 60V580M1020 60V580M1120 60V580M1220 60V580"/>
 </g>
-<text x="90" y="42" fill="#e5edf8" font-size="26" font-family="Arial, sans-serif" font-weight="600">Inverse Head &amp; Shoulders — Trade Plan</text>
+<text x="90" y="42" fill="#e5edf8" font-size="26" font-family="Arial, sans-serif" font-weight="600">Inverse Head &amp; Shoulders - Trade Plan</text>
 <text x="90" y="64" fill="#9eb1c7" font-size="14" font-family="Arial, sans-serif">Neckline trigger, stop under right shoulder, target = head-to-neckline projection</text>
 <path d="M120.0 136.9 L180.0 213.8 L240.0 290.8 L300.0 348.5 L360.0 375.4 L420.0 321.5 L480.0 298.5 L540.0 329.2 L600.0 406.2 L660.0 452.3 L700.0 463.8 L740.0 406.2 L780.0 336.9 L820.0 298.5 L860.0 321.5 L900.0 352.3 L940.0 360.0 L980.0 321.5 L1020.0 283.1 L1060.0 252.3 L1100.0 221.5 L1160.0 183.1 L1220.0 152.3" fill="none" stroke="#4da3ff" stroke-width="2.5"/>
 <line x1="80" y1="290.8" x2="1320" y2="290.8" stroke="#22c55e" stroke-dasharray="6 6" stroke-width="2"/>
@@ -16,7 +17,7 @@
 <line x1="80" y1="213.8" x2="1320" y2="213.8" stroke="#7dd3fc" stroke-dasharray="6 6" stroke-width="2"/>
 <text x="1100" y="207.8" fill="#7dd3fc" font-size="13" font-family="Arial, sans-serif" font-weight="600">T1: +2R</text>
 <line x1="80" y1="117.7" x2="1320" y2="117.7" stroke="#60a5fa" stroke-dasharray="6 6" stroke-width="2"/>
-<text x="1100" y="111.7" fill="#60a5fa" font-size="13" font-family="Arial, sans-serif" font-weight="600">T2: head→neckline projected up (max ≈ +28%)</text>
+<text x="1100" y="111.7" fill="#60a5fa" font-size="13" font-family="Arial, sans-serif" font-weight="600">T2: head-&gt;neckline projected up (max ~ +28%)</text>
 <rect x="108" y="635.0" width="24" height="85.0" fill="#6e3745"/>
 <rect x="168" y="625.0" width="24" height="95.0" fill="#6e3745"/>
 <rect x="228" y="650.0" width="24" height="70.0" fill="#6e3745"/>
@@ -39,7 +40,7 @@
 <rect x="1128" y="610.0" width="24" height="110.0" fill="#2f6f49"/>
 <rect x="1188" y="605.0" width="24" height="115.0" fill="#2f6f49"/>
 <text x="90" y="592.0" fill="#9eb1c7" font-size="13" font-family="Arial, sans-serif" font-weight="400">Volume</text>
-<text x="90" y="590.0" fill="#fbbf24" font-size="13" font-family="Arial, sans-serif" font-weight="600">Right shoulder must be SHALLOWER than head, with lighter vol — proves sellers are exhausted.</text>
+<text x="90" y="590.0" fill="#fbbf24" font-size="13" font-family="Arial, sans-serif" font-weight="600">Right shoulder must be SHALLOWER than head, with lighter vol - proves sellers are exhausted.</text>
 <rect x="1010" y="62" width="280" height="120" rx="8" fill="#0d1626" stroke="#172338"/>
 <line x1="1020" y1="80" x2="1050" y2="80" stroke="#22c55e" stroke-dasharray="6 6" stroke-width="2"/>
 <text x="1060" y="84.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Entry</text>
