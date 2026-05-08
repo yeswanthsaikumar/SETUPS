@@ -1280,6 +1280,140 @@ _PLAYBOOK_DOCS: dict[str, dict] = {
         "icon":     "🛡️",
         "order":    7,
     },
+    # ── Risk & Survival playbooks ──────────────────────────────────────────
+    "position-sizing-playbook": {
+        "path":     ROOT / "docs" / "POSITION_SIZING_PLAYBOOK.md",
+        "title":    "Position Sizing Playbook",
+        "dek":      "The five-layer sizing system: base risk, regime multiplier, setup quality, "
+                    "streak adjustment, and heat caps. Starter positions, pyramiding, and the math "
+                    "that separates survivors from blow-ups.",
+        "file":     "Position_Sizing_Playbook.html",
+        "category": "blog",
+        "icon":     "📐",
+        "order":    8,
+    },
+    "stop-loss-mastery": {
+        "path":     ROOT / "docs" / "STOP_LOSS_MASTERY.md",
+        "title":    "Stop Loss Mastery",
+        "dek":      "Five stop types, placement decision trees, hard vs mental stops, "
+                    "the post-stop ritual, and why honoring every stop is the only discipline "
+                    "that matters.",
+        "file":     "Stop_Loss_Mastery.html",
+        "category": "blog",
+        "icon":     "🛑",
+        "order":    9,
+    },
+    "drawdown-management": {
+        "path":     ROOT / "docs" / "DRAWDOWN_MANAGEMENT.md",
+        "title":    "Drawdown Management",
+        "dek":      "Account-level defense: daily, weekly, and monthly drawdown caps, severity "
+                    "tiers, the recovery protocol, and the five mistakes that turn small drawdowns "
+                    "into career-ending ones.",
+        "file":     "Drawdown_Management.html",
+        "category": "blog",
+        "icon":     "🩹",
+        "order":    10,
+    },
+    "losing-streak-survival-guide": {
+        "path":     ROOT / "docs" / "LOSING_STREAK_SURVIVAL_GUIDE.md",
+        "title":    "Losing Streak Survival Guide",
+        "dek":      "The probability of streaks, the streak response protocol (size reduction "
+                    "tiers), the recovery roadmap, emotional first aid, and what NOT to do when "
+                    "everything is going wrong.",
+        "file":     "Losing_Streak_Survival_Guide.html",
+        "category": "blog",
+        "icon":     "🧊",
+        "order":    11,
+    },
+    "overnight-risk-survival-guide": {
+        "path":     ROOT / "docs" / "OVERNIGHT_RISK_SURVIVAL_GUIDE.md",
+        "title":    "Overnight Risk Survival Guide",
+        "dek":      "Gap risk management for swing traders: the seven rules, pre-event de-risk "
+                    "protocol, gap survival sizing formula, weekend holding rules, and what to do "
+                    "after a gap against you.",
+        "file":     "Overnight_Risk_Survival_Guide.html",
+        "category": "blog",
+        "icon":     "🌙",
+        "order":    12,
+    },
+    # ── Profits & Execution playbooks ──────────────────────────────────────
+    "profit-taking-playbook": {
+        "path":     ROOT / "docs" / "PROFIT_TAKING_PLAYBOOK.md",
+        "title":    "Profit Taking Playbook",
+        "dek":      "The four profit-taking models, the scaling system (1R/2R/3R), climax sell "
+                    "signals, when to hold through pullbacks, and the common mistakes that turn "
+                    "winners into nothing.",
+        "file":     "Profit_Taking_Playbook.html",
+        "category": "blog",
+        "icon":     "💰",
+        "order":    13,
+    },
+    "hold-vs-sell-framework": {
+        "path":     ROOT / "docs" / "HOLD_VS_SELL_FRAMEWORK.md",
+        "title":    "Hold vs Sell Framework",
+        "dek":      "The hold/sell decision tree, five sell signals, five hold signals, the "
+                    "scaling plan for open positions, and how to replace 'should I sell?' with "
+                    "a mechanical trailing-stop answer.",
+        "file":     "Hold_vs_Sell_Framework.html",
+        "category": "blog",
+        "icon":     "⚖️",
+        "order":    14,
+    },
+    "risk-reward-expectancy": {
+        "path":     ROOT / "docs" / "RISK_REWARD_EXPECTANCY.md",
+        "title":    "Risk-Reward & Expectancy",
+        "dek":      "The expectancy formula, why 1:1 trades kill you, R-multiples explained, "
+                    "pattern-specific R:R expectations, and the monthly expectancy journal that "
+                    "keeps your edge visible.",
+        "file":     "Risk_Reward_Expectancy.html",
+        "category": "blog",
+        "icon":     "📊",
+        "order":    15,
+    },
+    "market-regime-playbook": {
+        "path":     ROOT / "docs" / "MARKET_REGIME_PLAYBOOK.md",
+        "title":    "Market Regime Playbook",
+        "dek":      "The four regimes (strong, neutral, correction, bear), the weekly regime "
+                    "checklist, how each pattern performs by regime, and the transition playbook "
+                    "for adapting when conditions change.",
+        "file":     "Market_Regime_Playbook.html",
+        "category": "blog",
+        "icon":     "🌡️",
+        "order":    16,
+    },
+    # ── Psychology & Process playbooks ──────────────────────────────────────
+    "trading-psychology-playbook": {
+        "path":     ROOT / "docs" / "TRADING_PSYCHOLOGY_PLAYBOOK.md",
+        "title":    "Trading Psychology Playbook",
+        "dek":      "The seven emotions that kill trades, the pre-trade mental checklist, the "
+                    "Mark Douglas framework, the identity shift, and the emotional journal that "
+                    "turns impulse into process.",
+        "file":     "Trading_Psychology_Playbook.html",
+        "category": "blog",
+        "icon":     "🧘",
+        "order":    17,
+    },
+    "when-not-to-trade": {
+        "path":     ROOT / "docs" / "WHEN_NOT_TO_TRADE.md",
+        "title":    "When Not to Trade",
+        "dek":      "The complete no-trade checklist, eight situations where cash is better, "
+                    "and what to do instead of trading when no setups exist.",
+        "file":     "When_Not_To_Trade.html",
+        "category": "blog",
+        "icon":     "🚫",
+        "order":    18,
+    },
+    "swing-trading-journal-system": {
+        "path":     ROOT / "docs" / "SWING_TRADING_JOURNAL_SYSTEM.md",
+        "title":    "Swing Trading Journal System",
+        "dek":      "The trade card, exit card, mistake tags, daily/weekly/monthly/quarterly "
+                    "review templates, and why the journal is the single habit that separates "
+                    "pros from everybody else.",
+        "file":     "Swing_Trading_Journal_System.html",
+        "category": "blog",
+        "icon":     "📓",
+        "order":    19,
+    },
 }
 
 
@@ -1557,6 +1691,254 @@ def playbook_download(doc: str = "playbook") -> Response:
         media_type="text/html; charset=utf-8",
         headers={
             "Content-Disposition": f'attachment; filename="{meta["file"]}"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+@app.get("/api/playbook/book")
+def playbook_book() -> Response:
+    """Download ALL playbooks as a single printable HTML book, ordered by category.
+
+    This produces a self-contained HTML you can Cmd+P / Ctrl+P → Save as PDF
+    to get a complete offline trading library.
+    """
+    import html as _html
+    from datetime import datetime as _dt
+
+    # Collect all docs that exist, sorted by (category-rank, order)
+    cat_rank = {"core": 0, "blog": 1}
+    entries = []
+    for key, meta in _PLAYBOOK_DOCS.items():
+        if not meta["path"].exists():
+            continue
+        entries.append((cat_rank.get(meta.get("category", "blog"), 2),
+                        meta.get("order", 99), key, meta))
+    entries.sort()
+
+    # Re-use the single-doc download renderer (it calls _inline, _slug, etc.)
+    # by invoking playbook_download for each doc and extracting just the body.
+    # But to keep it simpler and avoid circular imports, we'll just concatenate
+    # the raw markdown with chapter dividers and render once.
+    all_md_parts: list[str] = []
+    for _, _, key, meta in entries:
+        md_text = meta["path"].read_text(encoding="utf-8")
+        all_md_parts.append(md_text)
+
+    combined_md = "\n\n---\n\n".join(all_md_parts)
+
+    # Render using the same inline renderer already defined in playbook_download
+    # We call the download endpoint logic directly by building a virtual meta dict.
+    virtual_meta = {
+        "path": None,
+        "title": "The Complete SETUPS Trading Library",
+        "dek": "Every playbook, guide, and wisdom post in one printable book.",
+        "file": "SETUPS_Complete_Trading_Library.html",
+        "category": "core",
+    }
+
+    # Import the markdown-to-HTML renderer from the existing download function
+    import re as _re
+
+    def _inline_book(s: str) -> str:
+        s = _html.escape(s)
+        def _img_sub(m):
+            alt = m.group(1)
+            url = m.group(2).strip()
+            if url.startswith("./assets/"):
+                url = "/playbook-assets/" + url[len("./assets/"):]
+            elif url.startswith("assets/"):
+                url = "/playbook-assets/" + url[len("assets/"):]
+            return f'<img src="{url}" alt="{alt}" loading="lazy"/>'
+        s = _re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", _img_sub, s)
+        s = _re.sub(r"`([^`]+)`", r"<code>\1</code>", s)
+        s = _re.sub(r"\*\*([^\*]+)\*\*", r"<strong>\1</strong>", s)
+        s = _re.sub(r"(?<!\w)\*([^\*]+)\*", r"<em>\1</em>", s)
+        s = _re.sub(r"(?<!_)_([^_]+)_(?!\w)", r"<em>\1</em>", s)
+        s = _re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', s)
+        return s
+
+    def _slug_book(text: str) -> str:
+        t = _re.sub(r"<[^>]+>", "", text).lower()
+        t = _re.sub(r"[^\w\s-]", "", t).strip()
+        return _re.sub(r"\s+", "-", t) or "section"
+
+    lines = combined_md.splitlines()
+    out: list[str] = []
+    i = 0
+    in_code = False
+    while i < len(lines):
+        ln = lines[i]
+        stripped = ln.rstrip()
+        if stripped.startswith("```"):
+            if not in_code:
+                out.append("<pre><code>")
+                in_code = True
+            else:
+                out.append("</code></pre>")
+                in_code = False
+            i += 1
+            continue
+        if in_code:
+            out.append(_html.escape(ln))
+            i += 1
+            continue
+        if not stripped.strip():
+            out.append("")
+            i += 1
+            continue
+        if _re.match(r"^\s*---+\s*$", stripped):
+            out.append("<hr/>")
+            i += 1
+            continue
+        m = _re.match(r"^(#{1,6})\s+(.*)$", stripped)
+        if m:
+            level = len(m.group(1))
+            text = _inline_book(m.group(2).rstrip("#").strip())
+            slug = _slug_book(text)
+            out.append(f'<h{level} id="{slug}">{text}</h{level}>')
+            i += 1
+            continue
+        if stripped.startswith(">"):
+            block = []
+            while i < len(lines) and lines[i].startswith(">"):
+                block.append(_inline_book(lines[i].lstrip("> ").rstrip()))
+                i += 1
+            out.append("<blockquote><p>" + "<br/>".join(block) + "</p></blockquote>")
+            continue
+        if "|" in stripped and i + 1 < len(lines) and _re.match(
+                r"^\s*\|?\s*:?-{2,}", lines[i + 1]):
+            header_cells = [c.strip() for c in stripped.strip("|").split("|")]
+            i += 2
+            rows: list[list[str]] = []
+            while i < len(lines) and "|" in lines[i] and lines[i].strip():
+                rows.append([c.strip() for c in lines[i].strip().strip("|").split("|")])
+                i += 1
+            th = "".join(f"<th>{_inline_book(c)}</th>" for c in header_cells)
+            tr_list = []
+            for r in rows:
+                td = "".join(f"<td>{_inline_book(c)}</td>" for c in r)
+                tr_list.append(f"<tr>{td}</tr>")
+            out.append(f"<table><thead><tr>{th}</tr></thead><tbody>"
+                       f"{''.join(tr_list)}</tbody></table>")
+            continue
+        m = _re.match(r"^(\s*)(\d+)\.\s+(.*)$", stripped)
+        if m:
+            items = []
+            while i < len(lines):
+                mm = _re.match(r"^(\s*)(\d+)\.\s+(.*)$", lines[i])
+                if not mm:
+                    break
+                items.append(_inline_book(mm.group(3)))
+                i += 1
+            out.append("<ol>" + "".join(f"<li>{x}</li>" for x in items) + "</ol>")
+            continue
+        m = _re.match(r"^(\s*)[\-\*]\s+(.*)$", stripped)
+        if m:
+            items = []
+            while i < len(lines):
+                mm = _re.match(r"^(\s*)[\-\*]\s+(.*)$", lines[i])
+                if not mm:
+                    break
+                items.append(_inline_book(mm.group(2)))
+                i += 1
+            out.append("<ul>" + "".join(f"<li>{x}</li>" for x in items) + "</ul>")
+            continue
+        # Checkbox lists - [ ] and - [x]
+        m = _re.match(r"^(\s*)[\-\*]\s+\[[ x]\]\s+(.*)$", stripped)
+        if m:
+            items = []
+            while i < len(lines):
+                mm = _re.match(r"^(\s*)[\-\*]\s+\[([ x])\]\s+(.*)$", lines[i])
+                if not mm:
+                    break
+                checked = ' checked' if mm.group(2) == 'x' else ''
+                items.append(f'<input type="checkbox" disabled{checked}/> {_inline_book(mm.group(3))}')
+                i += 1
+            out.append("<ul class='checklist'>" + "".join(f"<li>{x}</li>" for x in items) + "</ul>")
+            continue
+        para = [_inline_book(stripped)]
+        i += 1
+        while i < len(lines):
+            nxt = lines[i]
+            if not nxt.strip():
+                break
+            if _re.match(r"^(#{1,6}\s|>|\s*---+\s*$|```|\s*[\-\*]\s|\s*\d+\.\s)", nxt):
+                break
+            if "|" in nxt and i + 1 < len(lines) and _re.match(
+                    r"^\s*\|?\s*:?-{2,}", lines[i + 1]):
+                break
+            para.append(_inline_book(nxt.rstrip()))
+            i += 1
+        out.append("<p>" + " ".join(para) + "</p>")
+
+    body_html = "\n".join(out)
+    now_str = _dt.now().strftime("%B %d, %Y")
+    doc_count = len(entries)
+
+    page = f"""<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"/>
+<title>The Complete SETUPS Trading Library</title>
+<style>
+  @page {{ size: A4; margin: 18mm 16mm 20mm; }}
+  html,body{{margin:0;padding:0;background:#fff;color:#111;
+    font-family:Georgia,'Times New Roman',serif;font-size:11pt;line-height:1.55}}
+  .container{{max-width:760px;margin:24px auto;padding:0 28px}}
+  h1,h2,h3,h4{{font-family:Georgia,serif;color:#111;letter-spacing:-.2px}}
+  h1{{font-size:26pt;border-bottom:2px solid #b8830c;padding-bottom:8px;margin:28pt 0 14pt;page-break-before:always}}
+  h1:first-of-type{{page-break-before:auto;margin-top:0;text-align:center;border:none;font-size:32pt}}
+  h2{{font-size:16pt;color:#8a5a00;margin:22pt 0 8pt}}
+  h3{{font-size:13pt;margin:16pt 0 6pt}}
+  h4{{font-size:11pt;color:#444;margin:12pt 0 4pt}}
+  p{{margin:0 0 10pt}}
+  ul,ol{{margin:0 0 10pt;padding-left:22pt}}
+  li{{margin:3pt 0}}
+  blockquote{{margin:10pt 0;padding:8pt 14pt;border-left:3px solid #b8830c;
+    background:#faf4e4;font-style:italic;color:#444}}
+  code{{font-family:Menlo,Consolas,monospace;background:#f5f2ea;padding:1pt 4pt;
+    border-radius:2pt;font-size:.85em}}
+  pre{{background:#f5f2ea;border:1px solid #e2dccc;border-radius:4pt;padding:10pt;
+    overflow:auto;page-break-inside:avoid}}
+  pre code{{background:none;padding:0;font-size:.82em}}
+  table{{border-collapse:collapse;width:100%;margin:10pt 0;font-family:Arial,sans-serif;
+    font-size:.9em;page-break-inside:avoid}}
+  th,td{{border:1px solid #d9d6cc;padding:6pt 8pt;text-align:left;vertical-align:top}}
+  th{{background:#f5f2ea;color:#8a5a00;font-weight:700;text-transform:uppercase;font-size:.85em;letter-spacing:.4px}}
+  img{{max-width:100%;height:auto;display:block;margin:10pt auto;border:1px solid #e5e1d7;border-radius:6pt;page-break-inside:avoid}}
+  hr{{border:0;border-top:1px solid #d9d6cc;margin:18pt 0}}
+  a{{color:#1d4ed8;text-decoration:none}}
+  .cover{{text-align:center;margin:0 0 26pt;padding:0 0 20pt;border-bottom:1px solid #d9d6cc}}
+  .cover .eyebrow{{font-family:Arial,sans-serif;letter-spacing:3px;text-transform:uppercase;
+    color:#b8830c;font-size:9pt;font-weight:700;margin-bottom:8pt}}
+  .cover .dek{{font-style:italic;color:#555;font-size:12pt;max-width:520px;margin:10pt auto 0;line-height:1.45}}
+  .meta{{font-family:Arial,sans-serif;color:#888;font-size:9pt;margin-top:12pt}}
+  .print-hint{{text-align:center;background:#fff5d6;border:1px solid #e8c566;
+    border-radius:6pt;padding:10pt 14pt;margin:14pt 0;font-family:Arial,sans-serif;font-size:10pt;color:#7a5a00}}
+  ul.checklist{{list-style:none;padding-left:8pt}}
+  ul.checklist li{{margin:2pt 0}}
+  @media print {{ .print-hint {{ display:none }} }}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="cover">
+    <div class="eyebrow">SETUPS - Complete Trading Library</div>
+    <div style="font-size:30pt;font-weight:700;color:#111;font-family:Georgia,serif">The Complete Trading Library</div>
+    <div class="dek">Every playbook, guide, and wisdom post — {doc_count} documents in one printable book.</div>
+    <div class="meta">Generated {_html.escape(now_str)}</div>
+  </div>
+  <div class="print-hint">Press <strong>Cmd+P</strong> (Mac) or <strong>Ctrl+P</strong> (Windows)
+    and choose <em>Save as PDF</em> for a permanent offline reference.</div>
+  {body_html}
+</div>
+</body></html>"""
+
+    return Response(
+        content=page,
+        media_type="text/html; charset=utf-8",
+        headers={
+            "Content-Disposition": 'attachment; filename="SETUPS_Complete_Trading_Library.html"',
             "Cache-Control": "no-store",
         },
     )

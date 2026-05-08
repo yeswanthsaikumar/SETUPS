@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="t d">
+<title id="t">Pennant / Symmetrical Triangle - Variations and Verdict</title>
+<desc id="d">Pennant / Symmetrical Triangle - Variations and Verdict</desc>
+<rect width="1400" height="760" fill="#070d18"/>
+<text x="40" y="40" fill="#e5edf8" font-size="24" font-family="Arial, sans-serif" font-weight="700">Pennant / Symmetrical Triangle - Variations and Verdict</text>
+<rect x="40" y="70" width="640" height="320" rx="10" fill="#0d1626" stroke="#172338"/>
+<text x="56" y="96" fill="#e5edf8" font-size="16" font-family="Arial, sans-serif" font-weight="600">Bull Pennant - tight coil, fast (A-grade)</text>
+<text x="56" y="116" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif">Take it: impulse + coil + expansion</text>
+<rect x="56" y="130" width="600" height="240" fill="#0a1322" stroke="#172338"/>
+<path d="M56.0 348.2 L97.4 322.0 L138.8 293.6 L180.1 265.3 L221.5 239.1 L262.9 226.0 L304.3 230.4 L341.5 234.7 L378.8 239.1 L416.0 241.3 L453.2 243.5 L490.5 241.3 L531.9 226.0 L573.2 204.2 L614.6 178.0 L656.0 156.2" fill="none" stroke="#2ecc71" stroke-width="2"/>
+<rect x="700" y="70" width="640" height="320" rx="10" fill="#0d1626" stroke="#172338"/>
+<text x="716" y="96" fill="#e5edf8" font-size="16" font-family="Arial, sans-serif" font-weight="600">Symmetrical Triangle - wider, multi-week (good)</text>
+<text x="716" y="116" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif">Take it: patience needed, vol confirms</text>
+<rect x="716" y="130" width="600" height="240" fill="#0a1322" stroke="#172338"/>
+<path d="M716.0 348.2 L754.1 322.0 L792.2 293.6 L830.3 265.3 L868.4 239.1 L906.5 226.0 L944.6 226.0 L992.2 232.5 L1039.8 236.9 L1087.4 239.1 L1135.0 241.3 L1182.7 243.5 L1211.2 232.5 L1239.8 210.7 L1277.9 182.4 L1316.0 158.4" fill="none" stroke="#2ecc71" stroke-width="2"/>
+<rect x="40" y="410" width="640" height="320" rx="10" fill="#0d1626" stroke="#172338"/>
+<text x="56" y="436" fill="#e5edf8" font-size="16" font-family="Arial, sans-serif" font-weight="600">Expanding Triangle - widening range (avoid)</text>
+<text x="56" y="456" fill="#ff5a6e" font-size="13" font-family="Arial, sans-serif">Avoid: distribution pattern, no controlled coil</text>
+<rect x="56" y="470" width="600" height="240" fill="#0a1322" stroke="#172338"/>
+<path d="M56.0 674.9 L94.7 639.8 L133.4 601.7 L172.1 563.7 L210.8 528.5 L249.5 511.0 L288.3 505.1 L336.6 499.3 L385.0 508.0 L433.4 490.5 L481.8 513.9 L530.2 493.4 L568.9 534.4 L597.9 543.2 L627.0 552.0 L656.0 557.8" fill="none" stroke="#ff5a6e" stroke-width="2"/>
+<rect x="700" y="410" width="640" height="320" rx="10" fill="#0d1626" stroke="#172338"/>
+<text x="716" y="436" fill="#e5edf8" font-size="16" font-family="Arial, sans-serif" font-weight="600">Failed Pennant - breaks lower on volume</text>
+<text x="716" y="456" fill="#ff5a6e" font-size="13" font-family="Arial, sans-serif">Avoid: lower boundary fails = trend reversal risk</text>
+<rect x="716" y="470" width="600" height="240" fill="#0a1322" stroke="#172338"/>
+<path d="M716.0 688.2 L757.4 662.0 L798.8 633.6 L840.1 605.3 L881.5 579.1 L922.9 566.0 L964.3 570.4 L1001.5 574.7 L1038.8 579.1 L1076.0 581.3 L1113.2 583.5 L1150.5 600.9 L1191.9 622.7 L1233.2 644.5 L1274.6 655.5 L1316.0 662.0" fill="none" stroke="#ff5a6e" stroke-width="2"/>
+</svg>

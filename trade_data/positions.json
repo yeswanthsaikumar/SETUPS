@@ -1116,7 +1116,7 @@
       "name": "mtartech",
       "entry": 5655.78,
       "quantity": 99,
-      "remaining_quantity": 99,
+      "remaining_quantity": 29,
       "sl": 0.0,
       "t1": 0.0,
       "t2": 0.0,
@@ -1125,16 +1125,24 @@
       "rating": "",
       "notes": "",
       "entry_date": "2026-04-30",
-      "status": "OPEN",
+      "status": "PARTIAL",
       "exit_price": null,
       "exit_date": null,
       "tags": [],
-      "partial_exits": [],
+      "partial_exits": [
+        {
+          "date": "2026-05-08",
+          "quantity": 70,
+          "price": 6547.14,
+          "reason": "MANUAL"
+        }
+      ],
       "original_sl": null,
       "cmp": 6286.5,
       "lastPriceDate": "2026-05-08",
       "dayChangePct": 0.0,
-      "dayChangeAmt": 0.0
+      "dayChangeAmt": 0.0,
+      "realized_pl": 62395.2
     },
     {
       "id": "c8b081fa",
@@ -1224,7 +1232,7 @@
       "name": "krn",
       "entry": 1344.9,
       "quantity": 223,
-      "remaining_quantity": 223,
+      "remaining_quantity": 0,
       "sl": 1220.1,
       "t1": 0.0,
       "t2": 0.0,
@@ -1233,9 +1241,9 @@
       "rating": "A+",
       "notes": "",
       "entry_date": "2026-05-07",
-      "status": "OPEN",
-      "exit_price": null,
-      "exit_date": null,
+      "status": "CLOSED",
+      "exit_price": 1297.46,
+      "exit_date": "2026-05-08",
       "tags": [],
       "partial_exits": [],
       "original_sl": 1214.0,
@@ -1243,7 +1251,9 @@
       "lastPriceDate": "2026-05-08",
       "dayChangePct": 0.0,
       "dayChangeAmt": 0.0,
-      "sl_armed": true
+      "sl_armed": true,
+      "sl_manual": true,
+      "realized_pl": -10579.12
     },
     {
       "id": "5c5f6bf7",
@@ -1366,5 +1376,5 @@
     }
   ],
   "created": "2026-04-14T11:55:48.601550",
-  "lastUpdated": "2026-05-08T02:43:41.768327"
+  "lastUpdated": "2026-05-08T15:18:02.725946"
 }
