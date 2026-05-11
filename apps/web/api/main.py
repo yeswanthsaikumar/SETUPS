@@ -1696,51 +1696,16 @@ def playbook_download(doc: str = "playbook") -> Response:
     )
 
 
-@app.get("/api/playbook/book")
-def playbook_book() -> Response:
-    """Download ALL playbooks as a single printable HTML book, ordered by category.
+def _render_md_to_html(md: str) -> str:
+    """Shared markdown → HTML renderer used by download and book endpoints.
 
-    This produces a self-contained HTML you can Cmd+P / Ctrl+P → Save as PDF
-    to get a complete offline trading library.
+    Handles: headings, blockquotes, GFM tables, ordered/unordered/checkbox
+    lists, fenced code, horizontal rules, inline bold/italic/code/image/link.
     """
     import html as _html
-    from datetime import datetime as _dt
-
-    # Collect all docs that exist, sorted by (category-rank, order)
-    cat_rank = {"core": 0, "blog": 1}
-    entries = []
-    for key, meta in _PLAYBOOK_DOCS.items():
-        if not meta["path"].exists():
-            continue
-        entries.append((cat_rank.get(meta.get("category", "blog"), 2),
-                        meta.get("order", 99), key, meta))
-    entries.sort()
-
-    # Re-use the single-doc download renderer (it calls _inline, _slug, etc.)
-    # by invoking playbook_download for each doc and extracting just the body.
-    # But to keep it simpler and avoid circular imports, we'll just concatenate
-    # the raw markdown with chapter dividers and render once.
-    all_md_parts: list[str] = []
-    for _, _, key, meta in entries:
-        md_text = meta["path"].read_text(encoding="utf-8")
-        all_md_parts.append(md_text)
-
-    combined_md = "\n\n---\n\n".join(all_md_parts)
-
-    # Render using the same inline renderer already defined in playbook_download
-    # We call the download endpoint logic directly by building a virtual meta dict.
-    virtual_meta = {
-        "path": None,
-        "title": "The Complete SETUPS Trading Library",
-        "dek": "Every playbook, guide, and wisdom post in one printable book.",
-        "file": "SETUPS_Complete_Trading_Library.html",
-        "category": "core",
-    }
-
-    # Import the markdown-to-HTML renderer from the existing download function
     import re as _re
 
-    def _inline_book(s: str) -> str:
+    def _inline(s: str) -> str:
         s = _html.escape(s)
         def _img_sub(m):
             alt = m.group(1)
@@ -1758,12 +1723,12 @@ def playbook_book() -> Response:
         s = _re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', s)
         return s
 
-    def _slug_book(text: str) -> str:
+    def _slug(text: str) -> str:
         t = _re.sub(r"<[^>]+>", "", text).lower()
         t = _re.sub(r"[^\w\s-]", "", t).strip()
         return _re.sub(r"\s+", "-", t) or "section"
 
-    lines = combined_md.splitlines()
+    lines = md.splitlines()
     out: list[str] = []
     i = 0
     in_code = False
@@ -1794,15 +1759,15 @@ def playbook_book() -> Response:
         m = _re.match(r"^(#{1,6})\s+(.*)$", stripped)
         if m:
             level = len(m.group(1))
-            text = _inline_book(m.group(2).rstrip("#").strip())
-            slug = _slug_book(text)
-            out.append(f'<h{level} id="{slug}">{text}</h{level}>')
+            text = _inline(m.group(2).rstrip("#").strip())
+            sl = _slug(text)
+            out.append(f'<h{level} id="{sl}">{text}</h{level}>')
             i += 1
             continue
         if stripped.startswith(">"):
             block = []
             while i < len(lines) and lines[i].startswith(">"):
-                block.append(_inline_book(lines[i].lstrip("> ").rstrip()))
+                block.append(_inline(lines[i].lstrip("> ").rstrip()))
                 i += 1
             out.append("<blockquote><p>" + "<br/>".join(block) + "</p></blockquote>")
             continue
@@ -1814,13 +1779,22 @@ def playbook_book() -> Response:
             while i < len(lines) and "|" in lines[i] and lines[i].strip():
                 rows.append([c.strip() for c in lines[i].strip().strip("|").split("|")])
                 i += 1
-            th = "".join(f"<th>{_inline_book(c)}</th>" for c in header_cells)
-            tr_list = []
-            for r in rows:
-                td = "".join(f"<td>{_inline_book(c)}</td>" for c in r)
-                tr_list.append(f"<tr>{td}</tr>")
+            th = "".join(f"<th>{_inline(c)}</th>" for c in header_cells)
+            tr_list = [f"<tr>{''.join(f'<td>{_inline(c)}</td>' for c in r)}</tr>" for r in rows]
             out.append(f"<table><thead><tr>{th}</tr></thead><tbody>"
                        f"{''.join(tr_list)}</tbody></table>")
+            continue
+        # Checkbox lists (must come before plain unordered list)
+        if _re.match(r"^(\s*)[\-\*]\s+\[[ x]\]\s+", stripped):
+            items = []
+            while i < len(lines):
+                mm = _re.match(r"^(\s*)[\-\*]\s+\[([ x])\]\s+(.*)$", lines[i])
+                if not mm:
+                    break
+                checked = ' checked' if mm.group(2) == 'x' else ''
+                items.append(f'<input type="checkbox" disabled{checked}/> {_inline(mm.group(3))}')
+                i += 1
+            out.append("<ul class='checklist'>" + "".join(f"<li>{x}</li>" for x in items) + "</ul>")
             continue
         m = _re.match(r"^(\s*)(\d+)\.\s+(.*)$", stripped)
         if m:
@@ -1829,7 +1803,7 @@ def playbook_book() -> Response:
                 mm = _re.match(r"^(\s*)(\d+)\.\s+(.*)$", lines[i])
                 if not mm:
                     break
-                items.append(_inline_book(mm.group(3)))
+                items.append(_inline(mm.group(3)))
                 i += 1
             out.append("<ol>" + "".join(f"<li>{x}</li>" for x in items) + "</ol>")
             continue
@@ -1840,24 +1814,11 @@ def playbook_book() -> Response:
                 mm = _re.match(r"^(\s*)[\-\*]\s+(.*)$", lines[i])
                 if not mm:
                     break
-                items.append(_inline_book(mm.group(2)))
+                items.append(_inline(mm.group(2)))
                 i += 1
             out.append("<ul>" + "".join(f"<li>{x}</li>" for x in items) + "</ul>")
             continue
-        # Checkbox lists - [ ] and - [x]
-        m = _re.match(r"^(\s*)[\-\*]\s+\[[ x]\]\s+(.*)$", stripped)
-        if m:
-            items = []
-            while i < len(lines):
-                mm = _re.match(r"^(\s*)[\-\*]\s+\[([ x])\]\s+(.*)$", lines[i])
-                if not mm:
-                    break
-                checked = ' checked' if mm.group(2) == 'x' else ''
-                items.append(f'<input type="checkbox" disabled{checked}/> {_inline_book(mm.group(3))}')
-                i += 1
-            out.append("<ul class='checklist'>" + "".join(f"<li>{x}</li>" for x in items) + "</ul>")
-            continue
-        para = [_inline_book(stripped)]
+        para = [_inline(stripped)]
         i += 1
         while i < len(lines):
             nxt = lines[i]
@@ -1868,79 +1829,316 @@ def playbook_book() -> Response:
             if "|" in nxt and i + 1 < len(lines) and _re.match(
                     r"^\s*\|?\s*:?-{2,}", lines[i + 1]):
                 break
-            para.append(_inline_book(nxt.rstrip()))
+            para.append(_inline(nxt.rstrip()))
             i += 1
         out.append("<p>" + " ".join(para) + "</p>")
 
-    body_html = "\n".join(out)
-    now_str = _dt.now().strftime("%B %d, %Y")
+    return "\n".join(out)
+
+
+@app.get("/api/playbook/book")
+def playbook_book() -> Response:
+    """Open ALL playbooks as a single printable HTML book in the browser.
+
+    Ordered by category (core first, then wisdom blog posts) and chapter number.
+    The page automatically opens the print dialog — choose 'Save as PDF' for a
+    permanent offline reference that includes every playbook and wisdom post
+    as its own chapter.
+    """
+    import html as _html
+    import re as _re
+    from datetime import datetime as _dt
+
+    # Collect all docs that exist, sorted by (category-rank, order)
+    cat_rank = {"core": 0, "blog": 1}
+    entries: list[tuple] = []
+    for key, meta in _PLAYBOOK_DOCS.items():
+        if not meta["path"].exists():
+            continue
+        entries.append((
+            cat_rank.get(meta.get("category", "blog"), 2),
+            meta.get("order", 99),
+            key,
+            meta,
+        ))
+    entries.sort()
+
     doc_count = len(entries)
+    now_str = _dt.now().strftime("%B %d, %Y")
+
+    # ── Table of contents ────────────────────────────────────────────────────
+    toc_rows: list[str] = []
+    ch_num = 0
+    section_labels = {"core": "📖 Core Playbooks", "blog": "💡 Wisdom Blog"}
+    last_cat = None
+    for _, _, key, meta in entries:
+        cat = meta.get("category", "blog")
+        if cat != last_cat:
+            label = section_labels.get(cat, cat.title())
+            toc_rows.append(
+                f'<tr><td colspan="3" style="background:#f5f2ea;font-weight:700;'
+                f'color:#8a5a00;padding:6pt 8pt;font-family:Arial,sans-serif;font-size:9pt;'
+                f'text-transform:uppercase;letter-spacing:1px">{label}</td></tr>'
+            )
+            last_cat = cat
+        ch_num += 1
+        icon = _html.escape(meta.get("icon", "📄"))
+        title = _html.escape(meta["title"])
+        dek = _html.escape(meta.get("dek", ""))
+        anchor = f"ch-{key}"
+        toc_rows.append(
+            f'<tr><td style="width:28pt;color:#b8830c;font-weight:700;'
+            f'font-family:Arial,sans-serif;font-size:9pt;white-space:nowrap">{ch_num}</td>'
+            f'<td style="font-size:16pt;width:22pt">{icon}</td>'
+            f'<td><a href="#{anchor}" style="color:#1d4ed8;text-decoration:none">'
+            f'<strong>{title}</strong></a>'
+            f'<div style="color:#888;font-size:8.5pt;font-family:Arial,sans-serif;'
+            f'margin-top:1pt;line-height:1.3">{dek}</div></td></tr>'
+        )
+
+    toc_html = (
+        '<table style="border-collapse:collapse;width:100%;font-family:Georgia,serif;font-size:10pt">'
+        + "".join(toc_rows)
+        + "</table>"
+    )
+
+    # ── Chapter pages ────────────────────────────────────────────────────────
+    chapters: list[str] = []
+    ch_num = 0
+    for _, _, key, meta in entries:
+        ch_num += 1
+        md_text = meta["path"].read_text(encoding="utf-8")
+        # Strip the first H1 from the markdown (we render our own chapter header)
+        md_text_body = _re.sub(r"^\s*#\s+[^\n]+\n", "", md_text, count=1)
+        body_html = _render_md_to_html(md_text_body)
+
+        icon  = _html.escape(meta.get("icon", "📄"))
+        title = _html.escape(meta["title"])
+        dek   = _html.escape(meta.get("dek", ""))
+        cat   = meta.get("category", "blog")
+        cat_label = "Core Playbook" if cat == "core" else "Wisdom Blog"
+        anchor = f"ch-{key}"
+
+        chapters.append(f"""
+<div class="chapter" id="{anchor}">
+  <div class="chapter-cover">
+    <div class="ch-eyebrow">Chapter {ch_num} &nbsp;·&nbsp; {cat_label}</div>
+    <div class="ch-icon">{icon}</div>
+    <h1 class="ch-title">{title}</h1>
+    <p class="ch-dek">{dek}</p>
+  </div>
+  <div class="chapter-body">
+    {body_html}
+  </div>
+</div>""")
+
+    chapters_html = "\n".join(chapters)
 
     page = f"""<!DOCTYPE html>
-<html lang="en"><head>
+<html lang="en">
+<head>
 <meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>The Complete SETUPS Trading Library</title>
 <style>
-  @page {{ size: A4; margin: 18mm 16mm 20mm; }}
-  html,body{{margin:0;padding:0;background:#fff;color:#111;
-    font-family:Georgia,'Times New Roman',serif;font-size:11pt;line-height:1.55}}
-  .container{{max-width:760px;margin:24px auto;padding:0 28px}}
-  h1,h2,h3,h4{{font-family:Georgia,serif;color:#111;letter-spacing:-.2px}}
-  h1{{font-size:26pt;border-bottom:2px solid #b8830c;padding-bottom:8px;margin:28pt 0 14pt;page-break-before:always}}
-  h1:first-of-type{{page-break-before:auto;margin-top:0;text-align:center;border:none;font-size:32pt}}
-  h2{{font-size:16pt;color:#8a5a00;margin:22pt 0 8pt}}
-  h3{{font-size:13pt;margin:16pt 0 6pt}}
-  h4{{font-size:11pt;color:#444;margin:12pt 0 4pt}}
-  p{{margin:0 0 10pt}}
-  ul,ol{{margin:0 0 10pt;padding-left:22pt}}
-  li{{margin:3pt 0}}
-  blockquote{{margin:10pt 0;padding:8pt 14pt;border-left:3px solid #b8830c;
-    background:#faf4e4;font-style:italic;color:#444}}
-  code{{font-family:Menlo,Consolas,monospace;background:#f5f2ea;padding:1pt 4pt;
-    border-radius:2pt;font-size:.85em}}
-  pre{{background:#f5f2ea;border:1px solid #e2dccc;border-radius:4pt;padding:10pt;
-    overflow:auto;page-break-inside:avoid}}
-  pre code{{background:none;padding:0;font-size:.82em}}
-  table{{border-collapse:collapse;width:100%;margin:10pt 0;font-family:Arial,sans-serif;
-    font-size:.9em;page-break-inside:avoid}}
-  th,td{{border:1px solid #d9d6cc;padding:6pt 8pt;text-align:left;vertical-align:top}}
-  th{{background:#f5f2ea;color:#8a5a00;font-weight:700;text-transform:uppercase;font-size:.85em;letter-spacing:.4px}}
-  img{{max-width:100%;height:auto;display:block;margin:10pt auto;border:1px solid #e5e1d7;border-radius:6pt;page-break-inside:avoid}}
-  hr{{border:0;border-top:1px solid #d9d6cc;margin:18pt 0}}
-  a{{color:#1d4ed8;text-decoration:none}}
-  .cover{{text-align:center;margin:0 0 26pt;padding:0 0 20pt;border-bottom:1px solid #d9d6cc}}
-  .cover .eyebrow{{font-family:Arial,sans-serif;letter-spacing:3px;text-transform:uppercase;
-    color:#b8830c;font-size:9pt;font-weight:700;margin-bottom:8pt}}
-  .cover .dek{{font-style:italic;color:#555;font-size:12pt;max-width:520px;margin:10pt auto 0;line-height:1.45}}
-  .meta{{font-family:Arial,sans-serif;color:#888;font-size:9pt;margin-top:12pt}}
-  .print-hint{{text-align:center;background:#fff5d6;border:1px solid #e8c566;
-    border-radius:6pt;padding:10pt 14pt;margin:14pt 0;font-family:Arial,sans-serif;font-size:10pt;color:#7a5a00}}
-  ul.checklist{{list-style:none;padding-left:8pt}}
-  ul.checklist li{{margin:2pt 0}}
-  @media print {{ .print-hint {{ display:none }} }}
+/* ── Print / PDF layout ─────────────────────────────────── */
+@page {{
+  size: A4;
+  margin: 18mm 16mm 20mm;
+  @bottom-center {{ content: counter(page) " / " counter(pages); font-family:Arial,sans-serif; font-size:8pt; color:#999; }}
+}}
+*, *::before, *::after {{ box-sizing: border-box; }}
+html, body {{ margin:0; padding:0; background:#fff; color:#111;
+  font-family: Georgia, 'Times New Roman', serif; font-size:11pt; line-height:1.6; }}
+
+/* ── Screen-only toolbar ────────────────────────────────── */
+.toolbar {{
+  position:sticky; top:0; z-index:100;
+  display:flex; align-items:center; gap:12px;
+  background:#1a1a2e; color:#e7ecf3; padding:12px 24px;
+  font-family:Arial,sans-serif; font-size:13px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.4);
+}}
+.toolbar .brand {{ font-weight:700; letter-spacing:.5px; color:#f5b748; }}
+.toolbar .info {{ color:#a3adc2; flex:1; }}
+.toolbar .print-btn {{
+  background:#f5b748; color:#1a1a2e; border:none; border-radius:8px;
+  padding:9px 20px; font-size:13px; font-weight:700; cursor:pointer;
+  font-family:inherit; transition:background .15s;
+}}
+.toolbar .print-btn:hover {{ background:#ffcf6a; }}
+.toolbar .hint {{ color:#6b7490; font-size:11px; }}
+
+/* ── COVER PAGE ──────────────────────────────────────────── */
+.book-cover {{
+  page-break-after: always;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center; text-align: center;
+  padding: 48px 40px;
+}}
+.book-cover .eyebrow {{
+  font-family: Arial, sans-serif; letter-spacing: 4px; text-transform: uppercase;
+  color: #b8830c; font-size: 9pt; font-weight: 700; margin-bottom: 20pt;
+}}
+.book-cover h1 {{
+  font-size: 36pt; font-weight: 700; color: #111; margin: 0 0 18pt;
+  border: none; page-break-before: auto;
+}}
+.book-cover .tagline {{
+  font-style: italic; color: #555; font-size: 13pt; max-width: 520px;
+  line-height: 1.5; margin: 0 auto 20pt;
+}}
+.book-cover .meta {{
+  font-family: Arial, sans-serif; color: #999; font-size: 9pt;
+}}
+.book-cover .doc-count {{
+  display: inline-block; margin-top: 16pt;
+  background: #faf4e4; border: 1px solid #e8c566;
+  border-radius: 20px; padding: 4pt 14pt;
+  font-family: Arial, sans-serif; font-size: 10pt; color: #8a5a00; font-weight: 700;
+}}
+
+/* ── TABLE OF CONTENTS ───────────────────────────────────── */
+.toc-section {{
+  page-break-after: always;
+  padding-top: 20pt;
+}}
+.toc-section h2 {{
+  font-size: 20pt; color: #111; border-bottom: 2px solid #b8830c;
+  padding-bottom: 6pt; margin: 0 0 16pt;
+}}
+
+/* ── CHAPTER ─────────────────────────────────────────────── */
+.chapter {{ page-break-before: always; }}
+.chapter-cover {{
+  page-break-after: always;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: flex-start;
+  min-height: 60vh;
+  padding: 40pt 0 30pt;
+  border-bottom: 2px solid #b8830c;
+  margin-bottom: 0;
+}}
+.ch-eyebrow {{
+  font-family: Arial, sans-serif; font-size: 9pt; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase; color: #b8830c;
+  margin-bottom: 14pt;
+}}
+.ch-icon {{ font-size: 48pt; margin-bottom: 12pt; line-height: 1; }}
+h1.ch-title {{
+  font-size: 28pt; font-weight: 700; color: #111; margin: 0 0 12pt;
+  border: none; page-break-before: auto; line-height: 1.15;
+}}
+.ch-dek {{
+  font-style: italic; color: #555; font-size: 11.5pt;
+  max-width: 560px; line-height: 1.5; margin: 0;
+}}
+.chapter-body {{ padding-top: 20pt; }}
+
+/* ── Typography ──────────────────────────────────────────── */
+h1, h2, h3, h4 {{ font-family: Georgia, serif; color: #111; letter-spacing: -.2px; }}
+h1 {{
+  font-size: 22pt; border-bottom: 1.5px solid #b8830c;
+  padding-bottom: 7px; margin: 24pt 0 12pt;
+  page-break-before: always;
+}}
+h1:first-child {{ page-break-before: auto; }}
+h2 {{ font-size: 16pt; color: #8a5a00; margin: 20pt 0 8pt; }}
+h3 {{ font-size: 13pt; margin: 16pt 0 6pt; }}
+h4 {{ font-size: 11pt; color: #444; margin: 12pt 0 4pt; }}
+p  {{ margin: 0 0 10pt; }}
+ul, ol {{ margin: 0 0 10pt; padding-left: 22pt; }}
+li {{ margin: 3pt 0; }}
+blockquote {{
+  margin: 10pt 0; padding: 8pt 14pt;
+  border-left: 3px solid #b8830c; background: #faf4e4;
+  font-style: italic; color: #444;
+}}
+code {{
+  font-family: Menlo, Consolas, monospace; background: #f5f2ea;
+  padding: 1pt 4pt; border-radius: 2pt; font-size: .85em;
+}}
+pre {{
+  background: #f5f2ea; border: 1px solid #e2dccc; border-radius: 4pt;
+  padding: 10pt; overflow: auto; page-break-inside: avoid;
+}}
+pre code {{ background: none; padding: 0; font-size: .82em; }}
+table {{
+  border-collapse: collapse; width: 100%; margin: 10pt 0;
+  font-family: Arial, sans-serif; font-size: .9em; page-break-inside: avoid;
+}}
+th, td {{ border: 1px solid #d9d6cc; padding: 6pt 8pt; text-align: left; vertical-align: top; }}
+th {{
+  background: #f5f2ea; color: #8a5a00; font-weight: 700;
+  text-transform: uppercase; font-size: .85em; letter-spacing: .4px;
+}}
+img {{
+  max-width: 100%; height: auto; display: block; margin: 10pt auto;
+  border: 1px solid #e5e1d7; border-radius: 6pt; page-break-inside: avoid;
+}}
+hr {{ border: 0; border-top: 1px solid #d9d6cc; margin: 18pt 0; }}
+a {{ color: #1d4ed8; text-decoration: none; }}
+ul.checklist {{ list-style: none; padding-left: 8pt; }}
+ul.checklist li {{ margin: 2pt 0; }}
+
+/* ── Print overrides ─────────────────────────────────────── */
+@media print {{
+  .toolbar {{ display: none !important; }}
+  body {{ font-size: 10.5pt; }}
+  .book-cover {{ min-height: 95vh; }}
+  .chapter-cover {{ min-height: 55vh; }}
+}}
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="cover">
-    <div class="eyebrow">SETUPS - Complete Trading Library</div>
-    <div style="font-size:30pt;font-weight:700;color:#111;font-family:Georgia,serif">The Complete Trading Library</div>
-    <div class="dek">Every playbook, guide, and wisdom post — {doc_count} documents in one printable book.</div>
-    <div class="meta">Generated {_html.escape(now_str)}</div>
-  </div>
-  <div class="print-hint">Press <strong>Cmd+P</strong> (Mac) or <strong>Ctrl+P</strong> (Windows)
-    and choose <em>Save as PDF</em> for a permanent offline reference.</div>
-  {body_html}
+
+<!-- Screen-only toolbar -->
+<div class="toolbar">
+  <span class="brand">SETUPS</span>
+  <span class="info">Complete Trading Library &nbsp;·&nbsp; {doc_count} documents</span>
+  <span class="hint">Use Cmd+P / Ctrl+P → Save as PDF</span>
+  <button class="print-btn" onclick="window.print()">🖨 Save as PDF</button>
 </div>
-</body></html>"""
+
+<div style="max-width:760px;margin:0 auto;padding:0 28px">
+
+  <!-- ── BOOK COVER ─────────────────────────────────────────── -->
+  <div class="book-cover">
+    <div class="eyebrow">SETUPS · Complete Trading Library</div>
+    <h1>The Complete<br/>Trading Library</h1>
+    <p class="tagline">Every playbook, guide, and wisdom post — curated from<br/>
+      Minervini, O'Neil, Zanger, Kullamägi, Weinstein, Livermore,<br/>
+      Douglas, Van Tharp &amp; more — in one printable book.</p>
+    <p class="meta">Generated {_html.escape(now_str)}</p>
+    <span class="doc-count">{doc_count} documents · Core Playbooks + Wisdom Blog</span>
+  </div>
+
+  <!-- ── TABLE OF CONTENTS ──────────────────────────────────── -->
+  <div class="toc-section">
+    <h2>Table of Contents</h2>
+    {toc_html}
+  </div>
+
+  <!-- ── CHAPTERS ──────────────────────────────────────────── -->
+  {chapters_html}
+
+</div>
+
+<script>
+  // Auto-open print dialog after the page has fully rendered
+  window.addEventListener('load', function() {{
+    // Small delay to let fonts / images settle
+    setTimeout(function() {{ window.print(); }}, 800);
+  }});
+</script>
+</body>
+</html>"""
 
     return Response(
         content=page,
         media_type="text/html; charset=utf-8",
-        headers={
-            "Content-Disposition": 'attachment; filename="SETUPS_Complete_Trading_Library.html"',
-            "Cache-Control": "no-store",
-        },
+        headers={"Cache-Control": "no-store"},
     )
 
 
