@@ -128,3 +128,24 @@ class TestInitialPositionProtectionBlog:
         assert "<table>" in r.text
 
 
+class TestAsymmetricRiskRewardSwingGuideBlog:
+    def test_asymmetric_swing_guide_in_meta(self, api_client):
+        r = api_client.get("/api/playbook/meta")
+        assert r.status_code == 200
+        keys = {d.get("key") for d in r.json().get("docs", [])}
+        assert "asymmetric-risk-reward-swing-guide" in keys
+
+    def test_asymmetric_swing_guide_markdown_served(self, api_client):
+        r = api_client.get("/api/playbook/markdown?doc=asymmetric-risk-reward-swing-guide")
+        assert r.status_code == 200
+        assert "Asymmetric Risk–Reward for the Professional Swing Trader" in r.text
+        assert "Setup quality × regime matrix" in r.text
+
+    def test_asymmetric_swing_guide_download_renders_html(self, api_client):
+        r = api_client.get("/api/playbook/download?doc=asymmetric-risk-reward-swing-guide")
+        assert r.status_code == 200
+        assert "text/html" in r.headers.get("content-type", "")
+        assert "Professional Swing Trader" in r.text
+        assert "<table>" in r.text
+
+

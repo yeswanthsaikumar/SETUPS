@@ -1425,6 +1425,17 @@ _PLAYBOOK_DOCS: dict[str, dict] = {
         "icon":     "🪙",
         "order":    20,
     },
+    "asymmetric-risk-reward-swing-guide": {
+        "path":     ROOT / "docs" / "ASYMMETRIC_RISK_REWARD_SWING_GUIDE.md",
+        "title":    "Asymmetric Risk–Reward: Professional Swing Trader Guide",
+        "dek":      "Research-grade framework: expectancy vs stated R:R, crash/top/parabolic/base "
+                    "contexts, setup×regime matrix, scenario checklists, gap risk on shorts, and "
+                    "journaling asymmetry by pattern and market condition.",
+        "file":     "Asymmetric_Risk_Reward_Swing_Guide.html",
+        "category": "blog",
+        "icon":     "🔀",
+        "order":    21,
+    },
 }
 
 
