@@ -1315,8 +1315,8 @@
       "original_sl": 470.0,
       "cmp": 539.25,
       "lastPriceDate": "2026-05-11",
-      "dayChangePct": 3.43,
-      "dayChangeAmt": 9361.71,
+      "dayChangePct": -1.28,
+      "dayChangeAmt": -8890.0,
       "sl_armed": true,
       "sl_manual": true,
       "realized_pl": 0
@@ -1351,8 +1351,8 @@
       "original_sl": 892.0,
       "cmp": 969.45,
       "lastPriceDate": "2026-05-11",
-      "dayChangePct": 6.86,
-      "dayChangeAmt": 38906.24,
+      "dayChangePct": 5.95,
+      "dayChangeAmt": 34000.0,
       "sl_armed": true,
       "realized_pl": -10875.0,
       "sl_manual": true
@@ -1439,8 +1439,36 @@
       "dayChangePct": 2.15,
       "dayChangeAmt": 7532.0,
       "sl_armed": true
+    },
+    {
+      "id": "c464cb60",
+      "symbol": "GALLANTT",
+      "name": "gallantT",
+      "entry": 912.0,
+      "quantity": 200,
+      "remaining_quantity": 0,
+      "sl": 870.0,
+      "t1": 0.0,
+      "t2": 0.0,
+      "t3": 0.0,
+      "setup": "RANGE_EXPANSION",
+      "rating": "A+",
+      "notes": "",
+      "entry_date": "2026-05-11",
+      "status": "SL_HIT",
+      "exit_price": 869.25,
+      "exit_date": "2026-05-11",
+      "tags": [],
+      "partial_exits": [],
+      "original_sl": 844.0,
+      "cmp": 869.25,
+      "lastPriceDate": "2026-05-11",
+      "dayChangePct": 0.0,
+      "dayChangeAmt": 0.0,
+      "sl_armed": true,
+      "realized_pl": -8550.0
     }
   ],
   "created": "2026-04-14T11:55:48.601550",
-  "lastUpdated": "2026-05-11T20:26:03.420675"
+  "lastUpdated": "2026-05-11T22:01:08.073747"
 }

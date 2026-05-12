@@ -120,3 +120,40 @@ Score:
 ---
 
 *-- End of Market Regime Playbook --*
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — Adjusting to a Regime Shift
+
+**Scenario:** Nifty closes below 50DMA for the 3rd time, distribution count = 5.
+**Previous regime:** Confirmed uptrend.
+**New regime read:** Correction (orange).
+
+**Immediate adjustments:**
+
+| Variable | Uptrend | Correction |
+|---------|---------|------------|
+| Risk per trade | 1.0% | 0.5% |
+| Max open positions | 6 | 3 |
+| Patterns played | Breakouts + pullbacks | Pullbacks only |
+| Profit-taking | Aggressive trail | Take 50% at 1R |
+| New entries | 2-3/week | 1/week max |
+| Cash level | 20% | 50%+ |
+
+**Result:** even if the market drops 8% over 4 weeks, your portfolio is down 2-3% — survivable. **When the regime turns back, you're alive with capital to deploy.**
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Read the regime every Monday** — Nifty vs 50DMA, distribution count, breadth.
+2. **Score 1-4 (Strong/Neutral/Correction/Bear)** and write it on your dashboard.
+3. **Apply the position-sizing multiplier:** 1.0× / 0.75× / 0.5× / 0.25× or none.
+4. **Cap positions:** 6 / 4 / 3 / 1 max.
+5. **Change pattern menu:** breakouts in strong, pullbacks in neutral, bounces in correction, almost nothing in bear.
+6. **Re-score mid-week** if a major level breaks.
+7. **Don't fight the regime.** Even great setups underperform when context is wrong.
+8. **Keep a regime journal** — note how your equity curve behaves in each.
+

@@ -127,3 +127,47 @@ Quarterly -> 1-hr review: equity curve, best/worst setups, focus areas
 ---
 
 *-- End of Swing Trading Journal System --*
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — A Trade Card Done Right
+
+**Stock:** DIVISLAB
+**Date:** entered Mon, exited Fri (5 sessions)
+
+**Trade Card:**
+
+| Field | Entry | Exit |
+|-------|-------|------|
+| Setup | Bull flag on weekly, daily VCP | — |
+| Pattern grade | A | — |
+| Pivot | ₹5,640 | — |
+| Entry price | ₹5,648 | — |
+| Stop | ₹5,488 | — |
+| Target | ₹6,100 | — |
+| R:R planned | 2.9:1 | — |
+| Size | 100 shares (1% risk) | — |
+| Market regime | Confirmed uptrend | — |
+| Conviction | 8/10 | — |
+| Exit price | — | ₹5,945 (trail hit) |
+| R achieved | — | +1.86R |
+| Mistakes | — | Took only 60% of normal size out of fear |
+| Lesson | — | Trust the system when context is clean |
+
+After 100 of these, **patterns emerge that no chart can show you** — like "I underperform in choppy weeks" or "my A+ setups average 2.5R."
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Use a trade card** for every entry — even paper trades.
+2. **Fill the exit card** within 30 minutes of closing the trade.
+3. **Tag mistakes** consistently (FOMO, oversize, no stop, etc.).
+4. **Daily review:** 5 minutes — wins, losses, mistakes, emotions.
+5. **Weekly review:** 30 minutes — equity curve, expectancy, top mistakes.
+6. **Monthly review:** 60 minutes — what patterns work, which don't, what to drop.
+7. **Quarterly review:** half day — rewrite playbook, retire dead rules, add new ones.
+8. **Read your own journal monthly.** It is the best trading book you'll ever own.
+

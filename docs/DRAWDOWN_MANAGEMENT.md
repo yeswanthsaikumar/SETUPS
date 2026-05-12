@@ -126,3 +126,37 @@ This data tells you:
 ---
 
 *-- End of Drawdown Management --*
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — Climbing Out of a -12% Drawdown
+
+**Account peak:** ₹20,00,000 → **Current:** ₹17,60,000 (-12%).
+**Recent record:** 8 losses, 2 small wins. Confidence shaken.
+
+**The Recovery Protocol:**
+
+| Week | Action | Risk Per Trade | Trades Allowed |
+|------|--------|---------------|---------------|
+| 1 | Cut risk to 0.5%, only A+ setups | ₹8,800 | Max 1/day |
+| 2 | Same, journal every trade | ₹8,800 | Max 2/day |
+| 3 | If 60%+ win rate, ramp to 0.75% | ₹13,200 | Max 2/day |
+| 4 | If equity curve up, return to 1% | ₹17,600 | Normal |
+
+**Why it works:** small risk means you stop losing capital, but you keep playing. The journal forces you to identify what changed. The graduated ramp prevents the "revenge size-up" that turns -12% into -25%.
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Set tiered drawdown limits** — 5% (yellow), 10% (orange), 15% (red).
+2. **At yellow:** review every trade of the week, no rule changes.
+3. **At orange:** cut risk in half until equity recovers 50% of drawdown.
+4. **At red:** stop for 3 sessions. Review without trading.
+5. **Never increase size to "make it back."** Recovery comes from consistency, not aggression.
+6. **Track drawdown daily** — gut feel underestimates it 2×.
+7. **Separate skill vs market issue.** Bad market regime ≠ bad trader.
+8. **Document every drawdown** — they're your best teachers if studied calmly.
+

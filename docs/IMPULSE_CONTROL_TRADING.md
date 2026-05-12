@@ -1,5 +1,24 @@
 # The Anti-Impulse Trading Protocol — How to Stay Calm, Rule-Based, and Emotionally Flat
 
+
+<!-- ENHANCED_STORY -->
+## 📖 A Story Before the Rules
+
+Rahul opens his Zerodha app at 9:18 AM. Nifty is gapping up. His WhatsApp group is full of green emojis. PERSISTENT is up 4% pre-market. He hasn't researched it. He hasn't planned it. But his thumb taps "Buy" before his brain finishes a sentence.
+
+By 11 AM, the stock has reversed. He's down ₹14,000.
+
+By 1 PM, he's averaged down to "make it work."
+By 3 PM, he's down ₹38,000 and furious.
+
+That night, he can't sleep. He swears he'll "be more disciplined tomorrow."
+
+Tomorrow, the same thing happens with a different stock.
+
+This is not a discipline problem. This is an **impulse-control problem** — and impulse is not defeated by willpower. It's defeated by **process design** that makes impulse trades physically impossible.
+
+That is what this blog teaches.
+
 ## The Honest Truth About Trading
 
 You already know what to do.
@@ -525,4 +544,39 @@ It is refusing to let emotion replace your rules.
 ---
 
 *— End of The Anti-Impulse Trading Protocol —*
+
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — The Anti-Impulse Filter in Action
+
+**Scenario:** You spot ZOMATO breaking out at 10:30 AM. Your hand hovers over the buy button.
+
+**Apply the 4-question anti-impulse filter:**
+
+| Question | If "No" → | Your Answer |
+|---------|-----------|-------------|
+| Is this stock on my pre-market watchlist? | Skip the trade | _____ |
+| Have I defined entry, stop, and target in writing? | Skip the trade | _____ |
+| Is the volume above 1.5× the 20-day average? | Skip the trade | _____ |
+| Is my position size pre-calculated for 1% risk? | Skip the trade | _____ |
+
+If any answer is "No," the trade does not happen — no matter how good it looks.
+
+**The discipline isn't in saying no when it's hard. It's in making the rule so clear that the decision is automatic.**
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Pre-market planning (8:30-9:00 AM):** Build a watchlist of 3-5 names with entry zones, stops, and targets written down.
+2. **No new names during market hours.** If it's not on the watchlist, it doesn't exist today.
+3. **Use limit orders only.** Market orders are the language of impulse.
+4. **Set a daily trade cap** — 2 entries max. Quality beats quantity.
+5. **Hide your P&L.** Watch the chart, not the rupees.
+6. **Phone in another room.** Your charts are on the desktop. Your phone is the gateway to FOMO.
+7. **Take a 5-minute walk after each entry.** Decisions made calmly survive longer.
+8. **Journal every impulse you resisted.** Build the muscle of saying no.
 

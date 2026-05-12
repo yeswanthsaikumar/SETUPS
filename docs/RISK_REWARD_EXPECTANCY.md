@@ -152,3 +152,35 @@ Track expectancy monthly — it's your real edge
 ---
 
 *-- End of Risk-Reward & Expectancy --*
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — Why 1:1 Trades Destroy You
+
+**Trader A:** 55% win rate, average win = average loss (1R).
+Expectancy = 0.55(1) - 0.45(1) = **+0.10R per trade**.
+On 100 trades: +10R total. Costs (slippage, brokerage) eat most of it.
+
+**Trader B:** 45% win rate, average win = 2.5× average loss.
+Expectancy = 0.45(2.5) - 0.55(1) = **+0.575R per trade**.
+On 100 trades: +57.5R total. Massive edge.
+
+**Trader A loses sleep chasing accuracy. Trader B sleeps fine letting winners run.**
+
+This is the math behind every successful swing trader: **chase R-multiples, not win rates.**
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Calculate your expectancy** monthly: (Win% × Avg Win R) - (Loss% × Avg Loss R).
+2. **If expectancy < 0.3R**, your edge is too small. Either improve setups or stop trading.
+3. **Target minimum 2:1 R:R on every entry.** Below 2:1 → skip.
+4. **Cut losers at -1R, no exceptions.** Let winners reach 2R+ before partial exits.
+5. **Track R-multiples instead of ₹** in your journal. Removes account-size bias.
+6. **Find your A+ patterns** — the ones with 3R+ average winners.
+7. **Trade those patterns 80% of the time.** Skip B/C setups.
+8. **Review every losing month** — was it variance or did expectancy actually break?
+

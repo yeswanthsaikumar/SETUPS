@@ -1,5 +1,19 @@
 # Jesse Livermore — The Complete Wisdom
 
+
+<!-- ENHANCED_STORY -->
+## 📖 A Story Before the Rules
+
+Imagine a 14-year-old boy in 1891, standing in a Boston bucket shop, chalk in hand. He's not yet Jesse Livermore — he's just **Jesse**, an office boy who quietly notices that prices repeat patterns. He starts writing down numbers in a notebook. Within a year, he's making more money trading than his weekly salary.
+
+By 1907, he had made $3 million shorting the panic.
+By 1929, he had made $100 million shorting the crash.
+By 1940, he had lost it all and died broke.
+
+His success and his failure came from the **same set of rules** — followed in his winning years, and broken in his losing ones.
+
+This blog is the distillation of those rules. Read it not as history, but as a mirror: every time you feel impatient, oversized, or "sure," ask yourself — *am I trading like the Jesse of 1907, or the Jesse of 1934?*
+
 ## The Legend: The Boy Who Beat Wall Street (And Almost Broke It)
 
 They called him "The Boy Plunger." At 15, Jesse Livermore was posting stock quotes on a chalkboard in a Boston bucket shop — a smoky, fast-paced trading den where ordinary people placed bets on price movements. Most boys his age were in school. Jesse was learning the market's heartbeat by watching price tickers tick, one after another, all day.
@@ -642,4 +656,39 @@ Print sections 10 and 15 — tape them to your monitor and keep them in your wal
 *— End of the Jesse Livermore Wisdom Compendium —*
 
 **Sources:** *Reminiscences of a Stock Operator* (Lefèvre, 1923, public domain) · *How to Trade in Stocks* (Livermore, 1940, public domain) · Contemporary newspaper records (NYT, WSJ, 1907–1940) · Edwin Lefèvre interviews, Saturday Evening Post (1922–1923).
+
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — Trading Like Livermore in Today's Market
+
+**Setup:** TITAN forms a 9-week base, breaks out on 1.8× volume, Nifty in confirmed uptrend.
+
+**The Livermore Way:**
+
+| Step | Action | Livermore Principle |
+|------|--------|---------------------|
+| 1 | Wait for breakout above pivot ₹3,420 | "Never anticipate — react." |
+| 2 | Buy 25% starter at ₹3,425 | "Probe first. Don't load until you're proven right." |
+| 3 | Stop at ₹3,310 (-3.4%, below pivot) | "If wrong, get out fast." |
+| 4 | Add 25% after first pullback that holds the 10-EMA | "Pyramid winners, never losers." |
+| 5 | Trail under each higher low | "Sit tight — the big money is in the sitting." |
+| 6 | Exit on first violation of 10-week MA on heavy volume | "The market tells you when the move is done." |
+
+**Result:** Even if you only hold for half the trend, your R-multiple comes from **scaling, not predicting**. That is Livermore's edge in modern form.
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Build a watchlist** of leading stocks in leading sectors. Livermore traded the strongest, not the cheapest.
+2. **Wait for the pivot.** No buying inside the base. Only on breakout.
+3. **Start small** — 25% of intended size. Treat the first entry as a probe.
+4. **Cut fast** if it fails. A 3-5% stop is the price of admission.
+5. **Add only when proven right.** Each add must come on strength, not on hope.
+6. **Trail, don't predict.** Use structure — higher lows, 10-week MA — to stay in.
+7. **Exit on the line of least resistance reversing.** When the trend breaks, you leave.
+8. **Review weekly.** Livermore re-read his rules every Sunday. So should you.
 

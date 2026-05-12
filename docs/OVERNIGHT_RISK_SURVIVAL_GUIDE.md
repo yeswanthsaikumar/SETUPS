@@ -119,3 +119,40 @@ Friday close is when overnight risk is longest (2+ days including weekends).
 ---
 
 *-- End of Overnight Risk Survival Guide --*
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — Sizing With Gap Risk Built In
+
+**Stock:** IRCTC, holding 150 shares at ₹780, current ₹820 (+5.1%).
+**Calendar:** monthly traffic data release tonight.
+
+**Gap Survival Math:**
+
+| Scenario | Gap | Loss on 150 shares | % of account (₹10L) |
+|----------|-----|--------------------|---------------------|
+| Best case | +6% | Gain ₹7,380 | +0.74% |
+| Base case | -3% | Lose ₹3,690 | -0.37% |
+| Bad case | -7% | Lose ₹8,610 | -0.86% |
+| Disaster | -12% | Lose ₹14,760 | -1.48% |
+
+If disaster > 1% account risk → **cut size before close.**
+Action: sell 50 shares at ₹820 (book ₹2,000), hold 100. Disaster case now -0.98%.
+
+**You don't avoid every gap. You ensure no single gap can hurt more than one normal stop.**
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **List every overnight event** for your positions every Friday.
+2. **Compute worst-case gap loss** on each name (use 2× recent ATR).
+3. **If worst case > 1.5% account,** trim until it fits.
+4. **Never carry full size into binary events** (earnings, Fed, RBI, budget).
+5. **Use protective puts** when you must hold full size.
+6. **Avoid Friday-to-Monday holding** in fragile setups — too many headlines possible.
+7. **After an adverse gap,** wait 15-30 min to let the first move shake out, then act on the plan.
+8. **After a favorable gap,** book at least 30-50% of position.
+

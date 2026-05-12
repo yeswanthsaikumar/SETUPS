@@ -98,3 +98,40 @@ You are not paid to trade. You are paid to wait for the right trade.
 ---
 
 *-- End of When Not to Trade --*
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — A Day You Should Not Have Traded
+
+**Date:** Budget day, RBI meeting in 3 days, Nifty in choppy range for 2 weeks.
+**Mood:** You slept 4 hours. Feeling restless. "I need to make today work."
+
+**Run the no-trade checklist:**
+
+| Condition | Reading |
+|-----------|---------|
+| Major event today/tomorrow? | Yes (Budget) |
+| Market in clear regime? | No (choppy) |
+| Personal state (sleep, mood)? | Poor |
+| Setups on watchlist? | 1 borderline |
+| Recent streak? | 3 losses |
+
+**Score: 4/5 no-trade flags. Action: zero trades today. Watch only.**
+
+**Result:** market chops 1.5% both ways during the day. Borderline setup gaps down on Budget. **You saved a 2% loss by trading nothing.** That is alpha.
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Build a no-trade checklist** of 8-10 conditions.
+2. **Run it every morning before 9:15 AM.**
+3. **2+ flags = half size or no trade.**
+4. **3+ flags = no trade, watch only.**
+5. **Use no-trade days to study charts, refine watchlists, journal.**
+6. **Track no-trade days vs P&L** — most great accounts have many "zero" days.
+7. **Never trade because you're bored, behind, or angry.**
+8. **Cash is a position.** Treat it that way.
+

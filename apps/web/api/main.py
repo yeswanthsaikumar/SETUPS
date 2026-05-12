@@ -1414,6 +1414,17 @@ _PLAYBOOK_DOCS: dict[str, dict] = {
         "icon":     "📓",
         "order":    19,
     },
+    "initial-position-protection": {
+        "path":     ROOT / "docs" / "INITIAL_POSITION_PROTECTION.md",
+        "title":    "Heads I Win, Tails I Lose Very Little",
+        "dek":      "Asymmetric payoff across setups and regimes: sizing for clear thinking, how "
+                    "expectancy shifts with market context, structural vs tight stops, dynamic "
+                    "risk–reward after entry, and staged protection without choking winners.",
+        "file":     "Initial_Position_Protection.html",
+        "category": "blog",
+        "icon":     "🪙",
+        "order":    20,
+    },
 }
 
 
@@ -6251,7 +6262,7 @@ def get_journal(symbol: str = "", limit: int = 200, category: str = "", search: 
     avg_r = round(sum(r_multiples) / len(r_multiples), 2) if r_multiples else 0
     avg_win = round(win_pnl / wins, 2) if wins else 0
     avg_loss = round(loss_pnl / losses, 2) if losses else 0
-    expectancy = round(avg_r, 2) if avg_r else (round((win_rate/100 * avg_win + (1-win_rate/100) * avg_loss), 2) if total_trades else 0)
+    expectancy = round((win_rate/100 * avg_win + (1-win_rate/100) * avg_loss), 2) if total_trades else 0
     profit_factor = round(abs(win_pnl / loss_pnl), 2) if loss_pnl else (999 if win_pnl > 0 else 0)
 
     # Streak
@@ -9544,6 +9555,8 @@ def rs_scan_asof(
     sort_by: str = "swing",         # swing | rs | adr | volume
     min_adr: float = 0.0,
     min_avg_vol: int = 0,
+    ipo_only: bool = False,
+    include_post_scan_ipo: bool = True,
 ) -> dict:
     """
     Run the RS-leaders scan as if today were *scan_date*, using only OHLCV data
@@ -9641,6 +9654,8 @@ def rs_scan_asof(
             e = v * k + e * (1 - k)
         return e
 
+    from datetime import date as _date_cls
+
     def _score_one(sym: str):
         rows_full = _read_ohlcv(sym, days=0, market="india")
         if not rows_full:
@@ -9648,20 +9663,35 @@ def rs_scan_asof(
 
         # Truncate to scan_date
         rows = [r for r in rows_full if r["date"] <= scan_date]
+        post_scan_ipo = False
+
         if not rows:
-            return None
+            # ── Post-scan IPO: stock listed AFTER scan_date but within 180 days
+            if not include_post_scan_ipo:
+                return None
+            first_date = rows_full[0]["date"]
+            try:
+                days_after = (_date_cls.fromisoformat(first_date) - _date_cls.fromisoformat(scan_date)).days
+            except Exception:
+                return None
+            if days_after < 0 or days_after > 180:
+                return None
+            # Score using all available data from listing date; flag as post-scan IPO
+            rows = rows_full
+            post_scan_ipo = True
 
         n_bars = len(rows)
         last_close = rows[-1]["close"]
         if last_close < min_price:
             return None
 
-        # ── IPO detection: <126 trading days as of scan_date ≈ listed within ~6 months
-        is_ipo = n_bars < 126
+        # ── IPO detection: <126 trading days as of scan_date, or listed after scan_date
+        is_ipo = post_scan_ipo or n_bars < 126
 
-        # For non-IPO: respect min_bars; for IPO: need at least 15 bars
+        # For non-IPO: respect min_bars; for IPO: need at least 20 bars
+        # (20 = minimum required by compute_rs_score for the shortest period)
         if is_ipo:
-            if n_bars < 15:
+            if n_bars < 20:
                 return None
         else:
             if n_bars < min_bars:
@@ -9676,15 +9706,17 @@ def rs_scan_asof(
         stock_prices = {"close": closes, "dates": dates}
 
         # ── RS Score — IPO gets shorter periods (1M/2M/3M), normal gets standard
+        # Post-scan IPOs use full market data (not scan-date-truncated benchmark)
+        benchmark = market_prices_full if post_scan_ipo else market_prices_trunc
         try:
             if is_ipo:
                 rs = _wpe.compute_rs_score(
-                    stock_prices, market_prices_trunc,
+                    stock_prices, benchmark,
                     periods=[21, 42, 63],
                     weights=[0.50, 0.30, 0.20],
                 )
             else:
-                rs = _wpe.compute_rs_score(stock_prices, market_prices_trunc)
+                rs = _wpe.compute_rs_score(stock_prices, benchmark)
         except Exception:
             return None
 
@@ -9774,6 +9806,8 @@ def rs_scan_asof(
             "industry":         industry,
             "basicIndustry":    basic_industry,
             "is_ipo":           is_ipo,
+            "post_scan_ipo":    post_scan_ipo,
+            "listing_date":     dates[0] if dates else None,
             "bars":             n_bars,
             "rs_score":         score,
             "rs_label":         rs.get("rs_label"),
@@ -9810,7 +9844,10 @@ def rs_scan_asof(
         "volume": lambda x: (x.get("volSurge5d") or 0, x.get("rs_score") or 0),
     }
     scored.sort(key=_sort_keys.get(sort_by, _sort_keys["swing"]), reverse=True)
+    if ipo_only:
+        scored = [s for s in scored if s.get("is_ipo")]
     top = scored[:top_n]
+    ipo_count = sum(1 for s in top if s.get("is_ipo"))
     for i, s in enumerate(top, start=1):
         s["rank"] = i
 
@@ -9850,6 +9887,8 @@ def rs_scan_asof(
         "topN":             top_n,
         "totalScanned":     len(universe),
         "totalComputed":    len(scored),
+        "ipoOnly":          ipo_only,
+        "ipoCount":         ipo_count,
         "leaders":          top,
         "niftyReturnPct":   nifty_return_pct,
         "summary": {

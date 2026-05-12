@@ -141,3 +141,41 @@ Reduce size. Stay in the game. Trust the system. Rebuild slowly. This is the onl
 ---
 
 *-- End of Losing Streak Survival Guide --*
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — Surviving a 6-Loss Streak
+
+**Trader:** account ₹8L, base risk 1%.
+**Streak:** 6 losses in a row over 9 sessions. Down ~6%.
+
+**The Streak Response Protocol:**
+
+| Loss # | Action | New Risk |
+|--------|--------|----------|
+| 1-2 | Normal | 1.0% (₹8,000) |
+| 3 | Yellow flag — log mistakes | 0.75% (₹6,000) |
+| 4 | Cut risk | 0.5% (₹4,000) |
+| 5 | A+ setups only, max 1 trade/day | 0.5% |
+| 6 | **Stop trading for 2 sessions.** Review charts only. | — |
+| Return | Re-enter at 0.5%, must get 2 wins | 0.5% |
+| After 2 wins | Step up to 0.75% | 0.75% |
+| After 4 wins | Return to 1% | 1.0% |
+
+**Result:** even a 10-loss streak only costs ~5% of account instead of 10%. **The streak doesn't kill the trader who scales down.**
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Count losses in real time.** Don't pretend a streak isn't happening.
+2. **After 3 losses:** drop risk to 0.5%.
+3. **After 5 losses:** stop for 1-2 sessions. Reset emotionally.
+4. **No revenge trades. No size-up. Ever.**
+5. **Take only A+ setups during recovery.** Skip everything else.
+6. **Require 2 wins before stepping risk back up.**
+7. **Read your journal of past streaks** — they always end, and the next 3 trades after are often great.
+8. **Distinguish market issue from process issue.** Bear market streaks ≠ broken trader.
+

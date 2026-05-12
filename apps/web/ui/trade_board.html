@@ -213,6 +213,7 @@
     .perf-cell{background:var(--bg3);padding:10px 13px}
     .perf-l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-bottom:3px}
     .perf-v{font-size:1.3em;font-weight:900}
+    .perf-sub{display:block;font-size:.56em;font-weight:700;letter-spacing:.25px;color:var(--muted);margin-top:2px}
     /* JOURNAL — Advanced Trading Journal */
     .j-wrap{flex:1;display:flex;overflow:hidden;height:100%}
     .j-list{width:320px;border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column}
@@ -1582,7 +1583,8 @@
           </div>
         </div>
         <!-- Controls -->
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;">
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
           <span style="font-size:11px;color:var(--muted);font-weight:700;">SCAN DATE:</span>
           <input type="date" class="f-input" id="rsAsofDate" style="width:140px;font-size:11px;" value="2025-10-01">
           <span style="color:var(--border2);margin:0 4px;">|</span>
@@ -1602,7 +1604,23 @@
           <input type="number" class="f-input" id="rsAsofMinPrice" value="50" min="1" style="width:60px;font-size:11px;">
           <span style="font-size:10px;color:var(--muted);font-weight:700;">MIN ADR%</span>
           <input type="number" class="f-input" id="rsAsofMinAdr" value="0" min="0" step="0.5" style="width:55px;font-size:11px;">
+          <button class="btn btn-outline btn-sm" onclick="rsAsofRun(true)" id="rsAsofRescanBtn">🔄 Rescan</button>
           <button class="btn btn-primary btn-sm" onclick="rsAsofRun()" style="margin-left:auto;" id="rsAsofRunBtn">🔬 Run Scan</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:10px;color:var(--muted);font-weight:700;">MIN BARS</span>
+            <input type="number" class="f-input" id="rsAsofMinBars" value="150" min="20" step="5" style="width:72px;font-size:11px;">
+            <span style="font-size:10px;color:var(--muted);font-weight:700;">MIN VOL (20D AVG)</span>
+            <input type="number" class="f-input" id="rsAsofMinVol" value="0" min="0" step="10000" style="width:110px;font-size:11px;">
+            <label style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);font-weight:700;cursor:pointer;white-space:nowrap;" title="Only show IPO stocks (&lt;6 months of data at scan date, or listed within 180 days after scan date)">
+              <input type="checkbox" id="rsAsofIpoOnly" style="width:14px;height:14px;cursor:pointer;accent-color:var(--purple)">
+              🆕 IPO Only
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);font-weight:700;cursor:pointer;white-space:nowrap;" title="Include stocks that listed shortly after the scan date and score them using post-listing data">
+              <input type="checkbox" id="rsAsofIncludePostIpo" checked style="width:14px;height:14px;cursor:pointer;accent-color:var(--cyan)">
+              Include post-scan IPOs
+            </label>
+          </div>
         </div>
         <!-- Quick presets + view modes -->
         <div style="display:flex;gap:4px;align-items:center;margin-bottom:4px;flex-wrap:wrap">
@@ -4113,11 +4131,19 @@ function renderEqChart(curve) {
     document.getElementById('csAW').textContent = tradeWins.length ? '+₹' + Math.round(tradeWins.reduce((s, v) => s + v, 0) / tradeWins.length).toLocaleString('en-IN') : '—';
     document.getElementById('csAL').textContent = tradeLosses.length ? '-₹' + Math.round(Math.abs(tradeLosses.reduce((s, v) => s + v, 0) / tradeLosses.length)).toLocaleString('en-IN') : '—';
     const aw = tradeWins.length ? tradeWins.reduce((s, v) => s + v, 0) / tradeWins.length : 0;
-    const al = tradeLosses.length ? Math.abs(tradeLosses.reduce((s, v) => s + v, 0) / tradeLosses.length) : 0;
+    const al = tradeLosses.length ? tradeLosses.reduce((s, v) => s + v, 0) / tradeLosses.length : 0; // negative avg loss
     const wr = tradeWins.length / tradePls.length;
-    const exp = al > 0 ? ((wr * aw - (1 - wr) * al) / al).toFixed(2) + 'R' : '—';
-    document.getElementById('csEX').textContent = exp;
-    document.getElementById('csEX').className = 'perf-v ' + (parseFloat(exp) > 0 ? 'pos-color' : 'neg-color');
+    // Expectancy = (win_rate * avg_win) + (loss_rate * avg_loss)
+    const expVal = wr * aw + (1 - wr) * al;
+    const expStr = (expVal >= 0 ? '+₹' : '-₹') + Math.round(Math.abs(expVal)).toLocaleString('en-IN');
+    const lossAbs = Math.abs(al);
+    const rr = lossAbs > 0 ? (aw / lossAbs) : 0;
+    const rrPct = lossAbs > 0 ? (rr * 100) : 0;
+    const rrLabel = lossAbs > 0
+      ? `R:R 1:${rr.toFixed(2)} (${rrPct.toFixed(0)}%)`
+      : 'R:R —';
+    document.getElementById('csEX').innerHTML = `${expStr}<span class="perf-sub">${rrLabel}</span>`;
+    document.getElementById('csEX').className = 'perf-v ' + (expVal >= 0 ? 'pos-color' : 'neg-color');
   }
 }
 
@@ -6112,7 +6138,11 @@ function _renderRsPreview(d) {
     const vs = row.volSurge5d != null ? row.volSurge5d.toFixed(1) + 'x' : '—';
     const vsCol = row.volSurge5d >= 2 ? '#22c55e' : row.volSurge5d >= 1.5 ? '#fdba74' : 'var(--muted)';
     const hiCol = row.pctFrom52wHigh > -5 ? '#4ade80' : row.pctFrom52wHigh > -15 ? '#f59e0b' : 'var(--muted)';
-    const ipoBadge = row.is_ipo ? '<span style="font-size:9px;background:#1a0a40;color:#a78bfa;padding:1px 4px;border-radius:3px;margin-left:3px">IPO</span>' : '';
+    const ipoBadge = row.is_ipo
+      ? (row.post_scan_ipo
+          ? '<span style="font-size:9px;background:#1a0a40;color:#a78bfa;padding:1px 4px;border-radius:3px;margin-left:3px" title="Listed AFTER scan date — scored on post-scan data">🆕 POST-IPO</span>'
+          : '<span style="font-size:9px;background:#1a0a40;color:#a78bfa;padding:1px 4px;border-radius:3px;margin-left:3px" title="Listed within ~6 months of scan date">IPO</span>')
+      : '';
     const secCol = _SECTOR_COLORS[(row.sector && row.sector !== 'Other') ? row.sector : 'Other'] || '#64748b';
     const sector = (row.sector && row.sector !== 'Other') ? '<span style="color:'+secCol+';font-size:9.5px;font-weight:600">' + row.sector + '</span>' : '<span style="color:var(--dim)">—</span>';
     return '<tr style="border-top:1px solid var(--border)">' +
@@ -7439,7 +7469,7 @@ function rsAsofSetView(mode) {
   rsAsofRenderBody();
 }
 
-async function rsAsofRun() {
+async function rsAsofRun(force) {
   const scanDate = document.getElementById('rsAsofDate').value;
   if(!scanDate) { alert('Please select a scan date'); return; }
   const endDate = document.getElementById('rsAsofEndDate').value || '';
@@ -7447,6 +7477,10 @@ async function rsAsofRun() {
   const sortBy = document.getElementById('rsAsofSort').value;
   const minPrice = document.getElementById('rsAsofMinPrice').value;
   const minAdr = document.getElementById('rsAsofMinAdr').value;
+  const minBars = document.getElementById('rsAsofMinBars').value;
+  const minVol = document.getElementById('rsAsofMinVol').value;
+  const ipoOnly = document.getElementById('rsAsofIpoOnly')?.checked || false;
+  const includePostIpo = document.getElementById('rsAsofIncludePostIpo')?.checked !== false;
 
   const params = new URLSearchParams({ scan_date: scanDate });
   if(topN)    params.set('top_n',     topN);
@@ -7454,14 +7488,21 @@ async function rsAsofRun() {
   // Only send numeric params if they have a valid value (avoids 422 on empty fields)
   const mp = parseFloat(minPrice); if(!isNaN(mp)) params.set('min_price', mp);
   const ma = parseFloat(minAdr);   if(!isNaN(ma)) params.set('min_adr',   ma);
+  const mb = parseInt(minBars, 10); if(!isNaN(mb)) params.set('min_bars', mb);
+  const mv = parseInt(minVol, 10);  if(!isNaN(mv)) params.set('min_avg_vol', mv);
   if(endDate) params.set('end_date', endDate);
+  if(ipoOnly) params.set('ipo_only', 'true');
+  params.set('include_post_scan_ipo', includePostIpo ? 'true' : 'false');
+  if(force) params.set('refresh', 'true');
 
   const endLbl = endDate ? endDate : 'latest';
   document.getElementById('rsAsofBody').innerHTML = '<div style="color:var(--muted);padding:40px;text-align:center;">⏳ Running RS scan as of <strong>'+scanDate+'</strong> → <strong>'+endLbl+'</strong>… This may take 1-2 minutes for ~2000 stocks.</div>';
   document.getElementById('rsAsofSummary').style.display = 'none';
   document.getElementById('rsAsofSectors').innerHTML = '';
   document.getElementById('rsAsofRunBtn').disabled = true;
+  document.getElementById('rsAsofRescanBtn').disabled = true;
   document.getElementById('rsAsofRunBtn').textContent = '⏳ Running…';
+  document.getElementById('rsAsofRescanBtn').textContent = '⏳ Rescanning…';
 
   try {
     const r = await fetch(API + '/api/rs-scan-asof?' + params.toString());
@@ -7480,8 +7521,9 @@ async function rsAsofRun() {
     const s = rsAsofData.summary || {};
     const sortLbl = {swing:'Swing Score', rs:'RS Score', adr:'ADR%', volume:'Vol Surge'}[rsAsofData.sortBy || 'swing'] || rsAsofData.sortBy;
     const endDt = rsAsofData.endDate || 'latest';
+    const ipoInfo = rsAsofData.ipoCount ? `  ·  🆕 ${rsAsofData.ipoCount} IPO` : '';
     document.getElementById('rsAsofInfo').textContent =
-      `Scan: ${scanDate} → ${endDt}  ·  Top-${rsAsofData.topN}  ·  ${rsAsofLeaders.length} leaders  ·  ${rsAsofData.totalScanned} scanned  ·  Sorted by ${sortLbl}`;
+      `Scan: ${scanDate} → ${endDt}  ·  Top-${rsAsofData.topN}  ·  ${rsAsofLeaders.length} leaders  ·  ${rsAsofData.totalScanned} scanned  ·  Sorted by ${sortLbl}${ipoInfo}`;
 
     rsAsofRenderSummary();
     rsAsofRenderSectors();
@@ -7490,7 +7532,9 @@ async function rsAsofRun() {
     document.getElementById('rsAsofBody').innerHTML = `<div style="color:var(--red);padding:40px;text-align:center;">❌ ${e.message}</div>`;
   } finally {
     document.getElementById('rsAsofRunBtn').disabled = false;
+    document.getElementById('rsAsofRescanBtn').disabled = false;
     document.getElementById('rsAsofRunBtn').textContent = '🔬 Run Scan';
+    document.getElementById('rsAsofRescanBtn').textContent = '🔄 Rescan';
   }
 }
 
@@ -7591,11 +7635,15 @@ function _rsAsofTable(items, showSector) {
     const vsCol = (r.volSurge5d||0)>=2?'#22c55e':(r.volSurge5d||0)>=1.5?'#fdba74':'var(--muted)';
     const mgC = (r.maxGainPct||0)>0?'#4ade80':'var(--muted)';
     const mdC = (r.maxDrawdownPct||0)<0?'#f87171':'var(--muted)';
-    const ipoBadge = r.is_ipo ? '<span style="font-size:9px;background:#1a0a40;color:#a78bfa;padding:1px 4px;border-radius:3px;margin-left:3px">IPO</span>' : '';
+    const ipoBadge = r.is_ipo
+      ? (r.post_scan_ipo
+          ? '<span style="font-size:9px;background:#1a0a40;color:#a78bfa;padding:1px 4px;border-radius:3px;margin-left:3px" title="Listed after the scan date — scored on post-listing data">🆕 POST-IPO</span>'
+          : '<span style="font-size:9px;background:#1a0a40;color:#a78bfa;padding:1px 4px;border-radius:3px;margin-left:3px" title="Listed within ~6 months of the scan date">IPO</span>')
+      : '';
 
     h += '<tr style="border-top:1px solid var(--border)" onmouseover="this.style.background=\'var(--bg3)\'" onmouseout="this.style.background=\'\'">'
       + '<td style="padding:4px 6px;color:var(--muted)">'+(r.rank||i+1)+'</td>'
-      + '<td style="padding:4px 6px;font-weight:800">'+r.symbol+'</td>'
+      + '<td style="padding:4px 6px;font-weight:800">'+r.symbol+ipoBadge+'</td>'
       + '<td style="padding:4px 6px;color:'+swCol+';font-weight:900">'+(r.swingScore!=null?r.swingScore.toFixed(0):'—')+'</td>'
       + '<td style="padding:4px 6px;color:'+rsCol+';font-weight:900">'+(r.rs_score||0)+'</td>'
       + '<td style="padding:4px 6px;color:'+rsCol+';font-size:10px">'+(r.rs_label||'—')+'</td>'

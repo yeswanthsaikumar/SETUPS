@@ -295,3 +295,42 @@ A professional trader doesn't ask "how much can I make?" They ask "how much can 
 
 *— End of Position Sizing Playbook —*
 
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — Sizing a Trade in Real Numbers
+
+**Account:** ₹15,00,000
+**Trade:** LT breakout, entry ₹3,650, stop ₹3,545 (-2.9%)
+**Conditions:** Bull regime (1.0×), A-grade pattern (1.0×), 2-win streak (1.0×), heat at 2.5%/6% cap.
+
+**Math:**
+
+| Step | Calculation | Result |
+|------|-------------|--------|
+| Base risk | 1% × ₹15,00,000 | ₹15,000 |
+| Regime adj | × 1.0 | ₹15,000 |
+| Setup adj | × 1.0 | ₹15,000 |
+| Streak adj | × 1.0 | ₹15,000 |
+| Heat check | 2.5% + 1% = 3.5% (under 6% cap) | ✓ |
+| Stop distance | ₹3,650 - ₹3,545 | ₹105 |
+| Position size | ₹15,000 / ₹105 | **142 shares** |
+| Capital deployed | 142 × ₹3,650 | ₹5,18,300 (34.5% of acct) |
+
+**Why this works:** if stopped, lose ₹14,910 ≈ 1% of account. If hits +3R, make ₹44,730 ≈ 3%. **You can lose 10 in a row and still be fine. You only need 3-4 winners to fund a strong year.**
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Never decide size by capital deployed.** Always decide by risk in ₹.
+2. **Risk = Base × Regime × Setup × Streak.** Compute every time.
+3. **Stop distance comes from the chart, not from "what feels okay."**
+4. **Shares = Risk ₹ ÷ Stop distance.** Round down, never up.
+5. **Check portfolio heat before entering.** 6% open risk is the ceiling.
+6. **For pyramids:** add ½ of previous tranche on each new higher-low. Never below entry.
+7. **Reduce size after 3 losses** until you have 2 wins back.
+8. **Re-size every Monday** based on the new account balance.
+

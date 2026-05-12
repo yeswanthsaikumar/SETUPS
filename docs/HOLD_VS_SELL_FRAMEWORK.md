@@ -118,3 +118,48 @@ This means:
 ---
 
 *-- End of Hold vs Sell Framework --*
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — A Real Hold-vs-Sell Decision
+
+**Position:** BAJFINANCE long, entry ₹7,200, current ₹8,150 (+13%).
+**Day's action:** Closed -2.4% on heavy volume after a 5-day vertical run.
+
+**Run the 5/5 checklist:**
+
+| Sell Signal | Yes/No |
+|-------------|--------|
+| Close below 10-EMA on volume | No |
+| Climax day (vertical + huge volume) | Yes |
+| Trendline broken | No |
+| Distribution count (4+ days) | No |
+| Stop hit | No |
+
+| Hold Signal | Yes/No |
+|-------------|--------|
+| Holding 10-EMA | Yes |
+| Higher highs intact | Yes |
+| Leading group strength | Yes |
+| RS still rising | Yes |
+| Volume on up days > down days | Borderline |
+
+**Decision:** 1 sell signal (climax), 4 hold signals. **Action: sell 30-40% to lock climax profit, hold 60-70% under structure trail.**
+
+You did not flip a coin. You followed the framework. **That repeatability is the edge.**
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Build the 5-sell + 5-hold checklist** on a sticky note next to your screen.
+2. **Run it every evening on every open position.**
+3. **3+ sell signals → exit fully.**
+4. **1-2 sell signals → trim 30-50%.**
+5. **0 sell signals + multiple hold signals → do nothing.**
+6. **Move stop after every higher-low** — mechanical, no opinion.
+7. **Never sell on a single down day** without checking the framework.
+8. **Journal every "hold vs sell" decision** with the framework score.
+

@@ -107,3 +107,24 @@ class TestTimeframeAnalysisBlog:
         assert "<table>" in r.text  # Cheat sheet tables must render
 
 
+class TestInitialPositionProtectionBlog:
+    def test_initial_position_protection_in_meta(self, api_client):
+        r = api_client.get("/api/playbook/meta")
+        assert r.status_code == 200
+        keys = {d.get("key") for d in r.json().get("docs", [])}
+        assert "initial-position-protection" in keys
+
+    def test_initial_position_protection_markdown_served(self, api_client):
+        r = api_client.get("/api/playbook/markdown?doc=initial-position-protection")
+        assert r.status_code == 200
+        assert "Heads I Win, Tails I Lose Very Little" in r.text
+        assert "Protect the Thesis, Not the Entry Price" in r.text
+
+    def test_initial_position_protection_download_renders_html(self, api_client):
+        r = api_client.get("/api/playbook/download?doc=initial-position-protection")
+        assert r.status_code == 200
+        assert "text/html" in r.headers.get("content-type", "")
+        assert "Heads I Win, Tails I Lose Very Little" in r.text
+        assert "<table>" in r.text
+
+

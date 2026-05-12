@@ -8,6 +8,18 @@ If you have ever said "my stop was there, but it opened way below," this is for 
 
 ---
 
+
+<!-- ENHANCED_STORY -->
+## 📖 A Story Before the Rules
+
+It's 3:25 PM on a Friday. INFOSYS reports earnings tonight. The stock is up 3% today on hope. Priya is sitting on a 7% gain after holding for 12 days. Her plan said "exit before earnings." But the chart looks strong. Her group says "results will beat." She holds.
+
+Monday morning: INFOSYS opens **-9%** on a guidance cut. Her ₹50,000 gain is now a ₹40,000 loss. A 90-point swing. Her stop-loss never even got a chance — because gaps don't honor stops.
+
+This is the brutal reality of **event risk**: a single overnight headline can erase weeks of careful trading. The market doesn't care about your stop, your average price, or your "high-conviction thesis." It only cares about the open price on Monday.
+
+This blog teaches you how to survive — and even profit from — the events that destroy careless traders.
+
 ## The Morning That Teaches the Hard Lesson
 
 You buy a clean breakout at 3:10 PM.
@@ -328,3 +340,44 @@ Your first job is to make sure you are still solvent, calm, and ready to take it
 ---
 
 *End of Event Pivot Gap Risk Playbook*
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — De-Risking Before Earnings
+
+**Position:** Long HDFCBANK, 200 shares at ₹1,620, currently at ₹1,705 (+5.2%, ₹17,000 profit).
+**Event:** Q2 results in 4 sessions.
+
+**The De-Risk Decision Tree:**
+
+| Factor | Reading | Action |
+|--------|---------|--------|
+| Open profit | +5.2% (>1R) | Eligible to hold partial |
+| Recent reaction history | Mixed (last 4 quarters: +2%, -4%, +6%, -3%) | Cut at least half |
+| Sector momentum | Strong (Bank Nifty making highs) | Keep some skin |
+| Implied volatility (options) | Elevated | Reduce more |
+
+**Decision:** Sell 60% (120 shares) at ₹1,705. Lock ₹10,200 profit. Hold 80 shares with stop tightened to ₹1,665 (break-even on remainder).
+
+**Outcome scenarios:**
+- Gap up +5%: Make ₹10,200 (booked) + ₹6,800 (open) = ₹17,000
+- Gap down -8%: Make ₹10,200 (booked) - ₹3,200 (gap loss on 80 shares) = +₹7,000 still positive
+- Flat: Make ₹10,200 (booked) + ~₹0 = ₹10,200
+
+**No scenario destroys the trade.** That is what de-risking buys you.
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Track every event** on your holdings — earnings, RBI, budget, FOMC, ex-date.
+2. **Mark T-5 to T-1 sessions** as "de-risk zone" on each name.
+3. **Default action:** trim 50-75% before binary events unless you've sized assuming gap risk.
+4. **Never average down before an event.** Wait for the gap to print.
+5. **Use options to define risk** when you must hold full size — protective puts cost 1-2% but cap disaster.
+6. **Avoid new entries in the 3 sessions before earnings** on the stock you're trading.
+7. **After a gap against you,** don't reflex-sell at open. Let the first 30 minutes print, then act on the plan.
+8. **After a gap in your favor,** book at least 30-50% — windfalls fade.
+

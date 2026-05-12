@@ -5,6 +5,18 @@
 
 ---
 
+
+<!-- ENHANCED_STORY -->
+## 📖 A Story Before the Rules
+
+Amit bought BAJFINANCE at ₹4,200. Sold at ₹4,520 for a 7.6% gain. Felt smart.
+
+Six months later, BAJFINANCE was ₹7,800.
+
+If he had held with a structure trail, he would have made **86%**, not 7.6%. The difference between a hobby trader and a professional is not finding the trade. It's **holding it through the noise that scares everyone else out**.
+
+This blog teaches you the five-stage trailing system that lets a single winner pay for ten losers — the math that makes swing trading actually profitable.
+
 ## The Trade That Got Away
 
 You entered at the right moment.
@@ -359,3 +371,39 @@ The trailing plan is not optional. It is the mechanism that turns a decent edge 
 ---
 
 *End of Trailing Winners — The Complete Action Plan*
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — Trailing PERSISTENT for a 60% Move
+
+**Entry:** ₹5,400 breakout from 7-week base, 200 shares.
+**Initial stop:** ₹5,200 (-3.7%).
+**Result over 14 weeks:**
+
+| Stage | Price | Action | Trailing Stop | Locked Gain |
+|-------|-------|--------|---------------|-------------|
+| Entry | ₹5,400 | Buy 200 | ₹5,200 | -3.7% (risk) |
+| +5% (week 1) | ₹5,670 | Move to BE | ₹5,400 | 0% |
+| +10% (week 2) | ₹5,940 | Trail under 10-EMA | ₹5,720 | +5.9% |
+| +20% (week 4) | ₹6,480 | Trail under 10-EMA | ₹6,180 | +14.4% |
+| +35% (week 7) | ₹7,290 | Sell 30% at climax wick | ₹6,720 | +24.4% on remainder |
+| +50% (week 10) | ₹8,100 | Trail under 20-EMA (slower) | ₹7,650 | +41.7% on remainder |
+| +62% (week 13) | ₹8,748 | Climax volume + reversal day | EXIT remainder at ₹8,700 | **Average: +44%** |
+
+**Lesson:** The biggest part of the gain came from **not selling at +20%**. The stage system gave a mechanical way to ignore the urge.
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Stage 1 — Survival.** First 3-5 days: don't touch the stop. Let the trade prove itself.
+2. **Stage 2 — Break-even.** After +1R or first higher-low, move stop to entry. The trade can no longer hurt.
+3. **Stage 3 — Structure trail.** Trail under each new higher-low or 10-EMA close. Mechanical, no opinion.
+4. **Stage 4 — Climax recognition.** Watch for parabolic acceleration, exhaustion gap, reversal on huge volume → take partial profits (30-50%).
+5. **Stage 5 — Slower trail on runner.** Switch to 20-EMA or 10-week MA for the final piece. Let it run until structure breaks.
+6. **Never widen a stop.** Stops only move up.
+7. **Don't trail on intraday wicks.** Use closing prices only.
+8. **Review every trailed winner monthly.** Where did you exit early? Where did you hold too long? Adjust the rules, not the trade.
+

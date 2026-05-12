@@ -4,6 +4,22 @@
 
 ---
 
+
+<!-- ENHANCED_STORY -->
+## 📖 A Story Before the Rules
+
+Two traders look at the same RELIANCE chart.
+
+**Trader A** zooms in on the 15-minute. He sees a "bull flag." He buys. Within 2 hours, the stock has reversed because — on the daily — it was rolling over at a major resistance.
+
+**Trader B** starts on the monthly. He sees RELIANCE in a 5-year base, finally breaking out. He drops to weekly: clean cup-and-handle. Drops to daily: tight pullback to 10-EMA. Drops to hourly: clean entry trigger. He buys the same level Trader A bought, but with **the full weight of three higher timeframes behind him**.
+
+Six weeks later, Trader B is up 22%. Trader A is still telling himself "patterns don't work anymore."
+
+The pattern worked. The **context** was missing.
+
+This blog teaches you to never trade a single timeframe again.
+
 ## The Two Traders
 
 Imagine two traders, both staring at the same stock — let's call it Tata Motors on a random Tuesday afternoon.
@@ -293,4 +309,47 @@ That is the edge. Not a secret indicator. Not a complicated algorithm. Just the 
 ---
 
 *Multi-timeframe mastery is not complex. It is consistent. The trader who checks every timeframe, every time, will outlast every trader who doesn't.*
+
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — Top-Down Stack on ICICIBANK
+
+**Monthly:** 18-month base, breaking out of all-time-high zone. Bullish bias confirmed.
+**Weekly:** 8-week handle, declining volume, holding 10-week MA. Continuation setup.
+**Daily:** Tight 3-day inside-day cluster at pivot ₹1,275. Pre-breakout coil.
+**Hourly:** First hour of breakout day closes above pivot on 1.7× volume.
+
+**All four timeframes agree → A++ trade.**
+
+| Timeframe | Question | Answer |
+|-----------|----------|--------|
+| Monthly | What's the multi-year trend? | Up, breakout |
+| Weekly | What's the swing structure? | Higher highs, handle complete |
+| Daily | What's the immediate setup? | Coil at pivot |
+| Hourly | Where's the trigger? | Hour-2 close >₹1,275 with volume |
+
+**Position size:** Full risk (1%) — confluence justifies it.
+**Result:** Trade runs +18% over 6 weeks with two add-ons at higher-low retests.
+
+Now contrast: if monthly was rolling over, even a clean daily flag would only get **half-risk** or no trade at all.
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Always start with the monthly.** Define the multi-year trend and major levels.
+2. **Drop to weekly.** Identify the active pattern and key MAs (10W, 30W).
+3. **Drop to daily.** Find the pivot, the volatility contraction, the volume signature.
+4. **Drop to hourly only for the trigger.** Don't trade hourly setups against daily structure.
+5. **Score the confluence:**
+   - 4/4 aligned → full size
+   - 3/4 aligned → 75% size
+   - 2/4 aligned → 50% size or skip
+   - ≤1 aligned → no trade
+6. **Manage on the same timeframe you entered.** Hourly entry → hourly trail. Daily entry → daily trail.
+7. **Re-check higher timeframe weekly** while in the trade. If the monthly bias flips, your trade just changed character.
+8. **Never let a lower timeframe override a higher one.** Hourly noise is not a thesis change.
 

@@ -2,6 +2,20 @@
 
 > *"The goal is not to make money. The goal is to protect the money you have and let profits run. Risk management separates professionals from gamblers."* — A veteran trader
 
+
+<!-- ENHANCED_STORY -->
+## 📖 A Story Before the Rules
+
+Two friends start with ₹5 lakh each in January.
+
+**Vikram** risks 5% per trade ("I want to grow fast"). He has 8 wins and 7 losses. He's down ₹62,000 by April. He doubles down. By July he's down ₹1.4 lakh.
+
+**Aditya** risks 1% per trade. He has 7 wins and 8 losses. He's still up ₹18,000 by April. By July he's up ₹52,000. By December he's up ₹2.1 lakh.
+
+**Same trades. Same edge. Different risk per trade. Different lives.**
+
+This blog teaches the five-layer risk system that ensures *your* July looks like Aditya's, not Vikram's.
+
 ## Why Risk Management Comes First
 
 Most traders start by asking: *"What's my profit target?"* — the wrong question. The right question is: *"How much can I afford to lose?"* Risk management isn't defensive; it's **the foundation of all consistent profits**. A trader who risks 1% per trade but takes 60% winners will compound capital indefinitely. A trader who risks 10% per trade will be wiped out, even with 65% winners.
@@ -485,4 +499,46 @@ Final Position Size = (Account × Risk %) ÷ (Entry – Stop)
 **Follow this, and you'll never blow up an account.**
 
 Ignore this, and you'll blow up multiple accounts. I guarantee it.
+
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — The Five Risk Layers on a Single Trade
+
+**Setup:** TATAPOWER breakout, ₹400 entry, stop ₹380 (-5%).
+**Account:** ₹10,00,000.
+**Current state:** Market in confirmed uptrend, 2 winners + 1 loss this week, pattern is B+ (decent, not perfect).
+
+| Layer | Reading | Multiplier |
+|-------|---------|-----------|
+| **1. Open risk floor** | 3 positions open, 2.1% portfolio heat | OK to add (cap is 6%) |
+| **2. Market regime** | Confirmed uptrend, Nifty above 50DMA | 1.0× (normal) |
+| **3. Base per-trade risk** | 1% of ₹10L = ₹10,000 | — |
+| **4. Situational** | 2W:1L this week, fresh and clean | 1.0× (no penalty) |
+| **5. Setup quality** | B+ pattern (not A+) | 0.75× |
+
+**Final risk:** ₹10,000 × 1.0 × 1.0 × 0.75 = **₹7,500**
+**Stop distance:** ₹20
+**Position size:** ₹7,500 / ₹20 = **375 shares**
+**Capital deployed:** ₹400 × 375 = ₹1,50,000 (15% of account)
+
+Now imagine after a 4-loss streak: situational multiplier drops to 0.5×, so risk = ₹3,750, size = 187 shares. **The system protects you when you're cold.**
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Define base risk = 1% of account.** Never higher, often lower.
+2. **Check open-risk floor first** — if total open heat is already 6%, no new trade.
+3. **Read the market regime** before any trade. Bear market = 0.5× or no trade.
+4. **Apply situational multiplier:**
+   - Streak: 3+ losses = 0.5×, 3+ wins = 1.0× (don't get cocky)
+   - Time: avoid first hour, last 30 minutes
+   - Calendar: pre-earnings = 0.5× or skip
+5. **Score setup quality** A+/A/B/C. Multiply by 1.25/1.0/0.75/skip.
+6. **Multiply all layers** → final risk in ₹.
+7. **Position size from stop**, not from "feel."
+8. **Re-check weekly:** are you violating any layer? Adjust before the streak punishes you.
 

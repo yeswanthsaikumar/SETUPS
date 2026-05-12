@@ -194,3 +194,35 @@ Honor every stop. Especially when it hurts.
 ---
 
 *-- End of Stop Loss Mastery --*
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — Five Stops on One Trade
+
+**Stock:** APOLLOHOSP, entry ₹6,850, position 50 shares, account ₹12L.
+
+| Stop Type | Level | Why | When Used |
+|-----------|-------|-----|-----------|
+| **1. Initial (hard)** | ₹6,650 (-2.9%) | Below pivot + last swing low | Day 1-3 |
+| **2. Break-even** | ₹6,852 | After +1R move (₹7,050) | Day 4-7 |
+| **3. Structure** | ₹6,920 | Under first higher-low | After confirmation |
+| **4. 10-EMA trail** | follows MA | Once trend is established | Week 3+ |
+| **5. Time** | Exit at ₹6,850 if no progress in 10 sessions | Setups should work or die | Always running |
+
+**Discipline:** Every stop is in the system as a GTT order. Mental stops are honored within 30 seconds of the trigger close. **No exceptions, ever.**
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Place the hard stop the instant the order fills.** Not "after I see how it acts."
+2. **Calculate position size from the stop**, not retrofit a stop to size.
+3. **Move to break-even only after proof** (+1R or first higher-low), never out of nervousness.
+4. **Once trailing, never widen.** Stops are a ratchet, not a slider.
+5. **Use closing prices for trail decisions** — ignore intraday wicks.
+6. **Apply a time stop** — if the trade hasn't worked in 10 sessions, it probably won't.
+7. **Honor every stop.** One skipped stop = the habit that destroys your career.
+8. **Journal every stop hit** — was it noise, or was your entry wrong?
+

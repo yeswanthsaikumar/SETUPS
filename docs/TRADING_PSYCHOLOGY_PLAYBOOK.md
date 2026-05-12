@@ -141,3 +141,38 @@ Overconfidence  -> "The formula doesn't change when I'm hot."
 ---
 
 *-- End of Trading Psychology Playbook --*
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — Catching FOMO in Real Time
+
+**9:32 AM:** Nifty gaps up 1%. Your watchlist is all green. ZOMATO is up 4% pre-market on news. Your hand reaches for the buy button.
+
+**Pause. Run the 4-question pre-trade ritual:**
+
+1. **Is it on my pre-market plan?** No.
+2. **Did I write the stop and target before the urge?** No.
+3. **Is my pulse elevated?** Yes.
+4. **Would I take this trade if it were Monday at 11 AM with no buzz?** No.
+
+**Decision:** No trade. Put phone face-down. Walk 3 minutes.
+
+**11 AM:** ZOMATO has reversed -2%. The trade you "had to take" would have hit your stop.
+
+The win isn't the trade you skipped — it's the **emotional muscle you built** by skipping it.
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Pre-market ritual every day** — plan in writing before 9 AM.
+2. **Pre-trade ritual every entry** — 4 questions above.
+3. **Hide unrealized P&L** during market hours.
+4. **Phone away from the desk** during trading.
+5. **Daily emotion journal** — name the emotion, log the trigger, score 1-10.
+6. **Weekly review** — which emotions cost money this week?
+7. **One identity shift:** stop saying "I want to win," start saying "I want to follow process."
+8. **Read one Mark Douglas chapter per week.** Repetition is the only path to integration.
+

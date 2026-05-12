@@ -164,3 +164,35 @@ You will never catch the top. You will occasionally sell too early. You will occ
 ---
 
 *-- End of Profit Taking Playbook --*
+
+<!-- ENHANCED_EXAMPLE -->
+
+---
+
+## 🎯 Worked Example — Scaling Out of a +3R Winner
+
+**Stock:** POLYCAB entry ₹4,800, stop ₹4,650 (R = ₹150).
+**Plan:** scale at 1R, 2R, 3R.
+
+| Move | Price | Action | Shares Left | Locked Profit |
+|------|-------|--------|-------------|---------------|
+| +1R | ₹4,950 | Sell 1/3, move stop to BE | 67% | +1% account |
+| +2R | ₹5,100 | Sell 1/3, trail under 10-EMA | 33% | +2% account |
+| +3R | ₹5,250 | Optional 1/2 of remainder | 16% | +2.5% account |
+| Climax | ₹5,400 | Exit on reversal candle | 0% | +3.3% account |
+
+**Total return:** about 3.3% on a single trade with no opinion-based decisions. The system did the work.
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Predefine scale-out levels** at entry — 1R, 2R, 3R minimum.
+2. **Move stop to break-even at 1R.** The trade can no longer hurt.
+3. **Trail under 10-EMA after 2R.** Use closes only.
+4. **Take final partial on climax signs** — vertical move, exhaustion gap, huge volume reversal.
+5. **Never sell everything at one level.** Always leave a runner.
+6. **Don't reverse the scale plan to hold more.** Greed kills.
+7. **Track your "left on table" vs "saved by exits"** in the journal.
+8. **Refine ratios over 50 trades.** Some traders do 25/25/50, others 50/25/25 — find yours.
+
