@@ -1300,7 +1300,7 @@
       "name": "BAJAJCON",
       "entry": 530.0,
       "quantity": 1270,
-      "remaining_quantity": 0,
+      "remaining_quantity": 635,
       "sl": 510.0,
       "t1": 0.0,
       "t2": 0.0,
@@ -1309,11 +1309,18 @@
       "rating": "A+",
       "notes": "",
       "entry_date": "2026-05-07",
-      "status": "SL_HIT",
-      "exit_price": 508.5,
-      "exit_date": "2026-05-14",
+      "status": "PARTIAL",
+      "exit_price": null,
+      "exit_date": null,
       "tags": [],
-      "partial_exits": [],
+      "partial_exits": [
+        {
+          "date": "2026-05-17",
+          "quantity": 635,
+          "price": 539.0,
+          "reason": "MANUAL"
+        }
+      ],
       "original_sl": 470.0,
       "cmp": 508.5,
       "lastPriceDate": "2026-05-14",
@@ -1321,7 +1328,7 @@
       "dayChangeAmt": -21272.5,
       "sl_armed": true,
       "sl_manual": true,
-      "realized_pl": -27305.0
+      "realized_pl": 5715.0
     },
     {
       "id": "5da5dfe7",
@@ -1477,5 +1484,5 @@
     }
   ],
   "created": "2026-04-14T11:55:48.601550",
-  "lastUpdated": "2026-05-14T12:55:54.123616"
+  "lastUpdated": "2026-05-17T21:34:27.348482"
 }
