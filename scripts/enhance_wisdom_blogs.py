@@ -896,6 +896,48 @@ This blog teaches the difference — so the next CDSL pays for the next 5 small 
 8. **Journal every "moved to BE too early" mistake** — it's the #1 killer of young winners.
 """,
     },
+
+    "WATCHLIST_TIER_SYSTEM.md": {
+        "story": None,  # blog ships with its own story block
+        "example": """
+---
+
+## 🎯 Worked Example — One Week Through the Tiers
+
+**Weekend:** RS scan shows **TITAN**, **POLYCAB**, **HAL**, **PERSISTENT** in top groups. You cap **Main at 25**; these four make the cut with tags: `Metals/Defence/Consumer`, `RS top 10%`, `weekly base / pullback`.
+
+**Monday pre-market:**
+- **Filtered (14):** TITAN pivot ₹3,420 (2% away), POLYCAB at handle — both promoted from Main.
+- **Daily (6):** Only **TITAN** and **POLYCAB** — triggers plausible today. Alerts set. Rest stay Filtered.
+
+**Monday session:**
+- You run **breadth first**: 1,179 stocks +1%, only 5 below -5% → healthy participation. Daily charts only.
+- TITAN alerts at 10:42. You open the chart (Filtered rule satisfied). Plan: buy above ₹3,425, stop ₹3,310.
+- **Maker:** You message Checker: "BUY TITAN >3425, stop 3310, 1% risk."
+- **Checker:** "Yes — breadth supports; don't chase past 3435."
+- You enter. You do **not** open HAL or PERSISTENT — not on Daily.
+
+**Monday close:**
+- TITAN holds → stays **Daily** tomorrow.
+- POLYCAB never triggered → `↓ FILTERED` (still valid).
+- A WhatsApp tip on a small-cap → **not on any list** → ignored.
+
+**Friday:** TITAN exits on trail. Weekend refresh drops POLYCAB from Main (RS slipped). Main rebuilt to 25 for next week.
+
+---
+
+## ✅ How to Trade This — Step-by-Step Process
+
+1. **Sunday:** RS rank by category → **Main ~25**, tagged.
+2. **Sunday/Monday AM:** Main → **Filtered ~12–14** (near pivot only).
+3. **Each morning:** Filtered → **Daily ~6–8**; write entry/stop/size; arm alerts.
+4. **Session:** **Price action on Daily only**; Filtered charts **on alert only**.
+5. **Post-close:** Promote/demote with tags (`↑ DAILY`, `↓ FILTERED`, `✕ OUT`).
+6. **Daily:** 15-min **breadth** (movers, RSI distribution, MA %, sectors) before stock charts.
+7. **Before any buy:** Maker plan → **Checker approval** (or 15-min written delay if solo).
+8. **Friday:** Audit tier creep — if Daily averaged >8 names, tighten next week's filters.
+""",
+    },
 }
 
 

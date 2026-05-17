@@ -1436,6 +1436,17 @@ _PLAYBOOK_DOCS: dict[str, dict] = {
         "icon":     "🔀",
         "order":    21,
     },
+    "watchlist-tier-system": {
+        "path":     ROOT / "docs" / "WATCHLIST_TIER_SYSTEM.md",
+        "title":    "The Tiered Watchlist System",
+        "dek":      "A three-layer watchlist funnel with hard caps (Main ~25, Filtered ~12–14, "
+                    "Daily ~6–8), weekend RS ranking, daily promote/demote rituals, breadth-over-ticks "
+                    "discipline, and a maker–checker process to kill FOMO before execution.",
+        "file":     "Watchlist_Tier_System.html",
+        "category": "blog",
+        "icon":     "📋",
+        "order":    22,
+    },
 }
 
 
