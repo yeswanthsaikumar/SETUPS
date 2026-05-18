@@ -1,8 +1,5 @@
 # SETUPS Trading System
 
-Swing-trading scanner + 3-year backtest engine for NSE India and US markets.  
-**Two commands per day. Four HTML dashboards. One complete picture.**
-
 ---
 
 ## Quick Start
