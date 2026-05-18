@@ -1,4 +1,4 @@
-# SETUPS Trading System
+# SETUPS System
 
 ---
 
