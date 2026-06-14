@@ -1,0 +1,112 @@
+{
+  "symbol": "ADANIENSOL.NS",
+  "market": "india",
+  "screener_slug": "ADANIENSOL",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 68.27,
+      "fii": 19.65,
+      "dii": 3.82,
+      "public": 8.26
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 73.22,
+      "fii": 17.74,
+      "dii": 3.87,
+      "public": 5.17
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 73.22,
+      "fii": 17.49,
+      "dii": 3.82,
+      "public": 5.46
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 73.22,
+      "fii": 17.49,
+      "dii": 3.8,
+      "public": 5.49
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 74.95,
+      "fii": 15.53,
+      "dii": 3.97,
+      "public": 5.54
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 69.94,
+      "fii": 18.66,
+      "dii": 5.38,
+      "public": 6.03
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 69.94,
+      "fii": 17.34,
+      "dii": 5.85,
+      "public": 6.87
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 69.94,
+      "fii": 17.58,
+      "dii": 6.33,
+      "public": 6.16
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 71.19,
+      "fii": 15.85,
+      "dii": 6.89,
+      "public": 6.08
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 71.19,
+      "fii": 13.06,
+      "dii": 9.97,
+      "public": 5.79
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 71.19,
+      "fii": 13.47,
+      "dii": 10.14,
+      "public": 5.2
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 72.72,
+      "fii": 12.23,
+      "dii": 10.24,
+      "public": 4.81
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 72.72,
+  "fii_pct": 12.23,
+  "dii_pct": 10.24,
+  "public_pct": 4.81,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "up",
+  "fii_trend": "down",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.83,
+  "dii_change_2q": 0.27,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "FII_SELLING",
+  "swing_signal": "\u26a0\ufe0f FIIs selling \u2193 (-0.8% in 2Q) \u2014 watch for follow-through",
+  "summary": "DIIs \u2192 10.2% (+0.3%) | FIIs \u2193 12.2% (-0.8%) | Promoters \u2191 72.7%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:35:17.759411"
+}

@@ -1,0 +1,14 @@
+{
+  "current_proxy": "str",
+  "custom_proxy_url": "str",
+  "enabled": "bool",
+  "last_test_error": "str",
+  "last_test_ip": "NoneType",
+  "last_test_ok": "bool",
+  "last_tested_at": "float",
+  "provider": "str",
+  "proxy_list_fetched_at": "float",
+  "proxy_list_size": "int",
+  "proxy_pool_size": "int",
+  "watchdog_running": "bool"
+}

@@ -1,0 +1,114 @@
+{
+  "symbol": "RICOAUTO.NS",
+  "market": "india",
+  "screener_slug": "RICOAUTO",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 50.33,
+      "fii": 1.95,
+      "dii": 0.0,
+      "public": 47.72
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 50.33,
+      "fii": 1.12,
+      "dii": 0.0,
+      "public": 48.55
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 50.33,
+      "fii": 1.11,
+      "dii": 0.0,
+      "public": 48.56
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 50.33,
+      "fii": 1.84,
+      "dii": 0.0,
+      "public": 47.82
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 50.33,
+      "fii": 1.28,
+      "dii": 0.0,
+      "public": 48.39
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 50.33,
+      "fii": 1.49,
+      "dii": 0.0,
+      "public": 48.17
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 50.33,
+      "fii": 1.62,
+      "dii": 0.0,
+      "public": 48.05
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 50.33,
+      "fii": 1.57,
+      "dii": 0.0,
+      "public": 48.11
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 50.33,
+      "fii": 1.35,
+      "dii": 0.0,
+      "public": 48.31
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 50.33,
+      "fii": 3.03,
+      "dii": 0.03,
+      "public": 46.6
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 50.33,
+      "fii": 2.01,
+      "dii": 0.0,
+      "public": 47.65
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 50.33,
+      "fii": 2.14,
+      "dii": 0.09,
+      "public": 47.43
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 1.8,
+  "insider_held_pct": 51.41,
+  "float_shares": 65682270,
+  "promoters_pct": 50.33,
+  "fii_pct": 2.14,
+  "dii_pct": 0.09,
+  "public_pct": 47.43,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.89,
+  "dii_change_2q": 0.06,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "FII_SELLING",
+  "swing_signal": "\u26a0\ufe0f FIIs selling \u2193 (-0.9% in 2Q) \u2014 watch for follow-through",
+  "summary": "DIIs \u2192 0.1% (+0.1%) | FIIs \u2193 2.1% (-0.9%) | Promoters \u2192 50.3%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:23:08.045842"
+}

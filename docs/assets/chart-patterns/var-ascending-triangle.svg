@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="t d">
+<title id="t">Ascending Triangle - Variations and Verdict</title>
+<desc id="d">Ascending Triangle - Variations and Verdict</desc>
+<rect width="1400" height="760" fill="#070d18"/>
+<text x="40" y="40" fill="#e5edf8" font-size="24" font-family="Arial, sans-serif" font-weight="700">Ascending Triangle - Variations and Verdict</text>
+<rect x="40" y="70" width="640" height="320" rx="10" fill="#0d1626" stroke="#172338"/>
+<text x="56" y="96" fill="#e5edf8" font-size="16" font-family="Arial, sans-serif" font-weight="600">Tight ascending triangle - 3-4 tests (A-grade)</text>
+<text x="56" y="116" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif">Take it: dip bought higher each time, clean</text>
+<rect x="56" y="130" width="600" height="240" fill="#0a1322" stroke="#172338"/>
+<path d="M56.0 348.2 L97.4 322.0 L138.8 293.6 L180.1 269.6 L221.5 252.2 L262.9 239.1 L283.6 239.1 L325.0 265.3 L366.3 239.1 L407.7 258.7 L449.1 239.1 L490.5 252.2 L490.5 234.7 L531.9 217.3 L573.2 195.5 L614.6 173.6 L656.0 156.2" fill="none" stroke="#2ecc71" stroke-width="2"/>
+<rect x="700" y="70" width="640" height="320" rx="10" fill="#0d1626" stroke="#172338"/>
+<text x="716" y="96" fill="#e5edf8" font-size="16" font-family="Arial, sans-serif" font-weight="600">Multi-test with tightening range (strong)</text>
+<text x="716" y="116" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif">Take it: 5+ tests with higher lows = pressure</text>
+<rect x="716" y="130" width="600" height="240" fill="#0a1322" stroke="#172338"/>
+<path d="M716.0 348.2 L769.7 304.5 L823.5 265.3 L859.3 243.5 L895.1 239.1 L913.0 239.1 L939.9 263.1 L966.7 239.1 L993.6 258.7 L1020.5 239.1 L1047.3 254.4 L1074.2 239.1 L1101.1 252.2 L1127.9 239.1 L1154.8 250.0 L1208.5 234.7 L1244.4 210.7 L1280.2 184.5 L1316.0 162.7" fill="none" stroke="#2ecc71" stroke-width="2"/>
+<rect x="40" y="410" width="640" height="320" rx="10" fill="#0d1626" stroke="#172338"/>
+<text x="56" y="436" fill="#e5edf8" font-size="16" font-family="Arial, sans-serif" font-weight="600">Too many failed upper touches (weakening)</text>
+<text x="56" y="456" fill="#facc15" font-size="13" font-family="Arial, sans-serif">Caution: if highs not advancing = distribution risk</text>
+<rect x="56" y="470" width="600" height="240" fill="#0a1322" stroke="#172338"/>
+<path d="M56.0 670.0 L120.7 603.3 L185.5 543.3 L228.7 503.3 L250.2 503.3 L271.8 513.3 L293.4 503.3 L315.0 515.0 L336.6 503.3 L358.2 516.7 L379.7 503.3 L401.3 518.3 L422.9 503.3 L444.5 520.0 L466.1 503.3 L487.7 521.7 L509.2 503.3 L530.8 523.3 L595.6 510.0 L627.9 523.3 L656.0 533.3" fill="none" stroke="#facc15" stroke-width="2"/>
+<rect x="700" y="410" width="640" height="320" rx="10" fill="#0d1626" stroke="#172338"/>
+<text x="716" y="436" fill="#e5edf8" font-size="16" font-family="Arial, sans-serif" font-weight="600">Rising support breaks - trend change signal</text>
+<text x="716" y="456" fill="#ff5a6e" font-size="13" font-family="Arial, sans-serif">Avoid: trendline failure invalidates the setup</text>
+<rect x="716" y="470" width="600" height="240" fill="#0a1322" stroke="#172338"/>
+<path d="M716.0 688.2 L760.4 662.0 L804.9 633.6 L849.3 609.6 L893.8 592.2 L938.2 579.1 L960.4 579.1 L1004.9 605.3 L1049.3 579.1 L1093.8 598.7 L1138.2 579.1 L1182.7 592.2 L1182.7 596.5 L1216.0 614.0 L1249.3 631.5 L1282.7 644.5 L1316.0 653.3" fill="none" stroke="#ff5a6e" stroke-width="2"/>
+</svg>

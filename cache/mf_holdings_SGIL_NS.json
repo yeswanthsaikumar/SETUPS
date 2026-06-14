@@ -1,0 +1,112 @@
+{
+  "symbol": "SGIL.NS",
+  "market": "india",
+  "screener_slug": "SGIL",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 74.02,
+      "fii": 5.11,
+      "dii": 1.8,
+      "public": 19.06
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 74.02,
+      "fii": 4.57,
+      "dii": 1.25,
+      "public": 20.17
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 74.02,
+      "fii": 3.23,
+      "dii": 0.76,
+      "public": 21.99
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 74.02,
+      "fii": 2.6,
+      "dii": 0.76,
+      "public": 22.61
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 74.02,
+      "fii": 2.86,
+      "dii": 0.76,
+      "public": 22.35
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 74.04,
+      "fii": 0.2,
+      "dii": 0.0,
+      "public": 25.75
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 69.76,
+      "fii": 0.27,
+      "dii": 0.0,
+      "public": 29.96
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 69.81,
+      "fii": 0.21,
+      "dii": 0.0,
+      "public": 29.96
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 69.84,
+      "fii": 0.6,
+      "dii": 0.0,
+      "public": 29.57
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 69.39,
+      "fii": 0.42,
+      "dii": 0.0,
+      "public": 30.2
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 69.45,
+      "fii": 0.25,
+      "dii": 0.0,
+      "public": 30.29
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 69.5,
+      "fii": 0.22,
+      "dii": 1.51,
+      "public": 28.72
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 69.5,
+  "fii_pct": 0.22,
+  "dii_pct": 1.51,
+  "public_pct": 28.72,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "up",
+  "fii_change_2q": -0.2,
+  "dii_change_2q": 1.51,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+1.5% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 1.5% (+1.5%) | FIIs \u2192 0.2% (-0.2%) | Promoters \u2192 69.5%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:36:37.000277"
+}

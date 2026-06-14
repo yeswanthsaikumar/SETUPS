@@ -1,0 +1,156 @@
+{
+  "symbol": "GRASIM.NS",
+  "market": "india",
+  "screener_slug": "GRASIM",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 42.75,
+      "fii": 12.29,
+      "dii": 16.82,
+      "public": 27.82
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 42.75,
+      "fii": 12.17,
+      "dii": 16.9,
+      "public": 27.8
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 42.75,
+      "fii": 12.52,
+      "dii": 16.7,
+      "public": 27.69
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 43.05,
+      "fii": 12.7,
+      "dii": 16.69,
+      "public": 27.24
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 43.05,
+      "fii": 13.69,
+      "dii": 16.66,
+      "public": 26.29
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 43.11,
+      "fii": 13.78,
+      "dii": 17.75,
+      "public": 25.04
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 43.11,
+      "fii": 13.5,
+      "dii": 17.9,
+      "public": 25.17
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 43.11,
+      "fii": 13.45,
+      "dii": 18.24,
+      "public": 24.87
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 43.11,
+      "fii": 13.79,
+      "dii": 17.91,
+      "public": 24.87
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 43.11,
+      "fii": 14.37,
+      "dii": 17.27,
+      "public": 24.92
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 43.21,
+      "fii": 14.49,
+      "dii": 16.99,
+      "public": 24.93
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 43.73,
+      "fii": 14.91,
+      "dii": 16.28,
+      "public": 24.75
+    }
+  ],
+  "top_mf_holders": [
+    {
+      "name": "Vanguard International Stock Index-Emerging Markets Stk",
+      "pct": 0.82,
+      "trend": "unknown"
+    },
+    {
+      "name": "Vanguard International Stock Index-Total Intl Stock Indx",
+      "pct": 0.75,
+      "trend": "unknown"
+    },
+    {
+      "name": "iShares Core MSCI Emerging Markets ETF",
+      "pct": 0.37,
+      "trend": "unknown"
+    },
+    {
+      "name": "DFA Investment Dimensions-DFA Emerging Mkts Value",
+      "pct": 0.19,
+      "trend": "unknown"
+    },
+    {
+      "name": "iShares MSCI India ETF",
+      "pct": 0.18,
+      "trend": "unknown"
+    },
+    {
+      "name": "iShares MSCI Emerging Markets ETF",
+      "pct": 0.16,
+      "trend": "unknown"
+    },
+    {
+      "name": "DFA Emerging Markets Core Equity Portfolio",
+      "pct": 0.13,
+      "trend": "unknown"
+    },
+    {
+      "name": "Vanguard Intl Equity Index Fds-FTSE All World ex U.S. Index Fund",
+      "pct": 0.11,
+      "trend": "unknown"
+    }
+  ],
+  "inst_held_pct": 25.5,
+  "insider_held_pct": 47.86,
+  "float_shares": 361320811,
+  "_top_holders_source": "yfinance",
+  "promoters_pct": 43.73,
+  "fii_pct": 14.91,
+  "dii_pct": 16.28,
+  "public_pct": 24.75,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "up",
+  "fii_trend": "up",
+  "dii_trend": "down",
+  "fii_change_2q": 0.54,
+  "dii_change_2q": -0.99,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+0.5% in 2Q) (foreign buying)",
+  "summary": "DIIs \u2193 16.3% (-1.0%) | FIIs \u2191 14.9% (+0.5%) | Promoters \u2191 43.7%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:33:29.196027"
+}

@@ -1,0 +1,107 @@
+{
+  "symbol": "AEROFLEX.NS",
+  "market": "india",
+  "screener_slug": "AEROFLEX",
+  "quarterly_data": [
+    {
+      "period": "Sep 2023",
+      "promoters": 66.99,
+      "fii": 1.13,
+      "dii": 6.76,
+      "public": 25.12
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 66.99,
+      "fii": 0.36,
+      "dii": 5.83,
+      "public": 26.82
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 66.99,
+      "fii": 0.29,
+      "dii": 6.16,
+      "public": 26.56
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 66.99,
+      "fii": 0.21,
+      "dii": 5.91,
+      "public": 26.89
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 66.99,
+      "fii": 0.13,
+      "dii": 5.59,
+      "public": 27.27
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 66.99,
+      "fii": 1.57,
+      "dii": 5.66,
+      "public": 25.76
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 66.99,
+      "fii": 0.66,
+      "dii": 5.91,
+      "public": 26.43
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 66.99,
+      "fii": 0.39,
+      "dii": 3.87,
+      "public": 28.74
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 66.99,
+      "fii": 0.23,
+      "dii": 3.43,
+      "public": 29.34
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 66.99,
+      "fii": 0.99,
+      "dii": 3.55,
+      "public": 28.46
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 65.47,
+      "fii": 1.49,
+      "dii": 3.8,
+      "public": 29.23
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 2.2,
+  "insider_held_pct": 69.8,
+  "float_shares": 41821420,
+  "promoters_pct": 65.47,
+  "fii_pct": 1.49,
+  "dii_pct": 3.8,
+  "public_pct": 29.23,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "down",
+  "fii_trend": "up",
+  "dii_trend": "up",
+  "fii_change_2q": 1.26,
+  "dii_change_2q": 0.37,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": true,
+  "smart_money_signal": "STRONG_BUYING",
+  "swing_signal": "\ud83d\udd25 STRONG BUYING \u2014 Both DIIs & FIIs accumulating",
+  "summary": "DIIs \u2191 3.8% (+0.4%) | FIIs \u2191 1.5% (+1.3%) | Promoters \u2193 65.5%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:20:43.304254"
+}

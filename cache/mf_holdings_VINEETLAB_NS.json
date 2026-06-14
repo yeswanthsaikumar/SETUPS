@@ -1,0 +1,102 @@
+{
+  "symbol": "VINEETLAB.NS",
+  "market": "india",
+  "screener_slug": "VINEETLAB",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 38.66,
+      "fii": 0.0,
+      "public": 61.34
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 38.66,
+      "fii": 0.0,
+      "public": 61.34
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 37.55,
+      "fii": 0.24,
+      "public": 62.2
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 37.5,
+      "fii": 0.0,
+      "public": 62.5
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 37.5,
+      "fii": 0.0,
+      "public": 62.49
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 36.07,
+      "fii": 0.0,
+      "public": 63.93
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 35.85,
+      "fii": 0.0,
+      "public": 64.15
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 35.85,
+      "fii": 0.0,
+      "public": 64.15
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 29.26,
+      "fii": 0.0,
+      "public": 70.74
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 15.89,
+      "fii": 0.0,
+      "public": 84.11
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 12.46,
+      "fii": 0.0,
+      "public": 87.54
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 5.98,
+      "fii": 0.36,
+      "public": 93.67
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.0,
+  "insider_held_pct": 14.31,
+  "float_shares": 6675868,
+  "promoters_pct": 5.98,
+  "fii_pct": 0.36,
+  "dii_pct": null,
+  "public_pct": 93.67,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "down",
+  "fii_trend": "up",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.36,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+0.4% in 2Q) (foreign buying)",
+  "summary": "FIIs \u2191 0.4% (+0.4%) | Promoters \u2193 6.0%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:28:57.522681"
+}

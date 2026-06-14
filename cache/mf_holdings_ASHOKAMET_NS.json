@@ -1,0 +1,90 @@
+{
+  "symbol": "ASHOKAMET.NS",
+  "market": "india",
+  "screener_slug": "ASHOKAMET",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 53.64,
+      "public": 46.35
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 53.64,
+      "public": 46.35
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 53.64,
+      "public": 46.35
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 53.64,
+      "public": 46.36
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 53.64,
+      "public": 46.35
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 53.64,
+      "public": 46.35
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 53.64,
+      "public": 46.35
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 53.64,
+      "public": 46.36
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 53.64,
+      "public": 46.34
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 53.64,
+      "public": 46.35
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 53.64,
+      "public": 46.35
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 53.64,
+      "public": 46.35
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.0,
+  "insider_held_pct": 53.65,
+  "float_shares": 10769505,
+  "promoters_pct": 53.64,
+  "fii_pct": null,
+  "dii_pct": null,
+  "public_pct": 46.35,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": null,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "PROMOTER_HELD",
+  "swing_signal": "\ud83c\udfe2 Promoter-held 53.6% \u2014 limited institutional data",
+  "summary": "Promoters \u2192 53.6%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:33:15.221555"
+}

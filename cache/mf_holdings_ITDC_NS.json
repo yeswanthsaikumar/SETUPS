@@ -1,0 +1,114 @@
+{
+  "symbol": "ITDC.NS",
+  "market": "india",
+  "screener_slug": "ITDC",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 87.03,
+      "fii": 0.02,
+      "dii": 1.98,
+      "public": 10.96
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 87.03,
+      "fii": 0.02,
+      "dii": 1.98,
+      "public": 10.97
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 87.03,
+      "fii": 0.0,
+      "dii": 1.86,
+      "public": 11.1
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 87.03,
+      "fii": 0.09,
+      "dii": 1.79,
+      "public": 11.09
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 87.03,
+      "fii": 0.01,
+      "dii": 1.8,
+      "public": 11.16
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 87.03,
+      "fii": 0.0,
+      "dii": 1.8,
+      "public": 11.17
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 87.03,
+      "fii": 0.01,
+      "dii": 1.8,
+      "public": 11.17
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 87.03,
+      "fii": 0.0,
+      "dii": 1.78,
+      "public": 11.19
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 87.03,
+      "fii": 0.0,
+      "dii": 1.78,
+      "public": 11.19
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 87.03,
+      "fii": 0.01,
+      "dii": 1.78,
+      "public": 11.18
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 87.03,
+      "fii": 0.0,
+      "dii": 1.78,
+      "public": 11.19
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 87.03,
+      "fii": 0.02,
+      "dii": 1.78,
+      "public": 11.17
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 1.78,
+  "insider_held_pct": 94.9,
+  "float_shares": 4375097,
+  "promoters_pct": 87.03,
+  "fii_pct": 0.02,
+  "dii_pct": 1.78,
+  "public_pct": 11.17,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.01,
+  "dii_change_2q": 0.0,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 1.8% (+0.0%) | FIIs \u2192 0.0% (+0.0%) | Promoters \u2192 87.0%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:26:37.189603"
+}

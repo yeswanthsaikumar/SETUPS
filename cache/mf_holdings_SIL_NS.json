@@ -1,0 +1,114 @@
+{
+  "symbol": "SIL.NS",
+  "market": "india",
+  "screener_slug": "SILVERTUC",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 74.59,
+      "fii": 0.0,
+      "dii": 0.0,
+      "public": 25.41
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 74.59,
+      "fii": 0.0,
+      "dii": 0.0,
+      "public": 25.41
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 74.51,
+      "fii": 0.0,
+      "dii": 0.0,
+      "public": 25.48
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 74.36,
+      "fii": 0.03,
+      "dii": 0.0,
+      "public": 25.6
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 74.36,
+      "fii": 0.0,
+      "dii": 0.0,
+      "public": 25.64
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 74.36,
+      "fii": 0.0,
+      "dii": 0.0,
+      "public": 25.64
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 74.42,
+      "fii": 0.0,
+      "dii": 0.0,
+      "public": 25.58
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 74.53,
+      "fii": 0.0,
+      "dii": 0.0,
+      "public": 25.47
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 74.61,
+      "fii": 0.05,
+      "dii": 0.0,
+      "public": 25.35
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 74.61,
+      "fii": 0.1,
+      "dii": 0.0,
+      "public": 25.29
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 74.61,
+      "fii": 0.75,
+      "dii": 0.04,
+      "public": 24.59
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 74.62,
+      "fii": 1.14,
+      "dii": 0.0,
+      "public": 24.23
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 3.0,
+  "insider_held_pct": 60.6,
+  "float_shares": 25346213,
+  "promoters_pct": 74.62,
+  "fii_pct": 1.14,
+  "dii_pct": 0.0,
+  "public_pct": 24.23,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "stable",
+  "fii_change_2q": 1.04,
+  "dii_change_2q": 0.0,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+1.0% in 2Q) (foreign buying)",
+  "summary": "DIIs \u2192 0.0% (+0.0%) | FIIs \u2191 1.1% (+1.0%) | Promoters \u2192 74.6%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:32:01.058526"
+}

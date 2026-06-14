@@ -1,0 +1,100 @@
+{
+  "symbol": "FEDFINA.NS",
+  "market": "india",
+  "screener_slug": "FEDFINA",
+  "quarterly_data": [
+    {
+      "period": "Dec 2023",
+      "promoters": 61.65,
+      "fii": 2.54,
+      "dii": 22.64,
+      "public": 13.17
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 61.58,
+      "fii": 1.05,
+      "dii": 23.17,
+      "public": 14.19
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 61.35,
+      "fii": 0.85,
+      "dii": 23.43,
+      "public": 14.38
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 61.16,
+      "fii": 0.63,
+      "dii": 22.56,
+      "public": 15.64
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 61.04,
+      "fii": 0.52,
+      "dii": 21.36,
+      "public": 17.08
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 61.03,
+      "fii": 0.49,
+      "dii": 20.81,
+      "public": 17.67
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 60.97,
+      "fii": 0.77,
+      "dii": 20.11,
+      "public": 18.15
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 60.88,
+      "fii": 1.17,
+      "dii": 19.36,
+      "public": 18.59
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 60.81,
+      "fii": 0.91,
+      "dii": 18.17,
+      "public": 20.11
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 60.79,
+      "fii": 0.66,
+      "dii": 18.82,
+      "public": 19.73
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 7.01,
+  "insider_held_pct": 69.19,
+  "float_shares": 115633447,
+  "promoters_pct": 60.79,
+  "fii_pct": 0.66,
+  "dii_pct": 18.82,
+  "public_pct": 19.73,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "down",
+  "fii_change_2q": -0.51,
+  "dii_change_2q": -0.54,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "DISTRIBUTING",
+  "swing_signal": "\u26a0\ufe0f Institutions distributing \u2014 both FIIs & DIIs selling",
+  "summary": "DIIs \u2193 18.8% (-0.5%) | FIIs \u2193 0.7% (-0.5%) | Promoters \u2192 60.8%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:18:49.789690"
+}

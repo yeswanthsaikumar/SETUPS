@@ -1,0 +1,102 @@
+{
+  "symbol": "MARALOVER.NS",
+  "market": "india",
+  "screener_slug": "MARALOVER",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 74.95,
+      "fii": 0.09,
+      "public": 24.95
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 74.95,
+      "fii": 0.16,
+      "public": 24.89
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 74.95,
+      "fii": 0.09,
+      "public": 24.97
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 74.95,
+      "fii": 0.1,
+      "public": 24.94
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 74.95,
+      "fii": 0.08,
+      "public": 24.97
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 74.95,
+      "fii": 0.08,
+      "public": 24.96
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 74.95,
+      "fii": 0.11,
+      "public": 24.93
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 74.95,
+      "fii": 0.08,
+      "public": 24.97
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 74.95,
+      "fii": 0.07,
+      "public": 24.97
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 74.95,
+      "fii": 0.07,
+      "public": 24.96
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 74.95,
+      "fii": 0.07,
+      "public": 24.97
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 74.95,
+      "fii": 0.07,
+      "public": 24.97
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.0,
+  "insider_held_pct": 79.26,
+  "float_shares": 8589793,
+  "promoters_pct": 74.95,
+  "fii_pct": 0.07,
+  "dii_pct": null,
+  "public_pct": 24.97,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.0,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 0.1% (+0.0%) | Promoters \u2192 75.0%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:29:14.051433"
+}

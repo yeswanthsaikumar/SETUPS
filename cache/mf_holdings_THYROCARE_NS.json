@@ -1,0 +1,114 @@
+{
+  "symbol": "THYROCARE.NS",
+  "market": "india",
+  "screener_slug": "THYROCARE",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 71.14,
+      "fii": 3.44,
+      "dii": 13.46,
+      "public": 11.95
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 71.14,
+      "fii": 3.46,
+      "dii": 13.33,
+      "public": 12.08
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 71.11,
+      "fii": 3.35,
+      "dii": 13.89,
+      "public": 11.64
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 71.11,
+      "fii": 2.9,
+      "dii": 14.88,
+      "public": 11.11
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 71.11,
+      "fii": 2.49,
+      "dii": 14.89,
+      "public": 11.49
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 71.11,
+      "fii": 1.93,
+      "dii": 14.79,
+      "public": 12.15
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 71.06,
+      "fii": 2.77,
+      "dii": 14.68,
+      "public": 11.49
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 71.06,
+      "fii": 2.41,
+      "dii": 14.97,
+      "public": 11.57
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 71.06,
+      "fii": 3.23,
+      "dii": 14.54,
+      "public": 11.18
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 71.06,
+      "fii": 4.85,
+      "dii": 13.47,
+      "public": 10.61
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 60.93,
+      "fii": 4.96,
+      "dii": 20.52,
+      "public": 13.61
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 60.92,
+      "fii": 5.37,
+      "dii": 21.0,
+      "public": 12.71
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 20.22,
+  "insider_held_pct": 61.09,
+  "float_shares": 62007803,
+  "promoters_pct": 60.92,
+  "fii_pct": 5.37,
+  "dii_pct": 21.0,
+  "public_pct": 12.71,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "down",
+  "fii_trend": "up",
+  "dii_trend": "up",
+  "fii_change_2q": 0.52,
+  "dii_change_2q": 7.53,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": true,
+  "smart_money_signal": "STRONG_BUYING",
+  "swing_signal": "\ud83d\udd25 STRONG BUYING \u2014 Both DIIs & FIIs accumulating",
+  "summary": "DIIs \u2191 21.0% (+7.5%) | FIIs \u2191 5.4% (+0.5%) | Promoters \u2193 60.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:29:48.194301"
+}

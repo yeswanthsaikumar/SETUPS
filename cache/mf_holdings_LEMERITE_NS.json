@@ -1,0 +1,98 @@
+{
+  "symbol": "LEMERITE.NS",
+  "market": "india",
+  "screener_slug": "LEMERITE",
+  "quarterly_data": [
+    {
+      "period": "Jun 2022",
+      "promoters": 72.74,
+      "fii": 0.0,
+      "dii": 0.18,
+      "public": 27.08
+    },
+    {
+      "period": "Sep 2022",
+      "promoters": 72.74,
+      "fii": 0.58,
+      "dii": 0.0,
+      "public": 26.68
+    },
+    {
+      "period": "Mar 2023",
+      "promoters": 72.74,
+      "fii": 0.58,
+      "dii": 0.0,
+      "public": 26.68
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 72.74,
+      "fii": 0.4,
+      "dii": 0.0,
+      "public": 26.86
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 72.96,
+      "fii": 0.4,
+      "dii": 0.0,
+      "public": 26.64
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 73.06,
+      "fii": 0.2,
+      "dii": 0.0,
+      "public": 26.74
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 62.22,
+      "fii": 0.52,
+      "dii": 0.0,
+      "public": 37.26
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 61.53,
+      "fii": 0.34,
+      "dii": 0.0,
+      "public": 38.13
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 59.65,
+      "fii": 0.15,
+      "dii": 0.16,
+      "public": 40.04
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 59.65,
+      "fii": 0.22,
+      "dii": 0.16,
+      "public": 39.97
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": 9773987,
+  "promoters_pct": 59.65,
+  "fii_pct": 0.22,
+  "dii_pct": 0.16,
+  "public_pct": 39.97,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "down",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.12,
+  "dii_change_2q": 0.16,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 0.2% (+0.2%) | FIIs \u2192 0.2% (-0.1%) | Promoters \u2193 59.6%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:25:15.548209"
+}

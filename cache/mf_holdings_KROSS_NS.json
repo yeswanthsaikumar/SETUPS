@@ -1,0 +1,79 @@
+{
+  "symbol": "KROSS.NS",
+  "market": "india",
+  "screener_slug": "KROSS",
+  "quarterly_data": [
+    {
+      "period": "Sep 2024",
+      "promoters": 67.7,
+      "fii": 5.93,
+      "dii": 9.54,
+      "public": 16.83
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 67.87,
+      "fii": 4.16,
+      "dii": 9.33,
+      "public": 18.63
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 67.99,
+      "fii": 3.18,
+      "dii": 9.72,
+      "public": 19.1
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 68.23,
+      "fii": 2.53,
+      "dii": 8.87,
+      "public": 20.36
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 68.38,
+      "fii": 2.31,
+      "dii": 7.41,
+      "public": 21.89
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 68.38,
+      "fii": 2.41,
+      "dii": 5.78,
+      "public": 23.45
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 68.52,
+      "fii": 2.62,
+      "dii": 6.03,
+      "public": 22.83
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 4.96,
+  "insider_held_pct": 69.67,
+  "float_shares": 20282758,
+  "promoters_pct": 68.52,
+  "fii_pct": 2.62,
+  "dii_pct": 6.03,
+  "public_pct": 22.83,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "down",
+  "fii_change_2q": 0.31,
+  "dii_change_2q": -1.38,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+0.3% in 2Q) (foreign buying)",
+  "summary": "DIIs \u2193 6.0% (-1.4%) | FIIs \u2191 2.6% (+0.3%) | Promoters \u2192 68.5%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:31:34.089909"
+}

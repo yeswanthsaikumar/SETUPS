@@ -1,0 +1,114 @@
+{
+  "symbol": "SAMMAANCAP.NS",
+  "market": "india",
+  "screener_slug": "SAMMAANCAP",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "fii": 18.53,
+      "dii": 16.12,
+      "government": 0.0,
+      "public": 60.47
+    },
+    {
+      "period": "Sep 2023",
+      "fii": 22.37,
+      "dii": 16.08,
+      "government": 0.0,
+      "public": 59.81
+    },
+    {
+      "period": "Dec 2023",
+      "fii": 23.41,
+      "dii": 8.53,
+      "government": 0.0,
+      "public": 66.34
+    },
+    {
+      "period": "Mar 2024",
+      "fii": 19.33,
+      "dii": 7.15,
+      "government": 0.0,
+      "public": 71.79
+    },
+    {
+      "period": "Jun 2024",
+      "fii": 19.13,
+      "dii": 6.62,
+      "government": 0.0,
+      "public": 72.54
+    },
+    {
+      "period": "Sep 2024",
+      "fii": 19.77,
+      "dii": 6.31,
+      "government": 0.0,
+      "public": 72.22
+    },
+    {
+      "period": "Dec 2024",
+      "fii": 19.53,
+      "dii": 6.71,
+      "government": 0.0,
+      "public": 72.05
+    },
+    {
+      "period": "Mar 2025",
+      "fii": 24.69,
+      "dii": 5.92,
+      "government": 0.0,
+      "public": 67.49
+    },
+    {
+      "period": "Jun 2025",
+      "fii": 24.4,
+      "dii": 5.96,
+      "government": 0.0,
+      "public": 67.72
+    },
+    {
+      "period": "Sep 2025",
+      "fii": 19.05,
+      "dii": 16.83,
+      "government": 0.0,
+      "public": 62.22
+    },
+    {
+      "period": "Dec 2025",
+      "fii": 24.94,
+      "dii": 14.31,
+      "government": 0.07,
+      "public": 58.76
+    },
+    {
+      "period": "Mar 2026",
+      "fii": 46.21,
+      "dii": 12.08,
+      "government": 0.53,
+      "public": 39.81
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 23.58,
+  "insider_held_pct": 7.46,
+  "float_shares": 408519993,
+  "promoters_pct": null,
+  "fii_pct": 46.21,
+  "dii_pct": 12.08,
+  "public_pct": 39.81,
+  "govt_pct": 0.53,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "down",
+  "fii_change_2q": 27.16,
+  "dii_change_2q": -4.75,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+27.2% in 2Q) (foreign buying)",
+  "summary": "DIIs \u2193 12.1% (-4.8%) | FIIs \u2191 46.2% (+27.2%)",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:30:40.821519"
+}

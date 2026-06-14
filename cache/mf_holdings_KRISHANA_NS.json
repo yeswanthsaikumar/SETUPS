@@ -1,0 +1,100 @@
+{
+  "symbol": "KRISHANA.NS",
+  "market": "india",
+  "screener_slug": "KRISHANA",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 65.46,
+      "fii": 0.0,
+      "public": 34.54
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 66.22,
+      "fii": 0.0,
+      "public": 33.78
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 69.88,
+      "fii": 0.0,
+      "public": 30.12
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 71.01,
+      "fii": 0.0,
+      "public": 28.99
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 71.03,
+      "fii": 0.02,
+      "public": 28.95
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 71.03,
+      "fii": 0.01,
+      "public": 28.96
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 71.23,
+      "fii": 0.0,
+      "public": 28.77
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 71.86,
+      "fii": 0.04,
+      "public": 28.09
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 71.86,
+      "fii": 1.37,
+      "public": 26.77
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 71.96,
+      "fii": 0.6,
+      "public": 27.44
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 72.26,
+      "fii": 0.2,
+      "public": 27.54
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 72.94,
+      "fii": 0.26,
+      "public": 26.8
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": 17161487,
+  "promoters_pct": 72.94,
+  "fii_pct": 0.26,
+  "dii_pct": null,
+  "public_pct": 26.8,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "up",
+  "fii_trend": "down",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.34,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "FII_SELLING",
+  "swing_signal": "\u26a0\ufe0f FIIs selling \u2193 (-0.3% in 2Q) \u2014 watch for follow-through",
+  "summary": "FIIs \u2193 0.3% (-0.3%) | Promoters \u2191 72.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:30:15.879859"
+}

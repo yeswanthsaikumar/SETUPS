@@ -1,0 +1,93 @@
+{
+  "symbol": "GPTHEALTH.NS",
+  "market": "india",
+  "screener_slug": "GPTHEALTH",
+  "quarterly_data": [
+    {
+      "period": "Mar 2024",
+      "promoters": 65.57,
+      "fii": 6.68,
+      "dii": 11.61,
+      "public": 16.14
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 65.57,
+      "fii": 5.38,
+      "dii": 11.88,
+      "public": 17.16
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 65.57,
+      "fii": 4.7,
+      "dii": 10.8,
+      "public": 18.92
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 65.57,
+      "fii": 4.71,
+      "dii": 11.3,
+      "public": 18.41
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 65.57,
+      "fii": 4.49,
+      "dii": 11.35,
+      "public": 18.59
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 65.57,
+      "fii": 4.96,
+      "dii": 9.33,
+      "public": 20.14
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 65.57,
+      "fii": 3.2,
+      "dii": 6.45,
+      "public": 24.77
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 65.57,
+      "fii": 2.73,
+      "dii": 6.2,
+      "public": 25.48
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 65.57,
+      "fii": 2.81,
+      "dii": 6.84,
+      "public": 24.79
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 7.45,
+  "insider_held_pct": 65.57,
+  "float_shares": 26973308,
+  "promoters_pct": 65.57,
+  "fii_pct": 2.81,
+  "dii_pct": 6.84,
+  "public_pct": 24.79,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "up",
+  "fii_change_2q": -0.39,
+  "dii_change_2q": 0.39,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+0.4% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 6.8% (+0.4%) | FIIs \u2193 2.8% (-0.4%) | Promoters \u2192 65.6%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:25:29.140984"
+}

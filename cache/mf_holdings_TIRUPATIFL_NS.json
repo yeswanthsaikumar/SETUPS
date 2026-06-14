@@ -1,0 +1,100 @@
+{
+  "symbol": "TIRUPATIFL.NS",
+  "market": "india",
+  "screener_slug": "TIRUPATIFL",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 57.59,
+      "fii": 0.0,
+      "public": 42.41
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 57.69,
+      "fii": 0.0,
+      "public": 42.31
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 57.69,
+      "fii": 0.0,
+      "public": 42.31
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 57.69,
+      "fii": 0.0,
+      "public": 42.31
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 55.76,
+      "fii": 0.0,
+      "public": 44.23
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 55.76,
+      "fii": 0.03,
+      "public": 44.21
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 55.76,
+      "fii": 0.03,
+      "public": 44.2
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 48.88,
+      "fii": 0.02,
+      "public": 51.1
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 49.31,
+      "fii": 0.02,
+      "public": 50.67
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 48.1,
+      "fii": 0.02,
+      "public": 51.88
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 48.93,
+      "fii": 0.02,
+      "public": 51.04
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 49.01,
+      "fii": 0.78,
+      "public": 50.21
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": 87788592,
+  "promoters_pct": 49.01,
+  "fii_pct": 0.78,
+  "dii_pct": null,
+  "public_pct": 50.21,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "up",
+  "fii_trend": "up",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.76,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+0.8% in 2Q) (foreign buying)",
+  "summary": "FIIs \u2191 0.8% (+0.8%) | Promoters \u2191 49.0%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:24:46.231291"
+}

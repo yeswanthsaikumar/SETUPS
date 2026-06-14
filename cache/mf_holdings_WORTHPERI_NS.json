@@ -1,0 +1,102 @@
+{
+  "symbol": "WORTHPERI.NS",
+  "market": "india",
+  "screener_slug": "WORTHPERI",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 74.3,
+      "fii": 0.0,
+      "public": 25.7
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 74.3,
+      "fii": 0.0,
+      "public": 25.7
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 74.3,
+      "fii": 0.0,
+      "public": 25.7
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 74.51,
+      "fii": 0.0,
+      "public": 25.49
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 74.51,
+      "fii": 0.0,
+      "public": 25.49
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 74.51,
+      "fii": 0.0,
+      "public": 25.49
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 68.16,
+      "fii": 0.0,
+      "public": 31.84
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 68.16,
+      "fii": 0.01,
+      "public": 31.84
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 68.16,
+      "fii": 0.0,
+      "public": 31.84
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 68.16,
+      "fii": 0.0,
+      "public": 31.83
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 68.16,
+      "fii": 0.0,
+      "public": 31.84
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 68.16,
+      "fii": 0.0,
+      "public": 31.85
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 2.28,
+  "insider_held_pct": 73.07,
+  "float_shares": 4837074,
+  "promoters_pct": 68.16,
+  "fii_pct": 0.0,
+  "dii_pct": null,
+  "public_pct": 31.85,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.0,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 0.0% (+0.0%) | Promoters \u2192 68.2%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:24:51.313635"
+}

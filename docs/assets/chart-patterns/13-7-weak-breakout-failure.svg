@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="title desc">
+  <title id="title">Weak-Volume Breakout Failure candlestick example</title>
+  <desc id="desc">Dark-theme candlestick chart where price briefly breaks a pivot on weak volume and fails immediately.</desc>
+  <rect width="1400" height="760" fill="#070d18"/>
+  <g stroke="#172338" stroke-width="1">
+    <path d="M80 70H1320M80 140H1320M80 210H1320M80 280H1320M80 350H1320M80 420H1320M80 490H1320M80 560H1320"/>
+    <path d="M120 60V580M220 60V580M320 60V580M420 60V580M520 60V580M620 60V580M720 60V580M820 60V580M920 60V580M1020 60V580M1120 60V580M1220 60V580"/>
+  </g>
+
+  <line x1="260" y1="255" x2="980" y2="255" stroke="#f87171" stroke-width="2" stroke-dasharray="8 7"/>
+
+  <g>
+    <line x1="260" y1="340" x2="260" y2="290" stroke="#2ecc71"/><rect x="252" y="298" width="16" height="34" fill="#2ecc71"/>
+    <line x1="300" y1="320" x2="300" y2="272" stroke="#2ecc71"/><rect x="292" y="280" width="16" height="34" fill="#2ecc71"/>
+    <line x1="340" y1="302" x2="340" y2="260" stroke="#2ecc71"/><rect x="332" y="266" width="16" height="30" fill="#2ecc71"/>
+    <line x1="380" y1="290" x2="380" y2="248" stroke="#2ecc71"/><rect x="372" y="256" width="16" height="28" fill="#2ecc71"/>
+
+    <line x1="420" y1="282" x2="420" y2="245" stroke="#2ecc71"/><rect x="412" y="252" width="16" height="24" fill="#2ecc71"/>
+    <line x1="460" y1="278" x2="460" y2="240" stroke="#2ecc71"/><rect x="452" y="246" width="16" height="24" fill="#2ecc71"/>
+    <line x1="500" y1="276" x2="500" y2="238" stroke="#2ecc71"/><rect x="492" y="244" width="16" height="24" fill="#2ecc71"/>
+
+    <line x1="540" y1="272" x2="540" y2="230" stroke="#2ecc71"/><rect x="532" y="238" width="16" height="26" fill="#2ecc71"/>
+    <line x1="580" y1="266" x2="580" y2="220" stroke="#2ecc71"/><rect x="572" y="228" width="16" height="30" fill="#2ecc71"/>
+
+    <line x1="620" y1="268" x2="620" y2="232" stroke="#ff5a6e"/><rect x="612" y="236" width="16" height="24" fill="#ff5a6e"/>
+    <line x1="660" y1="280" x2="660" y2="244" stroke="#ff5a6e"/><rect x="652" y="248" width="16" height="24" fill="#ff5a6e"/>
+    <line x1="700" y1="300" x2="700" y2="260" stroke="#ff5a6e"/><rect x="692" y="266" width="16" height="30" fill="#ff5a6e"/>
+    <line x1="740" y1="320" x2="740" y2="278" stroke="#ff5a6e"/><rect x="732" y="284" width="16" height="30" fill="#ff5a6e"/>
+    <line x1="780" y1="340" x2="780" y2="298" stroke="#ff5a6e"/><rect x="772" y="304" width="16" height="30" fill="#ff5a6e"/>
+    <line x1="820" y1="365" x2="820" y2="320" stroke="#ff5a6e"/><rect x="812" y="328" width="16" height="32" fill="#ff5a6e"/>
+  </g>
+
+  <line x1="610" y1="255" x2="1320" y2="255" stroke="#fda4af" stroke-dasharray="6 6"/>
+  <line x1="695" y1="300" x2="1320" y2="300" stroke="#f87171" stroke-dasharray="6 6"/>
+
+  <g>
+    <rect x="250" y="650" width="24" height="30" fill="#2f6f49"/>
+    <rect x="290" y="648" width="24" height="32" fill="#2f6f49"/>
+    <rect x="330" y="646" width="24" height="34" fill="#2f6f49"/>
+    <rect x="370" y="650" width="24" height="30" fill="#2f6f49"/>
+    <rect x="410" y="654" width="24" height="26" fill="#2f6f49"/>
+    <rect x="450" y="656" width="24" height="24" fill="#2f6f49"/>
+    <rect x="490" y="658" width="24" height="22" fill="#2f6f49"/>
+    <rect x="530" y="660" width="24" height="20" fill="#2f6f49"/>
+    <rect x="570" y="662" width="24" height="18" fill="#2f6f49"/>
+    <rect x="610" y="666" width="24" height="14" fill="#6e3745"/>
+    <rect x="650" y="645" width="24" height="35" fill="#6e3745"/>
+    <rect x="690" y="622" width="24" height="58" fill="#6e3745"/>
+    <rect x="730" y="596" width="24" height="84" fill="#6e3745"/>
+    <rect x="770" y="570" width="24" height="110" fill="#6e3745"/>
+    <rect x="810" y="545" width="24" height="135" fill="#6e3745"/>
+  </g>
+
+  <text x="90" y="42" fill="#e5edf8" font-size="28" font-family="Arial, sans-serif">Failure A (Dark Theme): weak breakout above pivot, then fast rejection</text>
+  <text x="995" y="250" fill="#fda4af" font-size="16" font-family="Arial, sans-serif">Failed pivot hold</text>
+  <text x="995" y="294" fill="#fca5a5" font-size="16" font-family="Arial, sans-serif">Exit trigger below pivot</text>
+  <text x="84" y="600" fill="#9eb1c7" font-size="16" font-family="Arial, sans-serif">Do not add on weakness; re-enter only after a fresh tight base rebuild</text>
+</svg>

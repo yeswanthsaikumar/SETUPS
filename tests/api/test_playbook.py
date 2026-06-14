@@ -48,3 +48,104 @@ class TestPlaybookDownload:
         assert "<table>" in r.text
         assert "<th>" in r.text
 
+
+class TestPlaybookBlogMeta:
+    def test_event_gap_risk_doc_is_exposed_in_meta(self, api_client):
+        r = api_client.get("/api/playbook/meta")
+        assert r.status_code == 200
+        docs = r.json().get("docs", [])
+        keys = {d.get("key") for d in docs}
+        assert "event-pivot-gap-risk" in keys
+
+    def test_event_gap_risk_markdown_is_served(self, api_client):
+        r = api_client.get("/api/playbook/markdown?doc=event-pivot-gap-risk")
+        assert r.status_code == 200
+        assert "Event Pivot Gap Risk Playbook" in r.text
+        assert "Why Stops Fail During Gaps" in r.text
+
+
+class TestTrailingWinnersBlog:
+    def test_trailing_winners_in_meta(self, api_client):
+        r = api_client.get("/api/playbook/meta")
+        assert r.status_code == 200
+        keys = {d.get("key") for d in r.json().get("docs", [])}
+        assert "trailing-winners-action-plan" in keys
+
+    def test_trailing_winners_markdown_served(self, api_client):
+        r = api_client.get("/api/playbook/markdown?doc=trailing-winners-action-plan")
+        assert r.status_code == 200
+        assert "Trailing Winners" in r.text
+        assert "Five-Stage Trailing System" in r.text or "five-stage" in r.text.lower()
+
+    def test_trailing_winners_download_renders_html(self, api_client):
+        r = api_client.get("/api/playbook/download?doc=trailing-winners-action-plan")
+        assert r.status_code == 200
+        assert "text/html" in r.headers.get("content-type", "")
+        assert "Trailing Winners" in r.text
+        assert "<table>" in r.text  # Stage reference table must render
+
+
+class TestTimeframeAnalysisBlog:
+    def test_timeframe_analysis_in_meta(self, api_client):
+        r = api_client.get("/api/playbook/meta")
+        assert r.status_code == 200
+        keys = {d.get("key") for d in r.json().get("docs", [])}
+        assert "timeframe-analysis-top-down" in keys
+
+    def test_timeframe_analysis_markdown_served(self, api_client):
+        r = api_client.get("/api/playbook/markdown?doc=timeframe-analysis-top-down")
+        assert r.status_code == 200
+        assert "Top-Down Timeframe Analysis" in r.text
+        assert "monthly" in r.text.lower()
+        assert "weekly" in r.text.lower()
+
+    def test_timeframe_analysis_download_renders_html(self, api_client):
+        r = api_client.get("/api/playbook/download?doc=timeframe-analysis-top-down")
+        assert r.status_code == 200
+        assert "text/html" in r.headers.get("content-type", "")
+        assert "Top-Down Timeframe Analysis" in r.text
+        assert "<table>" in r.text  # Cheat sheet tables must render
+
+
+class TestInitialPositionProtectionBlog:
+    def test_initial_position_protection_in_meta(self, api_client):
+        r = api_client.get("/api/playbook/meta")
+        assert r.status_code == 200
+        keys = {d.get("key") for d in r.json().get("docs", [])}
+        assert "initial-position-protection" in keys
+
+    def test_initial_position_protection_markdown_served(self, api_client):
+        r = api_client.get("/api/playbook/markdown?doc=initial-position-protection")
+        assert r.status_code == 200
+        assert "Heads I Win, Tails I Lose Very Little" in r.text
+        assert "Protect the Thesis, Not the Entry Price" in r.text
+
+    def test_initial_position_protection_download_renders_html(self, api_client):
+        r = api_client.get("/api/playbook/download?doc=initial-position-protection")
+        assert r.status_code == 200
+        assert "text/html" in r.headers.get("content-type", "")
+        assert "Heads I Win, Tails I Lose Very Little" in r.text
+        assert "<table>" in r.text
+
+
+class TestAsymmetricRiskRewardSwingGuideBlog:
+    def test_asymmetric_swing_guide_in_meta(self, api_client):
+        r = api_client.get("/api/playbook/meta")
+        assert r.status_code == 200
+        keys = {d.get("key") for d in r.json().get("docs", [])}
+        assert "asymmetric-risk-reward-swing-guide" in keys
+
+    def test_asymmetric_swing_guide_markdown_served(self, api_client):
+        r = api_client.get("/api/playbook/markdown?doc=asymmetric-risk-reward-swing-guide")
+        assert r.status_code == 200
+        assert "Asymmetric Risk–Reward for the Professional Swing Trader" in r.text
+        assert "Setup quality × regime matrix" in r.text
+
+    def test_asymmetric_swing_guide_download_renders_html(self, api_client):
+        r = api_client.get("/api/playbook/download?doc=asymmetric-risk-reward-swing-guide")
+        assert r.status_code == 200
+        assert "text/html" in r.headers.get("content-type", "")
+        assert "Professional Swing Trader" in r.text
+        assert "<table>" in r.text
+
+

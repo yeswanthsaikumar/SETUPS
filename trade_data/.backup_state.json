@@ -1,0 +1,24 @@
+{
+  "last_backup": "2026-05-11T20:05:04",
+  "method": "icloud+telegram",
+  "icloud_status": "success",
+  "telegram_status": "success",
+  "telegram_reason": "",
+  "files_count": 12,
+  "files": [
+    "breakout_alert_backtest.json",
+    "breakout_alert_config.json",
+    "breakout_alert_dedup.json",
+    "breakout_alert_signals.json",
+    "custom_groups.json",
+    "earnings_cache.json",
+    "industry_groups_cache.json",
+    "journal.json",
+    "nse_events_cache.json",
+    "positions.json",
+    "vpn_config.json",
+    "watchlist.json"
+  ],
+  "size_kb": 210.7,
+  "backup_path": "/Users/yeshwantha/Library/Mobile Documents/com~apple~CloudDocs/SETUPS_Backups/SETUPS_backup_2026-05-11_2004.zip"
+}

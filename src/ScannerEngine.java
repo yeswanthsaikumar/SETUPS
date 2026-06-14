@@ -296,7 +296,8 @@ public class ScannerEngine {
         // Sector info
         String sector = sectorAnalyzer.getSector(symbol);
         String industry = sectorAnalyzer.getIndustry(symbol);
-        result.setSectorInfo(sector, industry);
+        String basicIndustry = sectorAnalyzer.getBasicIndustry(symbol);
+        result.setSectorInfo(sector, industry, basicIndustry);
 
         // Sector score adjustment
         double sectorBonus = sectorAnalyzer.sectorScoreAdjustment(symbol, lastSectorStrength);
@@ -314,7 +315,8 @@ public class ScannerEngine {
 
         String sector = sectorAnalyzer.getSector(symbol);
         String industry = sectorAnalyzer.getIndustry(symbol);
-        result.setSectorInfo(sector, industry);
+        String basicIndustry = sectorAnalyzer.getBasicIndustry(symbol);
+        result.setSectorInfo(sector, industry, basicIndustry);
 
         double sectorBonus = sectorAnalyzer.sectorScoreAdjustment(symbol, lastSectorStrength);
         result.setSectorBonus(sectorBonus);

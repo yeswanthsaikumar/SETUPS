@@ -1,0 +1,102 @@
+{
+  "symbol": "GINNIFILA.NS",
+  "market": "india",
+  "screener_slug": "GINNIFILA",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 69.73,
+      "fii": 0.07,
+      "public": 30.2
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 69.73,
+      "fii": 0.07,
+      "public": 30.19
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 69.73,
+      "fii": 0.07,
+      "public": 30.2
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 69.73,
+      "fii": 0.1,
+      "public": 30.17
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 69.73,
+      "fii": 0.07,
+      "public": 30.2
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 69.73,
+      "fii": 0.04,
+      "public": 30.24
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 69.73,
+      "fii": 0.13,
+      "public": 30.15
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 69.73,
+      "fii": 0.02,
+      "public": 30.26
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 69.73,
+      "fii": 0.26,
+      "public": 30.02
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 69.73,
+      "fii": 0.14,
+      "public": 30.13
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 69.73,
+      "fii": 0.24,
+      "public": 30.04
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 69.72,
+      "fii": 0.17,
+      "public": 30.1
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.0,
+  "insider_held_pct": 71.52,
+  "float_shares": 23536355,
+  "promoters_pct": 69.72,
+  "fii_pct": 0.17,
+  "dii_pct": null,
+  "public_pct": 30.1,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.03,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 0.2% (+0.0%) | Promoters \u2192 69.7%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:24:33.145461"
+}

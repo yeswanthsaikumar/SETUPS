@@ -1,0 +1,90 @@
+{
+  "symbol": "BVCL.NS",
+  "market": "india",
+  "screener_slug": "BVCL",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 55.77,
+      "public": 44.23
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 55.77,
+      "public": 44.22
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 55.32,
+      "public": 44.68
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 55.32,
+      "public": 44.67
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 55.32,
+      "public": 44.68
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 55.15,
+      "public": 44.84
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 55.13,
+      "public": 44.86
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 55.05,
+      "public": 44.93
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 54.63,
+      "public": 45.35
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 54.12,
+      "public": 45.89
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 54.12,
+      "public": 45.87
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 54.12,
+      "public": 45.88
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.0,
+  "insider_held_pct": 67.27,
+  "float_shares": 7329317,
+  "promoters_pct": 54.12,
+  "fii_pct": null,
+  "dii_pct": null,
+  "public_pct": 45.88,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": null,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "PROMOTER_HELD",
+  "swing_signal": "\ud83c\udfe2 Promoter-held 54.1% \u2014 limited institutional data",
+  "summary": "Promoters \u2192 54.1%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:27:42.930718"
+}

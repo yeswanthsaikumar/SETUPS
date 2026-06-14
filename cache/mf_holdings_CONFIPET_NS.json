@@ -1,0 +1,114 @@
+{
+  "symbol": "CONFIPET.NS",
+  "market": "india",
+  "screener_slug": "CONFIPET",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 61.32,
+      "fii": 1.94,
+      "dii": 1.23,
+      "public": 35.53
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 61.32,
+      "fii": 2.23,
+      "dii": 1.26,
+      "public": 35.21
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 61.63,
+      "fii": 2.13,
+      "dii": 1.25,
+      "public": 35.0
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 56.12,
+      "fii": 2.08,
+      "dii": 1.19,
+      "public": 40.62
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 55.89,
+      "fii": 1.94,
+      "dii": 0.52,
+      "public": 41.65
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 55.89,
+      "fii": 2.04,
+      "dii": 0.43,
+      "public": 41.65
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 55.89,
+      "fii": 2.4,
+      "dii": 0.28,
+      "public": 41.45
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 55.89,
+      "fii": 2.71,
+      "dii": 0.1,
+      "public": 41.32
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 55.89,
+      "fii": 1.0,
+      "dii": 0.08,
+      "public": 43.03
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 55.89,
+      "fii": 0.97,
+      "dii": 0.04,
+      "public": 43.11
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 55.89,
+      "fii": 0.69,
+      "dii": 0.01,
+      "public": 43.42
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 55.89,
+      "fii": 0.48,
+      "dii": 0.01,
+      "public": 43.63
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.36,
+  "insider_held_pct": 69.64,
+  "float_shares": 101424246,
+  "promoters_pct": 55.89,
+  "fii_pct": 0.48,
+  "dii_pct": 0.01,
+  "public_pct": 43.63,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.49,
+  "dii_change_2q": -0.03,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "FII_SELLING",
+  "swing_signal": "\u26a0\ufe0f FIIs selling \u2193 (-0.5% in 2Q) \u2014 watch for follow-through",
+  "summary": "DIIs \u2192 0.0% (-0.0%) | FIIs \u2193 0.5% (-0.5%) | Promoters \u2192 55.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:18:49.317768"
+}

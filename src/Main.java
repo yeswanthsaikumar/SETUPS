@@ -115,6 +115,7 @@ public class Main {
             signal.rsPercentile = result.getRsPercentile();
             signal.sectorName = result.getSector();
             signal.industryName = result.getIndustry();
+            signal.basicIndustryName = result.getBasicIndustry();
             signal.marketRegime = result.getMarketRegime();
             signal.sectorScoreBonus = result.getSectorBonus();
             signal.ipoFlag = result.isIpoFlag();

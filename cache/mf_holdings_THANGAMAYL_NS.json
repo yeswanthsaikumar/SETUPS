@@ -1,0 +1,112 @@
+{
+  "symbol": "THANGAMAYL.NS",
+  "market": "india",
+  "screener_slug": "THANGAMAYL",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 67.16,
+      "fii": 0.2,
+      "dii": 11.46,
+      "public": 21.17
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 67.16,
+      "fii": 0.25,
+      "dii": 11.39,
+      "public": 21.2
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 67.32,
+      "fii": 0.74,
+      "dii": 11.4,
+      "public": 20.52
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 67.33,
+      "fii": 0.98,
+      "dii": 11.51,
+      "public": 20.17
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 67.33,
+      "fii": 1.08,
+      "dii": 12.08,
+      "public": 19.5
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 61.28,
+      "fii": 4.52,
+      "dii": 12.77,
+      "public": 21.42
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 61.28,
+      "fii": 4.05,
+      "dii": 13.56,
+      "public": 21.1
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 61.49,
+      "fii": 4.41,
+      "dii": 14.8,
+      "public": 19.29
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 61.53,
+      "fii": 4.49,
+      "dii": 14.83,
+      "public": 19.15
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 61.56,
+      "fii": 4.61,
+      "dii": 15.25,
+      "public": 18.58
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 61.56,
+      "fii": 4.7,
+      "dii": 16.62,
+      "public": 17.13
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 61.61,
+      "fii": 4.37,
+      "dii": 17.41,
+      "public": 16.61
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 61.61,
+  "fii_pct": 4.37,
+  "dii_pct": 17.41,
+  "public_pct": 16.61,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "up",
+  "fii_change_2q": -0.24,
+  "dii_change_2q": 2.16,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+2.2% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 17.4% (+2.2%) | FIIs \u2192 4.4% (-0.2%) | Promoters \u2192 61.6%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:37:09.806323"
+}

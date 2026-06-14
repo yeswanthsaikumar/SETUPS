@@ -1,0 +1,114 @@
+{
+  "symbol": "ADANIPORTS.NS",
+  "market": "india",
+  "screener_slug": "ADANIPORTS",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 62.89,
+      "fii": 16.99,
+      "dii": 12.45,
+      "public": 7.66
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 65.53,
+      "fii": 13.83,
+      "dii": 13.27,
+      "public": 7.37
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 65.89,
+      "fii": 14.72,
+      "dii": 12.01,
+      "public": 7.39
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 65.89,
+      "fii": 14.98,
+      "dii": 11.84,
+      "public": 7.3
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 65.89,
+      "fii": 15.19,
+      "dii": 12.48,
+      "public": 6.44
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 65.89,
+      "fii": 15.22,
+      "dii": 13.26,
+      "public": 5.62
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 65.89,
+      "fii": 13.94,
+      "dii": 14.2,
+      "public": 5.96
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 65.89,
+      "fii": 13.43,
+      "dii": 14.73,
+      "public": 5.94
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 65.89,
+      "fii": 13.53,
+      "dii": 15.15,
+      "public": 5.46
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 65.89,
+      "fii": 13.61,
+      "dii": 15.03,
+      "public": 5.48
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 68.02,
+      "fii": 13.1,
+      "dii": 13.89,
+      "public": 4.99
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 68.02,
+      "fii": 13.25,
+      "dii": 13.86,
+      "public": 4.89
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 20.65,
+  "insider_held_pct": 68.05,
+  "float_shares": 823735222,
+  "promoters_pct": 68.02,
+  "fii_pct": 13.25,
+  "dii_pct": 13.86,
+  "public_pct": 4.89,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "up",
+  "fii_trend": "down",
+  "dii_trend": "down",
+  "fii_change_2q": -0.36,
+  "dii_change_2q": -1.17,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "DISTRIBUTING",
+  "swing_signal": "\u26a0\ufe0f Institutions distributing \u2014 both FIIs & DIIs selling",
+  "summary": "DIIs \u2193 13.9% (-1.2%) | FIIs \u2193 13.2% (-0.4%) | Promoters \u2191 68.0%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:31:20.693275"
+}

@@ -1,0 +1,86 @@
+{
+  "symbol": "BOROSCI.NS",
+  "market": "india",
+  "screener_slug": "BOROSCI",
+  "quarterly_data": [
+    {
+      "period": "Jun 2024",
+      "promoters": 67.92,
+      "fii": 0.38,
+      "dii": 0.15,
+      "public": 31.54
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 67.86,
+      "fii": 0.37,
+      "dii": 0.01,
+      "public": 31.74
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 67.84,
+      "fii": 0.27,
+      "dii": 0.02,
+      "public": 31.88
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 67.81,
+      "fii": 0.24,
+      "dii": 0.02,
+      "public": 31.91
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 67.8,
+      "fii": 0.2,
+      "dii": 0.05,
+      "public": 31.93
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 67.8,
+      "fii": 0.07,
+      "dii": 0.1,
+      "public": 32.03
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 67.8,
+      "fii": 0.07,
+      "dii": 0.19,
+      "public": 31.93
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 68.08,
+      "fii": 0.09,
+      "dii": 0.26,
+      "public": 31.57
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.06,
+  "insider_held_pct": 73.15,
+  "float_shares": 23697733,
+  "promoters_pct": 68.08,
+  "fii_pct": 0.09,
+  "dii_pct": 0.26,
+  "public_pct": 31.57,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.02,
+  "dii_change_2q": 0.16,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 0.3% (+0.2%) | FIIs \u2192 0.1% (+0.0%) | Promoters \u2192 68.1%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:18:15.245957"
+}

@@ -1,0 +1,112 @@
+{
+  "symbol": "PDSL.NS",
+  "market": "india",
+  "screener_slug": "PDSL",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 66.16,
+      "fii": 2.99,
+      "dii": 0.57,
+      "public": 30.16
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 66.0,
+      "fii": 2.97,
+      "dii": 0.66,
+      "public": 30.24
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 65.84,
+      "fii": 3.42,
+      "dii": 0.64,
+      "public": 29.99
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 65.81,
+      "fii": 3.72,
+      "dii": 0.85,
+      "public": 29.49
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 65.73,
+      "fii": 3.69,
+      "dii": 0.91,
+      "public": 29.5
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 61.69,
+      "fii": 5.23,
+      "dii": 5.3,
+      "public": 27.62
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 61.52,
+      "fii": 5.15,
+      "dii": 5.74,
+      "public": 27.44
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 61.42,
+      "fii": 5.0,
+      "dii": 5.74,
+      "public": 27.68
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 61.41,
+      "fii": 4.43,
+      "dii": 5.92,
+      "public": 28.08
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 61.41,
+      "fii": 3.68,
+      "dii": 5.66,
+      "public": 29.1
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 61.4,
+      "fii": 3.22,
+      "dii": 5.78,
+      "public": 29.43
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 61.37,
+      "fii": 3.32,
+      "dii": 5.77,
+      "public": 29.38
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 61.37,
+  "fii_pct": 3.32,
+  "dii_pct": 5.77,
+  "public_pct": 29.38,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.36,
+  "dii_change_2q": 0.11,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "FII_SELLING",
+  "swing_signal": "\u26a0\ufe0f FIIs selling \u2193 (-0.4% in 2Q) \u2014 watch for follow-through",
+  "summary": "DIIs \u2192 5.8% (+0.1%) | FIIs \u2193 3.3% (-0.4%) | Promoters \u2192 61.4%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:35:44.671258"
+}

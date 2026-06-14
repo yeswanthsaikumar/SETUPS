@@ -1,0 +1,100 @@
+{
+  "symbol": "HAPPYFORGE.NS",
+  "market": "india",
+  "screener_slug": "HAPPYFORGE",
+  "quarterly_data": [
+    {
+      "period": "Dec 2023",
+      "promoters": 78.6,
+      "fii": 2.06,
+      "dii": 5.83,
+      "public": 13.5
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 78.6,
+      "fii": 1.12,
+      "dii": 16.92,
+      "public": 3.35
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 78.6,
+      "fii": 2.24,
+      "dii": 16.69,
+      "public": 2.47
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 78.6,
+      "fii": 2.27,
+      "dii": 17.14,
+      "public": 1.98
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 78.6,
+      "fii": 2.28,
+      "dii": 17.06,
+      "public": 2.05
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 78.57,
+      "fii": 2.19,
+      "dii": 17.07,
+      "public": 2.18
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 78.54,
+      "fii": 2.17,
+      "dii": 16.98,
+      "public": 2.31
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 78.52,
+      "fii": 2.03,
+      "dii": 17.02,
+      "public": 2.45
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 78.5,
+      "fii": 1.84,
+      "dii": 16.73,
+      "public": 2.94
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 78.48,
+      "fii": 1.73,
+      "dii": 16.48,
+      "public": 3.3
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 17.32,
+  "insider_held_pct": 78.5,
+  "float_shares": 20294456,
+  "promoters_pct": 78.48,
+  "fii_pct": 1.73,
+  "dii_pct": 16.48,
+  "public_pct": 3.3,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "down",
+  "fii_change_2q": -0.3,
+  "dii_change_2q": -0.54,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2193 16.5% (-0.5%) | FIIs \u2192 1.7% (-0.3%) | Promoters \u2192 78.5%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:23:03.421671"
+}

@@ -1,0 +1,102 @@
+{
+  "symbol": "SOFTTECH.NS",
+  "market": "india",
+  "screener_slug": "SOFTTECH",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 40.44,
+      "fii": 0.09,
+      "public": 59.45
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 40.44,
+      "fii": 0.09,
+      "public": 59.46
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 32.05,
+      "fii": 0.08,
+      "public": 67.87
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 32.05,
+      "fii": 0.08,
+      "public": 67.89
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 20.35,
+      "fii": 0.07,
+      "public": 79.58
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 20.35,
+      "fii": 0.07,
+      "public": 79.58
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 18.89,
+      "fii": 0.07,
+      "public": 81.03
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 18.89,
+      "fii": 0.07,
+      "public": 81.04
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 18.89,
+      "fii": 0.05,
+      "public": 81.07
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 18.84,
+      "fii": 0.0,
+      "public": 81.16
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 18.84,
+      "fii": 0.0,
+      "public": 81.15
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 18.89,
+      "fii": 0.0,
+      "public": 81.12
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.0,
+  "insider_held_pct": 83.72,
+  "float_shares": 2889545,
+  "promoters_pct": 18.89,
+  "fii_pct": 0.0,
+  "dii_pct": null,
+  "public_pct": 81.12,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.0,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 0.0% (+0.0%) | Promoters \u2192 18.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:31:16.057362"
+}

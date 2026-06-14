@@ -18,7 +18,7 @@ Web wrapper for your existing scan/backtest engine with:
 
 - `apps/web/api/main.py` - FastAPI backend
 - `apps/web/ui/index.html` - Web dashboard
-- `apps/web/scripts/smoke_test.py` - API smoke test
+- `tests/e2e/test_smoke.py` - API smoke test
 - `requirements-web.txt` - Web dependency list
 - `Dockerfile` - Container build
 - `docker-compose.yml` - Local container orchestration
@@ -58,7 +58,7 @@ Open `http://localhost:8000`
 ```bash
 cd /Users/yeshwantha/IdeaProjects/SETUPS
 source .venv/bin/activate
-python apps/web/scripts/smoke_test.py
+python tests/e2e/test_smoke.py
 ```
 
 ## API Examples

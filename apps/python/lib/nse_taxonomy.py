@@ -31,6 +31,7 @@ logger = logging.getLogger("NSETaxonomy")
 
 _ROOT      = Path(__file__).resolve().parents[3]   # SETUPS/
 _CSV_PATH  = _ROOT / "data" / "nse_stock_taxonomy.csv"
+_CUSTOM_SUB_PATH = _ROOT / "data" / "custom_sub_classification.csv"
 _AUTO_CACHE= _ROOT / "cache" / "auto_classify_cache.json"
 # Rich 4-level NSE + themes (written by scripts/apply_themes.py)
 _ENRICHED_PATH = _ROOT / "data" / "nse_stock_enriched.csv"
@@ -121,39 +122,46 @@ _FALLBACK_INDUSTRY: dict[str, str] = {
 
 # ── Map loading ───────────────────────────────────────────────────────────────
 
-def _load_from_csv(path: Path) -> tuple[dict[str, str], dict[str, str]]:
-    """Load sector + industry maps from the master CSV file."""
-    sector_map:   dict[str, str] = {}
-    industry_map: dict[str, str] = {}
+def _load_from_csv(path: Path) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
+    """Load sector + industry + basic_industry maps from the master CSV file."""
+    sector_map:         dict[str, str] = {}
+    industry_map:       dict[str, str] = {}
+    basic_industry_map: dict[str, str] = {}
     try:
         with open(path, newline="", encoding="utf-8") as f:
             for row in csv.DictReader(f):
-                ticker   = row.get("nse_ticker", "").strip().upper()
-                sector   = row.get("sector",   "").strip()
-                industry = row.get("industry", "").strip()
+                ticker         = row.get("nse_ticker", "").strip().upper()
+                sector         = row.get("sector",   "").strip()
+                industry       = row.get("industry", "").strip()
+                basic_industry = row.get("basic_industry", "").strip()
                 if ticker and sector:
                     sector_map[ticker]   = sector
                 if ticker and industry:
                     industry_map[ticker] = industry
+                if ticker and basic_industry:
+                    basic_industry_map[ticker] = basic_industry
     except Exception as e:
         logger.warning("Could not load taxonomy CSV %s: %s", path, e)
-    return sector_map, industry_map
+    return sector_map, industry_map, basic_industry_map
 
 
-def _build_maps() -> tuple[dict[str, str], dict[str, str]]:
-    """Return (sector_map, industry_map) — CSV overrides hardcoded fallbacks."""
+def _build_maps() -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
+    """Return (sector_map, industry_map, basic_industry_map) — CSV overrides hardcoded fallbacks."""
     sec  = dict(_FALLBACK_SECTOR)
     ind  = dict(_FALLBACK_INDUSTRY)
+    bi: dict[str, str] = {}
     if _CSV_PATH.exists():
-        csv_sec, csv_ind = _load_from_csv(_CSV_PATH)
+        csv_sec, csv_ind, csv_bi = _load_from_csv(_CSV_PATH)
         sec.update(csv_sec)
         ind.update(csv_ind)
-        logger.debug("Loaded %d sectors, %d industries from CSV", len(csv_sec), len(csv_ind))
-    return sec, ind
+        bi.update(csv_bi)
+        logger.debug("Loaded %d sectors, %d industries, %d basic_industries from CSV",
+                      len(csv_sec), len(csv_ind), len(csv_bi))
+    return sec, ind, bi
 
 
 # Module-level maps — loaded once at import time
-_SECTOR_MAP, _INDUSTRY_MAP = _build_maps()
+_SECTOR_MAP, _INDUSTRY_MAP, _BASIC_INDUSTRY_MAP_CSV = _build_maps()
 
 
 # ── Rich enriched loader (4-level NSE + themes) ───────────────────────────────
@@ -165,6 +173,12 @@ _BASIC_INDUSTRY_MAP: dict[str, str]       = {}
 _NAME_MAP:           dict[str, str]       = {}
 _THEMES_MAP:         dict[str, list[str]] = {}
 _THEME_META:         dict[str, dict]      = {}  # theme_key → {name, description}
+
+# Multi-label basic_industry: for conglomerates that operate in multiple
+# industries (e.g. Reliance = Refineries + Telecom + Retail). The primary
+# classification stays in _BASIC_INDUSTRY_MAP (first row in CSV); additional
+# industries are stored here. group_tickers_by("basic_industry") merges both.
+_BASIC_INDUSTRY_MULTI: dict[str, list[str]] = {}
 
 
 def _load_enriched() -> None:
@@ -211,6 +225,14 @@ def _load_enriched() -> None:
             return _re.sub(r"[A-Za-z]+", lambda m: _tok(m.group(0)), s)
         return s
 
+    def _sanitize_bi(s: str) -> str:
+        """Replace '/' in basic_industry names with ' - ' so they don't
+        break URL path routing in the web API (e.g. '2/3 Wheelers' →
+        '2-3 Wheelers')."""
+        if not s:
+            return s
+        return s.replace("/", "-")
+
     try:
         with _ENRICHED_PATH.open(newline="", encoding="utf-8") as f:
             for row in csv.DictReader(f):
@@ -221,7 +243,7 @@ def _load_enriched() -> None:
                 macro    = _MACRO_CANON.get(macro, _canon_case(macro))
                 sector   = _canon_case((row.get("sector") or "").strip())
                 industry = _canon_case((row.get("industry") or "").strip())
-                basic    = _canon_case((row.get("basic_industry") or "").strip())
+                basic    = _sanitize_bi(_canon_case((row.get("basic_industry") or "").strip()))
                 name     = (row.get("company_name") or "").strip()
                 themes_s = (row.get("themes") or "").strip()
                 if macro:    _MACRO_MAP[t] = macro
@@ -254,6 +276,58 @@ def _load_enriched() -> None:
 
 _load_enriched()
 
+# Merge CSV-loaded basic_industry as a fallback for tickers not in enriched CSV
+for _t, _bi in _BASIC_INDUSTRY_MAP_CSV.items():
+    if _t not in _BASIC_INDUSTRY_MAP and _bi:
+        _BASIC_INDUSTRY_MAP[_t] = _bi
+
+
+def _load_custom_sub_classification() -> None:
+    """Apply custom sub-classification overrides from data/custom_sub_classification.csv.
+
+    NSE's basic_industry is too coarse for some groups (e.g. "Heavy Electrical
+    Equipment" lumps HVDC, wind, transformers together). This file provides a
+    finer trader-relevant classification that OVERRIDES basic_industry for
+    listed tickers.
+
+    Multi-label support: if a ticker appears multiple times with DIFFERENT
+    custom_basic_industry values (e.g. RELIANCE in both "Refineries & Marketing"
+    and "Telecom - Cellular & Fixed Line"), the first row becomes the primary
+    classification and subsequent rows are stored in _BASIC_INDUSTRY_MULTI so
+    group_tickers_by includes the ticker in every listed group.
+    """
+    if not _CUSTOM_SUB_PATH.exists():
+        return
+    count = 0
+    _BASIC_INDUSTRY_MULTI.clear()
+    # Track which tickers we've already set from this CSV (not from enriched)
+    _seen_in_custom: set[str] = set()
+    try:
+        with _CUSTOM_SUB_PATH.open(newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                t = (row.get("nse_ticker") or "").strip().upper()
+                bi = (row.get("custom_basic_industry") or "").strip()
+                # Skip comment lines that csv.DictReader parsed as data
+                if not t or not bi or t.startswith("#"):
+                    continue
+                if t in _seen_in_custom:
+                    # Second+ row for this ticker → multi-label (conglomerate)
+                    existing = _BASIC_INDUSTRY_MAP.get(t, "")
+                    if bi != existing:
+                        _BASIC_INDUSTRY_MULTI.setdefault(t, []).append(bi)
+                else:
+                    _BASIC_INDUSTRY_MAP[t] = bi
+                    _seen_in_custom.add(t)
+                count += 1
+        multi_count = len(_BASIC_INDUSTRY_MULTI)
+        logger.debug("Applied %d custom sub-classification overrides "
+                     "(%d multi-label tickers)", count, multi_count)
+    except Exception as e:
+        logger.warning("Could not load custom sub-classification: %s", e)
+
+
+_load_custom_sub_classification()
+
 
 def reload() -> None:
     """Reload both the 2-level and enriched taxonomies from disk.
@@ -263,14 +337,21 @@ def reload() -> None:
     are picked up without restarting the process. Clears every global
     map before re-populating to guarantee removed tickers disappear.
     """
-    global _SECTOR_MAP, _INDUSTRY_MAP
+    global _SECTOR_MAP, _INDUSTRY_MAP, _BASIC_INDUSTRY_MAP_CSV
     _MACRO_MAP.clear()
     _BASIC_INDUSTRY_MAP.clear()
+    _BASIC_INDUSTRY_MULTI.clear()
     _NAME_MAP.clear()
     _THEMES_MAP.clear()
     _THEME_META.clear()
-    _SECTOR_MAP, _INDUSTRY_MAP = _build_maps()
+    _SECTOR_MAP, _INDUSTRY_MAP, _BASIC_INDUSTRY_MAP_CSV = _build_maps()
     _load_enriched()
+    # Merge CSV basic_industry fallback
+    for _t, _bi in _BASIC_INDUSTRY_MAP_CSV.items():
+        if _t not in _BASIC_INDUSTRY_MAP and _bi:
+            _BASIC_INDUSTRY_MAP[_t] = _bi
+    # Apply custom sub-classification overrides
+    _load_custom_sub_classification()
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -288,9 +369,11 @@ def all_tickers() -> list[str]:
     return sorted(_SECTOR_MAP.keys())
 
 
-def load_taxonomy() -> dict[str, tuple[str, str]]:
-    """Return dict of ticker -> (sector, industry) for all classified stocks."""
-    return {t: (_SECTOR_MAP.get(t, "Other"), _INDUSTRY_MAP.get(t, "Other"))
+def load_taxonomy() -> dict[str, tuple[str, str, str]]:
+    """Return dict of ticker -> (sector, industry, basic_industry) for all classified stocks."""
+    return {t: (_SECTOR_MAP.get(t, "Other"),
+                _INDUSTRY_MAP.get(t, "Other"),
+                _BASIC_INDUSTRY_MAP.get(t, _INDUSTRY_MAP.get(t, "Other")))
             for t in _SECTOR_MAP}
 
 
@@ -306,8 +389,21 @@ def get_industry(symbol: str) -> str:
 
 
 def get_breadth_peers(industry: str) -> list[str]:
-    """Return all NSE tickers in the same industry (for breadth computation)."""
-    return [ticker for ticker, ind in _INDUSTRY_MAP.items() if ind == industry]
+    """Return all NSE tickers in the same basic_industry or industry group.
+
+    Checks _BASIC_INDUSTRY_MAP first (has custom sub-classification overrides),
+    including multi-label entries, then falls back to _INDUSTRY_MAP.
+    """
+    # Check basic_industry (finest level, with custom overrides)
+    peers = [t for t, bi in _BASIC_INDUSTRY_MAP.items() if bi == industry]
+    # Also include tickers that list this industry as a secondary label
+    for t, extras in _BASIC_INDUSTRY_MULTI.items():
+        if industry in extras and t not in peers:
+            peers.append(t)
+    if peers:
+        return peers
+    # Fallback to NSE industry level
+    return [t for t, ind in _INDUSTRY_MAP.items() if ind == industry]
 
 
 def list_industries() -> list[str]:
@@ -363,13 +459,17 @@ def list_macros() -> list[str]:
 
 
 def list_basic_industries() -> list[str]:
-    return sorted(set(_BASIC_INDUSTRY_MAP.values()))
+    all_bis = set(_BASIC_INDUSTRY_MAP.values())
+    for extras in _BASIC_INDUSTRY_MULTI.values():
+        all_bis.update(extras)
+    return sorted(all_bis)
 
 
 # ── Generic groupings for relative-strength / rotation analysis ──────────────
 # LEVELS is the set of group-by dimensions exposed to downstream consumers.
-# "theme" is multi-label (a stock can be in multiple themes); the rest are
-# single-label (one bucket per ticker).
+# "theme" is multi-label (a stock can be in multiple themes);
+# "basic_industry" is also multi-label for conglomerates (via _BASIC_INDUSTRY_MULTI);
+# the rest are single-label (one bucket per ticker).
 LEVELS = ("macro", "sector", "industry", "basic_industry", "theme")
 
 
@@ -377,9 +477,9 @@ def group_tickers_by(level: str) -> dict[str, list[str]]:
     """
     Return {group_name -> [tickers]} for the requested classification level.
 
-    `level` must be one of LEVELS. For "theme", a single ticker may appear in
-    multiple groups (multi-label). For all other levels, each ticker appears
-    in exactly one group (labelled 'Other' when missing).
+    `level` must be one of LEVELS. For "theme" and "basic_industry", a single
+    ticker may appear in multiple groups (multi-label). For all other levels,
+    each ticker appears in exactly one group (labelled 'Other' when missing).
     """
     if level not in LEVELS:
         raise ValueError(f"unknown level {level!r}; expected one of {LEVELS}")
@@ -405,6 +505,14 @@ def group_tickers_by(level: str) -> dict[str, list[str]]:
         if not name:
             continue
         groups.setdefault(name, []).append(ticker)
+
+    # For basic_industry, also add multi-label entries (conglomerates)
+    if level == "basic_industry":
+        for ticker, extras in _BASIC_INDUSTRY_MULTI.items():
+            for bi in extras:
+                if bi and ticker not in groups.get(bi, []):
+                    groups.setdefault(bi, []).append(ticker)
+
     return groups
 
 
@@ -434,7 +542,11 @@ def group_parent_map(level: str) -> dict[str, str]:
 
 def _load_auto_cache() -> dict[str, dict]:
     try:
-        return json.loads(_AUTO_CACHE.read_text())
+        raw = json.loads(_AUTO_CACHE.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            return {}
+        # Keep only dict-like entries; ignore malformed cache rows.
+        return {str(k): v for k, v in raw.items() if isinstance(v, dict)}
     except Exception:
         return {}
 
@@ -442,7 +554,10 @@ def _load_auto_cache() -> dict[str, dict]:
 def _save_auto_cache(cache: dict) -> None:
     try:
         _AUTO_CACHE.parent.mkdir(parents=True, exist_ok=True)
-        _AUTO_CACHE.write_text(json.dumps(cache, indent=2))
+        # Atomic write to avoid partial/corrupt cache on interruption.
+        tmp = _AUTO_CACHE.with_suffix(".tmp")
+        tmp.write_text(json.dumps(cache, indent=2, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(_AUTO_CACHE)
     except Exception:
         pass
 

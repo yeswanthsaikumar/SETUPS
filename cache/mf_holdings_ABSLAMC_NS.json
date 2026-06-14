@@ -1,0 +1,126 @@
+{
+  "symbol": "ABSLAMC.NS",
+  "market": "india",
+  "screener_slug": "ABSLAMC",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 86.49,
+      "fii": 1.68,
+      "dii": 4.69,
+      "government": 0.0,
+      "public": 7.15
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 86.48,
+      "fii": 1.68,
+      "dii": 4.72,
+      "government": 0.0,
+      "public": 7.1
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 86.48,
+      "fii": 1.74,
+      "dii": 5.21,
+      "government": 0.0,
+      "public": 6.57
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 75.32,
+      "fii": 4.37,
+      "dii": 12.08,
+      "government": 0.0,
+      "public": 8.24
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 75.0,
+      "fii": 4.62,
+      "dii": 11.59,
+      "government": 0.02,
+      "public": 8.78
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 74.95,
+      "fii": 4.54,
+      "dii": 12.37,
+      "government": 0.02,
+      "public": 8.13
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 74.9,
+      "fii": 5.04,
+      "dii": 11.51,
+      "government": 0.02,
+      "public": 8.52
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 74.9,
+      "fii": 5.32,
+      "dii": 10.92,
+      "government": 0.02,
+      "public": 8.84
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 74.88,
+      "fii": 5.52,
+      "dii": 10.8,
+      "government": 0.03,
+      "public": 8.77
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 74.85,
+      "fii": 6.18,
+      "dii": 10.3,
+      "government": 0.03,
+      "public": 8.64
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 74.82,
+      "fii": 6.05,
+      "dii": 10.79,
+      "government": 0.03,
+      "public": 8.31
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 74.82,
+      "fii": 5.75,
+      "dii": 11.55,
+      "government": 0.03,
+      "public": 7.85
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 42.25,
+  "insider_held_pct": 44.84,
+  "float_shares": 152382038,
+  "promoters_pct": 74.82,
+  "fii_pct": 5.75,
+  "dii_pct": 11.55,
+  "public_pct": 7.85,
+  "govt_pct": 0.03,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "up",
+  "fii_change_2q": -0.43,
+  "dii_change_2q": 1.25,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+1.2% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 11.6% (+1.2%) | FIIs \u2193 5.8% (-0.4%) | Promoters \u2192 74.8%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:28:38.892732"
+}

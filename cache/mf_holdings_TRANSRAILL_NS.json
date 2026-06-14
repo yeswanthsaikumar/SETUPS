@@ -1,0 +1,72 @@
+{
+  "symbol": "TRANSRAILL.NS",
+  "market": "india",
+  "screener_slug": "TRANSRAILL",
+  "quarterly_data": [
+    {
+      "period": "Dec 2024",
+      "promoters": 71.12,
+      "fii": 1.0,
+      "dii": 15.15,
+      "public": 12.74
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 71.12,
+      "fii": 0.61,
+      "dii": 14.08,
+      "public": 14.2
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 71.12,
+      "fii": 1.43,
+      "dii": 12.44,
+      "public": 15.01
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 71.12,
+      "fii": 1.16,
+      "dii": 8.41,
+      "public": 19.31
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 71.12,
+      "fii": 1.14,
+      "dii": 8.21,
+      "public": 19.53
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 71.12,
+      "fii": 2.17,
+      "dii": 8.14,
+      "public": 18.58
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 1.24,
+  "insider_held_pct": 75.99,
+  "float_shares": 38617197,
+  "promoters_pct": 71.12,
+  "fii_pct": 2.17,
+  "dii_pct": 8.14,
+  "public_pct": 18.58,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "stable",
+  "fii_change_2q": 1.01,
+  "dii_change_2q": -0.27,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+1.0% in 2Q) (foreign buying)",
+  "summary": "DIIs \u2192 8.1% (-0.3%) | FIIs \u2191 2.2% (+1.0%) | Promoters \u2192 71.1%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:31:39.865136"
+}

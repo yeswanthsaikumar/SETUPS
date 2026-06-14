@@ -1,0 +1,44 @@
+{
+  "symbol": "TRAVELFOOD.NS",
+  "market": "india",
+  "screener_slug": "TRAVELFOOD",
+  "quarterly_data": [
+    {
+      "period": "Sep 2025",
+      "promoters": 86.19,
+      "fii": 2.77,
+      "dii": 8.03,
+      "public": 3.0
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 86.19,
+      "fii": 2.39,
+      "dii": 8.84,
+      "public": 2.59
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 8.87,
+  "insider_held_pct": 86.19,
+  "float_shares": 18175328,
+  "promoters_pct": 86.19,
+  "fii_pct": 2.39,
+  "dii_pct": 8.84,
+  "public_pct": 2.59,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "up",
+  "fii_change_2q": -0.38,
+  "dii_change_2q": 0.81,
+  "latest_period": "Dec 2025",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+0.8% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 8.8% (+0.8%) | FIIs \u2193 2.4% (-0.4%) | Promoters \u2192 86.2%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-14T02:11:30.051310"
+}

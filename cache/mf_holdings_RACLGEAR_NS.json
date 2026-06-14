@@ -1,0 +1,114 @@
+{
+  "symbol": "RACLGEAR.NS",
+  "market": "india",
+  "screener_slug": "RACLGEAR",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 53.35,
+      "fii": 0.07,
+      "dii": 0.0,
+      "public": 46.58
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 53.35,
+      "fii": 0.07,
+      "dii": 0.0,
+      "public": 46.58
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 53.34,
+      "fii": 0.07,
+      "dii": 0.0,
+      "public": 46.58
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 53.3,
+      "fii": 0.07,
+      "dii": 0.0,
+      "public": 46.62
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 53.33,
+      "fii": 0.01,
+      "dii": 0.0,
+      "public": 46.66
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 53.32,
+      "fii": 0.0,
+      "dii": 0.04,
+      "public": 46.64
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 53.31,
+      "fii": 0.0,
+      "dii": 0.05,
+      "public": 46.63
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 51.3,
+      "fii": 0.03,
+      "dii": 0.05,
+      "public": 48.62
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 42.67,
+      "fii": 8.76,
+      "dii": 2.85,
+      "public": 45.7
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 42.67,
+      "fii": 8.68,
+      "dii": 2.86,
+      "public": 45.78
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 42.68,
+      "fii": 8.96,
+      "dii": 2.74,
+      "public": 45.62
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 42.69,
+      "fii": 9.54,
+      "dii": 3.22,
+      "public": 44.55
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 7.73,
+  "insider_held_pct": 56.87,
+  "float_shares": 3355257,
+  "promoters_pct": 42.69,
+  "fii_pct": 9.54,
+  "dii_pct": 3.22,
+  "public_pct": 44.55,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "up",
+  "fii_change_2q": 0.86,
+  "dii_change_2q": 0.36,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": true,
+  "smart_money_signal": "STRONG_BUYING",
+  "swing_signal": "\ud83d\udd25 STRONG BUYING \u2014 Both DIIs & FIIs accumulating",
+  "summary": "DIIs \u2191 3.2% (+0.4%) | FIIs \u2191 9.5% (+0.9%) | Promoters \u2192 42.7%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:22:14.109124"
+}

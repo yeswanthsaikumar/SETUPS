@@ -1,0 +1,114 @@
+{
+  "symbol": "SKYGOLD.NS",
+  "market": "india",
+  "screener_slug": "SKYGOLD",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 73.55,
+      "fii": 0.01,
+      "dii": 0.0,
+      "public": 26.45
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 73.55,
+      "fii": 0.0,
+      "dii": 0.0,
+      "public": 26.45
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 62.08,
+      "fii": 0.13,
+      "dii": 0.02,
+      "public": 37.79
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 61.32,
+      "fii": 0.04,
+      "dii": 0.0,
+      "public": 38.64
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 61.32,
+      "fii": 0.08,
+      "dii": 0.0,
+      "public": 38.58
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 62.51,
+      "fii": 0.25,
+      "dii": 0.0,
+      "public": 37.24
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 58.24,
+      "fii": 0.86,
+      "dii": 6.63,
+      "public": 34.26
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 58.18,
+      "fii": 0.39,
+      "dii": 7.13,
+      "public": 34.29
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 53.86,
+      "fii": 0.87,
+      "dii": 9.4,
+      "public": 35.86
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 51.74,
+      "fii": 0.55,
+      "dii": 9.02,
+      "public": 38.69
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 51.74,
+      "fii": 0.78,
+      "dii": 11.66,
+      "public": 35.81
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 51.74,
+      "fii": 1.2,
+      "dii": 13.14,
+      "public": 33.91
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 11.62,
+  "insider_held_pct": 59.4,
+  "float_shares": 53416845,
+  "promoters_pct": 51.74,
+  "fii_pct": 1.2,
+  "dii_pct": 13.14,
+  "public_pct": 33.91,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "up",
+  "fii_change_2q": 0.65,
+  "dii_change_2q": 4.12,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": true,
+  "smart_money_signal": "STRONG_BUYING",
+  "swing_signal": "\ud83d\udd25 STRONG BUYING \u2014 Both DIIs & FIIs accumulating",
+  "summary": "DIIs \u2191 13.1% (+4.1%) | FIIs \u2191 1.2% (+0.7%) | Promoters \u2192 51.7%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:19:53.645530"
+}

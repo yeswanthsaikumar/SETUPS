@@ -375,6 +375,8 @@ class TestCriticalFunctionsDefined:
             "Date", "Error", "console",
             # DOM/BOM methods that may appear standalone in edge cases
             "open", "close", "focus", "blur", "reload",
+            # CSS functions that appear inside inline style assignments
+            "rgba", "rgb", "hsl", "hsla", "calc", "var",
         }
         lines = _js_lines(TRADE_BOARD_HTML)
         defined = _defined_functions(lines)

@@ -1,0 +1,105 @@
+{
+  "symbol": "JSWINFRA.NS",
+  "market": "india",
+  "screener_slug": "JSWINFRA",
+  "quarterly_data": [
+    {
+      "period": "Sep 2023",
+      "promoters": 85.61,
+      "fii": 3.64,
+      "dii": 4.13,
+      "public": 3.43
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 85.61,
+      "fii": 2.43,
+      "dii": 4.08,
+      "public": 5.2
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 85.61,
+      "fii": 2.34,
+      "dii": 3.59,
+      "public": 6.14
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 85.61,
+      "fii": 4.15,
+      "dii": 2.74,
+      "public": 5.79
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 85.61,
+      "fii": 4.2,
+      "dii": 2.5,
+      "public": 6.32
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 85.61,
+      "fii": 4.07,
+      "dii": 2.73,
+      "public": 6.3
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 85.61,
+      "fii": 4.75,
+      "dii": 2.69,
+      "public": 5.67
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 83.61,
+      "fii": 6.64,
+      "dii": 2.82,
+      "public": 5.98
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 83.61,
+      "fii": 7.3,
+      "dii": 2.54,
+      "public": 5.63
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 83.61,
+      "fii": 7.13,
+      "dii": 2.17,
+      "public": 6.33
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 83.61,
+      "fii": 6.92,
+      "dii": 2.43,
+      "public": 6.33
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 83.61,
+  "fii_pct": 6.92,
+  "dii_pct": 2.43,
+  "public_pct": 6.33,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.38,
+  "dii_change_2q": -0.11,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "FII_SELLING",
+  "swing_signal": "\u26a0\ufe0f FIIs selling \u2193 (-0.4% in 2Q) \u2014 watch for follow-through",
+  "summary": "DIIs \u2192 2.4% (-0.1%) | FIIs \u2193 6.9% (-0.4%) | Promoters \u2192 83.6%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:35:10.428910"
+}

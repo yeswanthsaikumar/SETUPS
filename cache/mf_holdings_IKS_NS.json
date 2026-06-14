@@ -1,0 +1,72 @@
+{
+  "symbol": "IKS.NS",
+  "market": "india",
+  "screener_slug": "IKS",
+  "quarterly_data": [
+    {
+      "period": "Dec 2024",
+      "promoters": 63.72,
+      "fii": 5.48,
+      "dii": 4.45,
+      "public": 23.52
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 63.72,
+      "fii": 5.38,
+      "dii": 4.02,
+      "public": 24.29
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 63.72,
+      "fii": 6.5,
+      "dii": 4.33,
+      "public": 22.88
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 63.72,
+      "fii": 7.02,
+      "dii": 4.89,
+      "public": 21.9
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 63.72,
+      "fii": 7.56,
+      "dii": 6.06,
+      "public": 20.29
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 63.72,
+      "fii": 8.19,
+      "dii": 6.4,
+      "public": 19.39
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 9.25,
+  "insider_held_pct": 73.46,
+  "float_shares": 40591428,
+  "promoters_pct": 63.72,
+  "fii_pct": 8.19,
+  "dii_pct": 6.4,
+  "public_pct": 19.39,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "up",
+  "fii_change_2q": 1.17,
+  "dii_change_2q": 1.51,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": true,
+  "smart_money_signal": "STRONG_BUYING",
+  "swing_signal": "\ud83d\udd25 STRONG BUYING \u2014 Both DIIs & FIIs accumulating",
+  "summary": "DIIs \u2191 6.4% (+1.5%) | FIIs \u2191 8.2% (+1.2%) | Promoters \u2192 63.7%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:22:30.971959"
+}

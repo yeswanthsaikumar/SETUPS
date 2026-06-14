@@ -1,0 +1,114 @@
+{
+  "symbol": "KOTAKBANK.NS",
+  "market": "india",
+  "screener_slug": "KOTAKBANK",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 25.94,
+      "fii": 41.54,
+      "dii": 19.57,
+      "public": 12.92
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 25.92,
+      "fii": 40.97,
+      "dii": 20.0,
+      "public": 13.11
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 25.91,
+      "fii": 39.74,
+      "dii": 21.38,
+      "public": 12.98
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 25.9,
+      "fii": 37.59,
+      "dii": 23.4,
+      "public": 13.11
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 25.89,
+      "fii": 33.16,
+      "dii": 27.69,
+      "public": 13.26
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 25.88,
+      "fii": 33.39,
+      "dii": 27.88,
+      "public": 12.84
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 25.88,
+      "fii": 32.48,
+      "dii": 28.79,
+      "public": 12.83
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 25.88,
+      "fii": 32.65,
+      "dii": 29.13,
+      "public": 12.34
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 25.88,
+      "fii": 32.34,
+      "dii": 29.61,
+      "public": 12.18
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 25.87,
+      "fii": 29.75,
+      "dii": 32.02,
+      "public": 12.35
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 25.87,
+      "fii": 29.36,
+      "dii": 32.88,
+      "public": 11.9
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 25.87,
+      "fii": 26.4,
+      "dii": 36.19,
+      "public": 11.54
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 47.55,
+  "insider_held_pct": 28.76,
+  "float_shares": 7311824545,
+  "promoters_pct": 25.87,
+  "fii_pct": 26.4,
+  "dii_pct": 36.19,
+  "public_pct": 11.54,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "up",
+  "fii_change_2q": -3.35,
+  "dii_change_2q": 4.17,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+4.2% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 36.2% (+4.2%) | FIIs \u2193 26.4% (-3.4%) | Promoters \u2192 25.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:19:57.602379"
+}

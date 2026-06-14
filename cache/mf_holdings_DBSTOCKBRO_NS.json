@@ -1,0 +1,102 @@
+{
+  "symbol": "DBSTOCKBRO.NS",
+  "market": "india",
+  "screener_slug": "DBSTOCKBRO",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 35.84,
+      "fii": 0.0,
+      "public": 64.16
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 36.12,
+      "fii": 0.01,
+      "public": 63.87
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 36.12,
+      "fii": 0.0,
+      "public": 63.87
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 36.18,
+      "fii": 0.0,
+      "public": 63.82
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 36.18,
+      "fii": 0.0,
+      "public": 63.81
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 36.18,
+      "fii": 0.0,
+      "public": 63.82
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 36.18,
+      "fii": 0.0,
+      "public": 63.81
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 41.66,
+      "fii": 0.0,
+      "public": 58.32
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 41.17,
+      "fii": 0.0,
+      "public": 58.82
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 41.17,
+      "fii": 0.0,
+      "public": 58.83
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 41.17,
+      "fii": 0.0,
+      "public": 58.82
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 41.17,
+      "fii": 0.0,
+      "public": 58.82
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.0,
+  "insider_held_pct": 79.73,
+  "float_shares": 11440727,
+  "promoters_pct": 41.17,
+  "fii_pct": 0.0,
+  "dii_pct": null,
+  "public_pct": 58.82,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.0,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 0.0% (+0.0%) | Promoters \u2192 41.2%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:23:56.808367"
+}

@@ -1,0 +1,114 @@
+{
+  "symbol": "STEELCAS.NS",
+  "market": "india",
+  "screener_slug": "STEELCAS",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 45.0,
+      "fii": 0.27,
+      "dii": 0.06,
+      "public": 54.67
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 45.0,
+      "fii": 0.38,
+      "dii": 0.07,
+      "public": 54.56
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 45.0,
+      "fii": 0.08,
+      "dii": 0.07,
+      "public": 54.87
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 45.0,
+      "fii": 0.01,
+      "dii": 0.33,
+      "public": 54.68
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 45.0,
+      "fii": 0.06,
+      "dii": 0.29,
+      "public": 54.65
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 45.0,
+      "fii": 0.1,
+      "dii": 0.0,
+      "public": 54.9
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 45.0,
+      "fii": 0.16,
+      "dii": 0.0,
+      "public": 54.83
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 45.0,
+      "fii": 0.24,
+      "dii": 0.3,
+      "public": 54.46
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 45.0,
+      "fii": 0.37,
+      "dii": 0.86,
+      "public": 53.77
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 45.0,
+      "fii": 0.19,
+      "dii": 1.11,
+      "public": 53.69
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 45.0,
+      "fii": 0.22,
+      "dii": 2.23,
+      "public": 52.56
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 45.0,
+      "fii": 0.25,
+      "dii": 2.53,
+      "public": 52.23
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 1.41,
+  "insider_held_pct": 56.91,
+  "float_shares": 42818464,
+  "promoters_pct": 45.0,
+  "fii_pct": 0.25,
+  "dii_pct": 2.53,
+  "public_pct": 52.23,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "up",
+  "fii_change_2q": 0.06,
+  "dii_change_2q": 1.42,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+1.4% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 2.5% (+1.4%) | FIIs \u2192 0.2% (+0.1%) | Promoters \u2192 45.0%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:27:58.624329"
+}

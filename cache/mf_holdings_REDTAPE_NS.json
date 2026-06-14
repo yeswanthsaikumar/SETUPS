@@ -1,0 +1,107 @@
+{
+  "symbol": "REDTAPE.NS",
+  "market": "india",
+  "screener_slug": "REDTAPE",
+  "quarterly_data": [
+    {
+      "period": "Sep 2023",
+      "promoters": 71.77,
+      "fii": 2.22,
+      "dii": 6.44,
+      "public": 19.58
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 71.77,
+      "fii": 2.74,
+      "dii": 7.3,
+      "public": 18.2
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 71.77,
+      "fii": 3.1,
+      "dii": 7.86,
+      "public": 17.28
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 71.79,
+      "fii": 3.17,
+      "dii": 8.89,
+      "public": 16.16
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 71.8,
+      "fii": 3.3,
+      "dii": 10.2,
+      "public": 14.72
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 71.8,
+      "fii": 3.48,
+      "dii": 10.23,
+      "public": 14.5
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 71.8,
+      "fii": 3.53,
+      "dii": 10.25,
+      "public": 14.44
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 71.8,
+      "fii": 3.64,
+      "dii": 10.27,
+      "public": 14.3
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 71.8,
+      "fii": 3.83,
+      "dii": 10.77,
+      "public": 13.6
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 71.79,
+      "fii": 3.88,
+      "dii": 10.88,
+      "public": 13.45
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 71.83,
+      "fii": 3.81,
+      "dii": 11.01,
+      "public": 13.36
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 13.37,
+  "insider_held_pct": 72.18,
+  "float_shares": 154096024,
+  "promoters_pct": 71.83,
+  "fii_pct": 3.81,
+  "dii_pct": 11.01,
+  "public_pct": 13.36,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.02,
+  "dii_change_2q": 0.24,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 11.0% (+0.2%) | FIIs \u2192 3.8% (-0.0%) | Promoters \u2192 71.8%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:33:57.140949"
+}

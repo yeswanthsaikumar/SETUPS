@@ -1,0 +1,89 @@
+{
+  "symbol": "CROWN.NS",
+  "market": "india",
+  "screener_slug": "CROWN",
+  "quarterly_data": [
+    {
+      "period": "Mar 2023",
+      "promoters": 75.0,
+      "public": 25.0
+    },
+    {
+      "period": "Jun 2023",
+      "promoters": 75.0,
+      "public": 25.0
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 75.0,
+      "public": 25.0
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 75.0,
+      "public": 25.0
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 75.0,
+      "public": 25.0
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 69.56,
+      "public": 30.44
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 69.56,
+      "public": 30.44
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 69.56,
+      "public": 30.44
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 69.56,
+      "public": 30.44
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 69.56,
+      "public": 30.44
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 69.56,
+      "public": 30.44
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 69.56,
+      "public": 30.44
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": 3523696,
+  "promoters_pct": 69.56,
+  "fii_pct": null,
+  "dii_pct": null,
+  "public_pct": 30.44,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": null,
+  "dii_change_2q": null,
+  "latest_period": "Dec 2025",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "PROMOTER_HELD",
+  "swing_signal": "\ud83c\udfe2 Promoter-held 69.6% \u2014 low FII/DII activity (small-cap)",
+  "summary": "Promoters \u2192 69.6%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-15T16:31:36.841083",
+  "_stale_reused": true
+}

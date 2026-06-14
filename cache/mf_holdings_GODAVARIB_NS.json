@@ -1,0 +1,72 @@
+{
+  "symbol": "GODAVARIB.NS",
+  "market": "india",
+  "screener_slug": "GODAVARIB",
+  "quarterly_data": [
+    {
+      "period": "Dec 2024",
+      "promoters": 63.31,
+      "fii": 1.14,
+      "dii": 14.88,
+      "public": 20.67
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 63.31,
+      "fii": 0.96,
+      "dii": 14.17,
+      "public": 21.56
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 63.31,
+      "fii": 0.63,
+      "dii": 13.98,
+      "public": 22.09
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 63.31,
+      "fii": 0.6,
+      "dii": 11.98,
+      "public": 24.11
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 63.31,
+      "fii": 0.86,
+      "dii": 11.16,
+      "public": 24.67
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 63.31,
+      "fii": 0.98,
+      "dii": 10.39,
+      "public": 25.31
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 10.02,
+  "insider_held_pct": 63.31,
+  "float_shares": 18655549,
+  "promoters_pct": 63.31,
+  "fii_pct": 0.98,
+  "dii_pct": 10.39,
+  "public_pct": 25.31,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "down",
+  "fii_change_2q": 0.38,
+  "dii_change_2q": -1.59,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+0.4% in 2Q) (foreign buying)",
+  "summary": "DIIs \u2193 10.4% (-1.6%) | FIIs \u2191 1.0% (+0.4%) | Promoters \u2192 63.3%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:28:18.255149"
+}

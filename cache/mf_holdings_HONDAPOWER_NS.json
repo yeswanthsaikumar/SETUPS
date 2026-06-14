@@ -1,0 +1,112 @@
+{
+  "symbol": "HONDAPOWER.NS",
+  "market": "india",
+  "screener_slug": "HONDAPOWER",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 66.67,
+      "fii": 1.73,
+      "dii": 14.4,
+      "public": 17.2
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 66.67,
+      "fii": 1.79,
+      "dii": 14.72,
+      "public": 16.81
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 66.67,
+      "fii": 1.59,
+      "dii": 14.82,
+      "public": 16.92
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 66.67,
+      "fii": 1.45,
+      "dii": 15.31,
+      "public": 16.56
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 66.67,
+      "fii": 1.42,
+      "dii": 16.93,
+      "public": 15.0
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 66.67,
+      "fii": 1.41,
+      "dii": 17.95,
+      "public": 13.97
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 66.67,
+      "fii": 1.36,
+      "dii": 18.18,
+      "public": 13.8
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 66.67,
+      "fii": 1.37,
+      "dii": 18.18,
+      "public": 13.78
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 66.67,
+      "fii": 1.16,
+      "dii": 18.23,
+      "public": 13.95
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 66.67,
+      "fii": 1.1,
+      "dii": 18.23,
+      "public": 14.01
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 66.67,
+      "fii": 1.09,
+      "dii": 18.23,
+      "public": 14.02
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 66.67,
+      "fii": 1.05,
+      "dii": 18.27,
+      "public": 14.02
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 66.67,
+  "fii_pct": 1.05,
+  "dii_pct": 18.27,
+  "public_pct": 14.02,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.05,
+  "dii_change_2q": 0.04,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 18.3% (+0.0%) | FIIs \u2192 1.1% (-0.1%) | Promoters \u2192 66.7%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:35:48.345205"
+}

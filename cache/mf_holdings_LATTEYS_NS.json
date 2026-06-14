@@ -1,0 +1,88 @@
+{
+  "symbol": "LATTEYS.NS",
+  "market": "india",
+  "screener_slug": "LATTEYS",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 72.08,
+      "public": 27.9
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 72.08,
+      "public": 27.92
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 72.08,
+      "public": 27.92
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 72.08,
+      "public": 27.92
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 72.08,
+      "public": 27.92
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 72.08,
+      "public": 27.92
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 70.42,
+      "public": 29.58
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 70.42,
+      "public": 29.58
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 70.42,
+      "public": 29.58
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 70.42,
+      "public": 29.58
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 70.42,
+      "public": 29.58
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 70.42,
+      "public": 29.58
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": 17306640,
+  "promoters_pct": 70.42,
+  "fii_pct": null,
+  "dii_pct": null,
+  "public_pct": 29.58,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": null,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "PROMOTER_HELD",
+  "swing_signal": "\ud83c\udfe2 Promoter-held 70.4% \u2014 low FII/DII activity (small-cap)",
+  "summary": "Promoters \u2192 70.4%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:25:40.977174"
+}

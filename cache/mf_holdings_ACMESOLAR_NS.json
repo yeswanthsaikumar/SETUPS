@@ -1,0 +1,72 @@
+{
+  "symbol": "ACMESOLAR.NS",
+  "market": "india",
+  "screener_slug": "ACMESOLAR",
+  "quarterly_data": [
+    {
+      "period": "Dec 2024",
+      "promoters": 83.41,
+      "fii": 5.54,
+      "dii": 6.97,
+      "public": 4.07
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 83.41,
+      "fii": 4.74,
+      "dii": 7.09,
+      "public": 4.75
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 83.41,
+      "fii": 5.76,
+      "dii": 6.61,
+      "public": 4.22
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 83.41,
+      "fii": 5.57,
+      "dii": 6.39,
+      "public": 4.63
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 83.29,
+      "fii": 4.03,
+      "dii": 6.87,
+      "public": 5.69
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 83.29,
+      "fii": 3.6,
+      "dii": 7.05,
+      "public": 5.96
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 8.14,
+  "insider_held_pct": 83.52,
+  "float_shares": 100171146,
+  "promoters_pct": 83.29,
+  "fii_pct": 3.6,
+  "dii_pct": 7.05,
+  "public_pct": 5.96,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "up",
+  "fii_change_2q": -1.97,
+  "dii_change_2q": 0.66,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+0.7% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 7.0% (+0.7%) | FIIs \u2193 3.6% (-2.0%) | Promoters \u2192 83.3%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:25:36.831789"
+}

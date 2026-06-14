@@ -1,0 +1,72 @@
+{
+  "symbol": "SENORES.NS",
+  "market": "india",
+  "screener_slug": "SENORES",
+  "quarterly_data": [
+    {
+      "period": "Dec 2024",
+      "promoters": 45.77,
+      "fii": 4.25,
+      "dii": 11.77,
+      "public": 38.2
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 45.78,
+      "fii": 4.17,
+      "dii": 9.66,
+      "public": 40.39
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 45.78,
+      "fii": 3.66,
+      "dii": 9.51,
+      "public": 41.03
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 45.8,
+      "fii": 4.28,
+      "dii": 8.62,
+      "public": 41.3
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 45.81,
+      "fii": 3.35,
+      "dii": 9.32,
+      "public": 41.54
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 45.82,
+      "fii": 3.64,
+      "dii": 9.62,
+      "public": 40.92
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 7.74,
+  "insider_held_pct": 55.57,
+  "float_shares": 18343257,
+  "promoters_pct": 45.82,
+  "fii_pct": 3.64,
+  "dii_pct": 9.62,
+  "public_pct": 40.92,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "up",
+  "fii_change_2q": -0.64,
+  "dii_change_2q": 1.0,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+1.0% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 9.6% (+1.0%) | FIIs \u2193 3.6% (-0.6%) | Promoters \u2192 45.8%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:19:18.550945"
+}

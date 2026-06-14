@@ -1,0 +1,100 @@
+{
+  "symbol": "INNOVACAP.NS",
+  "market": "india",
+  "screener_slug": "INNOVACAP",
+  "quarterly_data": [
+    {
+      "period": "Dec 2023",
+      "promoters": 50.9,
+      "fii": 3.57,
+      "dii": 10.31,
+      "public": 35.22
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 50.9,
+      "fii": 1.94,
+      "dii": 20.78,
+      "public": 26.39
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 50.9,
+      "fii": 1.19,
+      "dii": 21.24,
+      "public": 26.67
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 50.9,
+      "fii": 1.01,
+      "dii": 20.61,
+      "public": 27.48
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 50.9,
+      "fii": 0.74,
+      "dii": 19.96,
+      "public": 28.41
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 50.9,
+      "fii": 0.35,
+      "dii": 19.77,
+      "public": 29.0
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 50.9,
+      "fii": 0.23,
+      "dii": 19.67,
+      "public": 29.2
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 50.9,
+      "fii": 0.08,
+      "dii": 20.17,
+      "public": 28.86
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 50.9,
+      "fii": 0.1,
+      "dii": 20.24,
+      "public": 28.76
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 50.9,
+      "fii": 0.23,
+      "dii": 20.14,
+      "public": 28.74
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 19.22,
+  "insider_held_pct": 72.19,
+  "float_shares": 15905099,
+  "promoters_pct": 50.9,
+  "fii_pct": 0.23,
+  "dii_pct": 20.14,
+  "public_pct": 28.74,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.15,
+  "dii_change_2q": -0.03,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 20.1% (-0.0%) | FIIs \u2192 0.2% (+0.1%) | Promoters \u2192 50.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:30:59.010689"
+}

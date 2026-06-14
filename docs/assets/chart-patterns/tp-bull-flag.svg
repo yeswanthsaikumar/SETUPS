@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="t d">
+<title id="t">Bull Flag - Entry / Stop / Targets / Trail / Max Gain</title>
+<desc id="d">Pole drive, flag dry-up, breakout, manage with R-multiples and trail</desc>
+<rect width="1400" height="760" fill="#070d18"/>
+<g stroke="#172338" stroke-width="1">
+<path d="M80 70H1320M80 140H1320M80 210H1320M80 280H1320M80 350H1320M80 420H1320M80 490H1320M80 560H1320"/>
+<path d="M120 60V580M220 60V580M320 60V580M420 60V580M520 60V580M620 60V580M720 60V580M820 60V580M920 60V580M1020 60V580M1120 60V580M1220 60V580"/>
+</g>
+<text x="90" y="42" fill="#e5edf8" font-size="26" font-family="Arial, sans-serif" font-weight="600">Bull Flag - Entry / Stop / Targets / Trail / Max Gain</text>
+<text x="90" y="64" fill="#9eb1c7" font-size="14" font-family="Arial, sans-serif">Pole drive, flag dry-up, breakout, manage with R-multiples and trail</text>
+<path d="M120.0 518.3 L180.0 485.0 L240.0 443.3 L300.0 393.3 L360.0 343.3 L420.0 310.0 L460.0 318.3 L500.0 326.7 L540.0 335.0 L580.0 339.2 L620.0 335.0 L660.0 326.7 L700.0 301.7 L760.0 260.0 L820.0 218.3 L880.0 185.0 L940.0 151.7 L1000.0 135.0 L1060.0 118.3" fill="none" stroke="#4da3ff" stroke-width="2.5"/>
+<line x1="80" y1="310.0" x2="1320" y2="310.0" stroke="#22c55e" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1100" y="304.0" fill="#22c55e" font-size="13" font-family="Arial, sans-serif" font-weight="600">Entry: break &gt; 150 flag high</text>
+<line x1="80" y1="343.3" x2="1320" y2="343.3" stroke="#ef4444" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1100" y="337.3" fill="#ef4444" font-size="13" font-family="Arial, sans-serif" font-weight="600">Stop: &lt; 142 flag low</text>
+<line x1="80" y1="226.7" x2="1320" y2="226.7" stroke="#7dd3fc" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1100" y="220.7" fill="#7dd3fc" font-size="13" font-family="Arial, sans-serif" font-weight="600">T1: +1R (~158) -&gt; trim 1/3</text>
+<line x1="80" y1="164.2" x2="1320" y2="164.2" stroke="#60a5fa" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1100" y="158.2" fill="#60a5fa" font-size="13" font-family="Arial, sans-serif" font-weight="600">T2: pole projection ~ 195 (max)</text>
+<rect x="108" y="675.0" width="24" height="45.0" fill="#2f6f49"/>
+<rect x="168" y="665.0" width="24" height="55.0" fill="#2f6f49"/>
+<rect x="228" y="655.0" width="24" height="65.0" fill="#2f6f49"/>
+<rect x="288" y="645.0" width="24" height="75.0" fill="#2f6f49"/>
+<rect x="348" y="635.0" width="24" height="85.0" fill="#2f6f49"/>
+<rect x="408" y="625.0" width="24" height="95.0" fill="#2f6f49"/>
+<rect x="448" y="695.0" width="24" height="25.0" fill="#6e3745"/>
+<rect x="488" y="697.0" width="24" height="23.0" fill="#6e3745"/>
+<rect x="528" y="699.0" width="24" height="21.0" fill="#6e3745"/>
+<rect x="568" y="701.0" width="24" height="19.0" fill="#6e3745"/>
+<rect x="608" y="703.0" width="24" height="17.0" fill="#6e3745"/>
+<rect x="648" y="705.0" width="24" height="15.0" fill="#6e3745"/>
+<rect x="688" y="660.0" width="24" height="60.0" fill="#2f6f49"/>
+<rect x="748" y="651.4" width="24" height="68.6" fill="#2f6f49"/>
+<rect x="808" y="642.9" width="24" height="77.1" fill="#2f6f49"/>
+<rect x="868" y="634.3" width="24" height="85.7" fill="#2f6f49"/>
+<rect x="928" y="625.7" width="24" height="94.3" fill="#2f6f49"/>
+<rect x="988" y="617.1" width="24" height="102.9" fill="#2f6f49"/>
+<rect x="1048" y="608.6" width="24" height="111.4" fill="#2f6f49"/>
+<text x="90" y="592.0" fill="#9eb1c7" font-size="13" font-family="Arial, sans-serif" font-weight="400">Volume</text>
+<text x="140" y="88.0" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif" font-weight="600">1) POLE: high vol drive</text>
+<text x="470" y="88.0" fill="#9eb1c7" font-size="13" font-family="Arial, sans-serif" font-weight="600">2) FLAG: orderly drift, vol dry-up</text>
+<text x="790" y="88.0" fill="#2ecc71" font-size="13" font-family="Arial, sans-serif" font-weight="600">3) BREAKOUT: vol expansion + strong close</text>
+<text x="90" y="590.0" fill="#fbbf24" font-size="13" font-family="Arial, sans-serif" font-weight="600">Max gain logic: pole height (~50) projected from breakout = ~+30% potential</text>
+<rect x="1010" y="62" width="280" height="120" rx="8" fill="#0d1626" stroke="#172338"/>
+<line x1="1020" y1="80" x2="1050" y2="80" stroke="#22c55e" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1060" y="84.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Entry</text>
+<line x1="1020" y1="102" x2="1050" y2="102" stroke="#ef4444" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1060" y="106.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Stop</text>
+<line x1="1020" y1="124" x2="1050" y2="124" stroke="#7dd3fc" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1060" y="128.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Target 1</text>
+<line x1="1020" y1="146" x2="1050" y2="146" stroke="#60a5fa" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1060" y="150.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Target 2 / Max</text>
+<line x1="1020" y1="168" x2="1050" y2="168" stroke="#f59e0b" stroke-dasharray="6 6" stroke-width="2"/>
+<text x="1060" y="172.0" fill="#e5edf8" font-size="13" font-family="Arial, sans-serif" font-weight="400">Trail line</text>
+<path d="M420.0 360.0 L700.0 330.8 L1060.0 205.8" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 6"/><text x="1070" y="199.8" fill="#f59e0b" font-size="12" font-family="Arial, sans-serif" font-weight="400">Trail under higher lows</text>
+</svg>

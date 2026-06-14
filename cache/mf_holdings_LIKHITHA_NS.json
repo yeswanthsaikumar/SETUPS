@@ -1,0 +1,100 @@
+{
+  "symbol": "LIKHITHA.NS",
+  "market": "india",
+  "screener_slug": "LIKHITHA",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 70.02,
+      "fii": 0.1,
+      "public": 29.88
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 70.02,
+      "fii": 0.67,
+      "public": 29.31
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 70.02,
+      "fii": 0.09,
+      "public": 29.88
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 70.02,
+      "fii": 0.2,
+      "public": 29.78
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 70.02,
+      "fii": 0.18,
+      "public": 29.8
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 70.02,
+      "fii": 1.01,
+      "public": 28.96
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 70.02,
+      "fii": 1.05,
+      "public": 28.93
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 70.25,
+      "fii": 0.91,
+      "public": 28.83
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 70.25,
+      "fii": 0.14,
+      "public": 29.61
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 70.25,
+      "fii": 0.14,
+      "public": 29.61
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 70.25,
+      "fii": 0.22,
+      "public": 29.54
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 70.25,
+      "fii": 0.1,
+      "public": 29.65
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 70.25,
+  "fii_pct": 0.1,
+  "dii_pct": null,
+  "public_pct": 29.65,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.04,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 0.1% (-0.0%) | Promoters \u2192 70.2%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:34:33.496763"
+}

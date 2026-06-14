@@ -84,6 +84,7 @@ public class StructuredExporter {
         public double rsPercentile;           // RS rank 0-100
         public String sectorName;             // Sector from taxonomy
         public String industryName;           // Industry from taxonomy
+        public String basicIndustryName;      // Finest NSE classification (~200 groups)
         public String marketRegime;           // TAILWIND / NEUTRAL / HEADWIND
         public double sectorScoreBonus;       // Sector strength adjustment
         public double volumeDryUpRatio;       // Pre-breakout volume quietness
@@ -157,6 +158,7 @@ public class StructuredExporter {
         public double rsPercentile;
         public String sectorName;
         public String industryName;
+        public String basicIndustryName;
         public String marketRegime;
         public double sectorScoreBonus;
         public double volumeDryUpRatio;
@@ -259,7 +261,7 @@ public class StructuredExporter {
             "\"alignmentBonus\":%.1f,\"finalScore\":%.1f," +
             "\"qualityRating\":\"%s\",\"qualityScore\":%.1f," +
             "\"ipoFlag\":%b,\"daysSinceListing\":%d," +
-            "\"rsPercentile\":%.1f,\"sector\":\"%s\",\"industry\":\"%s\"," +
+            "\"rsPercentile\":%.1f,\"sector\":\"%s\",\"industry\":\"%s\",\"basicIndustry\":\"%s\"," +
             "\"marketRegime\":\"%s\",\"sectorBonus\":%.1f," +
             "\"volumeDryUpRatio\":%.2f,\"accumDistRatio\":%.2f," +
             "\"tightCloseCount\":%d,\"emaFanAligned\":%b,\"gapBreakout\":%b}",
@@ -271,6 +273,7 @@ public class StructuredExporter {
             s.rsPercentile,
             s.sectorName != null ? escapeJson(s.sectorName) : "",
             s.industryName != null ? escapeJson(s.industryName) : "",
+            s.basicIndustryName != null ? escapeJson(s.basicIndustryName) : "",
             s.marketRegime != null ? s.marketRegime : "NEUTRAL",
             s.sectorScoreBonus,
             s.volumeDryUpRatio, s.accumDistRatio,
@@ -287,7 +290,7 @@ public class StructuredExporter {
                 "{\"symbol\":\"%s\",\"baseScore\":%.1f,\"alignmentBonus\":%.1f," +
                 "\"finalScore\":%.1f,\"qualityRating\":\"%s\"," +
                 "\"ipoFlag\":%b,\"daysSinceListing\":%d," +
-                "\"rsPercentile\":%.1f,\"sector\":\"%s\",\"industry\":\"%s\"," +
+                "\"rsPercentile\":%.1f,\"sector\":\"%s\",\"industry\":\"%s\",\"basicIndustry\":\"%s\"," +
                 "\"marketRegime\":\"%s\",\"sectorBonus\":%.1f," +
                 "\"volumeDryUpRatio\":%.2f,\"accumDistRatio\":%.2f," +
                 "\"tightCloseCount\":%d,\"emaFanAligned\":%b,\"gapBreakout\":%b}",
@@ -298,6 +301,7 @@ public class StructuredExporter {
                 w.rsPercentile,
                 w.sectorName != null ? escapeJson(w.sectorName) : "",
                 w.industryName != null ? escapeJson(w.industryName) : "",
+                w.basicIndustryName != null ? escapeJson(w.basicIndustryName) : "",
                 w.marketRegime != null ? w.marketRegime : "NEUTRAL",
                 w.sectorScoreBonus,
                 w.volumeDryUpRatio, w.accumDistRatio,
@@ -347,16 +351,17 @@ public class StructuredExporter {
     
     private static String exportHitsAsCsv(List<SignalExport> signals) {
         StringBuilder sb = new StringBuilder();
-        sb.append("symbol,signalType,baseScore,alignmentBonus,finalScore,qualityRating,qualityScore,ipoFlag,daysSinceListing,rsPercentile,sector,industry,marketRegime,sectorBonus,volumeDryUpRatio,accumDistRatio,tightCloseCount,emaFanAligned,gapBreakout\n");
+        sb.append("symbol,signalType,baseScore,alignmentBonus,finalScore,qualityRating,qualityScore,ipoFlag,daysSinceListing,rsPercentile,sector,industry,basicIndustry,marketRegime,sectorBonus,volumeDryUpRatio,accumDistRatio,tightCloseCount,emaFanAligned,gapBreakout\n");
 
         for (SignalExport s : signals) {
-            sb.append(String.format("%s,%s,%.2f,%.2f,%.2f,%s,%.1f,%b,%d,%.1f,%s,%s,%s,%.1f,%.2f,%.2f,%d,%b,%b\n",
+            sb.append(String.format("%s,%s,%.2f,%.2f,%.2f,%s,%.1f,%b,%d,%.1f,%s,%s,%s,%s,%.1f,%.2f,%.2f,%d,%b,%b\n",
                 s.symbol, s.signalType, s.baseQualityScore, s.alignmentBonus,
                 s.finalScore, s.breakoutQualityRating, s.breakoutQualityScore,
                 s.ipoFlag, s.daysSinceListing,
                 s.rsPercentile,
                 s.sectorName != null ? s.sectorName : "",
                 s.industryName != null ? s.industryName : "",
+                s.basicIndustryName != null ? s.basicIndustryName : "",
                 s.marketRegime != null ? s.marketRegime : "NEUTRAL",
                 s.sectorScoreBonus,
                 s.volumeDryUpRatio, s.accumDistRatio,
@@ -369,16 +374,17 @@ public class StructuredExporter {
     
     private static String exportWatchlistAsCsv(List<WatchlistExport> items) {
         StringBuilder sb = new StringBuilder();
-        sb.append("symbol,baseScore,alignmentBonus,finalScore,qualityRating,qualityScore,ipoFlag,daysSinceListing,rsPercentile,sector,industry,marketRegime,sectorBonus,volumeDryUpRatio,accumDistRatio,tightCloseCount,emaFanAligned,gapBreakout\n");
+        sb.append("symbol,baseScore,alignmentBonus,finalScore,qualityRating,qualityScore,ipoFlag,daysSinceListing,rsPercentile,sector,industry,basicIndustry,marketRegime,sectorBonus,volumeDryUpRatio,accumDistRatio,tightCloseCount,emaFanAligned,gapBreakout\n");
 
         for (WatchlistExport w : items) {
-            sb.append(String.format("%s,%.2f,%.2f,%.2f,%s,%.1f,%b,%d,%.1f,%s,%s,%s,%.1f,%.2f,%.2f,%d,%b,%b\n",
+            sb.append(String.format("%s,%.2f,%.2f,%.2f,%s,%.1f,%b,%d,%.1f,%s,%s,%s,%s,%.1f,%.2f,%.2f,%d,%b,%b\n",
                 w.symbol, w.baseQualityScore, w.alignmentBonus,
                 w.finalScore, w.breakoutQualityRating, w.breakoutQualityScore,
                 w.ipoFlag, w.daysSinceListing,
                 w.rsPercentile,
                 w.sectorName != null ? w.sectorName : "",
                 w.industryName != null ? w.industryName : "",
+                w.basicIndustryName != null ? w.basicIndustryName : "",
                 w.marketRegime != null ? w.marketRegime : "NEUTRAL",
                 w.sectorScoreBonus,
                 w.volumeDryUpRatio, w.accumDistRatio,

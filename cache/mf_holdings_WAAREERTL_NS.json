@@ -1,0 +1,114 @@
+{
+  "symbol": "WAAREERTL.NS",
+  "market": "india",
+  "screener_slug": "WAAREERTL",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 74.51,
+      "fii": 0.0,
+      "dii": 0.0,
+      "public": 25.49
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 74.48,
+      "fii": 0.0,
+      "dii": 0.0,
+      "public": 25.51
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 74.46,
+      "fii": 0.0,
+      "dii": 0.09,
+      "public": 25.43
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 74.46,
+      "fii": 0.2,
+      "dii": 0.01,
+      "public": 25.33
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 74.46,
+      "fii": 0.83,
+      "dii": 0.01,
+      "public": 24.69
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 74.44,
+      "fii": 0.98,
+      "dii": 0.0,
+      "public": 24.58
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 74.39,
+      "fii": 0.99,
+      "dii": 0.01,
+      "public": 24.6
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 74.39,
+      "fii": 1.13,
+      "dii": 0.24,
+      "public": 24.25
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 74.39,
+      "fii": 1.31,
+      "dii": 0.14,
+      "public": 24.16
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 74.39,
+      "fii": 1.38,
+      "dii": 0.12,
+      "public": 24.12
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 74.32,
+      "fii": 1.7,
+      "dii": 0.14,
+      "public": 23.85
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 74.32,
+      "fii": 1.85,
+      "dii": 0.09,
+      "public": 23.73
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.97,
+  "insider_held_pct": 75.38,
+  "float_shares": 36794120,
+  "promoters_pct": 74.32,
+  "fii_pct": 1.85,
+  "dii_pct": 0.09,
+  "public_pct": 23.73,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.47,
+  "dii_change_2q": -0.03,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+0.5% in 2Q) (foreign buying)",
+  "summary": "DIIs \u2192 0.1% (-0.0%) | FIIs \u2191 1.9% (+0.5%) | Promoters \u2192 74.3%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:26:49.561368"
+}

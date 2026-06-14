@@ -527,6 +527,23 @@ SETUP_META = {
     "BULL_FLAG":         ("tag-bf",    "Bull Flag",          "Sharp pole + tight flag channel. Enter on breakout above flag high. Targets = flagpole measured move."),
 }
 
+# ── Merge taxonomy basic_industry into INDUSTRY_MAP ───────────────────────────
+# The custom_sub_classification.csv (loaded via nse_taxonomy) is the single
+# source of truth for fine-grained industry groupings. It OVERRIDES the
+# hardcoded INDUSTRY_MAP above — so any ticker present in the custom CSV
+# gets its classification from there, not from the legacy hardcoded map.
+try:
+    import nse_taxonomy as _taxo
+    # Taxonomy overrides hardcoded map — custom sub-classification wins.
+    for _t, _bi in _taxo._BASIC_INDUSTRY_MAP.items():
+        if _bi:
+            INDUSTRY_MAP[_t] = _bi
+    for _t, _s in _taxo._SECTOR_MAP.items():
+        if _s:
+            SECTOR_MAP[_t] = _s
+except Exception:
+    pass
+
 def _f(v, d=0.0):
     try:
         if v in (None, "", "N/A"):

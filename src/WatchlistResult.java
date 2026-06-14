@@ -14,6 +14,7 @@ public class WatchlistResult {
     private double rsPercentile;
     private String sector;
     private String industry;
+    private String basicIndustry;
     private double sectorBonus;
     private String marketRegime;
 
@@ -31,6 +32,7 @@ public class WatchlistResult {
         this.rsPercentile = 0.0;
         this.sector = null;
         this.industry = null;
+        this.basicIndustry = null;
         this.sectorBonus = 0.0;
         this.marketRegime = "NEUTRAL";
     }
@@ -62,7 +64,9 @@ public class WatchlistResult {
     public void setRsPercentile(double rs) { this.rsPercentile = rs; }
     public String getSector() { return sector; }
     public String getIndustry() { return industry; }
+    public String getBasicIndustry() { return basicIndustry; }
     public void setSectorInfo(String sector, String industry) { this.sector = sector; this.industry = industry; }
+    public void setSectorInfo(String sector, String industry, String basicIndustry) { this.sector = sector; this.industry = industry; this.basicIndustry = basicIndustry; }
     public double getSectorBonus() { return sectorBonus; }
     public void setSectorBonus(double bonus) { this.sectorBonus = bonus; }
     public String getMarketRegime() { return marketRegime; }

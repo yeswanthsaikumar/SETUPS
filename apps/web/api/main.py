@@ -43,6 +43,8 @@ TRADE_DATA_DIR = Path(_TD_ENV) if _TD_ENV else ROOT / "trade_data"
 TRADE_BOARD_JSON = TRADE_DATA_DIR / "positions.json"
 TRADE_JOURNAL_JSON = TRADE_DATA_DIR / "journal.json"
 TRADE_WATCHLIST_JSON = TRADE_DATA_DIR / "watchlist.json"
+TRADE_PAST_WINNERS_JSON = TRADE_DATA_DIR / "past_winners" / "catalog.json"
+TRADE_PAST_WINNERS_GLOSSARY_JSON = TRADE_DATA_DIR / "past_winners" / "glossary.json"
 TRADE_BOARD_JSON_LEGACY = OUTPUT_DIR / "trade_board.json"  # kept for migration only
 _CD_ENV = os.environ.get("SETUPS_CACHE_DIR", "").strip()
 CACHE_DIR = Path(_CD_ENV) if _CD_ENV else ROOT / "cache"
@@ -50,7 +52,6 @@ REFRESH_CACHE_SCRIPT = ROOT / "scripts" / "refresh_cache.py"
 REFRESH_LOG = OUTPUT_DIR / "cache_refresh.log"
 
 sys.path.insert(0, str(PY_LIB_DIR))
-from trade_plan_assistant import brief_as_json, build_scan_brief
 from stock_analyzer import analyze_stock
 import trading_wisdom
 import performance_tracker as _pt
@@ -81,15 +82,6 @@ RUN_VCP_SYSTEM = CLI_DIR / "run_vcp_system.py"
 RUN_BACKTEST = CLI_DIR / "run_backtest.py"
 
 
-class ScanJobRequest(BaseModel):
-    markets: list[Literal["india", "us"]] = Field(default_factory=lambda: ["india", "us"])
-    timeframes: list[Literal["daily", "weekly"]] = Field(default_factory=lambda: ["daily", "weekly"])
-    setups: Literal["full", "both", "vcp", "range_expansion", "mean_reversion", "breakout_pullback", "bull_flag", "all"] = "full"
-    daily_lookback: int = 252
-    weekly_lookback: int = 104
-    workers: int = 6
-    batch: int = 40
-    skip_us_refresh: bool = True
 
 
 class BacktestJobRequest(BaseModel):
@@ -104,7 +96,7 @@ class BacktestJobRequest(BaseModel):
 
 class JobRecord(BaseModel):
     id: str
-    kind: Literal["scan", "backtest"]
+    kind: Literal["backtest"]
     command: list[str]
     status: Literal["queued", "running", "succeeded", "failed"]
     created_at: str
@@ -166,6 +158,87 @@ class TradeBoardUpdate(BaseModel):
     entry: Optional[float] = None
     quantity: Optional[int] = None
     notes: Optional[str] = None
+    tags: Optional[list[str]] = None
+
+
+class PastWinnerEntry(BaseModel):
+    id: Optional[str] = None
+    symbol: str
+    name: str = ""
+    market: Literal["india", "us"] = "india"
+    timeframe: str = "daily"
+    pattern: str = ""
+    variation: str = ""
+    market_regime: str = ""
+    breakout_date: Optional[str] = None
+    exit_date: Optional[str] = None
+    entry_price: Optional[float] = None
+    stop_price: Optional[float] = None
+    exit_price: Optional[float] = None
+    realized_r: Optional[float] = None
+    risk_reward: str = ""
+    position_sizing: str = ""
+    trade_plan: str = ""
+    entry_logic: str = ""
+    exit_logic: str = ""
+    trail_logic: str = ""
+    pyramid_logic: str = ""
+    candle_structure: str = ""
+    key_levels: str = ""
+    confluence_factors: str = ""
+    mistakes_to_avoid: str = ""
+    lessons_learned: str = ""
+    grade: str = ""
+    rs_rank: Optional[float] = None
+    adr_pct: Optional[float] = None
+    breakout_volume_vs20d: Optional[float] = None
+    eps_growth_yoy: Optional[float] = None
+    sales_growth_yoy: Optional[float] = None
+    roe_percent: Optional[float] = None
+    debt_to_equity: Optional[float] = None
+    story: str = ""
+    notes: str = ""
+    image_paths: dict = Field(default_factory=dict)
+    tags: list[str] = Field(default_factory=list)
+
+
+class PastWinnerUpdate(BaseModel):
+    symbol: Optional[str] = None
+    name: Optional[str] = None
+    market: Optional[Literal["india", "us"]] = None
+    timeframe: Optional[str] = None
+    pattern: Optional[str] = None
+    variation: Optional[str] = None
+    market_regime: Optional[str] = None
+    breakout_date: Optional[str] = None
+    exit_date: Optional[str] = None
+    entry_price: Optional[float] = None
+    stop_price: Optional[float] = None
+    exit_price: Optional[float] = None
+    realized_r: Optional[float] = None
+    risk_reward: Optional[str] = None
+    position_sizing: Optional[str] = None
+    trade_plan: Optional[str] = None
+    entry_logic: Optional[str] = None
+    exit_logic: Optional[str] = None
+    trail_logic: Optional[str] = None
+    pyramid_logic: Optional[str] = None
+    candle_structure: Optional[str] = None
+    key_levels: Optional[str] = None
+    confluence_factors: Optional[str] = None
+    mistakes_to_avoid: Optional[str] = None
+    lessons_learned: Optional[str] = None
+    grade: Optional[str] = None
+    rs_rank: Optional[float] = None
+    adr_pct: Optional[float] = None
+    breakout_volume_vs20d: Optional[float] = None
+    eps_growth_yoy: Optional[float] = None
+    sales_growth_yoy: Optional[float] = None
+    roe_percent: Optional[float] = None
+    debt_to_equity: Optional[float] = None
+    story: Optional[str] = None
+    notes: Optional[str] = None
+    image_paths: Optional[dict] = None
     tags: Optional[list[str]] = None
 
 
@@ -956,6 +1029,16 @@ _UI_DIR = TRADE_BOARD_UI.parent
 if _UI_DIR.exists():
     app.mount("/ui", StaticFiles(directory=str(_UI_DIR)), name="ui")
 
+# Serve markdown-linked visual assets (for example docs/assets/chart-patterns/*.svg)
+# so playbook/blog images render correctly in the web reader.
+_DOCS_ASSETS_DIR = ROOT / "docs" / "assets"
+if _DOCS_ASSETS_DIR.exists():
+    app.mount(
+        "/playbook-assets",
+        StaticFiles(directory=str(_DOCS_ASSETS_DIR)),
+        name="playbook-assets",
+    )
+
 
 def _ensure_parent_dir(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1087,20 +1170,271 @@ def industry_groups_page() -> FileResponse:
 #   GET /api/playbook/markdown[?doc=…]    → raw markdown source
 #   GET /api/playbook/download[?doc=…]    → self-contained HTML, print-to-PDF
 _PLAYBOOK_UI_PATH = ROOT / "apps" / "web" / "ui" / "playbook.html"
+# ── _PLAYBOOK_DOCS ────────────────────────────────────────────────────────────
+# To add a new blog post / wisdom doc:
+#   1. Drop a .md file into docs/
+#   2. Add an entry below with category="blog" (category="core" for ref docs).
+#   3. Restart the server — the UI auto-discovers it via /api/playbook/meta.
 _PLAYBOOK_DOCS: dict[str, dict] = {
+    # ── Core reference docs ───────────────────────────────────────────────────
     "playbook": {
-        "path":  ROOT / "docs" / "TRADING_PLAYBOOK.md",
-        "title": "The Trading Playbook",
-        "dek":   "Why chart patterns work, which ones actually pay, and the "
-                 "distilled philosophies of the traders who pioneered them.",
-        "file":  "Trading_Playbook.html",
+        "path":     ROOT / "docs" / "TRADING_PLAYBOOK.md",
+        "title":    "The Trading Playbook",
+        "dek":      "Why chart patterns work, which ones actually pay, and the "
+                    "distilled philosophies of the traders who pioneered them.",
+        "file":     "Trading_Playbook.html",
+        "category": "core",
+        "icon":     "📖",
+        "order":    1,
     },
     "evidence": {
-        "path":  ROOT / "docs" / "TRADING_PLAYBOOK_EVIDENCE.md",
-        "title": "Trading Playbook — Evidence",
-        "dek":   "Hard statistics, audited track records, and academic research "
-                 "behind every claim in the playbook.",
-        "file":  "Trading_Playbook_Evidence.html",
+        "path":     ROOT / "docs" / "TRADING_PLAYBOOK_EVIDENCE.md",
+        "title":    "Trading Playbook · Evidence",
+        "dek":      "Hard statistics, audited track records, and academic research "
+                    "behind every claim in the playbook.",
+        "file":     "Trading_Playbook_Evidence.html",
+        "category": "core",
+        "icon":     "🔬",
+        "order":    2,
+    },
+    # ── Wisdom blog posts ─────────────────────────────────────────────────────
+    "livermore": {
+        "path":     ROOT / "docs" / "JESSE_LIVERMORE_WISDOM.md",
+        "title":    "Jesse Livermore — The Complete Wisdom",
+        "dek":      "Time-tested principles, entries, exits, position sizing, "
+                    "psychology, checklists, 50 quotes, and daily affirmations "
+                    "from the trader who made $100M shorting the 1929 crash.",
+        "file":     "Jesse_Livermore_Wisdom.html",
+        "category": "blog",
+        "icon":     "🎯",
+        "order":    1,
+    },
+    "impulse-control-trading": {
+        "path":     ROOT / "docs" / "IMPULSE_CONTROL_TRADING.md",
+        "title":    "The Anti-Impulse Trading Protocol",
+        "dek":      "A professional guide to avoiding immediate buys, greedy "
+                    "entries, panic selling, phone-driven over-monitoring, and "
+                    "emotion-led rule breaks using calm process and Mark Douglas "
+                    "style probabilistic thinking.",
+        "file":     "Impulse_Control_Trading.html",
+        "category": "blog",
+        "icon":     "🧠",
+        "order":    2,
+    },
+    "chart-pattern-trade-plans": {
+        "path":     ROOT / "docs" / "CHART_PATTERN_TRADE_PLANS.md",
+        "title":    "Chart Patterns & Trade Plans",
+        "dek":      "A daily price-action and volume playbook covering bull flags, "
+                    "triangles, cup-and-handle, VCP, double bottoms, reversals, "
+                    "trade plans, stops, targets, invalidation, and pattern failure "
+                    "signs.",
+        "file":     "Chart_Pattern_Trade_Plans.html",
+        "category": "blog",
+        "icon":     "📈",
+        "order":    3,
+    },
+    "event-pivot-gap-risk": {
+        "path":     ROOT / "docs" / "EVENT_PIVOT_GAP_RISK.md",
+        "title":    "Event Pivot Gap Risk Playbook",
+        "dek":      "How to survive earnings, RBI, policy, and close-open gap shocks "
+                    "that can bypass normal stop-loss behavior, with practical pre-event "
+                    "de-risk and capital-protection frameworks.",
+        "file":     "Event_Pivot_Gap_Risk.html",
+        "category": "blog",
+        "icon":     "⚠️",
+        "order":    4,
+    },
+    "trailing-winners-action-plan": {
+        "path":     ROOT / "docs" / "TRAILING_WINNERS_ACTION_PLAN.md",
+        "title":    "Trailing Winners — The Complete Action Plan",
+        "dek":      "A five-stage system for holding big trades through their full "
+                    "potential: break-even triggers, structure trails, MA trails, "
+                    "climax recognition, and the psychology blockers that kill great trades.",
+        "file":     "Trailing_Winners_Action_Plan.html",
+        "category": "blog",
+        "icon":     "🚀",
+        "order":    5,
+    },
+    "timeframe-analysis-top-down": {
+        "path":     ROOT / "docs" / "TIMEFRAME_ANALYSIS_TOP_DOWN.md",
+        "title":    "Top-Down Timeframe Analysis",
+        "dek":      "The professional trader's complete framework for multi-timeframe "
+                    "confluence — monthly thesis, weekly structure, daily trigger, hourly "
+                    "execution — with pattern strength scoring, watchlist protocol, entry "
+                    "confirmation, pyramid rules, and the full exit hierarchy.",
+        "file":     "Timeframe_Analysis_Top_Down.html",
+        "category": "blog",
+        "icon":     "🔭",
+        "order":    6,
+    },
+    "swing-trader-risk-management": {
+        "path":     ROOT / "docs" / "SWING_TRADER_RISK_MANAGEMENT.md",
+        "title":    "The Professional Swing Trader's Risk Management Playbook",
+        "dek":      "The complete five-layer risk framework: open risk (portfolio floor), "
+                    "market-based risk (regime adjustment), per-trade risk (1% rule), "
+                    "situation-based risk (time/earnings/streaks), and setup-based risk "
+                    "(pattern confidence). Position sizing tables, decision trees, real examples, "
+                    "and psychology—everything separating professionals from account-blowers.",
+        "file":     "Swing_Trader_Risk_Management.html",
+        "category": "blog",
+        "icon":     "🛡️",
+        "order":    7,
+    },
+    # ── Risk & Survival playbooks ──────────────────────────────────────────
+    "position-sizing-playbook": {
+        "path":     ROOT / "docs" / "POSITION_SIZING_PLAYBOOK.md",
+        "title":    "Position Sizing Playbook",
+        "dek":      "The five-layer sizing system: base risk, regime multiplier, setup quality, "
+                    "streak adjustment, and heat caps. Starter positions, pyramiding, and the math "
+                    "that separates survivors from blow-ups.",
+        "file":     "Position_Sizing_Playbook.html",
+        "category": "blog",
+        "icon":     "📐",
+        "order":    8,
+    },
+    "stop-loss-mastery": {
+        "path":     ROOT / "docs" / "STOP_LOSS_MASTERY.md",
+        "title":    "Stop Loss Mastery",
+        "dek":      "Five stop types, placement decision trees, hard vs mental stops, "
+                    "the post-stop ritual, and why honoring every stop is the only discipline "
+                    "that matters.",
+        "file":     "Stop_Loss_Mastery.html",
+        "category": "blog",
+        "icon":     "🛑",
+        "order":    9,
+    },
+    "drawdown-management": {
+        "path":     ROOT / "docs" / "DRAWDOWN_MANAGEMENT.md",
+        "title":    "Drawdown Management",
+        "dek":      "Account-level defense: daily, weekly, and monthly drawdown caps, severity "
+                    "tiers, the recovery protocol, and the five mistakes that turn small drawdowns "
+                    "into career-ending ones.",
+        "file":     "Drawdown_Management.html",
+        "category": "blog",
+        "icon":     "🩹",
+        "order":    10,
+    },
+    "losing-streak-survival-guide": {
+        "path":     ROOT / "docs" / "LOSING_STREAK_SURVIVAL_GUIDE.md",
+        "title":    "Losing Streak Survival Guide",
+        "dek":      "The probability of streaks, the streak response protocol (size reduction "
+                    "tiers), the recovery roadmap, emotional first aid, and what NOT to do when "
+                    "everything is going wrong.",
+        "file":     "Losing_Streak_Survival_Guide.html",
+        "category": "blog",
+        "icon":     "🧊",
+        "order":    11,
+    },
+    "overnight-risk-survival-guide": {
+        "path":     ROOT / "docs" / "OVERNIGHT_RISK_SURVIVAL_GUIDE.md",
+        "title":    "Overnight Risk Survival Guide",
+        "dek":      "Gap risk management for swing traders: the seven rules, pre-event de-risk "
+                    "protocol, gap survival sizing formula, weekend holding rules, and what to do "
+                    "after a gap against you.",
+        "file":     "Overnight_Risk_Survival_Guide.html",
+        "category": "blog",
+        "icon":     "🌙",
+        "order":    12,
+    },
+    # ── Profits & Execution playbooks ──────────────────────────────────────
+    "profit-taking-playbook": {
+        "path":     ROOT / "docs" / "PROFIT_TAKING_PLAYBOOK.md",
+        "title":    "Profit Taking Playbook",
+        "dek":      "The four profit-taking models, the scaling system (1R/2R/3R), climax sell "
+                    "signals, when to hold through pullbacks, and the common mistakes that turn "
+                    "winners into nothing.",
+        "file":     "Profit_Taking_Playbook.html",
+        "category": "blog",
+        "icon":     "💰",
+        "order":    13,
+    },
+    "hold-vs-sell-framework": {
+        "path":     ROOT / "docs" / "HOLD_VS_SELL_FRAMEWORK.md",
+        "title":    "Hold vs Sell Framework",
+        "dek":      "The hold/sell decision tree, five sell signals, five hold signals, the "
+                    "scaling plan for open positions, and how to replace 'should I sell?' with "
+                    "a mechanical trailing-stop answer.",
+        "file":     "Hold_vs_Sell_Framework.html",
+        "category": "blog",
+        "icon":     "⚖️",
+        "order":    14,
+    },
+    "risk-reward-expectancy": {
+        "path":     ROOT / "docs" / "RISK_REWARD_EXPECTANCY.md",
+        "title":    "Risk-Reward & Expectancy",
+        "dek":      "The expectancy formula, why 1:1 trades kill you, R-multiples explained, "
+                    "pattern-specific R:R expectations, and the monthly expectancy journal that "
+                    "keeps your edge visible.",
+        "file":     "Risk_Reward_Expectancy.html",
+        "category": "blog",
+        "icon":     "📊",
+        "order":    15,
+    },
+    "market-regime-playbook": {
+        "path":     ROOT / "docs" / "MARKET_REGIME_PLAYBOOK.md",
+        "title":    "Market Regime Playbook",
+        "dek":      "The four regimes (strong, neutral, correction, bear), the weekly regime "
+                    "checklist, how each pattern performs by regime, and the transition playbook "
+                    "for adapting when conditions change.",
+        "file":     "Market_Regime_Playbook.html",
+        "category": "blog",
+        "icon":     "🌡️",
+        "order":    16,
+    },
+    # ── Psychology & Process playbooks ──────────────────────────────────────
+    "trading-psychology-playbook": {
+        "path":     ROOT / "docs" / "TRADING_PSYCHOLOGY_PLAYBOOK.md",
+        "title":    "Trading Psychology Playbook",
+        "dek":      "The seven emotions that kill trades, the pre-trade mental checklist, the "
+                    "Mark Douglas framework, the identity shift, and the emotional journal that "
+                    "turns impulse into process.",
+        "file":     "Trading_Psychology_Playbook.html",
+        "category": "blog",
+        "icon":     "🧘",
+        "order":    17,
+    },
+    "when-not-to-trade": {
+        "path":     ROOT / "docs" / "WHEN_NOT_TO_TRADE.md",
+        "title":    "When Not to Trade",
+        "dek":      "The complete no-trade checklist, eight situations where cash is better, "
+                    "and what to do instead of trading when no setups exist.",
+        "file":     "When_Not_To_Trade.html",
+        "category": "blog",
+        "icon":     "🚫",
+        "order":    18,
+    },
+    "swing-trading-journal-system": {
+        "path":     ROOT / "docs" / "SWING_TRADING_JOURNAL_SYSTEM.md",
+        "title":    "Swing Trading Journal System",
+        "dek":      "The trade card, exit card, mistake tags, daily/weekly/monthly/quarterly "
+                    "review templates, and why the journal is the single habit that separates "
+                    "pros from everybody else.",
+        "file":     "Swing_Trading_Journal_System.html",
+        "category": "blog",
+        "icon":     "📓",
+        "order":    19,
+    },
+    "initial-position-protection": {
+        "path":     ROOT / "docs" / "INITIAL_POSITION_PROTECTION.md",
+        "title":    "Heads I Win, Tails I Lose Very Little",
+        "dek":      "Asymmetric payoff across setups and regimes: sizing for clear thinking, how "
+                    "expectancy shifts with market context, structural vs tight stops, dynamic "
+                    "risk–reward after entry, and staged protection without choking winners.",
+        "file":     "Initial_Position_Protection.html",
+        "category": "blog",
+        "icon":     "🪙",
+        "order":    20,
+    },
+    "asymmetric-risk-reward-swing-guide": {
+        "path":     ROOT / "docs" / "ASYMMETRIC_RISK_REWARD_SWING_GUIDE.md",
+        "title":    "Asymmetric Risk–Reward: Professional Swing Trader Guide",
+        "dek":      "Research-grade framework: expectancy vs stated R:R, crash/top/parabolic/base "
+                    "contexts, setup×regime matrix, scenario checklists, gap risk on shorts, and "
+                    "journaling asymmetry by pattern and market condition.",
+        "file":     "Asymmetric_Risk_Reward_Swing_Guide.html",
+        "category": "blog",
+        "icon":     "🔀",
+        "order":    21,
     },
 }
 
@@ -1144,14 +1478,27 @@ def playbook_markdown(doc: str = "playbook") -> Response:
 
 @app.get("/api/playbook/meta")
 def playbook_meta() -> dict:
-    """List available playbook documents so the UI can render a switcher."""
-    return {
-        "docs": [
-            {"key": k, "title": v["title"], "dek": v["dek"]}
-            for k, v in _PLAYBOOK_DOCS.items()
-            if v["path"].exists()
-        ],
-    }
+    """List available documents grouped by category.
+
+    Each entry includes: key, title, dek, category, icon, order.
+    The UI uses category to render Core docs vs Wisdom Blog posts separately.
+    Adding a new .md + entry in _PLAYBOOK_DOCS is the only step needed to
+    surface a new blog post in the UI.
+    """
+    docs = [
+        {
+            "key":      k,
+            "title":    v["title"],
+            "dek":      v["dek"],
+            "category": v.get("category", "core"),
+            "icon":     v.get("icon", "📄"),
+            "order":    v.get("order", 99),
+        }
+        for k, v in _PLAYBOOK_DOCS.items()
+        if v["path"].exists()
+    ]
+    docs.sort(key=lambda d: (d["category"] != "core", d["order"]))
+    return {"docs": docs}
 
 
 @app.get("/api/playbook/download")
@@ -1170,6 +1517,17 @@ def playbook_download(doc: str = "playbook") -> Response:
 
     def _inline(s: str) -> str:
         s = _html.escape(s)
+        # images ![alt](url)
+        def _img_sub(m):
+            alt = m.group(1)
+            url = m.group(2).strip()
+            if url.startswith("./assets/"):
+                url = "/playbook-assets/" + url[len("./assets/"):]
+            elif url.startswith("assets/"):
+                url = "/playbook-assets/" + url[len("assets/"):]
+            return f'<img src="{url}" alt="{alt}" loading="lazy"/>'
+
+        s = _re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", _img_sub, s)
         # code spans first (protect them from further subs)
         s = _re.sub(r"`([^`]+)`", r"<code>\1</code>", s)
         # bold, italic
@@ -1321,6 +1679,7 @@ def playbook_download(doc: str = "playbook") -> Response:
     font-size:.9em;page-break-inside:avoid}}
   th,td{{border:1px solid #d9d6cc;padding:6pt 8pt;text-align:left;vertical-align:top}}
   th{{background:#f5f2ea;color:#8a5a00;font-weight:700;text-transform:uppercase;font-size:.85em;letter-spacing:.4px}}
+  img{{max-width:100%;height:auto;display:block;margin:10pt auto;border:1px solid #e5e1d7;border-radius:6pt;page-break-inside:avoid}}
   hr{{border:0;border-top:1px solid #d9d6cc;margin:18pt 0}}
   a{{color:#1d4ed8;text-decoration:none}}
   .cover{{text-align:center;margin:0 0 26pt;padding:0 0 20pt;border-bottom:1px solid #d9d6cc}}
@@ -1356,6 +1715,452 @@ def playbook_download(doc: str = "playbook") -> Response:
             "Content-Disposition": f'attachment; filename="{meta["file"]}"',
             "Cache-Control": "no-store",
         },
+    )
+
+
+def _render_md_to_html(md: str) -> str:
+    """Shared markdown → HTML renderer used by download and book endpoints.
+
+    Handles: headings, blockquotes, GFM tables, ordered/unordered/checkbox
+    lists, fenced code, horizontal rules, inline bold/italic/code/image/link.
+    """
+    import html as _html
+    import re as _re
+
+    def _inline(s: str) -> str:
+        s = _html.escape(s)
+        def _img_sub(m):
+            alt = m.group(1)
+            url = m.group(2).strip()
+            if url.startswith("./assets/"):
+                url = "/playbook-assets/" + url[len("./assets/"):]
+            elif url.startswith("assets/"):
+                url = "/playbook-assets/" + url[len("assets/"):]
+            return f'<img src="{url}" alt="{alt}" loading="lazy"/>'
+        s = _re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", _img_sub, s)
+        s = _re.sub(r"`([^`]+)`", r"<code>\1</code>", s)
+        s = _re.sub(r"\*\*([^\*]+)\*\*", r"<strong>\1</strong>", s)
+        s = _re.sub(r"(?<!\w)\*([^\*]+)\*", r"<em>\1</em>", s)
+        s = _re.sub(r"(?<!_)_([^_]+)_(?!\w)", r"<em>\1</em>", s)
+        s = _re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', s)
+        return s
+
+    def _slug(text: str) -> str:
+        t = _re.sub(r"<[^>]+>", "", text).lower()
+        t = _re.sub(r"[^\w\s-]", "", t).strip()
+        return _re.sub(r"\s+", "-", t) or "section"
+
+    lines = md.splitlines()
+    out: list[str] = []
+    i = 0
+    in_code = False
+    while i < len(lines):
+        ln = lines[i]
+        stripped = ln.rstrip()
+        if stripped.startswith("```"):
+            if not in_code:
+                out.append("<pre><code>")
+                in_code = True
+            else:
+                out.append("</code></pre>")
+                in_code = False
+            i += 1
+            continue
+        if in_code:
+            out.append(_html.escape(ln))
+            i += 1
+            continue
+        if not stripped.strip():
+            out.append("")
+            i += 1
+            continue
+        if _re.match(r"^\s*---+\s*$", stripped):
+            out.append("<hr/>")
+            i += 1
+            continue
+        m = _re.match(r"^(#{1,6})\s+(.*)$", stripped)
+        if m:
+            level = len(m.group(1))
+            text = _inline(m.group(2).rstrip("#").strip())
+            sl = _slug(text)
+            out.append(f'<h{level} id="{sl}">{text}</h{level}>')
+            i += 1
+            continue
+        if stripped.startswith(">"):
+            block = []
+            while i < len(lines) and lines[i].startswith(">"):
+                block.append(_inline(lines[i].lstrip("> ").rstrip()))
+                i += 1
+            out.append("<blockquote><p>" + "<br/>".join(block) + "</p></blockquote>")
+            continue
+        if "|" in stripped and i + 1 < len(lines) and _re.match(
+                r"^\s*\|?\s*:?-{2,}", lines[i + 1]):
+            header_cells = [c.strip() for c in stripped.strip("|").split("|")]
+            i += 2
+            rows: list[list[str]] = []
+            while i < len(lines) and "|" in lines[i] and lines[i].strip():
+                rows.append([c.strip() for c in lines[i].strip().strip("|").split("|")])
+                i += 1
+            th = "".join(f"<th>{_inline(c)}</th>" for c in header_cells)
+            tr_list = [f"<tr>{''.join(f'<td>{_inline(c)}</td>' for c in r)}</tr>" for r in rows]
+            out.append(f"<table><thead><tr>{th}</tr></thead><tbody>"
+                       f"{''.join(tr_list)}</tbody></table>")
+            continue
+        # Checkbox lists (must come before plain unordered list)
+        if _re.match(r"^(\s*)[\-\*]\s+\[[ x]\]\s+", stripped):
+            items = []
+            while i < len(lines):
+                mm = _re.match(r"^(\s*)[\-\*]\s+\[([ x])\]\s+(.*)$", lines[i])
+                if not mm:
+                    break
+                checked = ' checked' if mm.group(2) == 'x' else ''
+                items.append(f'<input type="checkbox" disabled{checked}/> {_inline(mm.group(3))}')
+                i += 1
+            out.append("<ul class='checklist'>" + "".join(f"<li>{x}</li>" for x in items) + "</ul>")
+            continue
+        m = _re.match(r"^(\s*)(\d+)\.\s+(.*)$", stripped)
+        if m:
+            items = []
+            while i < len(lines):
+                mm = _re.match(r"^(\s*)(\d+)\.\s+(.*)$", lines[i])
+                if not mm:
+                    break
+                items.append(_inline(mm.group(3)))
+                i += 1
+            out.append("<ol>" + "".join(f"<li>{x}</li>" for x in items) + "</ol>")
+            continue
+        m = _re.match(r"^(\s*)[\-\*]\s+(.*)$", stripped)
+        if m:
+            items = []
+            while i < len(lines):
+                mm = _re.match(r"^(\s*)[\-\*]\s+(.*)$", lines[i])
+                if not mm:
+                    break
+                items.append(_inline(mm.group(2)))
+                i += 1
+            out.append("<ul>" + "".join(f"<li>{x}</li>" for x in items) + "</ul>")
+            continue
+        para = [_inline(stripped)]
+        i += 1
+        while i < len(lines):
+            nxt = lines[i]
+            if not nxt.strip():
+                break
+            if _re.match(r"^(#{1,6}\s|>|\s*---+\s*$|```|\s*[\-\*]\s|\s*\d+\.\s)", nxt):
+                break
+            if "|" in nxt and i + 1 < len(lines) and _re.match(
+                    r"^\s*\|?\s*:?-{2,}", lines[i + 1]):
+                break
+            para.append(_inline(nxt.rstrip()))
+            i += 1
+        out.append("<p>" + " ".join(para) + "</p>")
+
+    return "\n".join(out)
+
+
+@app.get("/api/playbook/book")
+def playbook_book() -> Response:
+    """Open ALL playbooks as a single printable HTML book in the browser.
+
+    Ordered by category (core first, then wisdom blog posts) and chapter number.
+    The page automatically opens the print dialog — choose 'Save as PDF' for a
+    permanent offline reference that includes every playbook and wisdom post
+    as its own chapter.
+    """
+    import html as _html
+    import re as _re
+    from datetime import datetime as _dt
+
+    # Collect all docs that exist, sorted by (category-rank, order)
+    cat_rank = {"core": 0, "blog": 1}
+    entries: list[tuple] = []
+    for key, meta in _PLAYBOOK_DOCS.items():
+        if not meta["path"].exists():
+            continue
+        entries.append((
+            cat_rank.get(meta.get("category", "blog"), 2),
+            meta.get("order", 99),
+            key,
+            meta,
+        ))
+    entries.sort()
+
+    doc_count = len(entries)
+    now_str = _dt.now().strftime("%B %d, %Y")
+
+    # ── Table of contents ────────────────────────────────────────────────────
+    toc_rows: list[str] = []
+    ch_num = 0
+    section_labels = {"core": "📖 Core Playbooks", "blog": "💡 Wisdom Blog"}
+    last_cat = None
+    for _, _, key, meta in entries:
+        cat = meta.get("category", "blog")
+        if cat != last_cat:
+            label = section_labels.get(cat, cat.title())
+            toc_rows.append(
+                f'<tr><td colspan="3" style="background:#f5f2ea;font-weight:700;'
+                f'color:#8a5a00;padding:6pt 8pt;font-family:Arial,sans-serif;font-size:9pt;'
+                f'text-transform:uppercase;letter-spacing:1px">{label}</td></tr>'
+            )
+            last_cat = cat
+        ch_num += 1
+        icon = _html.escape(meta.get("icon", "📄"))
+        title = _html.escape(meta["title"])
+        dek = _html.escape(meta.get("dek", ""))
+        anchor = f"ch-{key}"
+        toc_rows.append(
+            f'<tr><td style="width:28pt;color:#b8830c;font-weight:700;'
+            f'font-family:Arial,sans-serif;font-size:9pt;white-space:nowrap">{ch_num}</td>'
+            f'<td style="font-size:16pt;width:22pt">{icon}</td>'
+            f'<td><a href="#{anchor}" style="color:#1d4ed8;text-decoration:none">'
+            f'<strong>{title}</strong></a>'
+            f'<div style="color:#888;font-size:8.5pt;font-family:Arial,sans-serif;'
+            f'margin-top:1pt;line-height:1.3">{dek}</div></td></tr>'
+        )
+
+    toc_html = (
+        '<table style="border-collapse:collapse;width:100%;font-family:Georgia,serif;font-size:10pt">'
+        + "".join(toc_rows)
+        + "</table>"
+    )
+
+    # ── Chapter pages ────────────────────────────────────────────────────────
+    chapters: list[str] = []
+    ch_num = 0
+    for _, _, key, meta in entries:
+        ch_num += 1
+        md_text = meta["path"].read_text(encoding="utf-8")
+        # Strip the first H1 from the markdown (we render our own chapter header)
+        md_text_body = _re.sub(r"^\s*#\s+[^\n]+\n", "", md_text, count=1)
+        body_html = _render_md_to_html(md_text_body)
+
+        icon  = _html.escape(meta.get("icon", "📄"))
+        title = _html.escape(meta["title"])
+        dek   = _html.escape(meta.get("dek", ""))
+        cat   = meta.get("category", "blog")
+        cat_label = "Core Playbook" if cat == "core" else "Wisdom Blog"
+        anchor = f"ch-{key}"
+
+        chapters.append(f"""
+<div class="chapter" id="{anchor}">
+  <div class="chapter-cover">
+    <div class="ch-eyebrow">Chapter {ch_num} &nbsp;·&nbsp; {cat_label}</div>
+    <div class="ch-icon">{icon}</div>
+    <h1 class="ch-title">{title}</h1>
+    <p class="ch-dek">{dek}</p>
+  </div>
+  <div class="chapter-body">
+    {body_html}
+  </div>
+</div>""")
+
+    chapters_html = "\n".join(chapters)
+
+    page = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>The Complete SETUPS Trading Library</title>
+<style>
+/* ── Print / PDF layout ─────────────────────────────────── */
+@page {{
+  size: A4;
+  margin: 18mm 16mm 20mm;
+  @bottom-center {{ content: counter(page) " / " counter(pages); font-family:Arial,sans-serif; font-size:8pt; color:#999; }}
+}}
+*, *::before, *::after {{ box-sizing: border-box; }}
+html, body {{ margin:0; padding:0; background:#fff; color:#111;
+  font-family: Georgia, 'Times New Roman', serif; font-size:11pt; line-height:1.6; }}
+
+/* ── Screen-only toolbar ────────────────────────────────── */
+.toolbar {{
+  position:sticky; top:0; z-index:100;
+  display:flex; align-items:center; gap:12px;
+  background:#1a1a2e; color:#e7ecf3; padding:12px 24px;
+  font-family:Arial,sans-serif; font-size:13px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.4);
+}}
+.toolbar .brand {{ font-weight:700; letter-spacing:.5px; color:#f5b748; }}
+.toolbar .info {{ color:#a3adc2; flex:1; }}
+.toolbar .print-btn {{
+  background:#f5b748; color:#1a1a2e; border:none; border-radius:8px;
+  padding:9px 20px; font-size:13px; font-weight:700; cursor:pointer;
+  font-family:inherit; transition:background .15s;
+}}
+.toolbar .print-btn:hover {{ background:#ffcf6a; }}
+.toolbar .hint {{ color:#6b7490; font-size:11px; }}
+
+/* ── COVER PAGE ──────────────────────────────────────────── */
+.book-cover {{
+  page-break-after: always;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center; text-align: center;
+  padding: 48px 40px;
+}}
+.book-cover .eyebrow {{
+  font-family: Arial, sans-serif; letter-spacing: 4px; text-transform: uppercase;
+  color: #b8830c; font-size: 9pt; font-weight: 700; margin-bottom: 20pt;
+}}
+.book-cover h1 {{
+  font-size: 36pt; font-weight: 700; color: #111; margin: 0 0 18pt;
+  border: none; page-break-before: auto;
+}}
+.book-cover .tagline {{
+  font-style: italic; color: #555; font-size: 13pt; max-width: 520px;
+  line-height: 1.5; margin: 0 auto 20pt;
+}}
+.book-cover .meta {{
+  font-family: Arial, sans-serif; color: #999; font-size: 9pt;
+}}
+.book-cover .doc-count {{
+  display: inline-block; margin-top: 16pt;
+  background: #faf4e4; border: 1px solid #e8c566;
+  border-radius: 20px; padding: 4pt 14pt;
+  font-family: Arial, sans-serif; font-size: 10pt; color: #8a5a00; font-weight: 700;
+}}
+
+/* ── TABLE OF CONTENTS ───────────────────────────────────── */
+.toc-section {{
+  page-break-after: always;
+  padding-top: 20pt;
+}}
+.toc-section h2 {{
+  font-size: 20pt; color: #111; border-bottom: 2px solid #b8830c;
+  padding-bottom: 6pt; margin: 0 0 16pt;
+}}
+
+/* ── CHAPTER ─────────────────────────────────────────────── */
+.chapter {{ page-break-before: always; }}
+.chapter-cover {{
+  page-break-after: always;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: flex-start;
+  min-height: 60vh;
+  padding: 40pt 0 30pt;
+  border-bottom: 2px solid #b8830c;
+  margin-bottom: 0;
+}}
+.ch-eyebrow {{
+  font-family: Arial, sans-serif; font-size: 9pt; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase; color: #b8830c;
+  margin-bottom: 14pt;
+}}
+.ch-icon {{ font-size: 48pt; margin-bottom: 12pt; line-height: 1; }}
+h1.ch-title {{
+  font-size: 28pt; font-weight: 700; color: #111; margin: 0 0 12pt;
+  border: none; page-break-before: auto; line-height: 1.15;
+}}
+.ch-dek {{
+  font-style: italic; color: #555; font-size: 11.5pt;
+  max-width: 560px; line-height: 1.5; margin: 0;
+}}
+.chapter-body {{ padding-top: 20pt; }}
+
+/* ── Typography ──────────────────────────────────────────── */
+h1, h2, h3, h4 {{ font-family: Georgia, serif; color: #111; letter-spacing: -.2px; }}
+h1 {{
+  font-size: 22pt; border-bottom: 1.5px solid #b8830c;
+  padding-bottom: 7px; margin: 24pt 0 12pt;
+  page-break-before: always;
+}}
+h1:first-child {{ page-break-before: auto; }}
+h2 {{ font-size: 16pt; color: #8a5a00; margin: 20pt 0 8pt; }}
+h3 {{ font-size: 13pt; margin: 16pt 0 6pt; }}
+h4 {{ font-size: 11pt; color: #444; margin: 12pt 0 4pt; }}
+p  {{ margin: 0 0 10pt; }}
+ul, ol {{ margin: 0 0 10pt; padding-left: 22pt; }}
+li {{ margin: 3pt 0; }}
+blockquote {{
+  margin: 10pt 0; padding: 8pt 14pt;
+  border-left: 3px solid #b8830c; background: #faf4e4;
+  font-style: italic; color: #444;
+}}
+code {{
+  font-family: Menlo, Consolas, monospace; background: #f5f2ea;
+  padding: 1pt 4pt; border-radius: 2pt; font-size: .85em;
+}}
+pre {{
+  background: #f5f2ea; border: 1px solid #e2dccc; border-radius: 4pt;
+  padding: 10pt; overflow: auto; page-break-inside: avoid;
+}}
+pre code {{ background: none; padding: 0; font-size: .82em; }}
+table {{
+  border-collapse: collapse; width: 100%; margin: 10pt 0;
+  font-family: Arial, sans-serif; font-size: .9em; page-break-inside: avoid;
+}}
+th, td {{ border: 1px solid #d9d6cc; padding: 6pt 8pt; text-align: left; vertical-align: top; }}
+th {{
+  background: #f5f2ea; color: #8a5a00; font-weight: 700;
+  text-transform: uppercase; font-size: .85em; letter-spacing: .4px;
+}}
+img {{
+  max-width: 100%; height: auto; display: block; margin: 10pt auto;
+  border: 1px solid #e5e1d7; border-radius: 6pt; page-break-inside: avoid;
+}}
+hr {{ border: 0; border-top: 1px solid #d9d6cc; margin: 18pt 0; }}
+a {{ color: #1d4ed8; text-decoration: none; }}
+ul.checklist {{ list-style: none; padding-left: 8pt; }}
+ul.checklist li {{ margin: 2pt 0; }}
+
+/* ── Print overrides ─────────────────────────────────────── */
+@media print {{
+  .toolbar {{ display: none !important; }}
+  body {{ font-size: 10.5pt; }}
+  .book-cover {{ min-height: 95vh; }}
+  .chapter-cover {{ min-height: 55vh; }}
+}}
+</style>
+</head>
+<body>
+
+<!-- Screen-only toolbar -->
+<div class="toolbar">
+  <span class="brand">SETUPS</span>
+  <span class="info">Complete Trading Library &nbsp;·&nbsp; {doc_count} documents</span>
+  <span class="hint">Use Cmd+P / Ctrl+P → Save as PDF</span>
+  <button class="print-btn" onclick="window.print()">🖨 Save as PDF</button>
+</div>
+
+<div style="max-width:760px;margin:0 auto;padding:0 28px">
+
+  <!-- ── BOOK COVER ─────────────────────────────────────────── -->
+  <div class="book-cover">
+    <div class="eyebrow">SETUPS · Complete Trading Library</div>
+    <h1>The Complete<br/>Trading Library</h1>
+    <p class="tagline">Every playbook, guide, and wisdom post — curated from<br/>
+      Minervini, O'Neil, Zanger, Kullamägi, Weinstein, Livermore,<br/>
+      Douglas, Van Tharp &amp; more — in one printable book.</p>
+    <p class="meta">Generated {_html.escape(now_str)}</p>
+    <span class="doc-count">{doc_count} documents · Core Playbooks + Wisdom Blog</span>
+  </div>
+
+  <!-- ── TABLE OF CONTENTS ──────────────────────────────────── -->
+  <div class="toc-section">
+    <h2>Table of Contents</h2>
+    {toc_html}
+  </div>
+
+  <!-- ── CHAPTERS ──────────────────────────────────────────── -->
+  {chapters_html}
+
+</div>
+
+<script>
+  // Auto-open print dialog after the page has fully rendered
+  window.addEventListener('load', function() {{
+    // Small delay to let fonts / images settle
+    setTimeout(function() {{ window.print(); }}, 800);
+  }});
+</script>
+</body>
+</html>"""
+
+    return Response(
+        content=page,
+        media_type="text/html; charset=utf-8",
+        headers={"Cache-Control": "no-store"},
     )
 
 
@@ -1964,7 +2769,12 @@ def _do_compute_industry_groups_inner(t0: float) -> list[dict]:
 
     industry_tickers: dict[str, list[str]] = {}
     industry_sectors: dict[str, str] = {}
-    for ticker, (sector, industry) in taxonomy.items():
+    for ticker, tax_vals in taxonomy.items():
+        sector = tax_vals[0] if tax_vals else "Other"
+        # Use basic_industry (index 2, finest level with custom sub-classification
+        # overrides) instead of industry (index 1, coarse NSE level).
+        industry = tax_vals[2] if len(tax_vals) > 2 and tax_vals[2] else (
+                   tax_vals[1] if len(tax_vals) > 1 else "Other")
         # Skip unclassified rows: any ticker that NSE couldn't bucket into
         # a concrete industry is noise for RS/breadth aggregation.
         if not industry or industry == "Other":
@@ -1987,10 +2797,17 @@ def _do_compute_industry_groups_inner(t0: float) -> list[dict]:
         return (sym, rows) if rows and len(rows) >= 20 else (sym, None)
 
     preloaded: dict = {}
-    with ThreadPoolExecutor(max_workers=_IG_WORKERS, initializer=_ig_worker_init) as pool:
-        for sym, rows in pool.map(_load_one, all_syms):
-            if rows:
-                preloaded[sym] = rows
+    try:
+        with ThreadPoolExecutor(max_workers=_IG_WORKERS, initializer=_ig_worker_init) as pool:
+            for sym, rows in pool.map(_load_one, all_syms):
+                if rows:
+                    preloaded[sym] = rows
+    except RuntimeError as e:
+        # During interpreter shutdown, background daemon workers can still race
+        # with executor creation/submission. Avoid noisy tracebacks at exit.
+        if "interpreter shutdown" in str(e).lower():
+            return []
+        raise
 
     # ── Freshness check: if many CSVs are stale-for-today, delegate one
     # consolidated refresh to the OHLCV cache refresher (pooled, cooldowned).
@@ -2281,7 +3098,7 @@ def api_groups_levels() -> dict:
 
 
 @app.get("/api/groups")
-def api_groups(level: str = "industry", min_stocks: int = 2,
+def api_groups(level: str = "basic_industry", min_stocks: int = 2,
                sort_by: str = "rsScore") -> dict:
     """Unified multi-level groups endpoint for relative-strength & rotation.
 
@@ -2451,32 +3268,65 @@ def refresh_industry_groups(force: bool = False, prices: bool = True) -> dict:
 
 
 @app.get("/api/industry-groups/{group_name}")
-def get_industry_group_detail(group_name: str, fresh: bool = True) -> dict:
-    """Return metrics + member list for an industry group.
+def get_industry_group_detail(group_name: str, fresh: bool = True,
+                               level: str = "basic_industry") -> dict:
+    """Return metrics + member list for a group at any classification level.
 
-    By default (`fresh=True`) recomputes the group from the latest CSV data so
-    member close / dayChange / 52WH percentages are always current — this is
-    the only way to guarantee the drilldown isn't showing a snapshot from the
-    last full industry-groups rebuild (which may be up to 10 min old).
-
+    `level` can be one of: macro, sector, industry, basic_industry, theme.
+    By default (`fresh=True`) recomputes the group from the latest CSV data.
     Pass `fresh=false` to return the possibly-cached snapshot instead.
     """
     import urllib.parse
     decoded = urllib.parse.unquote(group_name)
 
-    # Resolve tickers + sector for this group from the taxonomy — cheap.
+    # Ensure taxonomy is reloaded/fresh — this populates _BASIC_INDUSTRY_MAP
+    # with custom sub-classification overrides before we call group_tickers_by.
     taxonomy = _load_taxonomy_cached()
 
+    # Use group_tickers_by(level) for a direct, level-aware lookup — handles
+    # macro, sector, industry, basic_industry and theme uniformly.
     tickers: list[str] = []
     sector = ""
-    for t, (sec, ind) in taxonomy.items():
-        if ind == decoded:
-            tickers.append(t)
-            if not sector:
-                sector = sec
+    try:
+        tax_mod = _taxonomy_module()
+        lvl = level if level in ("macro", "sector", "industry", "basic_industry", "theme") else "basic_industry"
+        groups_map = tax_mod.group_tickers_by(lvl)
+        tickers = list(groups_map.get(decoded, []))
+        # Determine display sector from the first member
+        if tickers:
+            for t in tickers[:5]:
+                tv = taxonomy.get(t)
+                if tv and tv[0]:
+                    sector = tv[0]
+                    break
+    except Exception as e:
+        print(f"⚠ group_tickers_by failed: {e}", flush=True)
+
+    # Legacy fallback: search taxonomy tuples directly
+    if not tickers:
+        taxonomy = _load_taxonomy_cached()
+        for t, tax_vals in taxonomy.items():
+            sec = tax_vals[0] if tax_vals else "Other"
+            bi  = tax_vals[2] if len(tax_vals) > 2 else ""
+            ind = tax_vals[1] if len(tax_vals) > 1 else "Other"
+            match_val = bi if bi else ind
+            if match_val == decoded:
+                tickers.append(t)
+                if not sector:
+                    sector = sec
 
     if not tickers:
-        # Fall back to any cached entry so stale-but-known groups still respond
+        # Also try matching by sector (index 0)
+        taxonomy = _load_taxonomy_cached()
+        for t, tax_vals in taxonomy.items():
+            sec = tax_vals[0] if tax_vals else "Other"
+            if sec == decoded:
+                tickers.append(t)
+                if not sector:
+                    sector = sec
+
+    if not tickers:
+        # Final fallback: pre-computed industry-level cache
         groups = _compute_all_industry_groups()
         for g in groups:
             if g.get("group") == decoded:
@@ -2550,26 +3400,51 @@ def get_industry_group_detail(group_name: str, fresh: bool = True) -> dict:
 
 
 @app.get("/api/industry-groups/{group_name}/rs-history")
-def get_industry_group_rs_history(group_name: str, days: int = 120) -> dict:
+def get_industry_group_rs_history(group_name: str, days: int = 120,
+                                   level: str = "basic_industry") -> dict:
     import urllib.parse
     decoded = urllib.parse.unquote(group_name)
-    groups = _compute_all_industry_groups()
-    target = None
-    for g in groups:
-        if g.get("group") == decoded:
-            target = g
-            break
-    if not target:
-        raise HTTPException(status_code=404, detail=f"Group '{decoded}' not found")
 
-    members = [m["symbol"] for m in target.get("members", [])]
-    # If loaded from disk cache (no members), look up tickers from taxonomy
+    # Ensure taxonomy is fresh (loads custom sub-classification overrides)
+    taxonomy = _load_taxonomy_cached()
+
+    # Use group_tickers_by(level) for level-aware lookup
+    members: list[str] = []
+    try:
+        tax_mod = _taxonomy_module()
+        lvl = level if level in ("macro", "sector", "industry", "basic_industry", "theme") else "basic_industry"
+        groups_map = tax_mod.group_tickers_by(lvl)
+        members = list(groups_map.get(decoded, []))
+    except Exception:
+        pass
+
+    # Legacy fallback: search taxonomy tuples
     if not members:
         try:
-            taxonomy = _load_taxonomy_cached()
-            members = [t for t, (sec, ind) in taxonomy.items() if ind == decoded]
+            # Search basic_industry (tv[2]) first, then industry (tv[1])
+            members = [
+                t for t, tv in taxonomy.items()
+                if (tv[2] if len(tv) > 2 else tv[1] if len(tv) > 1 else "") == decoded
+            ]
+            if not members:
+                members = [t for t, tv in taxonomy.items() if len(tv) > 1 and tv[1] == decoded]
+            if not members:
+                members = [t for t, tv in taxonomy.items() if tv[0] == decoded]
         except Exception:
             pass
+
+    # Legacy fallback: search pre-computed industry-level cache
+    if not members:
+        groups = _compute_all_industry_groups()
+        target = None
+        for g in groups:
+            if g.get("group") == decoded:
+                target = g
+                break
+        if not target:
+            raise HTTPException(status_code=404, detail=f"Group '{decoded}' not found")
+        members = [m["symbol"] for m in target.get("members", [])]
+
     if not members:
         return {"group": decoded, "rsLine": []}
 
@@ -2608,6 +3483,66 @@ def get_industry_group_rs_history(group_name: str, days: int = 120) -> dict:
         rs_line.append({"date": d, "rs": rs_val, "groupReturn": round(group_avg - 100, 2), "niftyReturn": round(nifty_normed - 100, 2)})
 
     return {"group": decoded, "rsLine": rs_line}
+
+
+@app.get("/api/stock-group-lookup")
+def stock_group_lookup(q: str = "") -> dict:
+    """Search for a stock by ticker or company name and return which groups it
+    belongs to at every classification level.
+    Query param ``q`` is matched case-insensitively against the ticker and
+    company_name fields in the enriched taxonomy."""
+    q = q.strip()
+    if not q:
+        raise HTTPException(status_code=400, detail="query param 'q' is required")
+
+    _load_taxonomy_cached()
+    tax_mod = _taxonomy_module()
+
+    # Build a quick name→ticker reverse index from _NAME_MAP
+    q_upper = q.upper()
+    q_lower = q.lower()
+
+    # Collect matching tickers (exact ticker match first, then name search)
+    matches: list[dict] = []
+    seen: set[str] = set()
+
+    # 1. Exact ticker match (with .NS stripping)
+    clean_q = q_upper.replace(".NS", "").replace(".BO", "")
+    for candidate in [clean_q, q_upper]:
+        name = tax_mod.get_company_name(candidate)
+        sector = tax_mod.get_sector(candidate)
+        if sector and sector != "Other":
+            if candidate not in seen:
+                seen.add(candidate)
+                matches.append({"ticker": candidate, "name": name or candidate})
+
+    # 2. Fuzzy / substring match on company name & ticker
+    if hasattr(tax_mod, "_NAME_MAP"):
+        for ticker, name in tax_mod._NAME_MAP.items():
+            if ticker in seen:
+                continue
+            if q_lower in ticker.lower() or q_lower in name.lower():
+                matches.append({"ticker": ticker, "name": name})
+                seen.add(ticker)
+                if len(matches) >= 25:
+                    break
+
+    # For each match, look up groups at all levels
+    results = []
+    for m in matches:
+        t = m["ticker"]
+        entry = {
+            "ticker": t,
+            "companyName": m["name"],
+            "macro": tax_mod.get_macro(t),
+            "sector": tax_mod.get_sector(t),
+            "industry": tax_mod.get_industry(t),
+            "basicIndustry": tax_mod.get_basic_industry(t),
+            "themes": tax_mod.get_themes(t),
+        }
+        results.append(entry)
+
+    return {"query": q, "results": results}
 
 
 @app.get("/api/custom-groups")
@@ -2955,33 +3890,6 @@ def vpn_health() -> dict:
     return _vpn.health_check()
 
 
-@app.post("/api/jobs/scan")
-def start_scan(req: ScanJobRequest) -> dict:
-    setups = "full" if req.setups == "all" else req.setups
-    command = [
-        sys.executable,
-        str(RUN_VCP_SYSTEM),
-        "--markets",
-        ",".join(req.markets),
-        "--timeframes",
-        ",".join(req.timeframes),
-        "--setups",
-        setups,
-        "--daily-lookback",
-        str(req.daily_lookback),
-        "--weekly-lookback",
-        str(req.weekly_lookback),
-        "--workers",
-        str(req.workers),
-        "--batch",
-        str(req.batch),
-        "--output-dir",
-        str(OUTPUT_DIR),
-    ]
-    if req.skip_us_refresh:
-        command.append("--skip-us-refresh")
-    job = _submit_job("scan", command)
-    return {"job": job}
 
 
 # ── iCloud Backup ──────────────────────────────────────────────────────────
@@ -3008,24 +3916,6 @@ def backup_trigger(force: bool = False) -> dict:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/assistant/scan-brief")
-def assistant_scan_brief(
-    market: Literal["india", "us"] = "india",
-    timeframe: Literal["daily", "weekly"] = "daily",
-    setups: Literal["full", "both", "vcp", "range_expansion", "mean_reversion", "breakout_pullback", "bull_flag", "all"] = "full",
-    top_n: int = 12,
-) -> dict:
-    if top_n <= 0:
-        raise HTTPException(status_code=400, detail="top_n must be greater than 0")
-
-    summary = build_scan_brief(
-        output_dir=OUTPUT_DIR,
-        market=market,
-        timeframe=timeframe,
-        setups="full" if setups == "all" else setups,
-        top_n=top_n,
-    )
-    return {"brief": brief_as_json(summary)}
 
 
 @app.post("/api/jobs/backtest")
@@ -3105,33 +3995,6 @@ def stock_analyze(
     return {"analysis": result}
 
 
-@app.get("/api/outputs/scan/latest")
-def scan_latest_summary() -> dict:
-    summary_json = OUTPUT_DIR / "system_latest_summary.json"
-    data = _read_json_if_exists(summary_json)
-    if data is None:
-        raise HTTPException(status_code=404, detail="No latest scan summary found")
-    return {
-        "summary": data,
-        "summaryJson": f"/reports/{summary_json.name}",
-        "summaryMd": "/reports/system_latest_summary.md",
-    }
-
-
-@app.get("/api/outputs/scan/manifests")
-def scan_manifests() -> dict:
-    manifests = sorted(OUTPUT_DIR.glob("scan_manifest_*_LATEST.json"), key=lambda p: p.stat().st_mtime, reverse=True)
-    items: list[dict] = []
-    for path in manifests[:30]:
-        items.append(
-            {
-                "name": path.name,
-                "updatedAt": datetime.fromtimestamp(path.stat().st_mtime).isoformat(timespec="seconds"),
-                "url": f"/reports/{path.name}",
-                "data": _read_json_if_exists(path),
-            }
-        )
-    return {"items": items}
 
 
 @app.get("/api/outputs/backtest/latest")
@@ -3419,7 +4282,17 @@ def market_phases_endpoint(
     """
     market_prices = _get_fresh_nifty_benchmark(days=max(days, 252))
     if not market_prices:
-        raise HTTPException(status_code=503, detail="Could not fetch Nifty50 data")
+        # Degrade gracefully for UI/tests when upstream data providers are unavailable.
+        return {
+            "nifty_current": None,
+            "nifty_dates": [],
+            "nifty_closes": [],
+            "phases": [],
+            "phase_summary": "Nifty data unavailable",
+            "phase_count": 0,
+            "recent_phases": [],
+            "data_unavailable": True,
+        }
 
     phases = _wpe.detect_market_phases(market_prices)
     closes = market_prices.get("close", [])
@@ -3509,6 +4382,10 @@ def _recompute_position_realized_pl(p: dict) -> float:
 
 def _compute_trailing_sl_candidate(p: dict, cmp: float) -> float | None:
     """1R trailing stop: trail to (highest-high since entry - initial risk)."""
+    # If the user manually updated SL, do not override it with automation.
+    # We still allow SL_HIT auto-close on breach; we only skip *trailing*.
+    if p.get("sl_manual") is True:
+        return None
     entry = float(p.get("entry", 0) or 0)
     sl = float(p.get("sl", 0) or 0)
     if entry <= 0 or sl <= 0:
@@ -3573,12 +4450,28 @@ def _apply_trailing_stop_automation(data: dict) -> dict:
         remaining = int(p.get("remaining_quantity") or p.get("quantity", 1) or 1)
         live_sl = float(p.get("sl", 0) or 0)
         entry_price = float(p.get("entry", 0) or 0)
+        # ── SL arming ──────────────────────────────────────────────────────
+        # Avoid instantly auto-closing a newly-added position if current price
+        # is already at/below the user-entered SL (common when adding during
+        # volatility or using stale quotes). We "arm" the SL only after the
+        # price has traded above the SL at least once.
+        if live_sl > 0:
+            if p.get("sl_armed") is None:
+                # Backward-compat: if a position predates this feature, treat it as armed
+                # only if it's currently above SL; otherwise keep unarmed until it trades above.
+                p["sl_armed"] = bool(cmp > live_sl)
+                changed = True
+            elif p.get("sl_armed") is False and cmp > live_sl:
+                p["sl_armed"] = True
+                changed = True
         # Only auto-close when:
         #  1. SL is set and CMP has breached it, AND
         #  2. The SL is at or below entry price (normal protective stop).
         # If SL has been trailed above entry (profit-lock zone), skip auto-close —
         # that is a manual decision; automation must not close profitable positions.
-        if live_sl > 0 and cmp <= live_sl and remaining > 0 and (entry_price <= 0 or live_sl <= entry_price):
+        # NOTE: We use a strict breach (cmp < sl). Touching the SL is not an exit.
+        if (live_sl > 0 and p.get("sl_armed") is True and cmp < live_sl
+                and remaining > 0 and (entry_price <= 0 or live_sl <= entry_price)):
             p["status"] = "SL_HIT"
             p["exit_price"] = round(cmp, 2)
             p["exit_date"] = today
@@ -4440,6 +5333,10 @@ def trade_board_update_position(position_id: str, update: TradeBoardUpdate) -> d
                 positions[i].update(upd)
                 if "sl" in upd and upd.get("sl") is not None and not positions[i].get("original_sl"):
                     positions[i]["original_sl"] = upd.get("sl")
+                # If user explicitly set SL via update endpoint, treat it as manual
+                # so trailing automation doesn't immediately overwrite it.
+                if "sl" in upd and upd.get("sl") is not None:
+                    positions[i]["sl_manual"] = bool(float(upd.get("sl") or 0) > 0)
                 # If status is a closing status and exit_price is set,
                 # auto-compute realized_pl for the remaining shares
                 new_status = positions[i].get("status", "OPEN")
@@ -4839,9 +5736,125 @@ def _calc_sma(closes: list[float], period: int) -> list[Optional[float]]:
     return result
 
 
+# Mini-chart RS benchmarks (Yahoo / cache tickers; mid/small verified via yfinance)
+_RS_CHART_NIFTY50 = "^NSEI"
+_RS_CHART_MIDCAP100 = "NIFTY_MIDCAP_100.NS"
+_RS_CHART_MIDCAP_ALT = "^NSMIDCAP"  # Yahoo Nifty Midcap 150 if .NS cache missing
+_RS_CHART_SMLCAP100 = "^CNXSC"
+
+
+def _normalized_close_series(rows: list[dict]) -> list[tuple[str, float]]:
+    """Return date-sorted unique (date, close) pairs with valid positive closes."""
+    by_date: dict[str, float] = {}
+    for r in rows or []:
+        d = str(r.get("date", ""))[:10]
+        c = r.get("close")
+        if not d or c is None:
+            continue
+        try:
+            cv = float(c)
+        except (TypeError, ValueError):
+            continue
+        if cv > 0:
+            by_date[d] = cv
+    return sorted(by_date.items(), key=lambda x: x[0])
+
+
+def _date_lag_days(newer: str, older: str) -> Optional[int]:
+    try:
+        nd = datetime.strptime(newer, "%Y-%m-%d")
+        od = datetime.strptime(older, "%Y-%m-%d")
+        return (nd - od).days
+    except Exception:
+        return None
+
+
+def _rs_line_vs_benchmark(stock_rows: list[dict], bench_rows: list[dict]) -> list[dict]:
+    """Relative strength vs index: first aligned session = 100; then (s/s0)/(i/i0)*100."""
+    stock = _normalized_close_series(stock_rows)
+    bench = _normalized_close_series(bench_rows)
+    if len(stock) < 2 or len(bench) < 2:
+        return []
+
+    aligned: list[tuple[str, float, float]] = []
+    j = 0
+    max_lag_days = 7  # allow normal holiday/weekend gaps between stock/index sessions
+    for d, sc in stock:
+        while j + 1 < len(bench) and bench[j + 1][0] <= d:
+            j += 1
+        bd, bc = bench[j]
+        if bd > d or bc <= 0:
+            continue
+        lag = _date_lag_days(d, bd)
+        if lag is not None and lag > max_lag_days:
+            continue
+        aligned.append((d, sc, bc))
+
+    if len(aligned) < 2:
+        return []
+
+    _d0, s0, b0 = aligned[0]
+    if s0 <= 0 or b0 <= 0:
+        return []
+    out: list[dict] = []
+    for d, s, b in aligned:
+        if b <= 0:
+            continue
+        rs = (s / s0) / (b / b0) * 100.0
+        out.append({"time": d, "value": round(rs, 4)})
+    return out
+
+
+def _build_rs_snapshot(rs_lines: dict[str, list[dict]]) -> dict:
+    """Compact RS summary for UI badges/details from per-benchmark RS lines."""
+    labels = {
+        "nifty50": "Nifty 50",
+        "niftyMidcap100": "Nifty Midcap 100",
+        "niftySmallcap100": "Nifty Smallcap 100",
+    }
+    bench_stats: dict[str, dict] = {}
+    for key, pts in (rs_lines or {}).items():
+        if not isinstance(pts, list) or len(pts) < 2:
+            continue
+        vals = [p.get("value") for p in pts if isinstance(p, dict) and p.get("value") is not None]
+        if len(vals) < 2:
+            continue
+        last = float(vals[-1])
+        prev_5 = float(vals[max(0, len(vals) - 6)])
+        prev_20 = float(vals[max(0, len(vals) - 21)])
+        d5 = round(last - prev_5, 2)
+        d20 = round(last - prev_20, 2)
+        trend = "up" if d5 > 0.75 else "down" if d5 < -0.75 else "flat"
+        bench_stats[key] = {
+            "label": labels.get(key, key),
+            "last": round(last, 2),
+            "delta5": d5,
+            "delta20": d20,
+            "trend": trend,
+            "points": len(vals),
+        }
+    if not bench_stats:
+        return {}
+    leader_key = max(bench_stats.keys(), key=lambda k: bench_stats[k]["last"])
+    return {
+        "leader": leader_key,
+        "leaderLabel": bench_stats[leader_key]["label"],
+        "leaderLast": bench_stats[leader_key]["last"],
+        "leaderDelta20": bench_stats[leader_key]["delta20"],
+        "benchmarks": bench_stats,
+    }
+
+
 @app.get("/api/trade-board/chart/{symbol}")
-def trade_board_chart(symbol: str, days: int = 252) -> dict:
-    rows = _read_ohlcv(symbol, days=max(days, 30) if days > 0 else 0)
+def trade_board_chart(symbol: str, days: int = 252, market: str = "india") -> dict:
+    mkt = (market or "india").lower()
+    if mkt not in ("india", "us"):
+        mkt = "india"
+    rows = _read_ohlcv(
+        symbol,
+        days=max(days, 30) if days > 0 else 0,
+        market=mkt,
+    )
     if not rows:
         raise HTTPException(status_code=404, detail=f"No price data for {symbol}")
 
@@ -4849,7 +5862,8 @@ def trade_board_chart(symbol: str, days: int = 252) -> dict:
     # The CSV cache only has completed daily bars.  During market hours the
     # latest bar may be yesterday's close.  Fetch live price and either
     # update today's row (if cache already has today) or append a new one.
-    live = _get_live_price(symbol)
+    # US symbols: skip Groww/NSE live merge (quotes target .NS); CSV bar is enough.
+    live = None if mkt == "us" else _get_live_price(symbol)
     if live and live.get("price") and live["price"] > 0:
         import datetime as _dtmod
         today_str = _dtmod.datetime.now(_IST).strftime("%Y-%m-%d")
@@ -4922,8 +5936,26 @@ def trade_board_chart(symbol: str, days: int = 252) -> dict:
 
     last_date = rows[-1]["date"] if rows else None
 
+    rs_lines: dict[str, list[dict]] = {}
+    rs_snapshot: dict = {}
+    if mkt == "india":
+        # Full history for indices so every bar in `rows` can align (trim is cheap).
+        try:
+            n50 = _read_ohlcv(_RS_CHART_NIFTY50, days=0, market="us") or []
+            mid = _read_ohlcv(_RS_CHART_MIDCAP100, days=0, market="india") or []
+            if len(mid) < 20:
+                mid = _read_ohlcv(_RS_CHART_MIDCAP_ALT, days=0, market="us") or []
+            sml = _read_ohlcv(_RS_CHART_SMLCAP100, days=0, market="us") or []
+            rs_lines["nifty50"] = _rs_line_vs_benchmark(rows, n50)
+            rs_lines["niftyMidcap100"] = _rs_line_vs_benchmark(rows, mid)
+            rs_lines["niftySmallcap100"] = _rs_line_vs_benchmark(rows, sml)
+            rs_snapshot = _build_rs_snapshot(rs_lines)
+        except Exception:
+            rs_lines = {}
+            rs_snapshot = {}
+
     return {
-        "symbol": symbol, "days": len(rows), "avgVol20": round(avg_vol, 0),
+        "symbol": symbol, "market": mkt, "days": len(rows), "avgVol20": round(avg_vol, 0),
         "avgVol50": round(avg_vol_50, 0),
         "cmp": closes[-1],
         "lastDate": last_date,
@@ -4932,6 +5964,8 @@ def trade_board_chart(symbol: str, days: int = 252) -> dict:
         "distDays50": dist_days, "accumDays50": accum_days,
         "rsi": rsi14[-1] if rsi14 and rsi14[-1] is not None else None,
         "adr": adr_abs, "adrPct": adr_pct,
+        "rsLines": rs_lines,
+        "rsSnapshot": rs_snapshot,
         "candles": rows
     }
 
@@ -5012,65 +6046,6 @@ def trade_board_equity() -> dict:
 
     return {"curve": curve, "totalPl": round(total, 2)}
 
-@app.get("/api/trade-board/scan-signals")
-def trade_board_scan_signals(market: str = "india", timeframe: str = "daily") -> dict:
-    """Return top open trade signals from scan output for quick import, enriched with vol/RS data."""
-    suffix = f"{market}_{timeframe}_full"
-    # Try open_trades first, then vcp_hits as fallback
-    candidates = [
-        OUTPUT_DIR / f"open_trades_{suffix}_LATEST.json",
-        OUTPUT_DIR / f"vcp_hits_{suffix}_LATEST.json",
-    ]
-    for json_path in candidates:
-        if not json_path.exists():
-            continue
-        try:
-            signals = json.loads(json_path.read_text(encoding="utf-8"))
-            if isinstance(signals, list) and signals:
-                # Normalize and enrich fields
-                for s in signals:
-                    if "rankingScore" not in s:
-                        s["rankingScore"] = s.get("score", 0)
-                    # Normalize vol% field
-                    vol_raw = s.get("vol%", s.get("vol_pct"))
-                    try:
-                        s["volPct"] = round(float(vol_raw), 1) if vol_raw not in (None, "", "0.0") else None
-                    except (ValueError, TypeError):
-                        s["volPct"] = None
-                    # Normalize dist% field
-                    dist_raw = s.get("distFromPivot%", s.get("dist%", s.get("distance_from_pivot_pct", s.get("distFromPivot%"))))
-                    try:
-                        s["distPct"] = round(float(dist_raw), 1) if dist_raw not in (None, "", "0.0") else None
-                    except (ValueError, TypeError):
-                        s["distPct"] = None
-                    # Avg volume
-                    try:
-                        s["avgVol20"] = round(float(s.get("avgVol20", 0))) if s.get("avgVol20") else None
-                    except (ValueError, TypeError):
-                        s["avgVol20"] = None
-                    try:
-                        s["lastVol"] = round(float(s.get("lastVol", 0))) if s.get("lastVol") else None
-                    except (ValueError, TypeError):
-                        s["lastVol"] = None
-                    # RS data
-                    try:
-                        s["rsScore"] = round(float(s.get("rsScore", 0)), 1) if s.get("rsScore") else None
-                    except (ValueError, TypeError):
-                        s["rsScore"] = None
-                    try:
-                        s["rs3m"] = round(float(s.get("rs3m", 0)), 1) if s.get("rs3m") else None
-                    except (ValueError, TypeError):
-                        s["rs3m"] = None
-                    try:
-                        s["rs6m"] = round(float(s.get("rs6m", 0)), 1) if s.get("rs6m") else None
-                    except (ValueError, TypeError):
-                        s["rs6m"] = None
-
-                signals.sort(key=lambda x: -float(x.get("rankingScore") or x.get("score") or 0))
-                return {"signals": signals[:40], "total": len(signals), "source": json_path.name}
-        except Exception:
-            pass
-    return {"signals": [], "total": 0}
 
 
 # ── Trade Journal ──────────────────────────────────────────────────────────────
@@ -5080,7 +6055,28 @@ def _load_journal() -> list:
     if not TRADE_JOURNAL_JSON.exists():
         return []
     try:
-        return json.loads(TRADE_JOURNAL_JSON.read_text(encoding="utf-8"))
+        raw = json.loads(TRADE_JOURNAL_JSON.read_text(encoding="utf-8"))
+        if not isinstance(raw, list):
+            return []
+        normalized: list[dict] = []
+        for e in raw:
+            if not isinstance(e, dict):
+                continue
+            x = dict(e)
+            # Backward/forward-compatible normalization for evolving journal schema.
+            x.setdefault("symbol", "")
+            x.setdefault("one_line_summary", "")
+            x.setdefault("observations", "")
+            x.setdefault("action_plan", "")
+            x.setdefault("anchor_thought", "")
+            x.setdefault("mood", "")
+            x.setdefault("moods", [])
+            if not isinstance(x.get("moods"), list):
+                x["moods"] = []
+            if not x["moods"] and isinstance(x.get("mood"), str) and x.get("mood"):
+                x["moods"] = [x["mood"]]
+            normalized.append(x)
+        return normalized
     except Exception:
         return []
 
@@ -5093,6 +6089,7 @@ class JournalEntry(BaseModel):
     title: str = ""
     body: str = ""
     mood: str = ""   # bullish/bearish/neutral/fearful/greedy/disciplined/fomo/revenge
+    moods: list[str] = Field(default_factory=list)  # allow multi-select overall mood
     tags: list[str] = Field(default_factory=list)
     # ── Advanced journal fields ──
     category: str = ""  # trade_entry/trade_exit/trade_review/market_analysis/cash_decision/lesson/mistake/rules
@@ -5134,6 +6131,11 @@ class JournalEntry(BaseModel):
     pre_trade_checklist: list[str] = Field(default_factory=list)
     capital_deployed_pct: float = 0  # % of total capital in this trade
     account_balance: float = 0  # account balance at time of entry
+    # Readability / blog-style helpers
+    one_line_summary: str = ""
+    observations: str = ""
+    action_plan: str = ""
+    anchor_thought: str = ""
 
 @app.get("/api/trade-journal")
 def get_journal(symbol: str = "", limit: int = 200, category: str = "", search: str = "", date_from: str = "", date_to: str = "") -> dict:
@@ -5178,9 +6180,15 @@ def get_journal(symbol: str = "", limit: int = 200, category: str = "", search: 
     best_pnl = 0; worst_pnl = 0
 
     for e in entries:
-        m = e.get("mood", "")
-        if m:
-            moods[m] = moods.get(m, 0) + 1
+        mood_list = e.get("moods", []) or []
+        if mood_list:
+            for m in mood_list:
+                if m:
+                    moods[m] = moods.get(m, 0) + 1
+        else:
+            m = e.get("mood", "")
+            if m:
+                moods[m] = moods.get(m, 0) + 1
         c = e.get("category", "")
         if c:
             categories[c] = categories.get(c, 0) + 1
@@ -5265,7 +6273,7 @@ def get_journal(symbol: str = "", limit: int = 200, category: str = "", search: 
     avg_r = round(sum(r_multiples) / len(r_multiples), 2) if r_multiples else 0
     avg_win = round(win_pnl / wins, 2) if wins else 0
     avg_loss = round(loss_pnl / losses, 2) if losses else 0
-    expectancy = round(avg_r, 2) if avg_r else (round((win_rate/100 * avg_win + (1-win_rate/100) * avg_loss), 2) if total_trades else 0)
+    expectancy = round((win_rate/100 * avg_win + (1-win_rate/100) * avg_loss), 2) if total_trades else 0
     profit_factor = round(abs(win_pnl / loss_pnl), 2) if loss_pnl else (999 if win_pnl > 0 else 0)
 
     # Streak
@@ -5328,12 +6336,22 @@ def update_journal_entry(entry_id: str, entry: JournalEntry) -> dict:
         if idx is None:
             raise HTTPException(status_code=404, detail="Journal entry not found")
         rec = entry.model_dump()
+        prev = entries[idx]
+        # Guard against accidental empty-string overwrites from UI state drift.
+        # If user did not actually provide these fields in a meaningful way,
+        # preserve existing non-empty values.
+        for key in ("anchor_thought", "action_plan", "one_line_summary", "observations"):
+            if isinstance(rec.get(key), str) and not rec.get(key).strip() and isinstance(prev.get(key), str) and prev.get(key).strip():
+                rec[key] = prev[key]
+        # Preserve symbol if incoming payload leaves it blank.
+        if isinstance(rec.get("symbol"), str) and not rec.get("symbol").strip() and isinstance(prev.get("symbol"), str) and prev.get("symbol").strip():
+            rec["symbol"] = prev["symbol"]
         rec["id"] = entry_id
-        rec["created_at"] = entries[idx].get("created_at", datetime.now().isoformat(timespec="seconds"))
+        rec["created_at"] = prev.get("created_at", datetime.now().isoformat(timespec="seconds"))
         rec["updated_at"] = datetime.now().isoformat(timespec="seconds")
         # Preserve screenshots from existing entry if not provided in update
-        if not rec.get("screenshots") and entries[idx].get("screenshots"):
-            rec["screenshots"] = entries[idx]["screenshots"]
+        if not rec.get("screenshots") and prev.get("screenshots"):
+            rec["screenshots"] = prev["screenshots"]
         entries[idx] = rec
         _save_journal(entries)
     return {"ok": True, "entry": rec}
@@ -5356,17 +6374,18 @@ def export_journal():
     entries = _load_journal()
     if not entries:
         raise HTTPException(status_code=404, detail="No entries to export")
-    fields = ["date","symbol","category","title","outcome","pnl_amount","r_multiple",
+    fields = ["date","symbol","category","title","one_line_summary","outcome","pnl_amount","r_multiple",
               "setup_type","entry_price","exit_price","stop_loss","position_size",
               "risk_amount","risk_pct","conviction","execution_rating","stress_level",
-              "mood","emotions","followed_rules","rule_violations","thesis",
+              "mood","moods","emotions","followed_rules","rule_violations","thesis",
               "what_went_well","what_went_wrong","lesson_learned","market_condition",
-              "timeframe","tags","body"]
+              "timeframe","observations","action_plan","anchor_thought","tags","body"]
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=fields, extrasaction="ignore")
     writer.writeheader()
     for e in sorted(entries, key=lambda x: x.get("date",""), reverse=True):
         row = dict(e)
+        row["moods"] = "; ".join(row.get("moods", []))
         row["emotions"] = "; ".join(row.get("emotions", []))
         row["rule_violations"] = "; ".join(row.get("rule_violations", []))
         row["tags"] = "; ".join(row.get("tags", []))
@@ -5380,6 +6399,439 @@ def export_journal():
     )
 
 
+# ── Past Winners Study Lab ─────────────────────────────────────────────────────
+
+_past_winners_lock = threading.Lock()
+
+
+def _default_past_winners_store() -> dict:
+    return {
+        "version": 1,
+        "updatedAt": datetime.now().strftime("%Y-%m-%d"),
+        "entries": [],
+    }
+
+
+def _load_past_winners_store() -> dict:
+    if not TRADE_PAST_WINNERS_JSON.exists():
+        return _default_past_winners_store()
+    try:
+        data = json.loads(TRADE_PAST_WINNERS_JSON.read_text(encoding="utf-8"))
+    except Exception:
+        return _default_past_winners_store()
+    if not isinstance(data, dict):
+        return _default_past_winners_store()
+    data.setdefault("version", 1)
+    data.setdefault("updatedAt", datetime.now().strftime("%Y-%m-%d"))
+    entries = data.get("entries")
+    if not isinstance(entries, list):
+        data["entries"] = []
+    return data
+
+
+def _save_past_winners_store(data: dict) -> None:
+    TRADE_PAST_WINNERS_JSON.parent.mkdir(parents=True, exist_ok=True)
+    data["updatedAt"] = datetime.now().strftime("%Y-%m-%d")
+    TRADE_PAST_WINNERS_JSON.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+
+
+def _safe_float(v) -> Optional[float]:
+    if v is None or v == "":
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+@app.get("/api/past-winners")
+def past_winners_list(
+    pattern: str = "",
+    regime: str = "",
+    min_realized_r: Optional[float] = None,
+    q: str = "",
+) -> dict:
+    with _past_winners_lock:
+        store = _load_past_winners_store()
+    entries = list(store.get("entries", []))
+
+    pat = pattern.strip().lower()
+    reg = regime.strip().lower()
+    qq = q.strip().lower()
+    out = []
+    for e in entries:
+        # Skip structural template/placeholder entries — they are not real trades
+        if str(e.get("status", "")).lower() in ("template", "placeholder", "example"):
+            continue
+        if pat and pat not in str(e.get("pattern", "")).lower():
+            continue
+        if reg and reg not in str(e.get("market_regime", "")).lower():
+            continue
+        rr = _safe_float(e.get("realized_r"))
+        if min_realized_r is not None and (rr is None or rr < min_realized_r):
+            continue
+        if qq:
+            hay = " ".join([
+                str(e.get("symbol", "")),
+                str(e.get("name", "")),
+                str(e.get("pattern", "")),
+                str(e.get("variation", "")),
+                str(e.get("story", "")),
+                str(e.get("notes", "")),
+                " ".join(e.get("tags", []) or []),
+            ]).lower()
+            if qq not in hay:
+                continue
+        out.append(e)
+
+    out.sort(
+        key=lambda x: (
+            str(x.get("breakout_date") or ""),
+            str(x.get("updated_at") or ""),
+            str(x.get("created_at") or ""),
+        ),
+        reverse=True,
+    )
+    return {
+        "entries": out,
+        "count": len(out),
+        "updatedAt": store.get("updatedAt"),
+    }
+
+
+@app.post("/api/past-winners")
+def past_winners_create(entry: PastWinnerEntry) -> dict:
+    now = datetime.now().isoformat(timespec="seconds")
+    rec = entry.model_dump()
+    rec["id"] = rec.get("id") or str(uuid.uuid4())[:8]
+    rec["created_at"] = now
+    rec["updated_at"] = now
+
+    with _past_winners_lock:
+        store = _load_past_winners_store()
+        rows = store.get("entries", [])
+        rows.append(rec)
+        store["entries"] = rows
+        _save_past_winners_store(store)
+    return {"ok": True, "entry": rec}
+
+
+@app.put("/api/past-winners/{entry_id}")
+def past_winners_update(entry_id: str, update: PastWinnerUpdate) -> dict:
+    with _past_winners_lock:
+        store = _load_past_winners_store()
+        rows = store.get("entries", [])
+        for i, e in enumerate(rows):
+            if str(e.get("id")) != entry_id:
+                continue
+            upd = update.model_dump(exclude_unset=True)
+            rows[i].update(upd)
+            rows[i]["updated_at"] = datetime.now().isoformat(timespec="seconds")
+            store["entries"] = rows
+            _save_past_winners_store(store)
+            return {"ok": True, "entry": rows[i]}
+    raise HTTPException(status_code=404, detail=f"Past winner not found: {entry_id}")
+
+
+@app.delete("/api/past-winners/{entry_id}")
+def past_winners_delete(entry_id: str) -> dict:
+    with _past_winners_lock:
+        store = _load_past_winners_store()
+        rows = store.get("entries", [])
+        new_rows = [e for e in rows if str(e.get("id")) != entry_id]
+        if len(new_rows) == len(rows):
+            raise HTTPException(status_code=404, detail=f"Past winner not found: {entry_id}")
+        store["entries"] = new_rows
+        _save_past_winners_store(store)
+    return {"ok": True, "deleted": entry_id}
+
+
+# ── Sample winners library ────────────────────────────────────────────────────
+# Production-quality reference snapshots a trader can study and copy.
+_PAST_WINNER_SAMPLES: list[dict] = [
+    {
+        "id": "sample-mtar",
+        "symbol": "MTAR.NS",
+        "name": "MTAR Technologies",
+        "market": "india",
+        "timeframe": "daily",
+        "pattern": "bull_flag",
+        "variation": "tight 3-week consolidation above pivot",
+        "market_regime": "uptrend",
+        "grade": "A",
+        "breakout_date": "2026-04-15",
+        "exit_date": "2026-05-02",
+        "entry_price": 385.50,
+        "stop_price": 350.00,
+        "exit_price": 470.00,
+        "realized_r": 2.4,
+        "rs_rank": 92.0,
+        "adr_pct": 5.2,
+        "breakout_volume_vs20d": 2.8,
+        "eps_growth_yoy": 45.2,
+        "sales_growth_yoy": 32.5,
+        "roe_percent": 18.4,
+        "debt_to_equity": 0.42,
+        "candle_structure": "Breakout candle: tall green body (~75% of range), tiny upper wick, no lower wick — pure demand. Prior 12 sessions: small-bodied dojis with overlapping ranges, lower wicks holding 21EMA. Three pocket pivots inside the base.",
+        "key_levels": "Pivot: 380 (base high). Setup low / hard stop: 348. 10EMA: 372. 21EMA: 365. T1 (1.5R): 432. T2 (3R): 490. Prior structure resistance: 405 (cleared on volume).",
+        "confluence_factors": "Daily bull flag at 52-week high + Weekly cup-and-handle base completing + Monthly stage-2 advance + Sector (capital goods) leading market + Volume contraction during base + Pocket pivots inside flag",
+        "entry_logic": "Buy on 5-min close above 380 with cumulative volume already 1.5x average by 11:30 IST. Skip if breakout candle has > 30% upper wick (sellers). Confirmed entry at 385.50 with closing 5-min volume 3.2x avg.",
+        "exit_logic": "Sold 33% at 432 (1.5R, T1). Trailed remainder under daily 10EMA. Final exit 470 when stock closed below 10EMA on rising volume — distribution signal.",
+        "trail_logic": "Stage 1 (entry → 1R): hard stop at 350, do not move. Stage 2 (1R → 2R): move stop to break-even (385). Stage 3 (2R+): trail under prior swing low or daily 10EMA, whichever is higher. Never trail tighter than 21EMA in healthy daily uptrend.",
+        "pyramid_logic": "Initial: 100 units at 385 (1R risk). Add #1 (50 units) on first 3-day flag inside trend at 412, stop under that flag low at 398. Add #2 (25 units) on next tight 5-day base at 445, stop 432. Total exposure peaks at 175 units; 1st add reduces blended risk because initial is in 1.5R+ profit before adding.",
+        "position_sizing": "Risk 0.75% of portfolio per trade. With 35.5 stop distance per share and ₹25,000 risk budget → ~700 shares initial. Max 8% portfolio allocation to single name.",
+        "risk_reward": "1:1.5 to T1 (partial), 1:3 to T2, runner trailed open. Realized blended R = 2.4.",
+        "trade_plan": "Buy 380 breakout. Stop 348. T1 partial 33% at 432. Trail 10EMA on rest. Invalidation: close back below 372 (10EMA) on heavy volume, or two consecutive lower lows on daily.",
+        "story": "MTAR is a precision components leader supplying ISRO, defense, and clean-energy sectors. Q4 results showed 45% EPS growth, strong order book of ₹1,200cr, and management guided 30%+ growth for FY27. Stock had been consolidating after a 60% run; the flag was textbook with volume drying up. Capital-goods sector was rotating into leadership.",
+        "mistakes_to_avoid": "Do NOT chase entries above 388 — the pivot moves with each candle but tight base means tight stop. Do NOT exit on first red day; wait for 10EMA close break. Do NOT add on extended day (> 3% above 10EMA).",
+        "lessons_learned": "Volume contraction inside a base is the single best tell of an imminent breakout. The first 30 minutes of breakout day usually decides — heavy early volume = real, weak volume = fade. Trailing under 10EMA captured 80% of the move while skipping shakeouts.",
+        "image_paths": {
+            "before": "/playbook-assets/past-winners/MTAR-20260415-before.svg",
+            "breakout": "/playbook-assets/past-winners/MTAR-20260415-breakout.svg",
+            "exit": "/playbook-assets/past-winners/MTAR-20260502-exit.svg",
+            "annotated": "/playbook-assets/past-winners/MTAR-20260502-annotated.svg",
+        },
+        "notes": "Pattern memory cue: 'Tight green-body breakout from a quiet flag, sector leadership, fundamentals already strong before move.' Hold this picture in mind for similar setups.",
+        "tags": ["bull_flag", "rs-leader", "capital-goods", "tight-base", "stage-2", "india"],
+    },
+    {
+        "id": "sample-nvda",
+        "symbol": "NVDA",
+        "name": "NVIDIA Corporation",
+        "market": "us",
+        "timeframe": "weekly",
+        "pattern": "vcp",
+        "variation": "5-week VCP, 3 contractions",
+        "market_regime": "uptrend",
+        "grade": "A+",
+        "breakout_date": "2026-02-10",
+        "exit_date": "2026-04-28",
+        "entry_price": 138.50,
+        "stop_price": 128.00,
+        "exit_price": 188.00,
+        "realized_r": 4.7,
+        "rs_rank": 98.0,
+        "adr_pct": 3.4,
+        "breakout_volume_vs20d": 2.1,
+        "eps_growth_yoy": 168.0,
+        "sales_growth_yoy": 122.0,
+        "roe_percent": 91.0,
+        "debt_to_equity": 0.18,
+        "candle_structure": "Weekly breakout candle: large green body, no upper wick — closed at week's high. Three prior weekly contractions: 12% → 6% → 3% (textbook VCP). Final week pre-breakout: tight inside-bar with shrinking range, volume 40% below 10-week avg (supply gone).",
+        "key_levels": "Pivot: 138 (3rd contraction high). Hard stop: 127.50 (final-tightening low). 10WMA: 125. 30WMA: 108. T1 (1.5R): 154. T2 (3R): 170. Round-number magnets: 140, 150, 175.",
+        "confluence_factors": "Weekly VCP + Earnings catalyst (beat & raise) + AI-cycle leader + RS line at new high before price + QQQ uptrend + Volume dry-up in last contraction + No overhead resistance for 25%",
+        "entry_logic": "Buy on weekly close above 138 with weekly volume > 1.5x 10-week avg. Took entry on Tuesday intraday breakout at 138.50 once daily volume pace projected 2x — paid up slightly for early position.",
+        "exit_logic": "Sold 25% at 154 (T1, +1.5R). Held core through earnings (defendable: stop at 142 = breakeven). Trailed weekly 10MA on remaining. Final exit 188 when stock had 3 weeks of distribution + closed below 10WMA.",
+        "trail_logic": "Below first 1R: original 127.50 hard stop, never moved. After +1R: stop to entry. After +2R: trail under each new weekly higher-low pivot. After 3+ months in trade: trail under 10WMA only on weekly closes, never intraweek.",
+        "pyramid_logic": "Initial: 100 shares at 138.50 (full 1R). Add #1 (50 shares) at first 3-week flag at 158, stop 152 (below flag low). Add #2 (25 shares) on weekly pocket pivot at 175, stop 168. No 3rd add — extension risk too high after 25%+ move.",
+        "position_sizing": "Risk 1% of account per trade. Stop distance 10.50 per share, $5,000 risk budget → 475 shares initial. Cap at 12% of equity in a single name.",
+        "risk_reward": "Plan: 1:3 to T2, runner trail. Realized: 4.7R blended (held weekly trail patiently).",
+        "trade_plan": "Buy 138 weekly breakout. Stop 127.50. T1 25% at 154. Hold core through Q1 earnings. Trail weekly 10MA after +2R. Invalidation: weekly close below 128 OR weekly close below 10WMA after 6+ weeks in trade.",
+        "story": "NVIDIA was the undisputed leader of the AI infrastructure cycle. Datacenter revenue compounding 100%+ YoY, Blackwell chip ramp in full swing, hyperscaler capex commitments through 2027 already signed. The stock's RS line broke out before price — institutional accumulation was visible weeks before the formal breakout.",
+        "mistakes_to_avoid": "Do NOT exit on first 5% pullback after entry — Stage-2 leaders shake weak hands constantly. Do NOT hold through earnings without partial profits booked. Do NOT add on extended weeks (> 8% from 10WMA).",
+        "lessons_learned": "Weekly VCP + leader status + RS line at highs = highest-probability setup in any market. The 'boring' final-week contraction with dry volume is the single most reliable tell. Held the runner via weekly trail and captured 36% in 11 weeks — the daily noise would have shaken me out.",
+        "image_paths": {
+            "before": "/playbook-assets/past-winners/NVDA-20260210-before.svg",
+            "breakout": "/playbook-assets/past-winners/NVDA-20260210-breakout.svg",
+            "exit": "/playbook-assets/past-winners/NVDA-20260428-exit.svg",
+            "annotated": "/playbook-assets/past-winners/NVDA-20260428-annotated.svg",
+        },
+        "notes": "Pattern memory cue: 'Three contractions, third tightest, RS line at highs, breakout on Tuesday with closing volume confirming — hold weekly.'",
+        "tags": ["vcp", "weekly", "ai-leader", "rs-line-high", "stage-2", "us", "earnings-catalyst"],
+    },
+    {
+        "id": "sample-tatapower",
+        "symbol": "TATAPOWER.NS",
+        "name": "Tata Power Company",
+        "market": "india",
+        "timeframe": "weekly",
+        "pattern": "cup_handle",
+        "variation": "deep cup, 22-week base, 4-week handle",
+        "market_regime": "range",
+        "grade": "B+",
+        "breakout_date": "2025-11-12",
+        "exit_date": "2026-03-20",
+        "entry_price": 412.00,
+        "stop_price": 388.00,
+        "exit_price": 548.00,
+        "realized_r": 5.7,
+        "rs_rank": 78.0,
+        "adr_pct": 4.1,
+        "breakout_volume_vs20d": 1.9,
+        "eps_growth_yoy": 28.5,
+        "sales_growth_yoy": 18.0,
+        "roe_percent": 12.8,
+        "debt_to_equity": 1.45,
+        "candle_structure": "Breakout week: solid green candle, 65% body, small wick on top. Handle (4 weeks): all small green/red bodies overlapping — classic shakeout pattern with lower wicks on the dip-week (smart money buying). Cup low to pivot retraced 38% Fibonacci.",
+        "key_levels": "Cup pivot: 410. Handle low: 388 (hard stop). 10WMA: 395. 30WMA: 360. Cup left lip: 410. Cup low: 320. T1 (1R): 432. T2 (3R): 478. Cup-depth measured target: 500.",
+        "confluence_factors": "Weekly cup-and-handle + Renewable energy capex theme + Govt policy tailwind (PLI, transition) + Sector breadth improving + Handle low held 30WMA + Volume 60% below avg in handle (supply dry)",
+        "entry_logic": "Buy on weekly close above 410 with weekly volume > 1.5x 10-week avg. Triggered Nov-12 weekly close at 412 with 1.9x volume — confirmed. Skipped daily-chart noise since this was a weekly setup.",
+        "exit_logic": "Sold 30% at 478 (T2, +3R) when 13/34 EMA spread peaked. Trailed remainder under weekly 10MA. Final exit 548 when weekly closed below 10MA after distribution signs (3 down weeks on rising volume).",
+        "trail_logic": "Pre-1R: stop at 388 (handle low). Post-1R: stop to break-even 412. Post-2R: trail to last weekly higher-low (425, then 458). Late-stage: trail strictly under weekly 10MA. NO daily-chart trailing — would have shaken out 3 times.",
+        "pyramid_logic": "Initial: 200 shares at 412 (full 1R). Add #1 (100 shares) at 458 on a 3-week tight base, stop 442. Add #2 (50 shares) on pocket-pivot week at 502, stop 488. Total 350 shares. Each add fully covered by initial profits.",
+        "position_sizing": "Risk 1% of portfolio. Stop distance 24 per share, ₹40,000 risk budget → ~1,650 shares initial cap. Took 200 only because regime was range (not full uptrend) — sized down 50%.",
+        "risk_reward": "Plan: 1:3 to T2, runner trail. Realized: 5.7R (full cup-depth target hit and trailed).",
+        "trade_plan": "Buy 410 weekly breakout. Stop 388 (handle low). T1 30% at 478. Trail weekly 10MA on rest. Invalidation: weekly close below 395 OR break of handle low.",
+        "story": "Tata Power was undergoing a structural transformation — pivoting from thermal to renewables, with 5GW solar pipeline and EV charging leadership. The cup-and-handle was 22 weeks deep, signaling massive accumulation by institutions. India's renewable capex theme was just starting; Tata Power was the cleanest large-cap proxy. Government PLI scheme for solar manufacturing was a direct catalyst.",
+        "mistakes_to_avoid": "Do NOT trade this on daily chart — weekly setups need weekly conviction. Do NOT exit on 8% intraweek drawdown; it's normal in deep cups. Do NOT add when stock is > 12% above 10WMA.",
+        "lessons_learned": "Range-market setups still produce huge winners IF the relative strength is at new highs vs. index. Sized down to 50% of normal due to regime — preserved capital but still captured 5.7R. The key was patience: 18 weeks in trade, mostly boring, ending with a 33% gain.",
+        "image_paths": {
+            "before": "/playbook-assets/past-winners/TATAPOWER-20251112-before.svg",
+            "breakout": "/playbook-assets/past-winners/TATAPOWER-20251112-breakout.svg",
+            "exit": "/playbook-assets/past-winners/TATAPOWER-20260320-exit.svg",
+            "annotated": "/playbook-assets/past-winners/TATAPOWER-20260320-annotated.svg",
+        },
+        "notes": "Pattern memory cue: 'Deep cup, tight handle on lower volume, weekly trail through entire move.' Don't size up just because the move is big — let the trail capture it.",
+        "tags": ["cup_handle", "weekly", "renewables", "policy-tailwind", "range-market", "india"],
+    },
+    {
+        "id": "sample-mcx",
+        "symbol": "MCX.NS",
+        "name": "Multi Commodity Exchange",
+        "market": "india",
+        "timeframe": "daily",
+        "pattern": "ascending_triangle",
+        "variation": "flat resistance at 1670, rising lows over 6 weeks",
+        "market_regime": "uptrend",
+        "grade": "A-",
+        "breakout_date": "2025-10-08",
+        "exit_date": "2026-02-01",
+        "entry_price": 1670.00,
+        "stop_price": 1599.00,
+        "exit_price": 2470.00,
+        "realized_r": 11.3,
+        "rs_rank": 88.0,
+        "adr_pct": 3.5,
+        "breakout_volume_vs20d": 2.0,
+        "eps_growth_yoy": 75.0,
+        "sales_growth_yoy": 38.0,
+        "roe_percent": 22.0,
+        "debt_to_equity": 0.05,
+        "candle_structure": "Breakout candle: large green marubozu (no wicks), closed at high of day. 6 weeks of rising lows touched perfect trendline; resistance at 1670 tested 4 times before clean break. Volume on breakout day: 2x average, biggest green volume bar in 3 months.",
+        "key_levels": "Pivot/horizontal resistance: 1670. Setup stop: 1599 (last swing low + ATR cushion). 10EMA: 1620. 21EMA: 1580. Measured-move target: 1900 (triangle height). T1 (1.5R): 1776. T2 (3R): 1883. Round magnets: 1700, 1800, 2000.",
+        "confluence_factors": "Daily ascending triangle + 6-week base + Options-volume tailwind (regulatory clarity) + Monopoly business model + RS at new high + Volume dry-up on each lower retest of resistance + Stage-2 advance",
+        "entry_logic": "Buy on 5-min close above 1670 with cumulative day volume > 70% of avg 20D by 12:00 IST. Confirmed entry at 1670; full-day closing volume 2.0x. Did NOT chase above 1685 — waited for clean trigger.",
+        "exit_logic": "Sold 25% at 1776 (T1). Sold another 25% at 2000 (round-number profit). Trailed last 50% under daily 21EMA (extended trend). Final exit 2470 on first weekly close below 10WMA after 16 weeks in trade.",
+        "trail_logic": "Hard stop 1599 until +1R. Then move to 1670 (entry). Then trail under 10EMA daily. After +5R, switch to 21EMA daily trail. After 3 months in trade, switch to 10WMA weekly trail (avoids daily shakeouts in extended trends).",
+        "pyramid_logic": "Initial: 60 shares at 1670 (1R risk). Add #1 (30 shares) at 1820 after first 5-day tight base, stop 1750. Add #2 (15 shares) at 2050 after pocket pivot, stop 1980. Total 105 shares. NO add after 2200 — extension > 12% above 10EMA.",
+        "position_sizing": "Risk 0.75% portfolio. Stop distance ₹71/share, ₹40,000 risk budget → 56 shares ≈ 60 initial. Capped at 7% portfolio because of low-float/options-volume risk.",
+        "risk_reward": "Plan: 1:3 to T2, trail. Realized: 11.3R blended — biggest winner of FY26.",
+        "trade_plan": "Buy 1670 breakout. Stop 1599. T1 25% at 1776. T2 25% at 1883. Trail 21EMA on rest. Hold for measured-move + extension. Invalidation: daily close back below 1620 (10EMA) on heavy volume.",
+        "story": "MCX had a near-monopoly on commodity-options trading in India. Q1 results: option premium turnover up 250% YoY, EPS up 75%. SEBI's regulatory clarity removed a key overhang. The 6-week ascending triangle showed institutions accumulating at 1670 every time price dipped — clear demand zone. Stock was a stage-2 advance from a 2-year base.",
+        "mistakes_to_avoid": "Did NOT exit on 8% pullback at 1900 — it was healthy consolidation. Did NOT add too aggressively — kept pyramid disciplined. Almost trailed too tight on daily 10EMA in week 8; switched to weekly trail saved the runner.",
+        "lessons_learned": "Monopoly businesses with regulatory clarity and earnings momentum are the most explosive winners. Switching from daily to weekly trail after the first 3 months captured the second 50% of the move. 11R is rare — but only happens if you let the trail do the work.",
+        "image_paths": {
+            "before": "/playbook-assets/past-winners/MCX-20251008-before.svg",
+            "breakout": "/playbook-assets/past-winners/MCX-20251008-breakout.svg",
+            "exit": "/playbook-assets/past-winners/MCX-20260201-exit.svg",
+            "annotated": "/playbook-assets/past-winners/MCX-20260201-annotated.svg",
+        },
+        "notes": "Pattern memory cue: 'Flat top, rising lows, big volume green marubozu breakout, monopoly biz, hold weekly.' This is the template for 10R+ winners.",
+        "tags": ["ascending_triangle", "monopoly", "options-tailwind", "stage-2", "10R-club", "india"],
+    },
+]
+
+
+@app.post("/api/past-winners/seed-samples")
+def past_winners_seed_samples(replace: bool = False) -> dict:
+    """Seed the catalog with high-quality reference winners. Idempotent.
+
+    Query params:
+      replace=true → wipes existing samples (id starts with 'sample-') first
+    """
+    now = datetime.now().isoformat(timespec="seconds")
+    added: list[str] = []
+    skipped: list[str] = []
+    with _past_winners_lock:
+        store = _load_past_winners_store()
+        rows = store.get("entries", [])
+        if replace:
+            rows = [e for e in rows if not str(e.get("id", "")).startswith("sample-")]
+        existing_ids = {str(e.get("id")) for e in rows}
+        for s in _PAST_WINNER_SAMPLES:
+            if s["id"] in existing_ids:
+                skipped.append(s["id"])
+                continue
+            rec = dict(s)
+            rec.setdefault("created_at", now)
+            rec.setdefault("updated_at", now)
+            rows.append(rec)
+            added.append(s["id"])
+        store["entries"] = rows
+        _save_past_winners_store(store)
+    return {"ok": True, "added": added, "skipped": skipped, "total": len(rows)}
+
+
+@app.get("/api/past-winners/glossary")
+def past_winners_glossary() -> dict:
+    if not TRADE_PAST_WINNERS_GLOSSARY_JSON.exists():
+        return {"version": 1, "patterns": [], "tradingWisdom": []}
+    try:
+        data = json.loads(TRADE_PAST_WINNERS_GLOSSARY_JSON.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            return data
+    except Exception:
+        pass
+    return {"version": 1, "patterns": [], "tradingWisdom": []}
+
+
+@app.get("/api/past-winners/prefill")
+def past_winners_prefill(symbol: str, market: Literal["india", "us"] = "india") -> dict:
+    sym = (symbol or "").strip().upper()
+    if not sym:
+        raise HTTPException(status_code=400, detail="symbol is required")
+
+    # Pattern engine deep-dive (RS/fundamentals/story hints)
+    analysis = _wpe.analyze_single_stock(
+        symbol=sym,
+        market=market,
+        include_news=False,
+        include_fundamentals=True,
+        include_mf=True,
+    )
+
+    # Local OHLCV-driven metrics (ADR/volume extension etc.)
+    quick = {"symbol": sym, "market": market}
+    _enrich_position_metrics(quick)
+
+    fundamentals = analysis.get("fundamentals") if isinstance(analysis.get("fundamentals"), dict) else {}
+    rs_block = analysis.get("rs") if isinstance(analysis.get("rs"), dict) else {}
+
+    prefill = {
+        "symbol": sym,
+        "name": analysis.get("name") or sym,
+        "market": market,
+        "timeframe": "daily",
+        "market_regime": analysis.get("regime") or analysis.get("regime_state") or "",
+        "rs_rank": _safe_float(rs_block.get("score") or analysis.get("rs_score") or analysis.get("rsScore")),
+        "adr_pct": _safe_float(quick.get("adrPct") or analysis.get("adr_pct") or analysis.get("adrPct")),
+        "breakout_volume_vs20d": _safe_float(quick.get("volRatio") or analysis.get("volume_ratio") or analysis.get("volumeRatio")),
+        "eps_growth_yoy": _safe_float(fundamentals.get("epsGrowthYoY") or fundamentals.get("eps_growth_yoy")),
+        "sales_growth_yoy": _safe_float(fundamentals.get("salesGrowthYoY") or fundamentals.get("sales_growth_yoy")),
+        "roe_percent": _safe_float(fundamentals.get("roe") or fundamentals.get("roePercent") or fundamentals.get("roe_percent")),
+        "debt_to_equity": _safe_float(fundamentals.get("debtToEquity") or fundamentals.get("debt_to_equity")),
+        "story_hint": analysis.get("thesis") or analysis.get("summary") or "",
+        "trade_plan_hint": analysis.get("entry_instruction") or analysis.get("entryInstruction") or "",
+    }
+
+    return {
+        "ok": True,
+        "prefill": prefill,
+        "analysis": analysis,
+        "quickMetrics": {
+            "ema20ext": quick.get("ema20ext"),
+            "volRatio": quick.get("volRatio"),
+            "rsi": quick.get("rsi"),
+            "aboveSma200": quick.get("aboveSma200"),
+            "accumDays": quick.get("accumDays"),
+            "distDays": quick.get("distDays"),
+        },
+    }
+
+
 # ── Trade Watchlist 2.0 ────────────────────────────────────────────────────────
 # Adds manual categorization (bucket), entry-style setup, cross-market pairing
 # (RS stock ↔ ADR), return-since-add tracking, conviction, tags, and a
@@ -5387,23 +6839,11 @@ def export_journal():
 _watchlist_lock = threading.Lock()
 
 WATCHLIST_BUCKETS: list[dict] = [
-    {"slug": "rs_leaders",      "label": "RS Leaders",         "icon": "🏆", "hint": "Outperformers holding up vs market"},
-    {"slug": "adr_pairs",       "label": "ADR Pairs",          "icon": "🌐", "hint": "Indian stock ↔ US ADR cross-listing"},
-    {"slug": "long_term",       "label": "Long-term / SIP",    "icon": "🏛️", "hint": "Multi-year compounders"},
-    {"slug": "sector_rotators", "label": "Sector Rotators",    "icon": "🔄", "hint": "Rotation candidates"},
-    {"slug": "macro_hedge",     "label": "Macro / Hedge",      "icon": "🛡️", "hint": "Gold, defensives, yields"},
-    {"slug": "setup_vcp",       "label": "Setup · VCP",        "icon": "🧲", "hint": "Volatility Contraction"},
-    {"slug": "setup_pullback",  "label": "Setup · Pullback",   "icon": "⤵️", "hint": "Buy on orderly retrace"},
-    {"slug": "setup_breakout",  "label": "Setup · Breakout",   "icon": "🚀", "hint": "Range high break + volume"},
-    {"slug": "setup_range_exp", "label": "Setup · Range Exp.", "icon": "📐", "hint": "Range expansion / trend day"},
-    {"slug": "setup_mean_rev",  "label": "Setup · Mean Rev.",  "icon": "↩️", "hint": "Oversold bounce"},
-    {"slug": "setup_bull_flag", "label": "Setup · Bull Flag",  "icon": "🏁", "hint": "Flag / pennant"},
-    {"slug": "setup_ema_pb",    "label": "Setup · EMA Pullback", "icon": "📉", "hint": "Pullback to rising EMA (5/10/20/50)"},
-    {"slug": "setup_base_bo",   "label": "Setup · Base Breakout", "icon": "📦", "hint": "Flat base / cup breakout on volume"},
-    {"slug": "setup_ftd",       "label": "Setup · Follow-Through", "icon": "📈", "hint": "Follow-through day after correction"},
-    {"slug": "setup_earnings",  "label": "Setup · Earnings",   "icon": "💼", "hint": "Pre / post earnings swing"},
-    {"slug": "setup_ipo_base",  "label": "Setup · IPO Base",   "icon": "🆕", "hint": "First base after listing"},
-    {"slug": "watching",        "label": "Just Watching",      "icon": "👀", "hint": "No setup yet, monitoring"},
+    {"slug": "rs_leaders",    "label": "RS Leaders",   "icon": "🏆", "hint": "High relative-strength leaders (IBD-RS ≥ 70). Your core universe."},
+    {"slug": "breakouts",     "label": "Breakouts",    "icon": "🚀", "hint": "Range high break on volume — entry trigger hit or very near."},
+    {"slug": "pullbacks",     "label": "Pullbacks",    "icon": "⤵️", "hint": "Healthy retrace to rising MA / support in a Stage 2 stock."},
+    {"slug": "ipo_bases",     "label": "IPO Bases",    "icon": "🆕", "hint": "First base after listing — tight, low-volume consolidation."},
+    {"slug": "watching",      "label": "Watching",     "icon": "👀", "hint": "On radar, no setup yet — just monitoring."},
 ]
 
 WATCHLIST_SETUPS: list[str] = [
@@ -5434,7 +6874,6 @@ ADR_HINTS: dict[str, dict] = {
 
 def _migrate_watchlist_item(raw: dict) -> dict:
     """Upgrade a v1 watchlist entry to v2+ schema (idempotent)."""
-    raw.setdefault("bucket",      "watching")
     raw.setdefault("market",      "india")
     raw.setdefault("setup",       raw.get("setup", ""))
     raw.setdefault("conviction",  3)
@@ -5443,8 +6882,48 @@ def _migrate_watchlist_item(raw: dict) -> dict:
     raw.setdefault("add_date",    (raw.get("added_at") or "")[:10] or None)
     raw.setdefault("pair_symbol", None)
     raw.setdefault("pair_market", None)
-    raw.setdefault("source",      "manual")   # "manual" | "auto_rs"
-    raw.setdefault("priority",    None)        # P1 / P2 / P3 (auto-computed)
+    raw.setdefault("source",      "manual")
+    raw.setdefault("priority",    None)
+
+    # ── Migrate single "bucket" string → "buckets" list ──────────────────────
+    _BUCKET_MIGRATION: dict[str, str] = {
+        # RS family
+        "rs_tier_1": "rs_leaders", "rs_tier_2": "rs_leaders", "rs_tier_3": "rs_leaders",
+        # Breakout family
+        "setup_breakout": "breakouts", "setup_base_bo": "breakouts",
+        "setup_ftd": "breakouts", "setup_range_exp": "breakouts",
+        "setup_bull_flag": "breakouts",
+        "day_breakouts": "breakouts", "day_scalps": "breakouts",
+        "today": "breakouts",
+        # Pullback family
+        "setup_pullback": "pullbacks", "setup_ema_pb": "pullbacks",
+        "setup_mean_rev": "pullbacks", "day_reversals": "pullbacks",
+        "setup_vcp": "pullbacks",
+        # IPO family
+        "setup_ipo_base": "ipo_bases",
+        # Everything else → watching
+        "ready": "watching", "parked": "watching",
+        "setup_earnings": "watching",
+        "adr_pairs": "watching", "filter_adr": "watching",
+        "long_term": "watching", "filter_long_term": "watching",
+        "filter_dividend": "watching", "filter_turnarounds": "watching",
+        "filter_defensives": "watching", "sector_rotators": "watching",
+        "macro_hedge": "watching", "day_sector_lead": "watching",
+    }
+    _VALID_SLUGS = {"rs_leaders", "breakouts", "pullbacks", "ipo_bases", "watching"}
+
+    # If old single "bucket" field exists, convert to list then drop the key
+    if "bucket" in raw and "buckets" not in raw:
+        old = raw.pop("bucket", "watching")
+        mapped = _BUCKET_MIGRATION.get(old, old)
+        raw["buckets"] = [mapped] if mapped in _VALID_SLUGS else ["watching"]
+
+    # Ensure "buckets" exists and contains only valid slugs
+    raw.setdefault("buckets", ["watching"])
+    if not isinstance(raw["buckets"], list):
+        raw["buckets"] = ["watching"]
+    raw["buckets"] = [b for b in raw["buckets"] if b in _VALID_SLUGS] or ["watching"]
+
     return raw
 
 
@@ -5472,15 +6951,15 @@ class WatchlistItem(BaseModel):
     setup: str = ""
     # ── v2 additions ──
     market: Literal["india", "us"] = "india"
-    bucket: str = "watching"
+    buckets: list[str] = Field(default_factory=lambda: ["watching"])  # multi-bucket
     conviction: int = Field(default=3, ge=1, le=5)
     tags: list[str] = Field(default_factory=list)
-    add_price: Optional[float] = None       # anchor price captured at add-time
-    add_date: Optional[str] = None          # YYYY-MM-DD (auto → today)
-    pair_symbol: Optional[str] = None       # cross-market pair (e.g. ADR)
+    add_price: Optional[float] = None
+    add_date: Optional[str] = None
+    pair_symbol: Optional[str] = None
     pair_market: Optional[Literal["india", "us"]] = None
-    source: Literal["manual", "auto_rs"] = "manual"  # provenance flag
-    priority: Optional[str] = None          # P1 / P2 / P3 (auto-computed)
+    source: Literal["manual", "auto_rs"] = "manual"
+    priority: Optional[str] = None
 
 
 class WatchlistItemUpdate(BaseModel):
@@ -5488,7 +6967,7 @@ class WatchlistItemUpdate(BaseModel):
     notes: Optional[str] = None
     alert_price: Optional[float] = None
     setup: Optional[str] = None
-    bucket: Optional[str] = None
+    buckets: Optional[list[str]] = None   # replaces old single bucket field
     conviction: Optional[int] = None
     tags: Optional[list[str]] = None
     add_price: Optional[float] = None
@@ -5977,8 +7456,9 @@ def _compute_rs_universe(
 
         # ── Sector / industry tag from taxonomy
         tax_entry = taxonomy.get(sym)
-        sector   = tax_entry[0] if tax_entry else "Other"
-        industry = tax_entry[1] if tax_entry else "Other"
+        sector         = tax_entry[0] if tax_entry else "Other"
+        industry       = tax_entry[1] if tax_entry else "Other"
+        basic_industry = tax_entry[2] if tax_entry and len(tax_entry) > 2 else industry
 
         # ── SWING SCORE (0-100)
         # Designed to surface explosive-move candidates for swing trading:
@@ -6005,6 +7485,7 @@ def _compute_rs_universe(
             # Sector / industry
             "sector":           sector,
             "industry":         industry,
+            "basicIndustry":    basic_industry,
             # RS
             "rs_score":         score,
             "rs_label":         rs.get("rs_label"),
@@ -6208,12 +7689,8 @@ def rs_leaders_auto_add(req: Optional[RsLeaderAutoAddRequest] = None) -> dict:
             scan_rating = (sig.get("rating", "") if sig else "")
             in_scan = bool(sig)
 
-            # Smart bucket: prefer setup_* bucket from scan signal, else rs_leaders
-            best_bucket = _resolve_best_bucket(
-                scan_setup, is_ipo=row.get("is_ipo", False),
-                rs_score=row.get("rs_score", 0),
-            )
-            # Derive friendly setup name from scan
+            # Auto RS-35 stocks always land in rs_leaders only.
+            # Users can manually tick additional buckets (Breakouts, Pullbacks…) via the UI.
             best_setup = scan_setup.replace("_", " ").title() if scan_setup else ""
             # Compute conviction + priority
             _conviction = max(3, min(5, int((row["rs_score"] or 50) / 20)))
@@ -6228,10 +7705,11 @@ def rs_leaders_auto_add(req: Optional[RsLeaderAutoAddRequest] = None) -> dict:
                 if existing.get("source") == "manual":
                     skipped_manual.append(sym_u)
                     continue
-                # It's an auto entry we kept — refresh rank, bucket, priority
+                # It's an auto entry we kept — refresh rank, buckets, priority
                 existing["conviction"] = _conviction
                 existing["priority"] = _priority
-                existing["bucket"] = best_bucket
+                existing["buckets"] = ["rs_leaders"]  # always rs_leaders; user adds more via UI
+                existing.pop("bucket", None)  # remove legacy field
                 existing["setup"] = best_setup or existing.get("setup", "")
                 _tags = {"rs_leader", f"rs{row['rs_score']}", f"rank{row['rank']}"}
                 if row.get("is_ipo"):
@@ -6262,7 +7740,7 @@ def rs_leaders_auto_add(req: Optional[RsLeaderAutoAddRequest] = None) -> dict:
                 "symbol":      sym_u,
                 "market":      "india",
                 "name":        "",
-                "bucket":      best_bucket,
+                "buckets":     ["rs_leaders"],
                 "setup":       best_setup,
                 "conviction":  _conviction,
                 "tags":        _tags,
@@ -7817,10 +9295,12 @@ def ibd_backtest_run(
         # Sector info from taxonomy
         sector = "Other"
         industry = "Other"
+        basic_industry = "Other"
         tax_entry = taxonomy.get(base)
         if tax_entry:
             sector = tax_entry[0] or "Other"
             industry = tax_entry[1] or "Other"
+            basic_industry = tax_entry[2] if len(tax_entry) > 2 else industry
 
         # Apply sector filter
         if sector_filter and sector.upper() != sector_filter.upper():
@@ -7871,6 +9351,7 @@ def ibd_backtest_run(
             "displaySymbol": base,
             "sector": sector,
             "industry": industry,
+            "basicIndustry": basic_industry,
             "appearances": len(sd["appearances"]),
             "scanDates": sd["appearances"],
             "firstScanDate": sd["firstScanDate"],
@@ -8085,6 +9566,8 @@ def rs_scan_asof(
     sort_by: str = "swing",         # swing | rs | adr | volume
     min_adr: float = 0.0,
     min_avg_vol: int = 0,
+    ipo_only: bool = False,
+    include_post_scan_ipo: bool = True,
 ) -> dict:
     """
     Run the RS-leaders scan as if today were *scan_date*, using only OHLCV data
@@ -8182,6 +9665,8 @@ def rs_scan_asof(
             e = v * k + e * (1 - k)
         return e
 
+    from datetime import date as _date_cls
+
     def _score_one(sym: str):
         rows_full = _read_ohlcv(sym, days=0, market="india")
         if not rows_full:
@@ -8189,20 +9674,35 @@ def rs_scan_asof(
 
         # Truncate to scan_date
         rows = [r for r in rows_full if r["date"] <= scan_date]
+        post_scan_ipo = False
+
         if not rows:
-            return None
+            # ── Post-scan IPO: stock listed AFTER scan_date but within 180 days
+            if not include_post_scan_ipo:
+                return None
+            first_date = rows_full[0]["date"]
+            try:
+                days_after = (_date_cls.fromisoformat(first_date) - _date_cls.fromisoformat(scan_date)).days
+            except Exception:
+                return None
+            if days_after < 0 or days_after > 180:
+                return None
+            # Score using all available data from listing date; flag as post-scan IPO
+            rows = rows_full
+            post_scan_ipo = True
 
         n_bars = len(rows)
         last_close = rows[-1]["close"]
         if last_close < min_price:
             return None
 
-        # ── IPO detection: <126 trading days as of scan_date ≈ listed within ~6 months
-        is_ipo = n_bars < 126
+        # ── IPO detection: <126 trading days as of scan_date, or listed after scan_date
+        is_ipo = post_scan_ipo or n_bars < 126
 
-        # For non-IPO: respect min_bars; for IPO: need at least 15 bars
+        # For non-IPO: respect min_bars; for IPO: need at least 20 bars
+        # (20 = minimum required by compute_rs_score for the shortest period)
         if is_ipo:
-            if n_bars < 15:
+            if n_bars < 20:
                 return None
         else:
             if n_bars < min_bars:
@@ -8217,15 +9717,17 @@ def rs_scan_asof(
         stock_prices = {"close": closes, "dates": dates}
 
         # ── RS Score — IPO gets shorter periods (1M/2M/3M), normal gets standard
+        # Post-scan IPOs use full market data (not scan-date-truncated benchmark)
+        benchmark = market_prices_full if post_scan_ipo else market_prices_trunc
         try:
             if is_ipo:
                 rs = _wpe.compute_rs_score(
-                    stock_prices, market_prices_trunc,
+                    stock_prices, benchmark,
                     periods=[21, 42, 63],
                     weights=[0.50, 0.30, 0.20],
                 )
             else:
-                rs = _wpe.compute_rs_score(stock_prices, market_prices_trunc)
+                rs = _wpe.compute_rs_score(stock_prices, benchmark)
         except Exception:
             return None
 
@@ -8281,8 +9783,9 @@ def rs_scan_asof(
         listing_gain_pct = round((last_close - closes[0]) / closes[0] * 100, 1) if is_ipo and closes[0] else None
 
         tax_entry = taxonomy.get(sym)
-        sector   = tax_entry[0] if tax_entry else "Other"
-        industry = tax_entry[1] if tax_entry else "Other"
+        sector         = tax_entry[0] if tax_entry else "Other"
+        industry       = tax_entry[1] if tax_entry else "Other"
+        basic_industry = tax_entry[2] if tax_entry and len(tax_entry) > 2 else industry
 
         # ── Forward return: scan_date close → end_date close (or latest)
         if end_date_str:
@@ -8312,7 +9815,10 @@ def rs_scan_asof(
             "symbol":           sym,
             "sector":           sector,
             "industry":         industry,
+            "basicIndustry":    basic_industry,
             "is_ipo":           is_ipo,
+            "post_scan_ipo":    post_scan_ipo,
+            "listing_date":     dates[0] if dates else None,
             "bars":             n_bars,
             "rs_score":         score,
             "rs_label":         rs.get("rs_label"),
@@ -8349,7 +9855,10 @@ def rs_scan_asof(
         "volume": lambda x: (x.get("volSurge5d") or 0, x.get("rs_score") or 0),
     }
     scored.sort(key=_sort_keys.get(sort_by, _sort_keys["swing"]), reverse=True)
+    if ipo_only:
+        scored = [s for s in scored if s.get("is_ipo")]
     top = scored[:top_n]
+    ipo_count = sum(1 for s in top if s.get("is_ipo"))
     for i, s in enumerate(top, start=1):
         s["rank"] = i
 
@@ -8389,6 +9898,8 @@ def rs_scan_asof(
         "topN":             top_n,
         "totalScanned":     len(universe),
         "totalComputed":    len(scored),
+        "ipoOnly":          ipo_only,
+        "ipoCount":         ipo_count,
         "leaders":          top,
         "niftyReturnPct":   nifty_return_pct,
         "summary": {

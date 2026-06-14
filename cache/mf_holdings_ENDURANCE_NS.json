@@ -1,0 +1,112 @@
+{
+  "symbol": "ENDURANCE.NS",
+  "market": "india",
+  "screener_slug": "ENDURANCE",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 75.0,
+      "fii": 7.34,
+      "dii": 15.91,
+      "public": 1.74
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 75.0,
+      "fii": 8.31,
+      "dii": 14.91,
+      "public": 1.8
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 75.0,
+      "fii": 7.82,
+      "dii": 15.4,
+      "public": 1.77
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 75.0,
+      "fii": 7.79,
+      "dii": 15.44,
+      "public": 1.76
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 75.0,
+      "fii": 8.67,
+      "dii": 14.34,
+      "public": 1.98
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 75.0,
+      "fii": 9.53,
+      "dii": 13.57,
+      "public": 1.9
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 75.0,
+      "fii": 11.5,
+      "dii": 11.74,
+      "public": 1.75
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 75.0,
+      "fii": 12.37,
+      "dii": 10.89,
+      "public": 1.75
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 75.0,
+      "fii": 13.54,
+      "dii": 9.54,
+      "public": 1.93
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 75.0,
+      "fii": 13.84,
+      "dii": 9.05,
+      "public": 2.1
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 75.0,
+      "fii": 13.72,
+      "dii": 9.2,
+      "public": 2.08
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 75.0,
+      "fii": 13.14,
+      "dii": 9.77,
+      "public": 2.07
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 75.0,
+  "fii_pct": 13.14,
+  "dii_pct": 9.77,
+  "public_pct": 2.07,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "up",
+  "fii_change_2q": -0.7,
+  "dii_change_2q": 0.72,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": false,
+  "smart_money_signal": "DII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d DIIs accumulating \u2191 (+0.7% in 2Q) (smart money buying)",
+  "summary": "DIIs \u2191 9.8% (+0.7%) | FIIs \u2193 13.1% (-0.7%) | Promoters \u2192 75.0%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:36:40.968256"
+}

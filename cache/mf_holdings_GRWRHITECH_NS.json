@@ -1,0 +1,114 @@
+{
+  "symbol": "GRWRHITECH.NS",
+  "market": "india",
+  "screener_slug": "GRWRHITECH",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 60.73,
+      "fii": 0.12,
+      "dii": 2.35,
+      "public": 36.81
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 60.73,
+      "fii": 0.14,
+      "dii": 3.49,
+      "public": 35.65
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 60.73,
+      "fii": 0.12,
+      "dii": 3.77,
+      "public": 35.38
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 60.73,
+      "fii": 0.31,
+      "dii": 4.21,
+      "public": 34.75
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 60.73,
+      "fii": 0.52,
+      "dii": 4.76,
+      "public": 34.0
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 60.73,
+      "fii": 1.56,
+      "dii": 4.48,
+      "public": 33.25
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 60.73,
+      "fii": 2.69,
+      "dii": 4.33,
+      "public": 32.27
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 60.73,
+      "fii": 3.5,
+      "dii": 4.75,
+      "public": 31.03
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 60.73,
+      "fii": 3.86,
+      "dii": 4.89,
+      "public": 30.53
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 60.73,
+      "fii": 3.58,
+      "dii": 4.96,
+      "public": 30.74
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 60.73,
+      "fii": 3.96,
+      "dii": 5.35,
+      "public": 29.98
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 60.73,
+      "fii": 3.98,
+      "dii": 5.28,
+      "public": 30.04
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 9.71,
+  "insider_held_pct": 62.6,
+  "float_shares": 8281183,
+  "promoters_pct": 60.73,
+  "fii_pct": 3.98,
+  "dii_pct": 5.28,
+  "public_pct": 30.04,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "up",
+  "fii_change_2q": 0.4,
+  "dii_change_2q": 0.32,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": true,
+  "smart_money_signal": "STRONG_BUYING",
+  "swing_signal": "\ud83d\udd25 STRONG BUYING \u2014 Both DIIs & FIIs accumulating",
+  "summary": "DIIs \u2191 5.3% (+0.3%) | FIIs \u2191 4.0% (+0.4%) | Promoters \u2192 60.7%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:25:14.718070"
+}

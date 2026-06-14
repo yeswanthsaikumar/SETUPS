@@ -1,0 +1,113 @@
+{
+  "symbol": "RADIOCITY.NS",
+  "market": "india",
+  "screener_slug": "RADIOCITY",
+  "quarterly_data": [
+    {
+      "period": "Mar 2023",
+      "promoters": 74.05,
+      "fii": 0.0,
+      "dii": 5.06,
+      "public": 20.89
+    },
+    {
+      "period": "Jun 2023",
+      "promoters": 74.05,
+      "fii": 0.0,
+      "dii": 4.9,
+      "public": 21.06
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 74.05,
+      "fii": 0.0,
+      "dii": 1.4,
+      "public": 24.55
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 74.05,
+      "fii": 0.04,
+      "dii": 0.0,
+      "public": 25.91
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 74.05,
+      "fii": 0.28,
+      "dii": 0.0,
+      "public": 25.67
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 74.05,
+      "fii": 0.03,
+      "dii": 0.0,
+      "public": 25.92
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 74.05,
+      "fii": 0.03,
+      "dii": 0.0,
+      "public": 25.91
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 74.05,
+      "fii": 0.01,
+      "dii": 0.01,
+      "public": 25.91
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 74.05,
+      "fii": 0.01,
+      "dii": 0.01,
+      "public": 25.93
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 74.05,
+      "fii": 0.0,
+      "dii": 3.75,
+      "public": 22.2
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 74.05,
+      "fii": 0.0,
+      "dii": 3.75,
+      "public": 22.19
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 74.05,
+      "fii": 0.0,
+      "dii": 3.75,
+      "public": 22.21
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 74.05,
+  "fii_pct": 0.0,
+  "dii_pct": 3.75,
+  "public_pct": 22.21,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.0,
+  "dii_change_2q": 0.0,
+  "latest_period": "Dec 2025",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "DIIs \u2192 3.8% (+0.0%) | FIIs \u2192 0.0% (+0.0%) | Promoters \u2192 74.0%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-15T16:14:40.000642",
+  "_stale_reused": true
+}

@@ -1,0 +1,102 @@
+{
+  "symbol": "UMIYA-MRO.NS",
+  "market": "india",
+  "screener_slug": "UMIYA-MRO",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 55.04,
+      "fii": 0.0,
+      "public": 44.96
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 55.04,
+      "fii": 0.0,
+      "public": 44.97
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 55.04,
+      "fii": 0.0,
+      "public": 44.97
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 55.04,
+      "fii": 0.01,
+      "public": 44.95
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 55.04,
+      "fii": 0.0,
+      "public": 44.95
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 60.03,
+      "fii": 0.01,
+      "public": 39.96
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 60.03,
+      "fii": 0.0,
+      "public": 39.97
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 60.03,
+      "fii": 0.0,
+      "public": 39.96
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 60.94,
+      "fii": 0.0,
+      "public": 39.05
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 64.19,
+      "fii": 0.0,
+      "public": 35.82
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 64.43,
+      "fii": 0.0,
+      "public": 35.58
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 65.02,
+      "fii": 0.0,
+      "public": 34.98
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.0,
+  "insider_held_pct": 72.9,
+  "float_shares": 3847012,
+  "promoters_pct": 65.02,
+  "fii_pct": 0.0,
+  "dii_pct": null,
+  "public_pct": 34.98,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "up",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.0,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 0.0% (+0.0%) | Promoters \u2191 65.0%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:18:23.793240"
+}

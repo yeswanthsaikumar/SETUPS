@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="760" viewBox="0 0 1400 760" role="img" aria-labelledby="title desc">
+  <title id="title">Ascending Triangle candlestick example</title>
+  <desc id="desc">Dark-theme candlestick chart with flat resistance, rising lows, and breakout volume expansion.</desc>
+  <rect width="1400" height="760" fill="#070d18"/>
+  <g stroke="#172338" stroke-width="1">
+    <path d="M80 70H1320M80 140H1320M80 210H1320M80 280H1320M80 350H1320M80 420H1320M80 490H1320M80 560H1320"/>
+    <path d="M120 60V580M220 60V580M320 60V580M420 60V580M520 60V580M620 60V580M720 60V580M820 60V580M920 60V580M1020 60V580M1120 60V580M1220 60V580"/>
+  </g>
+
+  <g stroke-width="2">
+    <path d="M90 460 L210 430 L320 405 L430 385 L540 365 L650 350 L760 340 L880 318 L1000 290 L1180 255" fill="none" stroke="#ff8c00"/>
+    <path d="M90 500 L220 480 L330 455 L440 430 L550 410 L660 392 L770 378 L890 355 L1010 328 L1180 290" fill="none" stroke="#00c2ff"/>
+    <path d="M90 540 L220 525 L330 510 L440 495 L550 480 L660 468 L770 456 L890 440 L1010 425 L1180 405" fill="none" stroke="#39c467"/>
+  </g>
+
+  <line x1="360" y1="250" x2="980" y2="250" stroke="#f87171" stroke-width="2" stroke-dasharray="8 7"/>
+  <line x1="360" y1="360" x2="980" y2="255" stroke="#60a5fa" stroke-width="2"/>
+
+  <g>
+    <line x1="360" y1="340" x2="360" y2="280" stroke="#2ecc71"/><rect x="352" y="295" width="16" height="35" fill="#2ecc71"/>
+    <line x1="400" y1="325" x2="400" y2="260" stroke="#2ecc71"/><rect x="392" y="276" width="16" height="40" fill="#2ecc71"/>
+    <line x1="440" y1="300" x2="440" y2="245" stroke="#ff5a6e"/><rect x="432" y="255" width="16" height="30" fill="#ff5a6e"/>
+    <line x1="480" y1="315" x2="480" y2="255" stroke="#2ecc71"/><rect x="472" y="265" width="16" height="38" fill="#2ecc71"/>
+    <line x1="520" y1="300" x2="520" y2="245" stroke="#ff5a6e"/><rect x="512" y="258" width="16" height="30" fill="#ff5a6e"/>
+    <line x1="560" y1="292" x2="560" y2="245" stroke="#2ecc71"/><rect x="552" y="254" width="16" height="30" fill="#2ecc71"/>
+    <line x1="600" y1="285" x2="600" y2="245" stroke="#ff5a6e"/><rect x="592" y="254" width="16" height="25" fill="#ff5a6e"/>
+    <line x1="640" y1="275" x2="640" y2="245" stroke="#2ecc71"/><rect x="632" y="250" width="16" height="20" fill="#2ecc71"/>
+    <line x1="680" y1="270" x2="680" y2="245" stroke="#ff5a6e"/><rect x="672" y="252" width="16" height="15" fill="#ff5a6e"/>
+    <line x1="720" y1="265" x2="720" y2="245" stroke="#2ecc71"/><rect x="712" y="249" width="16" height="14" fill="#2ecc71"/>
+    <line x1="760" y1="262" x2="760" y2="245" stroke="#ff5a6e"/><rect x="752" y="248" width="16" height="12" fill="#ff5a6e"/>
+    <line x1="800" y1="258" x2="800" y2="245" stroke="#2ecc71"/><rect x="792" y="247" width="16" height="10" fill="#2ecc71"/>
+
+    <line x1="840" y1="258" x2="840" y2="205" stroke="#2ecc71"/><rect x="832" y="212" width="16" height="40" fill="#2ecc71"/>
+    <line x1="880" y1="222" x2="880" y2="180" stroke="#2ecc71"/><rect x="872" y="188" width="16" height="30" fill="#2ecc71"/>
+    <line x1="920" y1="202" x2="920" y2="165" stroke="#2ecc71"/><rect x="912" y="173" width="16" height="24" fill="#2ecc71"/>
+  </g>
+
+  <line x1="825" y1="250" x2="1320" y2="250" stroke="#7dd3fc" stroke-dasharray="6 6"/>
+  <line x1="720" y1="282" x2="1320" y2="282" stroke="#f87171" stroke-dasharray="6 6"/>
+
+  <g>
+    <rect x="350" y="640" width="24" height="45" fill="#2f6f49"/>
+    <rect x="390" y="655" width="24" height="30" fill="#6e3745"/>
+    <rect x="430" y="665" width="24" height="20" fill="#2f6f49"/>
+    <rect x="470" y="670" width="24" height="15" fill="#6e3745"/>
+    <rect x="510" y="674" width="24" height="11" fill="#2f6f49"/>
+    <rect x="550" y="676" width="24" height="9" fill="#6e3745"/>
+    <rect x="590" y="678" width="24" height="7" fill="#2f6f49"/>
+    <rect x="630" y="679" width="24" height="6" fill="#6e3745"/>
+    <rect x="670" y="680" width="24" height="5" fill="#2f6f49"/>
+    <rect x="710" y="679" width="24" height="6" fill="#2f6f49"/>
+    <rect x="750" y="678" width="24" height="7" fill="#6e3745"/>
+    <rect x="790" y="676" width="24" height="9" fill="#2f6f49"/>
+    <rect x="830" y="640" width="24" height="45" fill="#2f6f49"/>
+    <rect x="870" y="610" width="24" height="75" fill="#2f6f49"/>
+    <rect x="910" y="585" width="24" height="100" fill="#2f6f49"/>
+  </g>
+
+  <text x="90" y="42" fill="#e5edf8" font-size="28" font-family="Arial, sans-serif">Ascending Triangle (Dark Theme): pressure builds below flat resistance</text>
+  <text x="982" y="246" fill="#fca5a5" font-size="16" font-family="Arial, sans-serif">Pivot resistance</text>
+  <text x="982" y="278" fill="#dbeafe" font-size="16" font-family="Arial, sans-serif">Stop below last higher low</text>
+  <text x="84" y="615" fill="#9eb1c7" font-size="16" font-family="Arial, sans-serif">Best trigger is decisive close above pivot with expanding volume</text>
+</svg>
+

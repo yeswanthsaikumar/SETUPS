@@ -1,0 +1,102 @@
+{
+  "symbol": "LOKESHMACH.NS",
+  "market": "india",
+  "screener_slug": "LOKESHMACH",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 52.4,
+      "fii": 0.49,
+      "public": 47.11
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 52.4,
+      "fii": 0.32,
+      "public": 47.27
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 52.4,
+      "fii": 0.57,
+      "public": 47.02
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 50.76,
+      "fii": 0.27,
+      "public": 48.98
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 50.76,
+      "fii": 0.21,
+      "public": 49.04
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 50.76,
+      "fii": 0.2,
+      "public": 49.06
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 51.75,
+      "fii": 0.0,
+      "public": 48.27
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 52.19,
+      "fii": 0.0,
+      "public": 47.81
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 53.16,
+      "fii": 0.0,
+      "public": 46.83
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 53.6,
+      "fii": 0.0,
+      "public": 46.41
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 53.6,
+      "fii": 0.0,
+      "public": 46.4
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 53.6,
+      "fii": 0.0,
+      "public": 46.4
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 0.0,
+  "insider_held_pct": 53.87,
+  "float_shares": 9017805,
+  "promoters_pct": 53.6,
+  "fii_pct": 0.0,
+  "dii_pct": null,
+  "public_pct": 46.4,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.0,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 0.0% (+0.0%) | Promoters \u2192 53.6%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:32:45.643082"
+}

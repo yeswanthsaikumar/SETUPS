@@ -1,0 +1,127 @@
+{
+  "symbol": "SASKEN.NS",
+  "market": "india",
+  "screener_slug": "SASKEN",
+  "quarterly_data": [
+    {
+      "period": "Mar 2023",
+      "promoters": 43.38,
+      "fii": 18.61,
+      "dii": 0.0,
+      "government": 0.05,
+      "public": 37.94
+    },
+    {
+      "period": "Jun 2023",
+      "promoters": 43.38,
+      "fii": 18.55,
+      "dii": 0.0,
+      "government": 0.05,
+      "public": 38.02
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 43.38,
+      "fii": 18.62,
+      "dii": 0.33,
+      "government": 0.05,
+      "public": 37.61
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 43.44,
+      "fii": 18.52,
+      "dii": 1.09,
+      "government": 0.05,
+      "public": 36.89
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 43.25,
+      "fii": 18.37,
+      "dii": 1.1,
+      "government": 0.05,
+      "public": 37.23
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 43.25,
+      "fii": 18.38,
+      "dii": 1.21,
+      "government": 0.05,
+      "public": 37.11
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 43.1,
+      "fii": 18.27,
+      "dii": 1.31,
+      "government": 0.05,
+      "public": 37.25
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 43.11,
+      "fii": 18.48,
+      "dii": 1.31,
+      "government": 0.05,
+      "public": 37.05
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 43.07,
+      "fii": 18.45,
+      "dii": 1.21,
+      "government": 0.05,
+      "public": 37.22
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 43.07,
+      "fii": 18.48,
+      "dii": 1.21,
+      "government": 0.05,
+      "public": 37.19
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 43.08,
+      "fii": 18.52,
+      "dii": 1.21,
+      "government": 0.05,
+      "public": 37.15
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 43.08,
+      "fii": 18.87,
+      "dii": 0.66,
+      "government": 0.05,
+      "public": 37.35
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 9.29,
+  "insider_held_pct": 56.47,
+  "float_shares": 6253291,
+  "promoters_pct": 43.08,
+  "fii_pct": 18.87,
+  "dii_pct": 0.66,
+  "public_pct": 37.35,
+  "govt_pct": 0.05,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "up",
+  "dii_trend": "down",
+  "fii_change_2q": 0.39,
+  "dii_change_2q": -0.55,
+  "latest_period": "Dec 2025",
+  "dii_accumulating": false,
+  "fii_accumulating": true,
+  "smart_money_signal": "FII_ACCUMULATING",
+  "swing_signal": "\ud83d\udc4d FIIs accumulating \u2191 (+0.4% in 2Q) (foreign buying)",
+  "summary": "DIIs \u2193 0.7% (-0.6%) | FIIs \u2191 18.9% (+0.4%) | Promoters \u2192 43.1%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-15T16:33:34.382605",
+  "_stale_reused": true
+}

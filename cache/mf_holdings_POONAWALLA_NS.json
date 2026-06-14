@@ -1,0 +1,115 @@
+{
+  "symbol": "POONAWALLA.NS",
+  "market": "india",
+  "screener_slug": "POONAWALLA",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 62.12,
+      "fii": 7.18,
+      "dii": 7.99,
+      "public": 22.71
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 62.1,
+      "fii": 7.91,
+      "dii": 6.94,
+      "public": 23.06
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 62.07,
+      "fii": 7.79,
+      "dii": 5.58,
+      "public": 24.57
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 62.13,
+      "fii": 7.76,
+      "dii": 5.81,
+      "public": 23.79
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 62.09,
+      "fii": 7.85,
+      "dii": 6.77,
+      "public": 22.64
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 61.87,
+      "fii": 7.72,
+      "dii": 9.63,
+      "public": 20.12
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 62.36,
+      "fii": 8.19,
+      "dii": 11.82,
+      "public": 16.98
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 62.53,
+      "fii": 9.99,
+      "dii": 11.12,
+      "public": 15.71
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 62.46,
+      "fii": 10.76,
+      "dii": 12.26,
+      "public": 13.86
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 63.96,
+      "fii": 10.56,
+      "dii": 12.28,
+      "public": 12.58
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 63.95,
+      "fii": 10.61,
+      "dii": 12.22,
+      "public": 12.62
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 63.93,
+      "fii": 10.21,
+      "dii": 12.14,
+      "public": 13.15
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 16.89,
+  "insider_held_pct": 68.05,
+  "float_shares": 282195538,
+  "promoters_pct": 63.93,
+  "fii_pct": 10.21,
+  "dii_pct": 12.14,
+  "public_pct": 13.15,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "stable",
+  "fii_trend": "down",
+  "dii_trend": "stable",
+  "fii_change_2q": -0.35,
+  "dii_change_2q": -0.14,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "FII_SELLING",
+  "swing_signal": "\u26a0\ufe0f FIIs selling \u2193 (-0.3% in 2Q) \u2014 watch for follow-through",
+  "summary": "DIIs \u2192 12.1% (-0.1%) | FIIs \u2193 10.2% (-0.3%) | Promoters \u2192 63.9%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-15T16:18:26.099811",
+  "_stale_reused": true
+}

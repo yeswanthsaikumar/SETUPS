@@ -1,0 +1,100 @@
+{
+  "symbol": "GUJAPOLLO.NS",
+  "market": "india",
+  "screener_slug": "GUJAPOLLO",
+  "quarterly_data": [
+    {
+      "period": "Jun 2023",
+      "promoters": 55.7,
+      "fii": 0.0,
+      "public": 44.31
+    },
+    {
+      "period": "Sep 2023",
+      "promoters": 55.7,
+      "fii": 0.0,
+      "public": 44.3
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 54.86,
+      "fii": 0.0,
+      "public": 45.14
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 54.79,
+      "fii": 0.09,
+      "public": 45.11
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 54.64,
+      "fii": 0.01,
+      "public": 45.34
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 51.99,
+      "fii": 0.03,
+      "public": 47.98
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 51.99,
+      "fii": 0.01,
+      "public": 48.0
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 51.99,
+      "fii": 0.01,
+      "public": 48.01
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 51.99,
+      "fii": 0.14,
+      "public": 47.88
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 51.99,
+      "fii": 0.0,
+      "public": 48.02
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 47.3,
+      "fii": 0.05,
+      "public": 52.64
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 47.3,
+      "fii": 0.18,
+      "public": 52.52
+    }
+  ],
+  "top_mf_holders": [],
+  "float_shares": null,
+  "promoters_pct": 47.3,
+  "fii_pct": 0.18,
+  "dii_pct": null,
+  "public_pct": 52.52,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "down",
+  "fii_trend": "stable",
+  "dii_trend": "stable",
+  "fii_change_2q": 0.18,
+  "dii_change_2q": null,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": false,
+  "fii_accumulating": false,
+  "smart_money_signal": "NEUTRAL",
+  "swing_signal": "\u2192 Institutional ownership stable",
+  "summary": "FIIs \u2192 0.2% (+0.2%) | Promoters \u2193 47.3%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:36:58.335684"
+}

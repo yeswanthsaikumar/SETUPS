@@ -1,0 +1,107 @@
+{
+  "symbol": "RATNAVEER.NS",
+  "market": "india",
+  "screener_slug": "RATNAVEER",
+  "quarterly_data": [
+    {
+      "period": "Sep 2023",
+      "promoters": 55.48,
+      "fii": 10.47,
+      "dii": 0.01,
+      "public": 34.05
+    },
+    {
+      "period": "Dec 2023",
+      "promoters": 55.48,
+      "fii": 3.82,
+      "dii": 0.01,
+      "public": 40.7
+    },
+    {
+      "period": "Mar 2024",
+      "promoters": 55.48,
+      "fii": 0.15,
+      "dii": 0.01,
+      "public": 44.38
+    },
+    {
+      "period": "Jun 2024",
+      "promoters": 55.48,
+      "fii": 1.19,
+      "dii": 0.01,
+      "public": 43.32
+    },
+    {
+      "period": "Sep 2024",
+      "promoters": 50.72,
+      "fii": 0.73,
+      "dii": 0.39,
+      "public": 48.17
+    },
+    {
+      "period": "Dec 2024",
+      "promoters": 50.72,
+      "fii": 2.38,
+      "dii": 0.27,
+      "public": 46.63
+    },
+    {
+      "period": "Mar 2025",
+      "promoters": 50.72,
+      "fii": 1.84,
+      "dii": 0.23,
+      "public": 47.21
+    },
+    {
+      "period": "Jun 2025",
+      "promoters": 50.72,
+      "fii": 1.23,
+      "dii": 0.0,
+      "public": 48.05
+    },
+    {
+      "period": "Sep 2025",
+      "promoters": 50.72,
+      "fii": 1.32,
+      "dii": 0.1,
+      "public": 47.87
+    },
+    {
+      "period": "Dec 2025",
+      "promoters": 42.63,
+      "fii": 8.35,
+      "dii": 2.57,
+      "public": 46.45
+    },
+    {
+      "period": "Mar 2026",
+      "promoters": 42.74,
+      "fii": 7.28,
+      "dii": 2.54,
+      "public": 47.44
+    }
+  ],
+  "top_mf_holders": [],
+  "inst_held_pct": 1.09,
+  "insider_held_pct": 63.08,
+  "float_shares": 27356767,
+  "promoters_pct": 42.74,
+  "fii_pct": 7.28,
+  "dii_pct": 2.54,
+  "public_pct": 47.44,
+  "govt_pct": null,
+  "mutual_funds_pct": null,
+  "promoters_trend": "down",
+  "fii_trend": "up",
+  "dii_trend": "up",
+  "fii_change_2q": 5.96,
+  "dii_change_2q": 2.44,
+  "latest_period": "Mar 2026",
+  "dii_accumulating": true,
+  "fii_accumulating": true,
+  "smart_money_signal": "STRONG_BUYING",
+  "swing_signal": "\ud83d\udd25 STRONG BUYING \u2014 Both DIIs & FIIs accumulating",
+  "summary": "DIIs \u2191 2.5% (+2.4%) | FIIs \u2191 7.3% (+6.0%) | Promoters \u2193 42.7%",
+  "_source": "screener+yfinance",
+  "_cached_at": "2026-04-26T01:24:24.985197"
+}

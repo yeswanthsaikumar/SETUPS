@@ -1,0 +1,9 @@
+{
+  "client_initialized": "bool",
+  "credentials_set": "bool",
+  "error": "NoneType",
+  "mode_groww_only": "bool",
+  "ok": "bool",
+  "probe_price": "float",
+  "probe_symbol": "str"
+}
