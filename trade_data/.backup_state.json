@@ -1,9 +1,9 @@
 {
-  "last_backup": "2026-05-17T22:40:47",
-  "method": "icloud+telegram",
-  "icloud_status": "success",
-  "telegram_status": "success",
-  "telegram_reason": "",
+  "last_backup": "2026-06-19T18:25:02",
+  "method": "telegram",
+  "icloud_status": "not_configured",
+  "telegram_status": "error",
+  "telegram_reason": "URLError: <urlopen error timed out>",
   "files_count": 12,
   "files": [
     "breakout_alert_backtest.json",
@@ -20,5 +20,5 @@
     "watchlist.json"
   ],
   "size_kb": 225.1,
-  "backup_path": "/Users/yeshwantha/Library/Mobile Documents/com~apple~CloudDocs/SETUPS_Backups/SETUPS_backup_2026-05-17_2240.zip"
+  "backup_path": "/Users/yeswanthaddanki/IdeaProjects/SETUPS/trade_data/.backups/SETUPS_backup_2026-06-19_1820.zip"
 }
