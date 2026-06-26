@@ -1822,11 +1822,21 @@
     <div class="modal-hdr"><span class="modal-title">➕ Add Position</span><button class="modal-close" onclick="closeAddModal()">✕</button></div>
     <div class="modal-body">
       <div class="fr">
-        <div class="fg"><label class="ml">Symbol *</label><input class="mi" id="fSym" placeholder="e.g. STLTECH" style="text-transform:uppercase"></div>
+        <div class="fg"><label class="ml">Symbol *</label><input class="mi" id="fSym" placeholder="e.g. STLTECH" style="text-transform:uppercase" onblur="addModalFetchCmp()"></div>
         <div class="fg"><label class="ml">Name</label><input class="mi" id="fName" placeholder="Company name"></div>
       </div>
+      <!-- CMP reference bar for Add modal -->
+      <div id="addCmpBar" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:11px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="color:var(--muted)">Last known price:</span>
+        <span id="addCmpVal" style="font-weight:800;font-size:13px"></span>
+        <span id="addCmpBadge" style="font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700"></span>
+        <button type="button" class="btn btn-outline btn-xs" onclick="addModalUseCmp()" id="addUseCmpBtn" style="margin-left:auto">📋 Use as Entry</button>
+      </div>
       <div class="fr3">
-        <div class="fg"><label class="ml">Entry *</label><input class="mi" id="fEntry" type="number" step="0.01" placeholder="0.00"></div>
+        <div class="fg">
+          <label class="ml">Entry * <span style="color:var(--muted);font-weight:400;font-size:9px">— actual buy price</span></label>
+          <input class="mi" id="fEntry" type="number" step="0.01" placeholder="Actual transaction price">
+        </div>
         <div class="fg"><label class="ml">Qty</label><input class="mi" id="fQty" type="number" value="1" min="1"></div>
         <div class="fg"><label class="ml">Stop Loss</label><input class="mi" id="fSl" type="number" step="0.01" placeholder="0.00"></div>
       </div>
@@ -1873,14 +1883,26 @@
             <option value="CLOSED">Closed Manually</option>
           </select>
         </div>
-        <div class="fg"><label class="ml">Exit Price</label><input class="mi" id="uExitPrice" type="number" step="0.01" placeholder="Leave blank if OPEN"></div>
+      </div>
+      <!-- Last known price reference — shown when a closing status is selected -->
+      <div id="uCmpBar" style="display:none;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:11px;flex-wrap:wrap;align-items:center;gap:8px">
+        <span style="color:var(--muted)">Last known price:</span>
+        <span id="uCmpVal" style="font-weight:800;font-size:13px"></span>
+        <span id="uCmpBadge" style="font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700"></span>
+        <button type="button" class="btn btn-outline btn-xs" onclick="uUseCmp()" style="margin-left:auto">📋 Use as Exit</button>
       </div>
       <div class="fr">
+        <div class="fg">
+          <label class="ml">Exit Price <span style="color:var(--muted);font-weight:400;font-size:9px">— actual sell price</span></label>
+          <input class="mi" id="uExitPrice" type="number" step="0.01" placeholder="Actual transaction price">
+        </div>
         <div class="fg"><label class="ml">Exit Date</label><input class="mi" id="uExitDate" type="date"></div>
-        <div class="fg"><label class="ml">Stop Loss (Trailing)</label><input class="mi" id="uSl" type="number" step="0.01" placeholder="New SL"></div>
       </div>
       <div class="fr">
+        <div class="fg"><label class="ml">Stop Loss (Trailing)</label><input class="mi" id="uSl" type="number" step="0.01" placeholder="New SL"></div>
         <div class="fg"><label class="ml">Entry Price</label><input class="mi" id="uEntry" type="number" step="0.01" placeholder="Entry price"></div>
+      </div>
+      <div class="fr">
         <div class="fg"><label class="ml">Quantity</label><input class="mi" id="uQty" type="number" min="1" placeholder="Total shares"></div>
       </div>
       <div class="fr">
@@ -2019,14 +2041,24 @@
     <div class="modal-hdr"><span class="modal-title" id="peTitle">📤 Book Partial Exit</span><button class="modal-close" onclick="closePeModal()">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="peId">
-      <div style="padding:6px 0 10px;font-size:11px;color:var(--muted)">
+      <div style="padding:6px 0 4px;font-size:11px;color:var(--muted)">
         <span id="peSym" style="font-weight:800;color:var(--text)">—</span> ·
         Entry: <span id="peEntry" style="color:#7dd3fc">—</span> ·
         Remaining: <span id="peRemaining" style="color:var(--text);font-weight:700">—</span> shares
       </div>
+      <!-- Last known price reference -->
+      <div id="peCmpBar" style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;margin-bottom:10px;font-size:11px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="color:var(--muted)">Last known price:</span>
+        <span id="peCmpVal" style="font-weight:800;font-size:13px">—</span>
+        <span id="peCmpBadge" style="font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700"></span>
+        <button type="button" class="btn btn-outline btn-xs" onclick="peUseCmp()" style="margin-left:auto">📋 Use</button>
+      </div>
       <div class="fr">
         <div class="fg"><label class="ml">Quantity *</label><input class="mi" id="peQty" type="number" min="1" placeholder="Shares to exit"></div>
-        <div class="fg"><label class="ml">Exit Price *</label><input class="mi" id="pePrice" type="number" step="0.01" placeholder="0.00"></div>
+        <div class="fg">
+          <label class="ml">Exit Price * <span style="color:var(--muted);font-weight:400;font-size:9px">— actual sell price</span></label>
+          <input class="mi" id="pePrice" type="number" step="0.01" placeholder="Actual transaction price">
+        </div>
       </div>
       <div class="fr">
         <div class="fg"><label class="ml">Reason</label>
@@ -3868,12 +3900,92 @@ function closeDetail() {
   if (detChart) { try { detChart.remove(); } catch(e) {} detChart = null; }
 }
 
+// ── Manual Price Override helpers ─────────────────────────────────────────────
+// Shared utility: fetch the latest known price for a symbol and render a
+// reference badge in any modal.  The price may come from live API, EOD cache,
+// or be unavailable — the badge communicates which.
+
+function _is_price_stale_js(dateStr) {
+  if (!dateStr) return true;
+  const today = new Date().toISOString().slice(0, 10);
+  return dateStr < today;
+}
+
+let _cmpCache = {};   // sym → {cmp, isStale, lastDate, ts}
+const _CMP_CACHE_TTL = 30000; // 30 s
+
+async function fetchSymbolCmp(symbol) {
+  if (!symbol) return null;
+  const sym = symbol.trim().toUpperCase();
+  const now = Date.now();
+  if (_cmpCache[sym] && (now - _cmpCache[sym].ts) < _CMP_CACHE_TTL) return _cmpCache[sym];
+  try {
+    const r = await fetch(API + '/api/trade-board/price-data?symbols=' + encodeURIComponent(sym));
+    if (!r.ok) return null;
+    const d = await r.json();
+    const info = (d.prices || {})[sym];
+    if (!info) return null;
+    const result = { cmp: info.cmp, isStale: info.isStale, lastDate: info.lastDate, ts: now };
+    _cmpCache[sym] = result;
+    return result;
+  } catch { return null; }
+}
+
+function renderCmpBar(barId, valId, badgeId, info) {
+  const bar = document.getElementById(barId);
+  const valEl = document.getElementById(valId);
+  const badgeEl = document.getElementById(badgeId);
+  if (!bar || !valEl || !badgeEl) return;
+  if (!info || !info.cmp) {
+    bar.style.display = 'none';
+    valEl.textContent = '—';
+    return;
+  }
+  bar.style.display = 'flex';  valEl.textContent = '₹' + Number(info.cmp).toLocaleString('en-IN');
+  if (info.isStale) {
+    badgeEl.textContent = '⚠ EOD cache' + (info.lastDate ? ' · ' + info.lastDate : '');
+    badgeEl.style.cssText = 'font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700;background:#78350f22;color:#fbbf24;border:1px solid #92400e44';
+  } else {
+    badgeEl.textContent = '✓ Latest';
+    badgeEl.style.cssText = 'font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700;background:#14532d22;color:#4ade80;border:1px solid #16a34a44';
+  }
+}
+
+// ── Add modal price helpers ────────────────────────────────────────────────────
+async function addModalFetchCmp() {
+  const sym = document.getElementById('fSym').value.trim().toUpperCase();
+  if (!sym) return;
+  const info = await fetchSymbolCmp(sym);
+  renderCmpBar('addCmpBar', 'addCmpVal', 'addCmpBadge', info);
+}
+
+function addModalUseCmp() {
+  const val = document.getElementById('addCmpVal').textContent.replace('₹','').replace(/,/g,'');
+  const n = parseFloat(val);
+  if (!isNaN(n) && n > 0) document.getElementById('fEntry').value = n;
+}
+
+// ── Partial exit modal price helpers ──────────────────────────────────────────
+let _peCmpInfo = null;
+function peUseCmp() {
+  if (_peCmpInfo && _peCmpInfo.cmp) document.getElementById('pePrice').value = _peCmpInfo.cmp;
+}
+
+// ── Update modal price helpers ─────────────────────────────────────────────────
+let _uCmpInfo = null;
+function uUseCmp() {
+  if (_uCmpInfo && _uCmpInfo.cmp) document.getElementById('uExitPrice').value = _uCmpInfo.cmp;
+}
+
 function openAddModal() {
   ['fSym','fName','fEntry','fSl','fT1','fT2','fT3','fNotes'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('fQty').value = '1';
   document.getElementById('fSetup').value = '';
   document.getElementById('fRating').value = '';
   document.getElementById('fDate').value = new Date().toISOString().slice(0, 10);
+  // Hide CMP bar until a symbol is entered
+  const bar = document.getElementById('addCmpBar');
+  if (bar) bar.style.display = 'none';
   document.getElementById('addModal').classList.add('open');
   setTimeout(() => document.getElementById('fSym').focus(), 100);
 }
@@ -3923,12 +4035,39 @@ function openUpdateModal(id) {
   const t1El = document.getElementById('uT1'); if (t1El) t1El.value = p.t1 || '';
   const t2El = document.getElementById('uT2'); if (t2El) t2El.value = p.t2 || '';
   const t3El = document.getElementById('uT3'); if (t3El) t3El.value = p.t3 || '';
+
+  // Populate CMP reference bar from already-loaded position data
+  const cmpBar = document.getElementById('uCmpBar');
+  if (cmpBar) cmpBar.style.display = 'none';
+  _uCmpInfo = null;
+  const sym = (p.symbol || '').toUpperCase();
+  if (sym) {
+    // Use in-memory cmp first (already fetched for summary), then probe API
+    const liveCmp = p.cmp || null;
+    const isStale = !!p.lastPriceDate && _is_price_stale_js(p.lastPriceDate);
+    if (liveCmp) {
+      _uCmpInfo = { cmp: liveCmp, isStale, lastDate: p.lastPriceDate };
+      renderCmpBar('uCmpBar', 'uCmpVal', 'uCmpBadge', _uCmpInfo);
+    } else {
+      fetchSymbolCmp(sym).then(info => {
+        _uCmpInfo = info;
+        renderCmpBar('uCmpBar', 'uCmpVal', 'uCmpBadge', info);
+      });
+    }
+  }
+
   document.getElementById('updateModal').classList.add('open');
 }
 function onUpdateStatusChange() {
   const st = document.getElementById('uStatus').value;
   const closingStatuses = ['T1_HIT','T2_HIT','T3_HIT','SL_HIT','CLOSED'];
-  if (closingStatuses.includes(st)) {
+  const isClosing = closingStatuses.includes(st);
+
+  // Show CMP bar only for closing statuses
+  const cmpBar = document.getElementById('uCmpBar');
+  if (cmpBar) cmpBar.style.display = isClosing ? 'flex' : 'none';
+
+  if (isClosing) {
     const id = document.getElementById('uId').value;
     const p = positions.find(x => x.id === id);
     if (!document.getElementById('uExitPrice').value && p) {
@@ -3936,7 +4075,7 @@ function onUpdateStatusChange() {
       else if (st === 'T2_HIT' && p.t2) document.getElementById('uExitPrice').value = p.t2;
       else if (st === 'T3_HIT' && p.t3) document.getElementById('uExitPrice').value = p.t3;
       else if (st === 'SL_HIT' && p.sl) document.getElementById('uExitPrice').value = p.sl;
-      else if (p.cmp) document.getElementById('uExitPrice').value = p.cmp;
+      // Note: don't auto-fill CMP — user should type the actual transaction price
     }
     if (!document.getElementById('uExitDate').value) {
       document.getElementById('uExitDate').value = new Date().toISOString().split('T')[0];
@@ -6301,11 +6440,28 @@ function openPeModal(id) {
   document.getElementById('peQty').value = '';
   document.getElementById('peQty').max = remaining;
   document.getElementById('peQty').placeholder = 'Max ' + remaining;
-  document.getElementById('pePrice').value = p.cmp || '';
+  // Leave price blank — user should enter actual transaction price
+  document.getElementById('pePrice').value = '';
   document.getElementById('peDate').value = new Date().toISOString().slice(0, 10);
   document.getElementById('peReason').value = 'MANUAL';
   document.getElementById('peModal').dataset.remaining = String(remaining);
   document.getElementById('peTitle').textContent = '📤 Book Partial — ' + p.symbol;
+
+  // Populate CMP reference bar
+  _peCmpInfo = null;
+  const liveCmp = p.cmp || null;
+  const isStale = !!p.lastPriceDate && _is_price_stale_js(p.lastPriceDate);
+  if (liveCmp) {
+    _peCmpInfo = { cmp: liveCmp, isStale, lastDate: p.lastPriceDate };
+    renderCmpBar('peCmpBar', 'peCmpVal', 'peCmpBadge', _peCmpInfo);
+  } else {
+    const sym = (p.symbol || '').toUpperCase();
+    fetchSymbolCmp(sym).then(info => {
+      _peCmpInfo = info;
+      renderCmpBar('peCmpBar', 'peCmpVal', 'peCmpBadge', info);
+    });
+  }
+
   document.getElementById('peModal').classList.add('open');
   setTimeout(() => document.getElementById('peQty').focus(), 100);
 }

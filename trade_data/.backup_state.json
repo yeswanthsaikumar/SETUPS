@@ -1,9 +1,9 @@
 {
-  "last_backup": "2026-06-19T18:25:02",
+  "last_backup": "2026-06-23T21:04:22",
   "method": "telegram",
   "icloud_status": "not_configured",
-  "telegram_status": "error",
-  "telegram_reason": "URLError: <urlopen error timed out>",
+  "telegram_status": "success",
+  "telegram_reason": "",
   "files_count": 12,
   "files": [
     "breakout_alert_backtest.json",
@@ -19,6 +19,6 @@
     "vpn_config.json",
     "watchlist.json"
   ],
-  "size_kb": 225.1,
-  "backup_path": "/Users/yeswanthaddanki/IdeaProjects/SETUPS/trade_data/.backups/SETUPS_backup_2026-06-19_1820.zip"
+  "size_kb": 214.2,
+  "backup_path": "/Users/yeswanthaddanki/IdeaProjects/SETUPS/trade_data/.backups/SETUPS_backup_2026-06-23_2103.zip"
 }

@@ -4812,18 +4812,53 @@ def _get_groww_client():
 
 
 def _reset_groww_on_auth_error(e: Exception):
-    """If Groww returns forbidden/auth error, reset client so token gets refreshed."""
+    """Handle Groww auth/permission errors.
+
+    • 401 / 'authentication' → token is expired/invalid → reset client so a
+      fresh token is obtained on the next call.
+    • 403 / 'forbidden' / 'authorisation' → token is valid but the API key
+      does not have the required permission scope.  Do NOT reset — resetting
+      would just fetch an identical token and loop forever.  Instead mark
+      market-data as unavailable until the credentials are upgraded.
+    """
+    global _groww_client, _groww_init_failed
     err_str = str(e).lower()
-    if "forbidden" in err_str or "authoris" in err_str or "unauthori" in err_str:
+    err_type = type(e).__name__
+
+    is_auth_error  = ("authentication" in err_type.lower() or "401" in err_str
+                      or ("unauthori" in err_str and "forbidden" not in err_str))
+    is_perm_error  = ("authorisation" in err_type.lower() or "authoriz" in err_type.lower()
+                      or "forbidden" in err_str or "403" in err_str
+                      or "authoris" in err_str)
+
+    if is_perm_error and not is_auth_error:
+        # 403: token is valid but lacks market-data permission scope.
+        # Mark init_failed so we stop hammering the API; user must upgrade key scope.
+        _groww_client = None
+        _groww_init_failed = True
+        print(
+            f"⚠ Groww market-data permission denied (403): {e}\n"
+            "  ↳ Your API key scope does not include market-data access.\n"
+            "  ↳ Enable 'Market Data' permissions for your API key at developer.groww.in\n"
+            "  ↳ Falling back to NSE / Yahoo for Indian stock quotes.",
+            flush=True,
+        )
+        try:
+            from groww_client import reset_groww_client, mark_groww_data_forbidden
+            reset_groww_client()
+            mark_groww_data_forbidden()
+        except Exception:
+            pass
+    elif is_auth_error:
+        # 401: token expired / invalid → reset so a fresh exchange happens next call
         try:
             from groww_client import reset_groww_client
             reset_groww_client()
-            global _groww_client, _groww_init_failed
-            _groww_client = None
-            _groww_init_failed = False
-            print(f"⚠ Groww auth error — will refresh token: {e}", flush=True)
         except Exception:
             pass
+        _groww_client = None
+        _groww_init_failed = False
+        print(f"⚠ Groww auth error — will refresh token: {e}", flush=True)
 
 
 def _fetch_live_quote_groww(base_symbol: str) -> Optional[dict]:
@@ -5009,11 +5044,18 @@ def _get_live_price(symbol: str) -> Optional[dict]:
 
     quote = None
 
-    # 1. Groww API — most reliable when API key is configured
-    if not quote:
-        quote = _fetch_live_quote_groww(base)
-    if not quote:
-        quote = _fetch_groww_quote(base)
+    # 1. Groww API — primary source when plan includes price data
+    try:
+        from groww_client import is_groww_data_forbidden as _is_gdf
+        _groww_data_ok = not _is_gdf()
+    except Exception:
+        _groww_data_ok = True
+
+    if _groww_data_ok:
+        if not quote:
+            quote = _fetch_live_quote_groww(base)
+        if not quote:
+            quote = _fetch_groww_quote(base)
 
     # Groww-only gate: for Indian symbols, forbid silent fallback to
     # geo-blocked Yahoo/NSE. If Groww failed, surface the failure (cache

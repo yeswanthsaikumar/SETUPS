@@ -220,24 +220,32 @@ def _strip_intraday_today(bars: list[dict]) -> list[dict]:
 def _fetch_bars(symbol: str, from_date: str | None = None) -> list[dict]:
     """Try every source in priority order: Groww → yfinance → NSE India → raw Yahoo v8.
 
-    When GROWW_ONLY mode is on (default), Indian stocks (.NS/.BO) are
-    fetched ONLY from Groww — no silent fallback to geo-blocked Yahoo/NSE
-    that would either fail or require a dead free-proxy VPN.
+    Groww is the PRIMARY source for Indian (.NS/.BO) stocks when the API plan
+    includes price data.  If Groww returns 403 (free plan), the flag
+    `_groww_data_forbidden` is set and yfinance/NSE India take over
+    automatically.  The flag auto-resets every hour so a plan upgrade is
+    picked up without a server restart.
     """
-    # 0. Groww API (primary — most reliable for NSE stocks when configured)
+    # 0. Groww API — primary for NSE/BSE stocks
     if symbol.endswith(".NS") or symbol.endswith(".BO"):
-        bars = _fetch_groww(symbol, from_date)
-        if bars:
-            return _strip_intraday_today(bars)
-        # 0b. Groww live-quote fallback — synthesise today's bar when the
-        # historical endpoint is forbidden (common on basic API plans) or
-        # simply returned nothing. Only useful when we're post-market on a
-        # weekday and the CSV is missing at most a few sessions.
-        quote_bar = _fetch_groww_today_bar(symbol)
-        if quote_bar:
-            # Only accept if it's actually newer than what we already have.
-            if not from_date or quote_bar[0]["date"] > from_date:
-                return _strip_intraday_today(quote_bar)
+        # Skip if Groww data is currently forbidden (avoid per-symbol 403 spam)
+        try:
+            from groww_client import is_groww_data_forbidden
+            _groww_skip = is_groww_data_forbidden()
+        except Exception:
+            _groww_skip = False
+
+        if not _groww_skip:
+            bars = _fetch_groww(symbol, from_date)
+            if bars:
+                return _strip_intraday_today(bars)
+            # 0b. Groww live-quote fallback — synthesise today's bar when the
+            # historical endpoint is forbidden (common on basic API plans) or
+            # simply returned nothing.
+            quote_bar = _fetch_groww_today_bar(symbol)
+            if quote_bar:
+                if not from_date or quote_bar[0]["date"] > from_date:
+                    return _strip_intraday_today(quote_bar)
 
     # Groww-only gate: for Indian stocks, stop here if fallbacks are forbidden.
     try:
@@ -271,7 +279,7 @@ def _fetch_bars(symbol: str, from_date: str | None = None) -> list[dict]:
 def _fetch_groww(symbol, from_date):
     """Fetch historical daily candles from Groww API."""
     try:
-        from groww_client import get_groww_client
+        from groww_client import get_groww_client, mark_groww_data_forbidden
     except ImportError:
         return []
     client = get_groww_client()
@@ -361,7 +369,16 @@ def _fetch_groww(symbol, from_date):
                 continue
 
         return sorted(bars, key=lambda b: b["date"])
-    except Exception:
+    except Exception as e:
+        # Detect 403 (Backtesting/historical data not available on free plan)
+        err_str = str(e).lower()
+        err_type = type(e).__name__
+        if ("403" in err_str or "forbidden" in err_str
+                or "authoris" in err_type.lower() or "authoriz" in err_type.lower()):
+            try:
+                mark_groww_data_forbidden()
+            except Exception:
+                pass
         return []
 
 
@@ -382,7 +399,7 @@ def _fetch_groww_today_bar(symbol: str) -> list[dict]:
     failure / if market hasn't produced a session yet.
     """
     try:
-        from groww_client import get_groww_client
+        from groww_client import get_groww_client, mark_groww_data_forbidden
     except ImportError:
         return []
     client = get_groww_client()
@@ -423,7 +440,16 @@ def _fetch_groww_today_bar(symbol: str) -> list[dict]:
         low = min(lo, o, last)
         return [dict(date=ds, open=round(o, 5), high=round(hi, 5),
                      low=round(low, 5), close=round(last, 5), volume=vol)]
-    except Exception:
+    except Exception as e:
+        # Detect 403 (live/quote data not available on free plan)
+        err_str = str(e).lower()
+        err_type = type(e).__name__
+        if ("403" in err_str or "forbidden" in err_str
+                or "authoris" in err_type.lower() or "authoriz" in err_type.lower()):
+            try:
+                mark_groww_data_forbidden()
+            except Exception:
+                pass
         return []
 
 
