@@ -524,6 +524,7 @@
     <button class="tl" id="tl-playbook" onclick="openEmbed('/playbook','Trading Playbook','playbook')">📖 Playbook</button>
     <button class="tl" id="tl-earnings" onclick="openEmbed('/earnings','Quarterly Earnings','earnings')" title="Quarterly earnings results — avoid volatility during prints, enter after confirmed beats">📊 Earnings</button>
     <button class="tl" id="tl-learn" onclick="showPage('education')">📚 Learn</button>
+    <button class="tl" id="tl-momentum" onclick="showPage('momentum')">⚡ Momentum</button>
   </div>
   <div class="topbar-right">
     <div class="cache-badge idle" id="cacheBadge" onclick="toggleCacheRefresh()" title="Click to refresh OHLCV cache">
@@ -587,6 +588,10 @@
        <svg class="sb-icon" viewBox="0 0 16 16" fill="none"><path d="M2 14L5 8L8 10L11 4L14 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="14" cy="7" r="1.5" fill="currentColor"/><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.2"/></svg>
        RS Scan As-Of
      </button>
+    <button class="sb-item" id="nav-momentum" onclick="showPage('momentum')">
+      <svg class="sb-icon" viewBox="0 0 16 16" fill="none"><path d="M2 12L6 7L9 9.5L13 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 3L13 6M13 3L10 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      ⚡ Momentum Burst<span class="sb-badge" id="sbMomentum">—</span>
+    </button>
     </div>
     <button class="sb-item" id="nav-education" onclick="showPage('education')">
       <svg class="sb-icon" viewBox="0 0 16 16" fill="none"><path d="M8 2L14 5.5V9C14 12 11 14.5 8 15C5 14.5 2 12 2 9V5.5L8 2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M5.5 8l2 2 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1654,6 +1659,80 @@
     </div>
 
 
+    <!-- ⚡ MOMENTUM BURST SCANNER PAGE -->
+    <div class="page" id="page-momentum" style="overflow-y:auto;">
+      <div style="padding:16px 20px;max-width:1600px;">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <div>
+            <span style="font-size:18px;font-weight:800;letter-spacing:-.3px;">⚡ Momentum Burst Scanner</span>
+            <span style="font-size:11px;color:var(--muted);margin-left:8px;" id="mbInfo"></span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <span id="mbBacktestBadge" style="display:none;font-size:10px;background:#3b0764;color:#c4b5fd;border:1px solid #6d28d9;border-radius:4px;padding:2px 8px;font-weight:700;">🔍 BACKTEST MODE</span>
+            <span style="font-size:10px;background:#052e16;color:#4ade80;border:1px solid #166534;border-radius:4px;padding:2px 7px;font-weight:700;">✅ Pure price/vol — no future leak</span>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:11px;color:var(--muted);font-weight:700;">SCAN DATE:</span>
+            <input type="date" class="f-input" id="mbScanDate" style="width:148px;font-size:11px;" placeholder="Today (live)">
+            <span style="font-size:9px;color:var(--muted);">(leave blank = today)</span>
+            <span style="color:var(--border2);margin:0 4px;">|</span>
+            <span style="font-size:11px;color:var(--muted);font-weight:700;">MIN SCORE</span>
+            <input type="number" class="f-input" id="mbMinScore" value="55" min="30" max="99" step="5" style="width:60px;font-size:11px;">
+            <span style="font-size:11px;color:var(--muted);font-weight:700;">TOP-N</span>
+            <input type="number" class="f-input" id="mbTopN" value="50" min="10" max="200" step="10" style="width:65px;font-size:11px;">
+            <button class="btn btn-outline btn-sm" onclick="mbRun(true)" id="mbRescanBtn">🔄 Rescan</button>
+            <button class="btn btn-primary btn-sm" onclick="mbRun()" id="mbRunBtn" style="margin-left:auto;">⚡ Run Scan</button>
+          </div>
+          <!-- Quick presets -->
+          <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
+            <span style="font-size:10px;color:var(--muted);">Quick backtest:</span>
+            <button class="btn btn-outline btn-xs" onclick="mbQuick('today')">Today</button>
+            <button class="btn btn-outline btn-xs" onclick="mbQuick('1w')">1W ago</button>
+            <button class="btn btn-outline btn-xs" onclick="mbQuick('2w')">2W ago</button>
+            <button class="btn btn-outline btn-xs" onclick="mbQuick('1m')">1M ago</button>
+            <button class="btn btn-outline btn-xs" onclick="mbQuick('3m')">3M ago</button>
+            <span style="color:var(--border2);margin:0 4px;">|</span>
+            <span style="font-size:10px;color:var(--muted);">Pattern:</span>
+            <button class="btn btn-outline btn-xs mbPatBtn active" data-pat="all"  onclick="mbFilterPat('all',this)">All</button>
+            <button class="btn btn-outline btn-xs mbPatBtn" data-pat="VELOCITY_PLAY"        onclick="mbFilterPat('VELOCITY_PLAY',this)">⚡ Velocity</button>
+            <button class="btn btn-outline btn-xs mbPatBtn" data-pat="LONG_BASE_BREAKOUT"   onclick="mbFilterPat('LONG_BASE_BREAKOUT',this)">🚀 Base BO</button>
+            <button class="btn btn-outline btn-xs mbPatBtn" data-pat="TIGHT_COIL_BREAKOUT"  onclick="mbFilterPat('TIGHT_COIL_BREAKOUT',this)">🎯 Tight Coil</button>
+            <button class="btn btn-outline btn-xs mbPatBtn" data-pat="THRUST_FROM_BASE"     onclick="mbFilterPat('THRUST_FROM_BASE',this)">📈 Thrust</button>
+            <span style="color:var(--border2);margin:0 4px;">|</span>
+            <input class="f-input" id="mbSearch" placeholder="🔍 Symbol…" oninput="mbRenderCards()" style="width:130px;font-size:11px;">
+            <span style="font-size:11px;color:var(--muted);margin-left:4px;" id="mbCount"></span>
+            <span style="flex:1"></span>
+            <button class="btn btn-outline btn-xs" onclick="mbSetView('cards')" id="mbBtnCards">📊 Cards</button>
+            <button class="btn btn-outline btn-xs" onclick="mbSetView('table')" id="mbBtnTable">📋 Table</button>
+          </div>
+        </div>
+
+        <!-- Pattern summary chips -->
+        <div id="mbPatSummary" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;"></div>
+
+        <!-- Examples reference bar -->
+        <div id="mbExamplesBar" style="background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:8px 12px;margin-bottom:12px;font-size:10px;line-height:1.7;">
+          <span style="color:var(--yellow);font-weight:700;">📚 Reference patterns caught by this scanner: </span>
+          <span style="color:#94a3b8">JSWINFRA (Jun 16 →+15% in 8d) &nbsp;·&nbsp; PARAS (Jun 18 →+22% in 3d) &nbsp;·&nbsp; ROTO (Jun 23 →+16% in 2d) &nbsp;·&nbsp; PATELENG (Jun 17 →+20% in 6d) &nbsp;·&nbsp; SETL (Jun 5 →+32% in 9d)</span>
+        </div>
+
+        <!-- Main body: cards or table -->
+        <div id="mbBody">
+          <div style="color:var(--muted);padding:60px;text-align:center;font-size:13px;">
+            Click <strong>⚡ Run Scan</strong> to find NSE stocks showing immense strength vs Nifty50 and positioned for a momentum burst.<br>
+            <span style="font-size:11px;color:var(--dim);margin-top:8px;display:block;">Scans 2000+ NSE stocks in ~3 seconds using local cache data.</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <!-- IFRAME EMBED PAGE (for reports that stay inside the app shell) -->
     <div class="page" id="page-embed">
       <div class="iframe-wrap">
@@ -2120,11 +2199,13 @@ function showPage(n) {
   if (nav) nav.classList.add('active');
   // Highlight topbar link
   const tlBoard = document.getElementById('tl-board');
-  if (n === 'board' || n === 'analytics' || n === 'journal' || n === 'watchlist' || n === 'winners' || n === 'alerts' || n === 'ibd-backtest') {
+  if (n === 'board' || n === 'analytics' || n === 'journal' || n === 'watchlist' || n === 'winners' || n === 'alerts' || n === 'ibd-backtest' || n === 'momentum') {
     if (tlBoard) tlBoard.classList.add('active');
   }
   const tlLearn = document.getElementById('tl-learn');
   if (n === 'education' && tlLearn) tlLearn.classList.add('active');
+  const tlMomentum = document.getElementById('tl-momentum');
+  if (n === 'momentum' && tlMomentum) tlMomentum.classList.add('active');
   if (n === 'analytics') loadEquity();
   if (n === 'journal') loadJournal();
   if (n === 'watchlist') loadWatchlist();
@@ -8564,9 +8645,332 @@ document.addEventListener('DOMContentLoaded', () => {
   setupPlaybookImagePaste();
 });
 
+// ══════════════════════════════════════════════════════════════════════════════
+// ⚡ MOMENTUM BURST SCANNER — UI Logic
+// ══════════════════════════════════════════════════════════════════════════════
+let mbData = null;
+let mbResults = [];
+let mbPatFilter = 'all';
+let mbView = 'cards';
+
+const MB_PAT_LABEL = {
+  VELOCITY_PLAY:       '⚡ Velocity Play',
+  LONG_BASE_BREAKOUT:  '🚀 Long Base Breakout',
+  TIGHT_COIL_BREAKOUT: '🎯 Tight Coil Breakout',
+  THRUST_FROM_BASE:    '📈 Thrust From Base',
+};
+const MB_PAT_COLOR = {
+  VELOCITY_PLAY:       '#f59e0b',
+  LONG_BASE_BREAKOUT:  '#4ade80',
+  TIGHT_COIL_BREAKOUT: '#a78bfa',
+  THRUST_FROM_BASE:    '#38bdf8',
+};
+
+function mbQuick(preset) {
+  const el = document.getElementById('mbScanDate');
+  if (preset === 'today') { el.value = ''; return; }
+  const d = new Date();
+  const days = { '1w': 7, '2w': 14, '1m': 30, '3m': 90 }[preset] || 0;
+  d.setDate(d.getDate() - days);
+  el.value = d.toISOString().slice(0, 10);
+}
+
+function mbSetView(v) {
+  mbView = v;
+  document.getElementById('mbBtnCards').style.background = v === 'cards' ? '#1e3a5f' : '';
+  document.getElementById('mbBtnCards').style.color = v === 'cards' ? '#93c5fd' : '';
+  document.getElementById('mbBtnTable').style.background = v === 'table' ? '#1e3a5f' : '';
+  document.getElementById('mbBtnTable').style.color = v === 'table' ? '#93c5fd' : '';
+  mbRenderCards();
+}
+
+function mbFilterPat(pat, btn) {
+  mbPatFilter = pat;
+  document.querySelectorAll('.mbPatBtn').forEach(b => {
+    b.style.background = '';
+    b.style.color = '';
+    b.style.borderColor = '';
+  });
+  if (btn) {
+    btn.style.background = '#1e3a5f';
+    btn.style.color = '#93c5fd';
+    btn.style.borderColor = '#3b82f6';
+  }
+  mbRenderCards();
+}
+
+function mbGetFiltered() {
+  const q = (document.getElementById('mbSearch')?.value || '').toLowerCase();
+  return mbResults.filter(r => {
+    if (mbPatFilter !== 'all' && r.pattern !== mbPatFilter) return false;
+    if (q && !r.clean_symbol.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function mbSparkline(closes, vols, w=150, h=52) {
+  if (!closes || closes.length < 2) return '';
+  const n = closes.length;
+  const mn = Math.min(...closes), mx = Math.max(...closes), rng = mx - mn || 1;
+  let pts = '';
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n-1) * w).toFixed(1);
+    const y = (h*0.15 + (1-(closes[i]-mn)/rng)*h*0.62).toFixed(1);
+    pts += (i ? ' ' : '') + x + ',' + y;
+  }
+  const maxV = Math.max(...vols) || 1;
+  let bars = '';
+  const bw = Math.max(1, w/n - 0.5);
+  for (let i = 0; i < vols.length; i++) {
+    const x = (i / (n-1) * w).toFixed(1);
+    const bh = (vols[i]/maxV*h*0.14).toFixed(1);
+    const isLast = i === vols.length - 1;
+    const avgV = vols.slice(0, -1).reduce((a,b)=>a+b,0) / Math.max(vols.length-1,1);
+    const surge = isLast && vols[i] > avgV * 1.5;
+    const bc = surge ? '#facc15' : '#1e3a5f';
+    bars += `<rect x="${x}" y="${h-bh}" width="${bw}" height="${bh}" fill="${bc}" opacity="0.9"/>`;
+  }
+  const lx = w.toFixed(1), ly = (h*0.15 + (1-(closes[n-1]-mn)/rng)*h*0.62).toFixed(1);
+  const lineColor = closes[n-1] >= closes[0] ? '#22c55e' : '#ef4444';
+  return `<svg width="${w}" height="${h}" style="overflow:visible">${bars}<polyline points="${pts}" fill="none" stroke="${lineColor}" stroke-width="1.5" stroke-linejoin="round"/><circle cx="${lx}" cy="${ly}" r="2.5" fill="${lineColor}"/></svg>`;
+}
+
+function mbScoreBar(score) {
+  const col = score >= 75 ? '#22c55e' : score >= 60 ? '#f59e0b' : '#ef4444';
+  return `<div style="background:#0f172a;border-radius:3px;height:5px;width:100%;overflow:hidden"><div style="background:${col};width:${score}%;height:100%;border-radius:3px;transition:width .4s"></div></div>`;
+}
+
+function mbRet(v, label) {
+  if (v === null || v === undefined) return `<span style="color:#334155">${label}:<b>—</b></span>`;
+  const col = v >= 0 ? '#22c55e' : '#ef4444';
+  const sign = v >= 0 ? '+' : '';
+  return `<span style="color:${col}">${label}:<b>${sign}${v.toFixed(1)}%</b></span>`;
+}
+
+function mbRenderPatSummary() {
+  if (!mbData) return;
+  const counts = mbData.pattern_counts || {};
+  let h = '';
+  for (const [pat, cnt] of Object.entries(counts).sort((a,b) => b[1]-a[1])) {
+    const label = MB_PAT_LABEL[pat] || pat;
+    const col   = MB_PAT_COLOR[pat] || '#64748b';
+    h += `<div style="display:inline-flex;align-items:center;gap:5px;background:${col}18;border:1px solid ${col}44;border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:${col}" onclick="mbFilterPat('${pat}',null)"><span style="font-weight:700">${cnt}</span><span>${label}</span></div>`;
+  }
+  h += `<div style="display:inline-flex;align-items:center;gap:5px;background:#1e293b;border:1px solid #334155;border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;color:#94a3b8" onclick="mbFilterPat('all',null)">Show All (${mbResults.length})</div>`;
+  document.getElementById('mbPatSummary').innerHTML = h;
+}
+
+function mbRenderCards() {
+  const filtered = mbGetFiltered();
+  document.getElementById('mbCount').textContent = filtered.length + ' stocks';
+
+  if (mbView === 'table') { mbRenderTable(filtered); return; }
+
+  if (!filtered.length) {
+    document.getElementById('mbBody').innerHTML = `<div style="color:var(--muted);padding:40px;text-align:center;">No stocks match the current filter. Try lowering the min score or selecting a different pattern.</div>`;
+    return;
+  }
+
+  let h = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;">`;
+  for (let i = 0; i < filtered.length; i++) {
+    const r = filtered[i];
+    const t = r.trend, tp = r.trade_plan;
+    const pat = r.pattern, patLabel = MB_PAT_LABEL[pat] || pat;
+    const patColor = MB_PAT_COLOR[pat] || '#64748b';
+    const scoreColor = r.score >= 75 ? '#22c55e' : r.score >= 60 ? '#f59e0b' : '#ef4444';
+    const spark = mbSparkline(r.closes_30d, r.volumes_30d);
+    const sb = r.short_base, lb = r.long_base;
+    const bestCv = Math.min(sb.cv_pct, lb.cv_pct);
+    const bestDep = Math.min(sb.depth_pct, lb.depth_pct);
+    const bestDryup = Math.min(sb.vol_dryup, lb.vol_dryup);
+    const rsColor = r.rs_score >= 80 ? '#ffd700' : r.rs_score >= 70 ? '#22c55e' : '#f59e0b';
+    const volColor = r.vol_surge >= 3 ? '#ffd700' : r.vol_surge >= 2 ? '#22c55e' : '#f59e0b';
+    const rank = mbResults.indexOf(r) + 1;
+
+    h += `
+    <div style="background:linear-gradient(180deg,#0d1728,#0c1626);border:1px solid #23344e;border-top:2px solid ${patColor}55;border-radius:12px;padding:16px;position:relative;transition:box-shadow .15s,transform .15s;cursor:pointer" onmouseover="this.style.boxShadow='0 8px 24px rgba(0,0,0,.5)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='';this.style.transform=''">
+
+      <!-- Rank + Score -->
+      <div style="position:absolute;top:10px;right:10px;display:flex;gap:5px;align-items:center">
+        <span style="font-size:9px;color:#334155;background:#0f172a;padding:1px 6px;border-radius:8px">#${rank}</span>
+        <span style="font-size:22px;font-weight:900;color:${scoreColor};line-height:1">${r.score}</span>
+      </div>
+
+      <!-- Symbol + date -->
+      <div style="font-size:18px;font-weight:800;color:#f1f5f9;margin-bottom:2px">${r.clean_symbol}</div>
+      <div style="font-size:10px;color:#64748b;margin-bottom:8px">${r.scan_date}</div>
+
+      <!-- Pattern badge -->
+      <div style="display:inline-block;background:${patColor}18;color:${patColor};border:1px solid ${patColor}44;border-radius:16px;padding:3px 10px;font-size:11px;font-weight:700;margin-bottom:10px">${patLabel}</div>
+
+      <!-- Score bar -->
+      <div style="margin-bottom:10px">${mbScoreBar(r.score)}</div>
+
+      <!-- Price + returns -->
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+        <span style="font-size:20px;font-weight:700;color:#f1f5f9">₹${t.current.toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+        <div style="display:flex;gap:7px;font-size:11px;flex-wrap:wrap">
+          ${mbRet(t.ret_1d,'1d')} ${mbRet(t.ret_10d,'10d')} ${mbRet(t.ret_20d,'20d')} ${mbRet(t.ret_60d,'60d')}
+        </div>
+      </div>
+
+      <!-- Sparkline -->
+      <div style="background:#0f172a;border-radius:6px;padding:6px;margin-bottom:10px">${spark}</div>
+
+      <!-- Metrics grid -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">
+        <div style="background:#0f172a;border-radius:6px;padding:7px;text-align:center">
+          <div style="color:#64748b;font-size:9px;text-transform:uppercase">RS Score</div>
+          <div style="color:${rsColor};font-size:17px;font-weight:700">${r.rs_score}</div>
+          <div style="color:#475569;font-size:9px">+${r.excess_pct.toFixed(1)}% vs Nifty</div>
+        </div>
+        <div style="background:#0f172a;border-radius:6px;padding:7px;text-align:center">
+          <div style="color:#64748b;font-size:9px;text-transform:uppercase">Vol Surge</div>
+          <div style="color:${volColor};font-size:17px;font-weight:700">${r.vol_surge.toFixed(1)}x</div>
+          <div style="color:#475569;font-size:9px">${(r.today_vol/1e6).toFixed(1)}M</div>
+        </div>
+        <div style="background:#0f172a;border-radius:6px;padding:7px;text-align:center">
+          <div style="color:#64748b;font-size:9px;text-transform:uppercase">Base</div>
+          <div style="color:#22c55e;font-size:12px;font-weight:700">${sb.quality}</div>
+          <div style="color:#475569;font-size:9px">CV ${bestCv.toFixed(1)}% D ${bestDep.toFixed(0)}%</div>
+        </div>
+      </div>
+
+      <!-- Tags row -->
+      <div style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap;font-size:10px">
+        <span style="background:#0c2d48;color:#38bdf8;padding:2px 7px;border-radius:4px">VolDry ${bestDryup.toFixed(2)}x ${bestDryup <= 0.8 ? '✅' : '🔵'}</span>
+        <span style="background:#0d1f12;color:#86efac;padding:2px 7px;border-radius:4px">${t.stage_label}</span>
+        <span style="background:#1c1033;color:#c4b5fd;padding:2px 7px;border-radius:4px">${t.pct_from_52w_high.toFixed(1)}% 52W Hi</span>
+      </div>
+
+      <!-- Trade plan -->
+      <div style="background:#0f172a;border-radius:7px;padding:10px">
+        <div style="color:#475569;font-size:9px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Trade Plan</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px">
+          <div><span style="color:#475569">Entry:</span> <span style="color:#22c55e;font-weight:700">₹${tp.entry.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
+          <div><span style="color:#475569">Stop:</span> <span style="color:#ef4444;font-weight:700">₹${tp.stop_loss.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})} <span style="color:#475569;font-size:9px">(${tp.risk_pct}%)</span></span></div>
+          <div><span style="color:#475569">T1:</span> <span style="color:#fbbf24;font-weight:700">₹${tp.target1.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})} <span style="color:#475569;font-size:9px">(${tp.rr1}R)</span></span></div>
+          <div><span style="color:#475569">T2:</span> <span style="color:#fb923c;font-weight:700">₹${tp.target2.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})} <span style="color:#475569;font-size:9px">(${tp.rr2}R)</span></span></div>
+        </div>
+      </div>
+
+    </div>`;
+  }
+  h += '</div>';
+  document.getElementById('mbBody').innerHTML = h;
+}
+
+function mbRenderTable(filtered) {
+  if (!filtered.length) {
+    document.getElementById('mbBody').innerHTML = `<div style="color:var(--muted);padding:40px;text-align:center;">No stocks match the current filter.</div>`;
+    return;
+  }
+  let h = `<div style="overflow-x:auto;border-radius:10px;border:1px solid var(--border)"><table style="width:100%;border-collapse:collapse;font-size:11px">
+  <thead style="background:var(--bg2)">
+    <tr>
+      <th style="padding:8px 10px;color:var(--muted);text-align:left;font-size:10px;text-transform:uppercase;white-space:nowrap">#</th>
+      <th style="padding:8px 10px;color:var(--muted);text-align:left;font-size:10px;text-transform:uppercase">Symbol</th>
+      <th style="padding:8px 10px;color:var(--muted);text-align:center;font-size:10px;text-transform:uppercase">Score</th>
+      <th style="padding:8px 10px;color:var(--muted);text-align:left;font-size:10px;text-transform:uppercase">Pattern</th>
+      <th style="padding:8px 10px;color:var(--muted);text-align:right;font-size:10px;text-transform:uppercase">Price</th>
+      <th style="padding:8px 10px;color:var(--muted);text-align:right;font-size:10px;text-transform:uppercase">1d%</th>
+      <th style="padding:8px 10px;color:var(--muted);text-align:right;font-size:10px;text-transform:uppercase">60d%</th>
+      <th style="padding:8px 10px;color:var(--muted);text-align:center;font-size:10px;text-transform:uppercase">RS</th>
+      <th style="padding:8px 10px;color:var(--muted);text-align:center;font-size:10px;text-transform:uppercase">Vol</th>
+      <th style="padding:8px 10px;color:var(--muted);text-align:right;font-size:10px;text-transform:uppercase">Entry</th>
+      <th style="padding:8px 10px;color:var(--muted);text-align:right;font-size:10px;text-transform:uppercase">Stop</th>
+      <th style="padding:8px 10px;color:var(--muted);text-align:right;font-size:10px;text-transform:uppercase">T1</th>
+      <th style="padding:8px 10px;color:var(--muted);text-align:right;font-size:10px;text-transform:uppercase">Stage</th>
+    </tr>
+  </thead><tbody>`;
+
+  for (let i = 0; i < filtered.length; i++) {
+    const r = filtered[i], t = r.trend, tp = r.trade_plan;
+    const rank = mbResults.indexOf(r) + 1;
+    const patLabel = MB_PAT_LABEL[r.pattern] || r.pattern;
+    const patColor = MB_PAT_COLOR[r.pattern] || '#64748b';
+    const scoreColor = r.score >= 75 ? '#22c55e' : r.score >= 60 ? '#f59e0b' : '#ef4444';
+    const ret1dColor = t.ret_1d >= 0 ? '#22c55e' : '#ef4444';
+    const ret60dColor = t.ret_60d >= 0 ? '#22c55e' : '#ef4444';
+    const rsColor = r.rs_score >= 80 ? '#ffd700' : r.rs_score >= 70 ? '#22c55e' : '#f59e0b';
+    const volColor = r.vol_surge >= 3 ? '#ffd700' : r.vol_surge >= 2 ? '#22c55e' : '#f59e0b';
+    const bgHover = i % 2 === 0 ? '#0d1728' : '#0c1525';
+
+    h += `<tr style="border-bottom:1px solid var(--border);cursor:pointer" onmouseover="this.style.background='#1e293b'" onmouseout="this.style.background='${bgHover}'">
+      <td style="padding:8px 10px;color:var(--muted)">${rank}</td>
+      <td style="padding:8px 10px;font-weight:800;color:#f1f5f9;font-size:13px">${r.clean_symbol}</td>
+      <td style="padding:8px 10px;text-align:center"><span style="color:${scoreColor};font-weight:700;font-size:14px">${r.score}</span></td>
+      <td style="padding:8px 10px"><span style="background:${patColor}18;color:${patColor};border-radius:10px;padding:2px 8px;font-size:10px;white-space:nowrap">${patLabel}</span></td>
+      <td style="padding:8px 10px;text-align:right;font-weight:600">₹${t.current.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="padding:8px 10px;text-align:right;color:${ret1dColor};font-weight:600">${t.ret_1d >= 0 ? '+' : ''}${t.ret_1d.toFixed(1)}%</td>
+      <td style="padding:8px 10px;text-align:right;color:${ret60dColor}">${t.ret_60d >= 0 ? '+' : ''}${t.ret_60d.toFixed(1)}%</td>
+      <td style="padding:8px 10px;text-align:center;color:${rsColor};font-weight:700">${r.rs_score}</td>
+      <td style="padding:8px 10px;text-align:center;color:${volColor};font-weight:700">${r.vol_surge.toFixed(1)}x</td>
+      <td style="padding:8px 10px;text-align:right;color:#22c55e;font-weight:700">₹${tp.entry.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="padding:8px 10px;text-align:right;color:#ef4444">₹${tp.stop_loss.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="padding:8px 10px;text-align:right;color:#fbbf24">₹${tp.target1.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+      <td style="padding:8px 10px;color:var(--muted)">${t.stage_label}</td>
+    </tr>`;
+  }
+  h += '</tbody></table></div>';
+  document.getElementById('mbBody').innerHTML = h;
+}
+
+async function mbRun(force) {
+  const scanDate  = document.getElementById('mbScanDate').value  || '';
+  const minScore  = parseInt(document.getElementById('mbMinScore').value) || 55;
+  const topN      = parseInt(document.getElementById('mbTopN').value)     || 50;
+
+  const params = new URLSearchParams({ min_score: minScore, top_n: topN, workers: 8 });
+  if (scanDate) params.set('as_of_date', scanDate);
+  if (force)    params.set('_cache_bust', Date.now());
+
+  const label = scanDate ? `as of ${scanDate}` : 'live (today)';
+  document.getElementById('mbBody').innerHTML = `<div style="color:var(--muted);padding:60px;text-align:center;">⏳ Scanning 2000+ NSE stocks <strong>${label}</strong>…<br><span style="font-size:11px;margin-top:8px;display:block">Usually completes in ~3 seconds</span></div>`;
+  document.getElementById('mbPatSummary').innerHTML = '';
+  document.getElementById('mbInfo').textContent = '';
+  document.getElementById('mbRunBtn').disabled = true;
+  document.getElementById('mbRescanBtn').disabled = true;
+  document.getElementById('mbRunBtn').textContent = '⏳ Scanning…';
+  document.getElementById('mbRescanBtn').textContent = '⏳';
+
+  const backtestBadge = document.getElementById('mbBacktestBadge');
+  if (backtestBadge) backtestBadge.style.display = scanDate ? 'inline-block' : 'none';
+
+  try {
+    const r = await fetch(API + '/api/momentum-burst/scan?' + params.toString());
+    if (!r.ok) {
+      const e = await r.json().catch(() => ({}));
+      let msg = e.detail;
+      if (Array.isArray(msg)) msg = msg.map(d => d.msg || JSON.stringify(d)).join('; ');
+      throw new Error(msg || `HTTP ${r.status}`);
+    }
+    mbData    = await r.json();
+    mbResults = mbData.results || [];
+
+    const counts = mbData.pattern_counts || {};
+    const topPat = Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([p,c])=>`${MB_PAT_LABEL[p]||p}: ${c}`).join(' · ');
+    document.getElementById('mbInfo').textContent =
+      `Scan: ${mbData.scan_date} · ${mbData.total_found} candidates · Min score: ${mbData.min_score}`;
+    document.getElementById('sbMomentum').textContent = mbData.total_found;
+
+    mbRenderPatSummary();
+    mbRenderCards();
+
+  } catch(e) {
+    document.getElementById('mbBody').innerHTML = `<div style="color:#ef4444;padding:40px;text-align:center;">❌ Scan failed: ${e.message}</div>`;
+  } finally {
+    document.getElementById('mbRunBtn').disabled = false;
+    document.getElementById('mbRescanBtn').disabled = false;
+    document.getElementById('mbRunBtn').textContent = '⚡ Run Scan';
+    document.getElementById('mbRescanBtn').textContent = '🔄 Rescan';
+  }
+}
+
 </script>
 <!-- Always-on wisdom/reminder layer: QOTD banner + page-contextual nudges -->
 <script defer src="/ui/wisdom.js"></script>
+
 </body>
 </html>
 

@@ -9971,3 +9971,125 @@ def rs_scan_asof(
     }
 
 
+# ── Momentum Burst Scanner ────────────────────────────────────────────────────
+
+@app.get("/api/momentum-burst/scan")
+def momentum_burst_scan(
+    as_of_date: str = "",        # YYYY-MM-DD for backtesting; empty = today
+    min_score: int = 50,
+    top_n: int = 50,
+    workers: int = 8,
+    patterns: str = "",          # comma-separated: velocity,base_breakout,tight_coil,thrust
+) -> dict:
+    """
+    Run the Momentum Burst Scanner — finds NSE stocks showing immense strength
+    vs Nifty50 and positioned for an explosive breakout.
+
+    Supports backtesting: pass as_of_date to scan as if it were that date.
+    All data comes from local cache CSVs (no live API calls needed).
+    """
+    import sys as _sys
+    _scripts = str(ROOT / "scripts")
+    if _scripts not in _sys.path:
+        _sys.path.insert(0, _scripts)
+
+    try:
+        import importlib
+        import momentum_burst_scanner as _mbs
+        importlib.reload(_mbs)
+    except ImportError as e:
+        raise HTTPException(status_code=500, detail=f"momentum_burst_scanner not found: {e}")
+
+    # Validate date if provided
+    if as_of_date:
+        from datetime import date as _date
+        try:
+            _date.fromisoformat(as_of_date)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid as_of_date: {as_of_date}")
+
+    # Parse pattern filter
+    pattern_list: list[str] | None = None
+    if patterns.strip():
+        _PMAP = {
+            "velocity":      "VELOCITY_PLAY",
+            "base_breakout": "LONG_BASE_BREAKOUT",
+            "tight_coil":    "TIGHT_COIL_BREAKOUT",
+            "thrust":        "THRUST_FROM_BASE",
+        }
+        pattern_list = []
+        for p in patterns.split(","):
+            p = p.strip().lower()
+            mapped = _PMAP.get(p, p.upper())
+            pattern_list.append(mapped)
+
+    try:
+        results = _mbs.run_scan(
+            as_of_date=as_of_date or None,
+            min_score=min_score,
+            top_n=top_n,
+            patterns=pattern_list,
+            workers=workers,
+            verbose=False,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Scan failed: {e}")
+
+    # Build pattern breakdown
+    from collections import Counter
+    pattern_counts = dict(Counter(r["pattern"] for r in results))
+
+    # Serialize results — strip raw price arrays to keep response lean
+    serialized = []
+    for r in results:
+        serialized.append({
+            "symbol":       r["symbol"],
+            "clean_symbol": r["symbol"].replace(".NS", ""),
+            "pattern":      r["pattern"],
+            "score":        r["score"],
+            "score_breakdown": r.get("score_breakdown", {}),
+            "rs_score":     r["rs_score"],
+            "excess_pct":   r["excess_pct"],
+            "stock_ret_63d": r.get("stock_ret_63d"),
+            "nifty_ret_63d": r.get("nifty_ret_63d"),
+            "vol_surge":    r["vol_surge"],
+            "avg_vol_20d":  r["avg_vol_20d"],
+            "today_vol":    r["today_vol"],
+            "trend": {
+                "current":           r["trend"]["current"],
+                "ma20":              r["trend"]["ma20"],
+                "ma50":              r["trend"]["ma50"],
+                "ma200":             r["trend"]["ma200"],
+                "stage":             r["trend"]["stage"],
+                "stage_label":       r["trend"]["stage_label"],
+                "ret_1d":            r["trend"]["ret_1d"],
+                "ret_10d":           r["trend"]["ret_10d"],
+                "ret_20d":           r["trend"]["ret_20d"],
+                "ret_60d":           r["trend"]["ret_60d"],
+                "pct_from_52w_high": r["trend"]["pct_from_52w_high"],
+                "high_52w":          r["trend"]["high_52w"],
+                "above_50":          r["trend"]["above_50"],
+                "above_200":         r["trend"]["above_200"],
+            },
+            "short_base": r["short_base"],
+            "long_base":  r["long_base"],
+            "pivot_short": r["pivot_short"],
+            "trade_plan": r["trade_plan"],
+            "scan_date":  r["scan_date"],
+            "closes_30d":  r.get("closes_30d", []),
+            "volumes_30d": r.get("volumes_30d", []),
+            "dates_30d":   r.get("dates_30d", []),
+        })
+
+    from datetime import date as _date2
+    scan_label = as_of_date or _date2.today().strftime("%Y-%m-%d")
+
+    return {
+        "scan_date":      scan_label,
+        "is_backtest":    bool(as_of_date),
+        "total_found":    len(results),
+        "min_score":      min_score,
+        "pattern_counts": pattern_counts,
+        "results":        serialized,
+    }
+

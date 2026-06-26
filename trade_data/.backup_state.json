@@ -1,5 +1,5 @@
 {
-  "last_backup": "2026-06-23T21:04:22",
+  "last_backup": "2026-06-26T17:29:38",
   "method": "telegram",
   "icloud_status": "not_configured",
   "telegram_status": "success",
@@ -19,6 +19,6 @@
     "vpn_config.json",
     "watchlist.json"
   ],
-  "size_kb": 214.2,
-  "backup_path": "/Users/yeswanthaddanki/IdeaProjects/SETUPS/trade_data/.backups/SETUPS_backup_2026-06-23_2103.zip"
+  "size_kb": 215.4,
+  "backup_path": "/Users/yeswanthaddanki/IdeaProjects/SETUPS/trade_data/.backups/SETUPS_backup_2026-06-26_1729.zip"
 }
